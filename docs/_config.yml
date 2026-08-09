@@ -1,0 +1,48 @@
+title: Runpod Hands-On Labs
+description: Serverless, Pods, Terraform — 실습 중심 Runpod 랩 모음 (EN/KO)
+lang: en
+
+# Served at https://litkhai.github.io/runpod-hols
+baseurl: "/runpod-hols"
+url: "https://litkhai.github.io"
+
+repo_url: https://github.com/litkhai/runpod-hols
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  hard_wrap: false
+
+# No remote theme on purpose — a self-contained layout has no upstream
+# gem-compatibility risk and gives full control over the bilingual toggle.
+# 원격 테마를 쓰지 않는다. 자체 레이아웃은 gem 호환성 문제가 없고
+# 이중 언어 토글을 완전히 제어할 수 있다.
+theme: null
+plugins: []
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor
+
+# Track pages in nav order / 네비게이션 순서
+nav:
+  - title: Overview
+    title_ko: 개요
+    url: /
+  - title: Setup
+    title_ko: 사전 구성
+    url: /setup/
+  - title: Serverless
+    title_ko: Serverless
+    url: /serverless/
+  - title: Pod
+    title_ko: Pod
+    url: /pod/
+  - title: Terraform
+    title_ko: Terraform
+    url: /terraform/
+  - title: Cluster
+    title_ko: Cluster
+    url: /cluster/

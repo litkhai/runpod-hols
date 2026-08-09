@@ -1,5 +1,7 @@
 # Runpod Hands-On Labs (HOLs)
 
+**📖 [litkhai.github.io/runpod-hols](https://litkhai.github.io/runpod-hols)**
+
 [English](#english) | [한국어](#한국어)
 
 ---
@@ -8,27 +10,38 @@
 
 A collection of practical, hands-on laboratory exercises for learning [Runpod](https://runpod.io) — the GPU cloud platform for AI/ML workloads.
 
+Everything here was verified by actually running it. The outputs, image sizes and error messages in these docs are real, not transcribed from vendor documentation.
+
 ### 🎯 Purpose
 
-These labs cover Runpod's three compute products, each in its own top-level directory:
+These labs cover Runpod's three compute products, plus the two things you need around them:
 
+- **Setup** — API keys, tooling, auth verification, MCP
 - **Serverless** — autoscaling inference endpoints, billed per execution
 - **Pods** — GPU containers you rent and control, billed per minute
+- **Terraform** — the same resources as infrastructure as code
 - **Instant Clusters** — multi-node distributed training (TBD)
 
 ### 📁 Repository Structure
 
 ```
 runpod-hols/
+├── setup/               # ← Start here: keys, tools, auth check, MCP
 ├── serverless/          # Autoscaling inference endpoints
 │   └── 01-hello-worker/ # handler → local test → container → deploy
+├── terraform/           # Infrastructure as code
+│   ├── 01-endpoint/     # runpod_template + runpod_endpoint
+│   └── 02-pod/          # runpod_pod + optional network volume
 ├── pod/                 # GPU containers (SSH / Jupyter)
-└── cluster/             # Multi-node distributed training — TBD
+├── cluster/             # Multi-node distributed training — TBD
+└── docs/                # GitHub Pages source
 ```
 
 | Track | Status | Contents |
 |---|---|---|
+| [`setup/`](./setup) | ✅ Ready | API key, tool checks, auth smoke test, MCP server |
 | [`serverless/`](./serverless) | ✅ Lab 01 ready | Write handler → test locally → containerize → deploy endpoint |
+| [`terraform/`](./terraform) | ✅ 2 labs ready | Provision endpoint and Pod declaratively |
 | [`pod/`](./pod) | 📋 Planned | Launch Pod → connect → storage → custom template |
 | [`cluster/`](./cluster) | 🚧 TBD | Multi-node PyTorch / Slurm / Axolotl |
 
@@ -99,27 +112,38 @@ Follow [serverless/01-hello-worker/README.md](./serverless/01-hello-worker/READM
 
 [Runpod](https://runpod.io) — AI/ML 워크로드를 위한 GPU 클라우드 플랫폼 — 학습을 위한 실무 중심 실습(Hands-On Labs) 모음입니다.
 
+여기 있는 내용은 전부 실제로 실행해서 확인한 것입니다. 문서에 나오는 출력, 이미지 크기, 오류 메시지는 벤더 문서를 옮긴 것이 아니라 직접 얻은 결과입니다.
+
 ### 🎯 목적
 
-Runpod 의 세 가지 컴퓨트 제품을 각각 최상위 디렉토리로 나눠서 다룹니다.
+Runpod 의 세 가지 컴퓨트 제품과, 그 주변에 필요한 두 가지를 다룹니다.
 
+- **Setup** — API 키, 도구, 인증 확인, MCP
 - **Serverless** — 오토스케일 추론 엔드포인트, 실행된 시간만큼 과금
 - **Pods** — 직접 빌려서 제어하는 GPU 컨테이너, 분 단위 과금
+- **Terraform** — 같은 리소스를 코드형 인프라로
 - **Instant Clusters** — 다중 노드 분산 학습 (TBD)
 
 ### 📁 저장소 구조
 
 ```
 runpod-hols/
+├── setup/               # ← 여기서 시작: 키, 도구, 인증 확인, MCP
 ├── serverless/          # 오토스케일 추론 엔드포인트
 │   └── 01-hello-worker/ # handler 작성 → 로컬 테스트 → 컨테이너화 → 배포
+├── terraform/           # 코드형 인프라
+│   ├── 01-endpoint/     # runpod_template + runpod_endpoint
+│   └── 02-pod/          # runpod_pod + 선택적 network volume
 ├── pod/                 # GPU 컨테이너 (SSH / Jupyter)
-└── cluster/             # 다중 노드 분산 학습 — TBD
+├── cluster/             # 다중 노드 분산 학습 — TBD
+└── docs/                # GitHub Pages 소스
 ```
 
 | 트랙 | 상태 | 내용 |
 |---|---|---|
+| [`setup/`](./setup) | ✅ 준비됨 | API 키, 도구 검사, 인증 스모크 테스트, MCP 서버 |
 | [`serverless/`](./serverless) | ✅ Lab 01 준비됨 | handler 작성 → 로컬 테스트 → 컨테이너화 → 엔드포인트 배포 |
+| [`terraform/`](./terraform) | ✅ 2개 준비됨 | 엔드포인트와 Pod 를 선언적으로 프로비저닝 |
 | [`pod/`](./pod) | 📋 계획됨 | Pod 기동 → 접속 → 스토리지 → 커스텀 템플릿 |
 | [`cluster/`](./cluster) | 🚧 TBD | 다중 노드 PyTorch / Slurm / Axolotl |
 

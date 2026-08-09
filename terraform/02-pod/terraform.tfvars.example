@@ -1,0 +1,32 @@
+# Copy to terraform.tfvars and edit. terraform.tfvars is gitignored.
+# terraform.tfvars 로 복사해서 수정한다. terraform.tfvars 는 gitignore 돼 있다.
+#
+# No API key here — the provider reads RUNPOD_API_KEY from the environment.
+# API 키는 여기 없다. 프로바이더가 환경변수 RUNPOD_API_KEY 를 읽는다.
+#
+# ⚠️ Applying this creates a Pod that bills per minute. / apply 하면 분 단위로 과금되는 Pod 가 생성된다.
+
+pod_name    = "hol-lab-pod"
+image_name  = "runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404"
+gpu_type_id = "NVIDIA GeForce RTX 4090"
+gpu_count   = 1
+
+# Scratch disk, destroyed with the Pod. / Pod 와 함께 소멸하는 임시 디스크.
+container_disk_in_gb = 20
+
+# Volume disk at /workspace — survives stop, dies on terminate.
+# /workspace 볼륨 디스크 — 중지 시 유지, 삭제 시 소멸.
+volume_in_gb = 20
+
+start_jupyter = true
+
+# Network volume — off by default. It keeps costing storage after the Pod
+# is destroyed, so only turn this on when you specifically want to practise
+# sharing state across Pods.
+#
+# 네트워크 볼륨 — 기본값 false. Pod 를 삭제한 뒤에도 스토리지 비용이 계속 나가므로,
+# Pod 간 상태 공유를 실습할 때만 켜세요.
+# create_network_volume = true
+# volume_name           = "hol-shared-workspace"
+# volume_size_gb        = 20
+# data_center_id        = "US-KS-2"

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% if page.title %}{{ page.title }} · {% endif %}{{ site.title }}</title>
+<meta name="description" content="{{ page.description | default: site.description }}">
+<link rel="stylesheet" href="{{ '/assets/style.css' | relative_url }}">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="{{ '/' | relative_url }}">
+      <span class="brand-mark">▮</span> {{ site.title }}
+    </a>
+    <div class="header-right">
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button type="button" data-set-lang="both" class="active">EN+KO</button>
+        <button type="button" data-set-lang="en">EN</button>
+        <button type="button" data-set-lang="ko">한국어</button>
+      </div>
+      <a class="gh" href="{{ site.repo_url }}">GitHub</a>
+    </div>
+  </div>
+</header>
+
+<nav class="site-nav">
+  <div class="wrap nav-inner">
+    {% assign cur = page.url | remove: site.baseurl %}
+    {% for item in site.nav %}
+      <a href="{{ item.url | relative_url }}"
+         class="{% if cur == item.url %}current{% endif %}">
+        {{ item.title }}{% if item.title != item.title_ko %} <span class="ko-label">{{ item.title_ko }}</span>{% endif %}
+      </a>
+    {% endfor %}
+  </div>
+</nav>
+
+<main class="wrap content">
+  {{ content }}
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>
+      Unofficial hands-on labs. Not affiliated with Runpod.<br>
+      비공식 실습 자료입니다. Runpod 과 무관합니다.
+    </p>
+    <p>
+      <a href="{{ site.repo_url }}">Source on GitHub</a> ·
+      <a href="https://docs.runpod.io">Runpod Docs</a>
+    </p>
+  </div>
+</footer>
+
+<script>
+// Bilingual toggle. Without JS every language block stays visible, so the
+// page degrades to showing both — never to showing nothing.
+// 이중 언어 토글. JS 가 없으면 모든 언어 블록이 그대로 보이므로
+// 최악의 경우에도 둘 다 표시될 뿐, 아무것도 안 보이는 상황은 생기지 않는다.
+(function () {
+  var KEY = 'runpod-hols-lang';
+  var buttons = document.querySelectorAll('[data-set-lang]');
+
+  function apply(mode) {
+    document.querySelectorAll('.lang').forEach(function (el) {
+      var l = el.getAttribute('data-lang');
+      el.hidden = !(mode === 'both' || mode === l);
+    });
+    buttons.forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-set-lang') === mode);
+    });
+    try { localStorage.setItem(KEY, mode); } catch (e) { /* private mode */ }
+  }
+
+  buttons.forEach(function (b) {
+    b.addEventListener('click', function () {
+      apply(b.getAttribute('data-set-lang'));
+    });
+  });
+
+  var saved;
+  try { saved = localStorage.getItem(KEY); } catch (e) { saved = null; }
+  apply(saved || 'both');
+})();
+</script>
+
+</body>
+</html>
