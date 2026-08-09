@@ -80,6 +80,8 @@ docker build --platform linux/amd64 -t <YOUR_DOCKERHUB_USERNAME>/hello-worker:v1
 
 `--platform linux/amd64` is mandatory on Apple Silicon. Runpod workers are amd64; an arm64 image will fail to start.
 
+> **Build context.** The `COPY` paths in the Dockerfile are relative to this directory, which is what keeps the lab self-contained — you can copy the folder anywhere and it still builds. Runpod, however, defaults its build context to the **repo root**, so when deploying you must set the endpoint's **Build context** field (under Advanced settings) to `/serverless/01-hello-worker`. Skip it and the build fails with `"/handler.py": not found`. More on this in Step 5.
+
 > **Do not tag this `:latest`.** Runpod caches images to speed up worker startup, and because `:latest` is mutable, workers can keep serving the previous build after you push a new one — with no obvious sign that they are. Use `v1.0.0`, `v1.0.1`, … so you always know what is running and can roll back. Runpod also validates the image reference when you create an endpoint and rejects a tag that does not resolve to a published image.
 
 The slim base produces a ~106MB image in a few seconds. Verify it runs:
@@ -98,13 +100,27 @@ Two options.
 
 1. Console → [Settings](https://console.runpod.io/user/settings) → **Connections** → **GitHub** → **Connect**, and grant access to this repository.
 2. [Serverless](https://console.runpod.io/serverless) → **New Endpoint** → **Import Git Repository** → select `runpod-hols`.
-3. **Branch:** `main`. **Dockerfile Path:** `serverless/01-hello-worker/Dockerfile` — this repo keeps each lab in its own directory, so the path is required.
-4. Configure the endpoint (see the settings table below) and **Deploy Endpoint**.
-5. Watch the **Builds** tab: Pending → Building → Uploading → Testing → Completed.
+3. **Branch:** `main`. **Dockerfile Path:** `/serverless/01-hello-worker/Dockerfile`.
+4. **Advanced settings → Build context:** `/serverless/01-hello-worker`. **This is the step that is easy to miss.**
+5. Configure the endpoint (see the settings table below) and **Deploy Endpoint**.
+6. Watch the **Builds** tab: Pending → Building → Uploading → Testing → Completed.
 
 > **Pushing to the branch does NOT redeploy.** The docs are explicit: *"When you make changes to your GitHub repository, they won't automatically be pushed to your endpoint. To trigger an update for the workers on your endpoint, create a new release."* So the update loop is commit → push → **create a GitHub release**. You can also roll back to any earlier build from the Builds tab.
 
-> **Build context is not documented.** Runpod asks for a Dockerfile path but does not say whether the build context is the repo root or the Dockerfile's directory. This Dockerfile uses `COPY requirements.txt .`, which assumes the latter. If the build fails with something like `requirements.txt: not found`, the context is the repo root — change the two `COPY` lines to `COPY serverless/01-hello-worker/requirements.txt .` and likewise for `handler.py`.
+> **Set the Build context, or the build fails.** Runpod defaults the build context to the repo root and only asks for a Dockerfile path on the main form. The first attempt at this lab failed with:
+>
+> ```
+> ERROR: failed to compute cache key: "/handler.py": not found
+> ```
+>
+> The build log shows why — the context is the last positional argument, and it is the clone root:
+>
+> ```
+> docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile \
+>                     /app/<id>/temp          <- context
+> ```
+>
+> The fix is the **Build context** field under Advanced settings, set to `/serverless/01-hello-worker`. The alternative — rewriting every `COPY` as `COPY serverless/01-hello-worker/handler.py .` — also works, but it ties the Dockerfile to its location in this repo and breaks `docker build .` inside the lab. Self-contained labs are worth more here.
 
 See [the GitHub integration guide](https://docs.runpod.io/serverless/github-integration).
 
@@ -150,6 +166,7 @@ Serverless with Active Workers at 0 costs nothing when idle, so you can leave th
 
 | Symptom | Cause |
 |---|---|
+| Build fails: `"/handler.py": not found` | **Build context** not set. Put `/serverless/01-hello-worker` in Advanced settings |
 | `runpod` will not install | Using Python 3.9. Use `uv venv --python 3.11` |
 | Worker never starts, no logs | Image built for arm64. Rebuild with `--platform linux/amd64` |
 | Console logs appear late or in bursts | Missing `-u` on the `python` command in the Dockerfile |
@@ -238,6 +255,8 @@ docker build --platform linux/amd64 -t <도커허브_사용자명>/hello-worker:
 
 Apple Silicon 에서는 `--platform linux/amd64` 가 필수입니다. Runpod 워커는 amd64 이며 arm64 이미지는 기동에 실패합니다.
 
+> **빌드 컨텍스트.** Dockerfile 의 `COPY` 경로는 이 디렉토리 기준입니다. 그래야 실습이 자체 완결적이어서 폴더를 어디로 옮겨도 빌드됩니다. 다만 Runpod 은 빌드 컨텍스트 기본값이 **저장소 루트**이므로, 배포할 때 엔드포인트의 **Build context** 필드(Advanced settings)에 `/serverless/01-hello-worker` 를 지정해야 합니다. 빠뜨리면 `"/handler.py": not found` 로 실패합니다. 자세한 내용은 5단계에 있습니다.
+
 > **`:latest` 태그는 쓰지 마세요.** Runpod 은 워커 기동 속도를 위해 이미지를 캐시하는데, `:latest` 는 가변 태그이므로 새 이미지를 푸시해도 워커가 이전 빌드를 계속 서빙할 수 있습니다. 그것도 눈에 띄는 표시 없이요. `v1.0.0`, `v1.0.1` 처럼 버전을 붙이면 무엇이 돌고 있는지 항상 알 수 있고 롤백도 가능합니다. 또한 Runpod 은 엔드포인트 생성 시 이미지 참조를 검증하며, 실제로 게시되지 않은 태그는 거부합니다.
 
 slim 베이스 기준으로 약 106MB 이미지가 수 초 만에 만들어집니다. 동작을 확인하려면:
@@ -256,13 +275,27 @@ docker run --rm --platform linux/amd64 <도커허브_사용자명>/hello-worker:
 
 1. 콘솔 → [Settings](https://console.runpod.io/user/settings) → **Connections** → **GitHub** → **Connect**, 이 저장소에 접근 권한 부여.
 2. [Serverless](https://console.runpod.io/serverless) → **New Endpoint** → **Import Git Repository** → `runpod-hols` 선택.
-3. **Branch:** `main`. **Dockerfile Path:** `serverless/01-hello-worker/Dockerfile` — 이 저장소는 실습마다 디렉토리를 나누므로 경로 지정이 필수입니다.
-4. 엔드포인트 설정(아래 표 참조) 후 **Deploy Endpoint**.
-5. **Builds** 탭에서 진행 확인: Pending → Building → Uploading → Testing → Completed.
+3. **Branch:** `main`. **Dockerfile Path:** `/serverless/01-hello-worker/Dockerfile`.
+4. **Advanced settings → Build context:** `/serverless/01-hello-worker`. **이 단계를 빠뜨리기 쉽습니다.**
+5. 엔드포인트 설정(아래 표 참조) 후 **Deploy Endpoint**.
+6. **Builds** 탭에서 진행 확인: Pending → Building → Uploading → Testing → Completed.
 
 > **브랜치에 푸시해도 재배포되지 않습니다.** 공식 문서에 명시돼 있습니다. *"When you make changes to your GitHub repository, they won't automatically be pushed to your endpoint. To trigger an update for the workers on your endpoint, create a new release."* 즉 갱신 흐름은 커밋 → 푸시 → **GitHub 릴리스 생성** 입니다. Builds 탭에서 이전 빌드로 롤백할 수도 있습니다.
 
-> **빌드 컨텍스트는 문서화돼 있지 않습니다.** Runpod 은 Dockerfile 경로만 입력받을 뿐, 빌드 컨텍스트가 저장소 루트인지 Dockerfile 이 있는 디렉토리인지 밝히지 않습니다. 이 Dockerfile 은 `COPY requirements.txt .` 를 사용하므로 후자를 가정합니다. `requirements.txt: not found` 같은 오류로 빌드가 실패하면 컨텍스트가 루트라는 뜻이므로, `COPY` 두 줄을 `COPY serverless/01-hello-worker/requirements.txt .` 형태로 바꾸면 됩니다 (`handler.py` 도 동일).
+> **Build context 를 지정하지 않으면 빌드가 실패합니다.** Runpod 은 빌드 컨텍스트 기본값이 저장소 루트이고, 기본 화면에서는 Dockerfile 경로만 물어봅니다. 이 실습의 첫 시도는 다음과 같이 실패했습니다.
+>
+> ```
+> ERROR: failed to compute cache key: "/handler.py": not found
+> ```
+>
+> 빌드 로그가 이유를 보여줍니다. 컨텍스트는 마지막 위치 인자이고, 그것이 클론 루트입니다.
+>
+> ```
+> docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile \
+>                     /app/<id>/temp          <- 컨텍스트
+> ```
+>
+> 해결책은 Advanced settings 의 **Build context** 필드에 `/serverless/01-hello-worker` 를 넣는 것입니다. 대안으로 모든 `COPY` 를 `COPY serverless/01-hello-worker/handler.py .` 로 바꿔도 동작하지만, Dockerfile 이 이 저장소 안의 위치에 묶이고 실습 디렉토리에서 `docker build .` 가 깨집니다. 여기서는 자체 완결적인 실습이 더 가치 있습니다.
 
 [GitHub 연동 가이드](https://docs.runpod.io/serverless/github-integration) 참고.
 
@@ -308,6 +341,7 @@ Active Worker 가 0 이면 유휴 상태에서 비용이 발생하지 않으므�
 
 | 증상 | 원인 |
 |---|---|
+| 빌드 실패: `"/handler.py": not found` | **Build context** 미지정. Advanced settings 에 `/serverless/01-hello-worker` 입력 |
 | `runpod` 설치 실패 | Python 3.9 사용 중. `uv venv --python 3.11` 로 해결 |
 | 워커가 기동되지 않고 로그도 없음 | arm64 로 빌드된 이미지. `--platform linux/amd64` 로 재빌드 |
 | 콘솔 로그가 늦게 또는 몰아서 출력됨 | Dockerfile 의 `python` 명령에 `-u` 가 빠짐 |

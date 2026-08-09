@@ -11,6 +11,17 @@
 # 해당 이미지는 CUDA / 여러 Python 버전 / uv / Jupyter 를 포함하지만 수 GB 다.
 FROM python:3.11-slim
 
+# The COPY paths below are relative to THIS directory, which keeps the lab
+# self-contained and portable. Runpod defaults its build context to the repo
+# root, so set the endpoint's **Build context** field to
+#   /serverless/01-hello-worker
+# Without it the build fails with: "/handler.py": not found
+#
+# 아래 COPY 경로는 이 디렉토리 기준이다. 그래야 실습이 자체 완결적이고
+# 다른 곳으로 옮겨도 동작한다. Runpod 은 빌드 컨텍스트 기본값이 저장소 루트이므로
+# 엔드포인트의 **Build context** 필드에 위 경로를 지정해야 한다.
+# 지정하지 않으면 "/handler.py": not found 로 빌드가 실패한다.
+
 WORKDIR /app
 
 # Copy dependencies first so the pip layer is cached.

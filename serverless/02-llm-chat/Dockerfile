@@ -13,6 +13,17 @@
 # Runpod 은 해석되지 않는 이미지 참조를 거부하므로 태그를 임의로 적지 말 것.
 FROM pytorch/pytorch:2.9.1-cuda12.6-cudnn9-runtime
 
+# COPY paths are relative to THIS directory, keeping the lab self-contained.
+# Runpod defaults its build context to the repo root, so set the endpoint's
+# **Build context** field to
+#   /serverless/02-llm-chat
+# Without it the build fails with: "/handler.py": not found
+#
+# COPY 경로는 이 디렉토리 기준이며, 그래야 실습이 자체 완결적이다.
+# Runpod 은 빌드 컨텍스트 기본값이 저장소 루트이므로 엔드포인트의
+# **Build context** 필드에 위 경로를 지정해야 한다.
+# 지정하지 않으면 "/handler.py": not found 로 빌드가 실패한다.
+
 WORKDIR /app
 
 # Dependencies first so the pip layer survives handler edits.

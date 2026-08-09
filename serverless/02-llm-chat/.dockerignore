@@ -1,0 +1,15 @@
+# Applies when the build context is THIS directory — locally, and on Runpod
+# provided the endpoint's Build context field is set to /serverless/02-llm-chat.
+#
+# 빌드 컨텍스트가 이 디렉토리일 때 적용된다. 로컬, 그리고 Runpod 엔드포인트의
+# Build context 를 /serverless/02-llm-chat 으로 지정한 경우 모두 해당한다.
+
+# A venv for this lab holds torch and is several GB — never send it to the daemon.
+# 이 실습의 가상환경에는 torch 가 들어 있어 수 GB 다. 데몬으로 보내지 않는다.
+.venv
+venv
+__pycache__
+*.py[cod]
+
+README.md
+.runpod

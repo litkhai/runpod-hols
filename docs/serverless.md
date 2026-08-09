@@ -84,10 +84,23 @@ Avoid `:latest`. Runpod caches images, so a mutable tag can leave workers servin
 
 ### Deploying from GitHub
 
-Runpod can clone the repo, build the image itself and host it in its own registry — no Docker Hub account and no emulated builds. For this repo, set **Dockerfile Path** to `serverless/01-hello-worker/Dockerfile`, since each lab lives in its own directory.
+Runpod can clone the repo, build the image itself and host it in its own registry — no Docker Hub account and no emulated builds. For this repo, set **Dockerfile Path** to `/serverless/01-hello-worker/Dockerfile`, since each lab lives in its own directory.
+
+<div class="warn" markdown="1">
+**Set the Build context, or a nested Dockerfile will not build.** Runpod defaults the context to the repo root and the main form only asks for a Dockerfile path, so `COPY handler.py .` fails with `"/handler.py": not found`. A failed build log shows the context as the last positional argument:
+
+```
+docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile \
+                    /app/<id>/temp          <- context
+```
+
+Fix it with **Advanced settings → Build context** = `/serverless/01-hello-worker`. That keeps each lab self-contained, so `docker build .` still works inside it.
+</div>
 
 <div class="note" markdown="1">
 **A push does not redeploy.** Per the docs, changes "won't automatically be pushed to your endpoint" — you must **create a GitHub release** to trigger a new build. Earlier builds can be rolled back from the endpoint's Builds tab.
+
+Two console warnings are worth knowing: *"Could not find runpod.serverless.start() in your repo"* can be a false negative on a new repository, because the check relies on GitHub's code search index, which lags. The Dockerfile-found check is the one that actually gates deployment.
 </div>
 
 ### Review of the official template
@@ -189,10 +202,23 @@ Apple Silicon 에서는 `--platform linux/amd64` 가 필수입니다. Runpod 워
 
 ### GitHub 연동 배포
 
-Runpod 이 저장소를 클론해 직접 이미지를 빌드하고 자체 레지스트리에 보관합니다. Docker Hub 계정도, 에뮬레이션 빌드도 필요 없습니다. 이 저장소는 실습마다 디렉토리가 나뉘므로 **Dockerfile Path** 를 `serverless/01-hello-worker/Dockerfile` 로 지정하세요.
+Runpod 이 저장소를 클론해 직접 이미지를 빌드하고 자체 레지스트리에 보관합니다. Docker Hub 계정도, 에뮬레이션 빌드도 필요 없습니다. 이 저장소는 실습마다 디렉토리가 나뉘므로 **Dockerfile Path** 를 `/serverless/01-hello-worker/Dockerfile` 로 지정하세요.
+
+<div class="warn" markdown="1">
+**Build context 를 지정하지 않으면 하위 디렉토리의 Dockerfile 은 빌드되지 않습니다.** Runpod 은 컨텍스트 기본값이 저장소 루트이고 기본 화면에서는 Dockerfile 경로만 묻기 때문에, `COPY handler.py .` 가 `"/handler.py": not found` 로 실패합니다. 실패한 빌드 로그에서 컨텍스트가 마지막 위치 인자로 드러납니다.
+
+```
+docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile \
+                    /app/<id>/temp          <- 컨텍스트
+```
+
+**Advanced settings → Build context** 에 `/serverless/01-hello-worker` 를 넣으면 해결됩니다. 이렇게 하면 각 실습이 자체 완결적으로 유지되어 실습 디렉토리에서 `docker build .` 도 그대로 동작합니다.
+</div>
 
 <div class="note" markdown="1">
 **푸시만으로는 재배포되지 않습니다.** 문서에 따르면 변경사항은 "won't automatically be pushed to your endpoint" 이며, 새 빌드를 트리거하려면 **GitHub 릴리스를 생성**해야 합니다. 이전 빌드는 엔드포인트의 Builds 탭에서 롤백할 수 있습니다.
+
+콘솔 경고 두 가지를 알아두면 좋습니다. *"Could not find runpod.serverless.start() in your repo"* 는 새 저장소에서 오탐일 수 있습니다. 이 검사는 색인이 늦는 GitHub 코드 검색에 의존하기 때문입니다. 실제로 배포를 막는 것은 Dockerfile 검사 쪽입니다.
 </div>
 
 ### 공식 템플릿 검토

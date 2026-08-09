@@ -1,0 +1,19 @@
+# Applies when the build context is THIS directory — which is the case both
+# locally (`docker build .` from here) and on Runpod, provided the endpoint's
+# Build context field is set to /serverless/01-hello-worker.
+#
+# 빌드 컨텍스트가 이 디렉토리일 때 적용된다. 로컬에서 여기서 `docker build .` 를
+# 실행할 때와, Runpod 엔드포인트의 Build context 를
+# /serverless/01-hello-worker 로 지정했을 때 모두 해당한다.
+
+# The local virtualenv would otherwise be uploaded to the daemon on every build.
+# 이 항목이 없으면 로컬 가상환경이 빌드마다 데몬으로 전송된다.
+.venv
+venv
+__pycache__
+*.py[cod]
+
+# Nothing in the image needs these.
+# 이미지에 필요 없는 것들.
+README.md
+.runpod
