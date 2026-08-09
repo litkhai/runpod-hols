@@ -54,9 +54,45 @@
   </div>
 </nav>
 
-<main class="wrap content">
-  {{ content }}
-</main>
+<div class="wrap layout">
+
+  <!-- Sidebar takes over from the horizontal nav on wide screens; below the
+       breakpoint it is hidden and .site-nav is shown instead.
+       넓은 화면에서는 사이드바가 가로 네비게이션을 대체하고,
+       그보다 좁으면 사이드바를 숨기고 .site-nav 를 보여준다. -->
+  <aside class="sidebar">
+    <nav aria-label="Sections">
+      {% assign cur = page.url | remove: site.baseurl %}
+      {% assign prev_group = '' %}
+      {% for item in site.nav %}
+        {% if item.group != prev_group %}
+          {% unless prev_group == '' %}</ul>{% endunless %}
+          <p class="side-group">{{ site.nav_groups[item.group] }}</p>
+          <ul class="side-list">
+        {% endif %}
+        <li>
+          <a href="{{ item.url | relative_url }}"
+             class="{% if cur == item.url %}current{% endif %}">{{ item.title }}</a>
+          {%- if cur == item.url -%}
+            <!-- Filled in by script: the headings of whichever language block
+                 is visible. Building it server-side would list every heading
+                 twice, once per language.
+                 스크립트가 채운다. 현재 보이는 언어 블록의 제목만 넣는다.
+                 서버 사이드로 만들면 언어마다 한 번씩 두 배로 나열된다. -->
+            <ul class="side-toc" id="page-toc"></ul>
+          {%- endif -%}
+        </li>
+        {% assign prev_group = item.group %}
+      {% endfor %}
+      </ul>
+    </nav>
+  </aside>
+
+  <main class="content">
+    {{ content }}
+  </main>
+
+</div>
 
 <footer class="site-footer">
   <div class="wrap">
@@ -96,8 +132,59 @@
       document.querySelectorAll('.lang').forEach(function (el) {
         el.hidden = el.getAttribute('data-lang') !== mode;
       });
+      buildToc();
     }
   });
+
+  // Sidebar table of contents for the current page.
+  //
+  // Built from the DOM rather than at build time because each page carries
+  // both languages: a server-rendered TOC would list every heading twice, and
+  // half of them would point into a hidden block, where anchors do not scroll.
+  //
+  // 현재 페이지의 사이드바 목차.
+  //
+  // 빌드 시점이 아니라 DOM 에서 만든다. 각 페이지가 두 언어를 모두 담고 있어서
+  // 서버에서 만들면 제목이 두 번씩 나열되고, 그 절반은 숨겨진 블록을 가리켜
+  // 앵커가 스크롤되지 않는다.
+  var spy = null;
+
+  function buildToc() {
+    var list = document.getElementById('page-toc');
+    if (!list) return;                       // not a nav page
+
+    var visible = document.querySelector('.lang:not([hidden])') || document;
+    var headings = visible.querySelectorAll('h3[id]');
+
+    list.textContent = '';
+    if (spy) { spy.disconnect(); spy = null; }
+    if (!headings.length) return;
+
+    headings.forEach(function (h) {
+      var li = document.createElement('li');
+      var a = document.createElement('a');
+      a.href = '#' + h.id;
+      a.textContent = h.textContent;
+      a.dataset.target = h.id;
+      li.appendChild(a);
+      list.appendChild(li);
+    });
+
+    // Highlight whichever heading is nearest the top of the viewport.
+    // 뷰포트 상단에 가장 가까운 제목을 강조한다.
+    var links = {};
+    list.querySelectorAll('a').forEach(function (a) { links[a.dataset.target] = a; });
+
+    spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        Object.keys(links).forEach(function (k) { links[k].classList.remove('active'); });
+        if (links[e.target.id]) links[e.target.id].classList.add('active');
+      });
+    }, { rootMargin: '0px 0px -75% 0px', threshold: 0 });
+
+    headings.forEach(function (h) { spy.observe(h); });
+  }
 
   // Theme: dark by default. The <head> script already set the attribute;
   // this only syncs the button state and handles clicks.
