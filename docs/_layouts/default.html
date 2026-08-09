@@ -16,8 +16,7 @@
     </a>
     <div class="header-right">
       <div class="lang-switch" role="group" aria-label="Language">
-        <button type="button" data-set-lang="both" class="active">EN+KO</button>
-        <button type="button" data-set-lang="en">EN</button>
+        <button type="button" data-set-lang="en" class="active">EN</button>
         <button type="button" data-set-lang="ko">한국어</button>
       </div>
       <a class="gh" href="{{ site.repo_url }}">GitHub</a>
@@ -55,18 +54,21 @@
 </footer>
 
 <script>
-// Bilingual toggle. Without JS every language block stays visible, so the
-// page degrades to showing both — never to showing nothing.
-// 이중 언어 토글. JS 가 없으면 모든 언어 블록이 그대로 보이므로
+// Language toggle: EN by default, KO on request. Without JS every language
+// block stays visible, so the page degrades to showing both — never to
+// showing nothing.
+//
+// 언어 토글: 기본 EN, 선택 시 KO. JS 가 없으면 모든 언어 블록이 그대로 보이므로
 // 최악의 경우에도 둘 다 표시될 뿐, 아무것도 안 보이는 상황은 생기지 않는다.
 (function () {
   var KEY = 'runpod-hols-lang';
+  var DEFAULT = 'en';
   var buttons = document.querySelectorAll('[data-set-lang]');
 
   function apply(mode) {
+    document.documentElement.lang = mode;
     document.querySelectorAll('.lang').forEach(function (el) {
-      var l = el.getAttribute('data-lang');
-      el.hidden = !(mode === 'both' || mode === l);
+      el.hidden = el.getAttribute('data-lang') !== mode;
     });
     buttons.forEach(function (b) {
       b.classList.toggle('active', b.getAttribute('data-set-lang') === mode);
@@ -80,9 +82,13 @@
     });
   });
 
-  var saved;
-  try { saved = localStorage.getItem(KEY); } catch (e) { saved = null; }
-  apply(saved || 'both');
+  // Anything other than a language we actually render falls back to the
+  // default — this also clears a stale 'both' from an earlier version.
+  // 실제로 렌더링하는 언어가 아니면 기본값으로 되돌린다.
+  // 이전 버전에서 저장된 'both' 값도 이 경로로 정리된다.
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) { /* private mode */ }
+  apply(saved === 'ko' || saved === 'en' ? saved : DEFAULT);
 })();
 </script>
 
