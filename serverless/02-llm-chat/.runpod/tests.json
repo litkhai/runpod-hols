@@ -1,0 +1,32 @@
+{
+  "tests": [
+    {
+      "name": "prompt_form",
+      "input": {
+        "prompt": "Say hello in exactly three words.",
+        "max_tokens": 32
+      },
+      "timeout": 120000
+    },
+    {
+      "name": "messages_form",
+      "input": {
+        "messages": [
+          { "role": "system", "content": "Answer with a single word." },
+          { "role": "user", "content": "What colour is the sky on a clear day?" }
+        ],
+        "max_tokens": 16
+      },
+      "timeout": 120000
+    },
+    {
+      "name": "rejects_empty_input",
+      "input": {},
+      "timeout": 60000
+    }
+  ],
+  "config": {
+    "gpuTypeId": "NVIDIA GeForce RTX 4090",
+    "gpuCount": 1
+  }
+}

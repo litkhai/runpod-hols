@@ -13,8 +13,22 @@ Runpod Serverless runs your code as an **autoscaling HTTP endpoint**. Workers sp
 | Lab | Status | Contents |
 |---|---|---|
 | [01-hello-worker](./01-hello-worker) | ✅ Ready | handler → local test → Docker image → endpoint deploy |
-| 02-vllm-endpoint | 📋 Planned | Serve an LLM with `worker-vllm`, OpenAI-compatible API |
-| 03-network-volume | 📋 Planned | Attach a Network Volume so model weights survive across workers |
+| [02-llm-chat](./02-llm-chat) | ✅ Ready | Small instruct model, deployed from GitHub, weights from Runpod's cached-model store |
+| 03-vllm-endpoint | 📋 Planned | Higher-throughput serving with `worker-vllm`, OpenAI-compatible API |
+
+### Where the model lives
+
+Lab 02's real subject. Three options, and the third is usually right:
+
+| Where | Cold start | Image size | Download billed? |
+|---|---|---|---|
+| Downloaded at runtime | Slow, every new worker | Small | **Yes** |
+| Baked into the image | Fast | Huge | No, but builds and pulls are slow |
+| **Runpod cached model** | Seconds | Small | **No** |
+
+Set the endpoint's **Model** field to a Hugging Face ID and Runpod caches the weights on the host at `/runpod-volume/huggingface-cache/hub`, shared by every worker there. Code stays in Git, weights stay out of it. Works with public, gated (token required) and private-on-Hugging-Face models; a private model hosted elsewhere has to be baked in.
+
+Note that the handler must be written for it — `HF_HUB_OFFLINE` is read at import time, so it has to be set before `transformers` is imported. See [`02-llm-chat/handler.py`](./02-llm-chat/handler.py).
 
 ### Core Concepts
 
@@ -74,8 +88,22 @@ Runpod Serverless 는 코드를 **오토스케일 HTTP 엔드포인트**로 실�
 | 실습 | 상태 | 내용 |
 |---|---|---|
 | [01-hello-worker](./01-hello-worker) | ✅ 준비됨 | handler → 로컬 테스트 → Docker 이미지 → 엔드포인트 배포 |
-| 02-vllm-endpoint | 📋 계획됨 | `worker-vllm` 으로 LLM 서빙, OpenAI 호환 API |
-| 03-network-volume | 📋 계획됨 | Network Volume 을 붙여 모델 가중치를 워커 간 공유 |
+| [02-llm-chat](./02-llm-chat) | ✅ 준비됨 | 소형 instruct 모델, GitHub 연동 배포, 가중치는 Runpod 모델 캐시에서 |
+| 03-vllm-endpoint | 📋 계획됨 | `worker-vllm` 으로 고처리량 서빙, OpenAI 호환 API |
+
+### 모델은 어디에 두는가
+
+Lab 02 의 진짜 주제입니다. 선택지는 셋이고, 보통 세 번째가 정답입니다.
+
+| 위치 | 콜드 스타트 | 이미지 크기 | 다운로드 과금 |
+|---|---|---|---|
+| 런타임 다운로드 | 느림, 새 워커마다 | 작음 | **있음** |
+| 이미지에 굽기 | 빠름 | 매우 큼 | 없음, 대신 빌드·pull 이 느림 |
+| **Runpod 모델 캐시** | 수 초 | 작음 | **없음** |
+
+엔드포인트의 **Model** 필드에 Hugging Face ID 를 넣으면 Runpod 이 호스트의 `/runpod-volume/huggingface-cache/hub` 에 가중치를 캐시하고, 그 호스트의 모든 워커가 공유합니다. 코드는 Git 에, 가중치는 Git 밖에 둡니다. public, gated(토큰 필요), Hugging Face 상의 private 모델까지 지원하며, 다른 곳에 있는 private 모델은 이미지에 구워야 합니다.
+
+단, 핸들러를 여기에 맞춰 작성해야 합니다. `HF_HUB_OFFLINE` 는 import 시점에 읽히므로 `transformers` 를 import 하기 전에 설정해야 합니다. [`02-llm-chat/handler.py`](./02-llm-chat/handler.py) 참조.
 
 ### 핵심 개념
 

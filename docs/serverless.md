@@ -17,8 +17,24 @@ Runpod Serverless runs your code as an autoscaling HTTP endpoint. Workers start 
 | Lab | Status | Contents |
 |---|---|---|
 | [01-hello-worker](https://github.com/litkhai/runpod-hols/tree/main/serverless/01-hello-worker) | Ready | handler → local test → Docker image → deploy |
-| 02-vllm-endpoint | Planned | Serve an LLM with `worker-vllm`, OpenAI-compatible API |
-| 03-network-volume | Planned | Attach a Network Volume so weights survive across workers |
+| [02-llm-chat](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat) | Ready | Small instruct model from GitHub, weights from Runpod's cached-model store |
+| 03-vllm-endpoint | Planned | Higher-throughput serving with `worker-vllm` |
+
+### Where the model lives
+
+The subject of Lab 02, and the thing hello-world cannot teach. Three options:
+
+| Where | Cold start | Image size | Download billed? |
+|---|---|---|---|
+| Downloaded at runtime | Slow, every new worker | Small | **Yes** |
+| Baked into the image | Fast | Huge | No, but builds and pulls are slow |
+| **Runpod cached model** | Seconds | Small | **No** |
+
+Put a Hugging Face ID in the endpoint's **Model** field and Runpod caches the weights on the host at `/runpod-volume/huggingface-cache/hub`, shared across workers there. Code stays in Git, weights stay out of it — the two compose rather than compete.
+
+<div class="warn" markdown="1">
+The handler has to be written for it. `HF_HUB_OFFLINE` is read when `huggingface_hub` is imported, so setting it after importing `transformers` silently does nothing — and you would be downloading on the clock while believing you were serving from cache.
+</div>
 
 ### Core concepts
 
@@ -106,8 +122,24 @@ Runpod Serverless 는 코드를 오토스케일 HTTP 엔드포인트로 실행�
 | 실습 | 상태 | 내용 |
 |---|---|---|
 | [01-hello-worker](https://github.com/litkhai/runpod-hols/tree/main/serverless/01-hello-worker) | 준비됨 | handler → 로컬 테스트 → Docker 이미지 → 배포 |
-| 02-vllm-endpoint | 계획됨 | `worker-vllm` 으로 LLM 서빙, OpenAI 호환 API |
-| 03-network-volume | 계획됨 | Network Volume 을 붙여 가중치를 워커 간 공유 |
+| [02-llm-chat](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat) | 준비됨 | GitHub 연동으로 소형 instruct 모델 배포, 가중치는 Runpod 모델 캐시 |
+| 03-vllm-endpoint | 계획됨 | `worker-vllm` 으로 고처리량 서빙 |
+
+### 모델은 어디에 두는가
+
+Lab 02 의 주제이자 hello-world 로는 가르칠 수 없는 부분입니다. 선택지는 셋입니다.
+
+| 위치 | 콜드 스타트 | 이미지 크기 | 다운로드 과금 |
+|---|---|---|---|
+| 런타임 다운로드 | 느림, 새 워커마다 | 작음 | **있음** |
+| 이미지에 굽기 | 빠름 | 매우 큼 | 없음, 대신 빌드·pull 이 느림 |
+| **Runpod 모델 캐시** | 수 초 | 작음 | **없음** |
+
+엔드포인트의 **Model** 필드에 Hugging Face ID 를 넣으면 Runpod 이 호스트의 `/runpod-volume/huggingface-cache/hub` 에 가중치를 캐시하고 그 호스트의 워커들이 공유합니다. 코드는 Git 에, 가중치는 Git 밖에 — 둘은 경쟁 관계가 아니라 함께 쓰는 관계입니다.
+
+<div class="warn" markdown="1">
+핸들러를 여기에 맞춰 작성해야 합니다. `HF_HUB_OFFLINE` 는 `huggingface_hub` 가 import 될 때 읽히므로, `transformers` 를 import 한 뒤에 설정하면 아무 효과 없이 무시됩니다. 캐시에서 서빙한다고 믿는 동안 실제로는 과금되며 다운로드하게 됩니다.
+</div>
 
 ### 핵심 개념
 

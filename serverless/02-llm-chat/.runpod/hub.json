@@ -1,0 +1,23 @@
+{
+  "title": "LLM Chat Worker",
+  "description": "Small instruct model served on Runpod Serverless, loading weights from Runpod's cached-model store rather than baking them into the image.",
+  "type": "serverless",
+  "category": "language",
+  "iconUrl": "https://dummyimage.com/100x100/5f4cfe/fff&text=LLM",
+  "config": {
+    "runsOn": "GPU",
+    "containerDiskInGb": 20,
+    "gpuCount": 1,
+    "env": [
+      {
+        "key": "MODEL_ID",
+        "input": {
+          "name": "Model ID",
+          "type": "string",
+          "description": "Hugging Face model to serve. Must match the endpoint's Model field.",
+          "default": "Qwen/Qwen2.5-1.5B-Instruct"
+        }
+      }
+    ]
+  }
+}

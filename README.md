@@ -28,7 +28,8 @@ These labs cover Runpod's three compute products, plus the two things you need a
 runpod-hols/
 ├── setup/               # ← Start here: keys, tools, auth check, MCP
 ├── serverless/          # Autoscaling inference endpoints
-│   └── 01-hello-worker/ # handler → local test → container → deploy
+│   ├── 01-hello-worker/ # handler → local test → container → deploy
+│   └── 02-llm-chat/     # LLM from GitHub + Runpod cached model
 ├── terraform/           # Infrastructure as code
 │   ├── 01-endpoint/     # runpod_template + runpod_endpoint
 │   └── 02-pod/          # runpod_pod + optional network volume
@@ -40,7 +41,7 @@ runpod-hols/
 | Track | Status | Contents |
 |---|---|---|
 | [`setup/`](./setup) | ✅ Ready | API key, tool checks, auth smoke test, MCP server |
-| [`serverless/`](./serverless) | ✅ Lab 01 ready | Write handler → test locally → containerize → deploy endpoint |
+| [`serverless/`](./serverless) | ✅ 2 labs ready | Write handler → test locally → containerize → deploy endpoint |
 | [`terraform/`](./terraform) | ✅ 2 labs ready | Provision endpoint and Pod declaratively |
 | [`pod/`](./pod) | 📋 Planned | Launch Pod → connect → storage → custom template |
 | [`cluster/`](./cluster) | 🚧 TBD | Multi-node PyTorch / Slurm / Axolotl |
@@ -136,7 +137,8 @@ Runpod 의 세 가지 컴퓨트 제품과, 그 주변에 필요한 두 가지를
 runpod-hols/
 ├── setup/               # ← 여기서 시작: 키, 도구, 인증 확인, MCP
 ├── serverless/          # 오토스케일 추론 엔드포인트
-│   └── 01-hello-worker/ # handler 작성 → 로컬 테스트 → 컨테이너화 → 배포
+│   ├── 01-hello-worker/ # handler 작성 → 로컬 테스트 → 컨테이너화 → 배포
+│   └── 02-llm-chat/     # GitHub 연동 LLM + Runpod 모델 캐시
 ├── terraform/           # 코드형 인프라
 │   ├── 01-endpoint/     # runpod_template + runpod_endpoint
 │   └── 02-pod/          # runpod_pod + 선택적 network volume
@@ -148,7 +150,7 @@ runpod-hols/
 | 트랙 | 상태 | 내용 |
 |---|---|---|
 | [`setup/`](./setup) | ✅ 준비됨 | API 키, 도구 검사, 인증 스모크 테스트, MCP 서버 |
-| [`serverless/`](./serverless) | ✅ Lab 01 준비됨 | handler 작성 → 로컬 테스트 → 컨테이너화 → 엔드포인트 배포 |
+| [`serverless/`](./serverless) | ✅ 2개 준비됨 | handler 작성 → 로컬 테스트 → 컨테이너화 → 엔드포인트 배포 |
 | [`terraform/`](./terraform) | ✅ 2개 준비됨 | 엔드포인트와 Pod 를 선언적으로 프로비저닝 |
 | [`pod/`](./pod) | 📋 계획됨 | Pod 기동 → 접속 → 스토리지 → 커스텀 템플릿 |
 | [`cluster/`](./cluster) | 🚧 TBD | 다중 노드 PyTorch / Slurm / Axolotl |

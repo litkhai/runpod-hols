@@ -1,0 +1,7 @@
+{
+  "input": {
+    "prompt": "What is Runpod Serverless in two sentences?",
+    "max_tokens": 120,
+    "temperature": 0.7
+  }
+}
