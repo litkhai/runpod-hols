@@ -106,6 +106,10 @@ cd serverless/01-hello-worker
 
 Follow [serverless/01-hello-worker/README.md](./serverless/01-hello-worker/README.md).
 
+### 🙏 Acknowledgements
+
+These labs grew out of an opportunity provided by **Kenny Lee** ([kenny.lee@runpod.io](mailto:kenny.lee@runpod.io)) and a technical introduction from **Hailong Yang**, both at Runpod. Special thanks to them.
+
 ---
 
 ## 한국어
@@ -207,3 +211,7 @@ cd serverless/01-hello-worker
 ```
 
 [serverless/01-hello-worker/README.md](./serverless/01-hello-worker/README.md) 를 따라가세요.
+
+### 🙏 감사의 말
+
+이 실습 자료는 Runpod 의 **Kenny Lee** ([kenny.lee@runpod.io](mailto:kenny.lee@runpod.io)) 님의 기회 제공과 **Hailong Yang** 님의 기술 소개를 기반으로 만들어졌습니다. 두 분께 감사드립니다.

@@ -75,6 +75,10 @@ cd runpod-hols
 ./setup/check-setup.sh
 ```
 
+### Acknowledgements
+
+These labs grew out of an opportunity provided by **Kenny Lee** ([kenny.lee@runpod.io](mailto:kenny.lee@runpod.io)) and a technical introduction from **Hailong Yang**, both at Runpod. Special thanks to them.
+
 </div>
 
 <div class="lang" data-lang="ko" markdown="1">
@@ -145,5 +149,9 @@ git clone https://github.com/litkhai/runpod-hols
 cd runpod-hols
 ./setup/check-setup.sh
 ```
+
+### 감사의 말
+
+이 실습 자료는 Runpod 의 **Kenny Lee** ([kenny.lee@runpod.io](mailto:kenny.lee@runpod.io)) 님의 기회 제공과 **Hailong Yang** 님의 기술 소개를 기반으로 만들어졌습니다. 두 분께 감사드립니다.
 
 </div>
