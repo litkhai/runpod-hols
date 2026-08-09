@@ -1,10 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% if page.title %}{{ page.title }} · {% endif %}{{ site.title }}</title>
 <meta name="description" content="{{ page.description | default: site.description }}">
+<meta name="theme-color" content="#08080c">
+<!-- Applied before first paint so a saved light theme does not flash dark.
+     첫 페인트 전에 적용해 라이트 테마 저장 시 다크가 번쩍이지 않게 한다. -->
+<script>
+(function () {
+  try {
+    var t = localStorage.getItem('runpod-hols-theme');
+    document.documentElement.dataset.theme = (t === 'light' || t === 'dark') ? t : 'dark';
+  } catch (e) { /* private mode — keep the dark default */ }
+})();
+</script>
 <link rel="stylesheet" href="{{ '/assets/style.css' | relative_url }}">
 </head>
 <body>
@@ -15,9 +26,13 @@
       <span class="brand-mark">▮</span> {{ site.title }}
     </a>
     <div class="header-right">
-      <div class="lang-switch" role="group" aria-label="Language">
+      <div class="switch" role="group" aria-label="Language">
         <button type="button" data-set-lang="en" class="active">EN</button>
         <button type="button" data-set-lang="ko">한국어</button>
+      </div>
+      <div class="switch" role="group" aria-label="Theme">
+        <button type="button" data-set-theme="dark" class="active" title="Dark / 다크">&#9789;</button>
+        <button type="button" data-set-theme="light" title="Light / 라이트">&#9788;</button>
       </div>
       <a class="gh" href="{{ site.repo_url }}">GitHub</a>
     </div>
@@ -54,41 +69,64 @@
 </footer>
 
 <script>
-// Language toggle: EN by default, KO on request. Without JS every language
-// block stays visible, so the page degrades to showing both — never to
-// showing nothing.
-//
-// 언어 토글: 기본 EN, 선택 시 KO. JS 가 없으면 모든 언어 블록이 그대로 보이므로
-// 최악의 경우에도 둘 다 표시될 뿐, 아무것도 안 보이는 상황은 생기지 않는다.
+// Two independent preferences, same segmented-switch pattern.
+// 서로 독립적인 두 설정이 같은 세그먼트 스위치 패턴을 공유한다.
 (function () {
-  var KEY = 'runpod-hols-lang';
-  var DEFAULT = 'en';
-  var buttons = document.querySelectorAll('[data-set-lang]');
-
-  function apply(mode) {
-    document.documentElement.lang = mode;
-    document.querySelectorAll('.lang').forEach(function (el) {
-      el.hidden = el.getAttribute('data-lang') !== mode;
-    });
-    buttons.forEach(function (b) {
-      b.classList.toggle('active', b.getAttribute('data-set-lang') === mode);
-    });
-    try { localStorage.setItem(KEY, mode); } catch (e) { /* private mode */ }
-  }
-
-  buttons.forEach(function (b) {
-    b.addEventListener('click', function () {
-      apply(b.getAttribute('data-set-lang'));
-    });
+  // Language: EN by default, KO on request. Without JS every language block
+  // stays visible, so the page degrades to showing both — never to nothing.
+  // 언어: 기본 EN, 선택 시 KO. JS 가 없으면 모든 블록이 보이므로
+  // 최악의 경우에도 둘 다 표시될 뿐, 빈 페이지가 되지는 않는다.
+  bind({
+    key: 'runpod-hols-lang',
+    attr: 'data-set-lang',
+    fallback: 'en',
+    valid: ['en', 'ko'],
+    onApply: function (mode) {
+      document.documentElement.lang = mode;
+      document.querySelectorAll('.lang').forEach(function (el) {
+        el.hidden = el.getAttribute('data-lang') !== mode;
+      });
+    }
   });
 
-  // Anything other than a language we actually render falls back to the
-  // default — this also clears a stale 'both' from an earlier version.
-  // 실제로 렌더링하는 언어가 아니면 기본값으로 되돌린다.
-  // 이전 버전에서 저장된 'both' 값도 이 경로로 정리된다.
-  var saved = null;
-  try { saved = localStorage.getItem(KEY); } catch (e) { /* private mode */ }
-  apply(saved === 'ko' || saved === 'en' ? saved : DEFAULT);
+  // Theme: dark by default. The <head> script already set the attribute;
+  // this only syncs the button state and handles clicks.
+  // 테마: 기본 다크. <head> 스크립트가 이미 속성을 설정했으므로
+  // 여기서는 버튼 상태 동기화와 클릭 처리만 한다.
+  bind({
+    key: 'runpod-hols-theme',
+    attr: 'data-set-theme',
+    fallback: 'dark',
+    valid: ['dark', 'light'],
+    onApply: function (mode) {
+      document.documentElement.dataset.theme = mode;
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', mode === 'light' ? '#ffffff' : '#08080c');
+    }
+  });
+
+  function bind(cfg) {
+    var buttons = document.querySelectorAll('[' + cfg.attr + ']');
+
+    function apply(mode) {
+      cfg.onApply(mode);
+      buttons.forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute(cfg.attr) === mode);
+      });
+      try { localStorage.setItem(cfg.key, mode); } catch (e) { /* private mode */ }
+    }
+
+    buttons.forEach(function (b) {
+      b.addEventListener('click', function () { apply(b.getAttribute(cfg.attr)); });
+    });
+
+    // Anything not in `valid` falls back to the default — this also clears
+    // stale values written by earlier versions of this page.
+    // `valid` 에 없는 값은 기본값으로 되돌린다. 이전 버전이 저장한 값도 이렇게 정리된다.
+    var saved = null;
+    try { saved = localStorage.getItem(cfg.key); } catch (e) { /* private mode */ }
+    apply(cfg.valid.indexOf(saved) !== -1 ? saved : cfg.fallback);
+  }
 })();
 </script>
 

@@ -1,43 +1,91 @@
 /* Runpod HOL — self-contained stylesheet. No framework, no remote theme.
-   Runpod HOL — 자체 스타일시트. 프레임워크와 원격 테마를 쓰지 않는다. */
+   Runpod HOL — 자체 스타일시트. 프레임워크와 원격 테마를 쓰지 않는다.
 
-:root {
-  --bg: #ffffff;
-  --bg-soft: #f6f7f9;
-  --bg-inset: #eceef1;
-  --fg: #1b1f24;
-  --fg-muted: #5b6470;
-  --border: #d8dce1;
-  --accent: #5b3df5;
-  --accent-soft: #efeaff;
-  --warn-bg: #fff6e5;
-  --warn-border: #e6a23c;
-  --danger-bg: #fdecec;
-  --danger-border: #d9534f;
+   Palette taken from Runpod's own brand assets:
+   색상은 Runpod 공식 자산에서 가져왔다:
+     #5F4CFE  primary violet   (docs.json colors.primary)
+     #9289FE  accent violet    (docs.json colors.dark / colors.light)
+     #BBB6FD  pale violet      (runpod.io)
+     #673AB7  logo purple      (og-icon-trim.svg)
+     #223354  navy             (og-logo-light.svg)
+     #050505  near-black       (runpod.io)
+
+   Dark is the default. Light is opt-in via [data-theme="light"].
+   기본은 다크. 라이트는 [data-theme="light"] 로 선택한다. */
+
+:root,
+[data-theme="dark"] {
+  --bg: #08080c;
+  --bg-soft: #101017;
+  --bg-inset: #191922;
+  --fg: #e9e9f2;
+  --fg-muted: #9b9bb2;
+  --border: #262631;
+  --border-strong: #34343f;
+
+  --accent: #9289fe;        /* readable violet on dark */
+  --accent-strong: #5f4cfe; /* brand primary, for filled controls */
+  --accent-soft: #191534;
+  --on-accent: #ffffff;
+
+  /* Heading gradient stops. Both ends stay bright on dark so the h1 keeps
+     well clear of the 3:1 large-text minimum.
+     제목 그라디언트. 다크에서는 양 끝을 모두 밝게 유지해
+     대형 텍스트 최소 대비 3:1 을 여유 있게 넘긴다. */
+  --h1-from: #bbb6fd;
+  --h1-to: #9289fe;
+
+  --warn-bg: #2a2113;
+  --warn-border: #d0a03c;
+  --warn-fg: #f0d9a8;
+  --danger-bg: #2c1720;
+  --danger-border: #e0567c;
+  --danger-fg: #f6bdcd;
+  --ok-bg: #10281c;
+  --ok-fg: #7fd7a4;
+
   --radius: 8px;
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #14171c;
-    --bg-soft: #1b1f26;
-    --bg-inset: #232830;
-    --fg: #e6e9ee;
-    --fg-muted: #9aa4b2;
-    --border: #2e343d;
-    --accent: #a996ff;
-    --accent-soft: #262040;
-    --warn-bg: #2e2617;
-    --warn-border: #b8860b;
-    --danger-bg: #331d1d;
-    --danger-border: #b5504c;
-  }
+[data-theme="light"] {
+  --bg: #ffffff;
+  --bg-soft: #f4f7fb;   /* runpod.io light surface */
+  --bg-inset: #e9edf5;
+  --fg: #223354;        /* runpod navy */
+  --fg-muted: #5a6a85;
+  --border: #d7dee9;
+  --border-strong: #c2ccdb;
+
+  --accent: #5f4cfe;
+  --accent-strong: #5f4cfe;
+  --accent-soft: #efecff;
+  --on-accent: #ffffff;
+
+  --h1-from: #5f4cfe;
+  --h1-to: #673ab7;   /* logo purple / 로고 퍼플 */
+
+  --warn-bg: #fff7e6;
+  --warn-border: #d99b1a;
+  --warn-fg: #6b4c07;
+  --danger-bg: #fdeef1;
+  --danger-border: #d84e70;
+  --danger-fg: #8a1f3c;
+  --ok-bg: #e2f5e9;
+  --ok-fg: #146138;
+
+  --shadow: 0 1px 2px rgba(34, 51, 84, 0.08);
 }
 
 * { box-sizing: border-box; }
 
-html { -webkit-text-size-adjust: 100%; }
+html {
+  -webkit-text-size-adjust: 100%;
+  color-scheme: dark;
+}
+
+[data-theme="light"] { color-scheme: light; }
 
 body {
   margin: 0;
@@ -64,7 +112,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   min-height: 56px;
   flex-wrap: wrap;
 }
@@ -78,35 +126,48 @@ body {
 
 .brand-mark { color: var(--accent); }
 
-.header-right { display: flex; align-items: center; gap: 12px; }
+.header-right { display: flex; align-items: center; gap: 10px; }
 
-.lang-switch {
+/* Segmented switches, shared by language and theme.
+   언어·테마 토글이 공유하는 세그먼트 스위치. */
+.switch {
   display: inline-flex;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   overflow: hidden;
+  background: var(--bg);
 }
 
-.lang-switch button {
+.switch button {
   font: inherit;
   font-size: 12px;
-  padding: 5px 10px;
+  line-height: 1;
+  padding: 6px 10px;
   border: 0;
   background: transparent;
   color: var(--fg-muted);
   cursor: pointer;
 }
 
-.lang-switch button + button { border-left: 1px solid var(--border); }
-.lang-switch button:hover { background: var(--bg-inset); }
-.lang-switch button.active { background: var(--accent); color: #fff; }
+.switch button + button { border-left: 1px solid var(--border-strong); }
+.switch button:hover { background: var(--bg-inset); color: var(--fg); }
+
+.switch button.active {
+  background: var(--accent-strong);
+  color: var(--on-accent);
+}
+
+.switch button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
 
 .gh { font-size: 13px; color: var(--fg-muted); text-decoration: none; }
 .gh:hover { color: var(--accent); }
 
 /* --- Nav ------------------------------------------------------------ */
 
-.site-nav { border-bottom: 1px solid var(--border); }
+.site-nav { border-bottom: 1px solid var(--border); background: var(--bg); }
 
 .nav-inner {
   display: flex;
@@ -140,18 +201,33 @@ body {
 .content { padding: 32px 20px 64px; }
 
 h1, h2, h3, h4 { line-height: 1.3; margin: 1.8em 0 0.6em; }
-h1 { font-size: 30px; margin-top: 0; letter-spacing: -0.02em; }
+
+h1 {
+  font-size: 30px;
+  margin-top: 0;
+  letter-spacing: -0.02em;
+  background: linear-gradient(92deg, var(--h1-from) 0%, var(--h1-to) 75%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  width: fit-content;
+}
+
 h2 {
   font-size: 22px;
   padding-bottom: 6px;
   border-bottom: 1px solid var(--border);
 }
+
 h3 { font-size: 17px; }
 
 p, ul, ol { margin: 0.8em 0; }
 li { margin: 0.3em 0; }
 
 a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:hover { color: var(--accent-strong); }
+
+[data-theme="dark"] a:hover { color: #bbb6fd; }
 
 hr { border: 0; border-top: 1px solid var(--border); margin: 2.5em 0; }
 
@@ -178,7 +254,7 @@ pre code { background: none; padding: 0; font-size: inherit; }
 blockquote {
   margin: 1.2em 0;
   padding: 2px 16px;
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--accent-strong);
   background: var(--accent-soft);
   border-radius: 0 var(--radius) var(--radius) 0;
   color: var(--fg);
@@ -205,24 +281,34 @@ th { background: var(--bg-soft); font-weight: 600; }
 /* --- Language blocks ------------------------------------------------ */
 
 .lang[hidden] { display: none; }
-
-.lang > h2:first-child {
-  margin-top: 0.6em;
-}
+.lang > h2:first-child { margin-top: 0.6em; }
 
 /* --- Callouts ------------------------------------------------------- */
 
 .note, .warn, .danger {
   border: 1px solid var(--border);
   border-left-width: 4px;
+  border-left-color: var(--accent-strong);
   border-radius: var(--radius);
   padding: 12px 16px;
   margin: 1.2em 0;
   background: var(--bg-soft);
 }
 
-.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
-.danger { background: var(--danger-bg); border-left-color: var(--danger-border); }
+.warn {
+  background: var(--warn-bg);
+  border-left-color: var(--warn-border);
+  color: var(--warn-fg);
+}
+
+.danger {
+  background: var(--danger-bg);
+  border-left-color: var(--danger-border);
+  color: var(--danger-fg);
+}
+
+.warn code, .danger code { background: rgba(127, 127, 127, 0.18); }
+.warn a, .danger a { color: inherit; }
 
 .note > :first-child, .warn > :first-child, .danger > :first-child { margin-top: 0; }
 .note > :last-child, .warn > :last-child, .danger > :last-child { margin-bottom: 0; }
@@ -241,6 +327,13 @@ th { background: var(--bg-soft); font-weight: 600; }
   border-radius: var(--radius);
   padding: 16px;
   background: var(--bg-soft);
+  box-shadow: var(--shadow);
+  transition: border-color 0.12s ease, transform 0.12s ease;
+}
+
+.card:hover {
+  border-color: var(--accent-strong);
+  transform: translateY(-1px);
 }
 
 .card h3 { margin: 0 0 6px; font-size: 16px; }
@@ -257,15 +350,9 @@ th { background: var(--bg-soft); font-weight: 600; }
   color: var(--fg-muted);
 }
 
-.badge.ready { background: #d8f2e0; color: #14612f; }
-.badge.planned { background: #e2e7ef; color: #3d4a5c; }
-.badge.tbd { background: var(--warn-bg); color: #8a6100; }
-
-@media (prefers-color-scheme: dark) {
-  .badge.ready { background: #16351f; color: #7fd79a; }
-  .badge.planned { background: #232a35; color: #a4b1c4; }
-  .badge.tbd { background: #322913; color: #d6a83c; }
-}
+.badge.ready { background: var(--ok-bg); color: var(--ok-fg); }
+.badge.planned { background: var(--accent-soft); color: var(--accent); }
+.badge.tbd { background: var(--warn-bg); color: var(--warn-border); }
 
 /* --- Footer --------------------------------------------------------- */
 
@@ -282,4 +369,5 @@ th { background: var(--bg-soft); font-weight: 600; }
 @media (max-width: 600px) {
   h1 { font-size: 25px; }
   .content { padding-top: 24px; }
+  .header-inner { padding-bottom: 8px; }
 }
