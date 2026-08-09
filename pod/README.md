@@ -32,6 +32,18 @@ A Pod is a **GPU or CPU container you rent and control**. Unlike Serverless, it 
 
 Anything you want to keep goes in `/workspace` or a Network Volume. Never leave work on the container disk.
 
+**Choosing a data center for a Network Volume matters more than it looks.** The docs put it plainly: location "does not affect pricing, but the datacenter location will determine which GPU types your network volume can be used with." Pick a thinly-provisioned one and you quietly narrow your GPU options later.
+
+Queried from the live API (`runpod_data_centers`, read-only, costs nothing):
+
+| | Count |
+|---|---|
+| Data centers total | 49 |
+| Reporting `global_network = true` | 20 |
+| Supporting the S3-compatible API | 5 — `EUR-IS-1`, `EU-RO-1`, `EU-CZ-1`, `US-KS-2`, `US-CA-2` |
+
+`US-KS-2` is the default in [`terraform/02-pod`](../terraform/02-pod) because it is in both sets.
+
 **Access** — SSH, JupyterLab, VS Code / Cursor via Remote-SSH, or a web proxy for services you expose.
 
 **Billing** — per minute, for as long as the Pod is running, idle or not. Stopping releases the GPU but still bills volume storage. Terminating removes everything. This is the single biggest difference from Serverless and the easiest way to run up a bill by accident.
@@ -84,6 +96,18 @@ Pod 는 **직접 빌려서 제어하는 GPU 또는 CPU 컨테이너**입니다. 
 | Network Volume | Pod 와 독립적, 공유 가능 | 설정 가능 | 여러 Pod 에서 재사용하는 모델 가중치 |
 
 보존해야 할 것은 반드시 `/workspace` 또는 Network Volume 에 둡니다. 컨테이너 디스크에 작업물을 남기지 마세요.
+
+**Network Volume 의 데이터센터 선택은 보기보다 중요합니다.** 문서에 이렇게 적혀 있습니다. 위치가 "가격에 영향을 주지는 않지만, 볼륨을 어떤 GPU 타입과 함께 쓸 수 있는지를 결정한다." 물량이 적은 데이터센터를 고르면 나중에 GPU 선택지가 조용히 좁아집니다.
+
+실제 API 조회 결과입니다 (`runpod_data_centers`, 읽기 전용, 비용 없음).
+
+| | 개수 |
+|---|---|
+| 전체 데이터센터 | 49 |
+| `global_network = true` | 20 |
+| S3 호환 API 지원 | 5 — `EUR-IS-1`, `EU-RO-1`, `EU-CZ-1`, `US-KS-2`, `US-CA-2` |
+
+[`terraform/02-pod`](../terraform/02-pod) 의 기본값이 `US-KS-2` 인 것은 두 집합에 모두 속하기 때문입니다.
 
 **접속** — SSH, JupyterLab, Remote-SSH 를 통한 VS Code / Cursor, 그리고 노출한 서비스용 웹 프록시.
 

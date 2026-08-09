@@ -59,6 +59,53 @@ So on 1.0.8 an endpoint is a two-resource affair — register a template holding
 
 Also note the upstream `examples/network_volume/main.tf` sets `type = ...` on `runpod_network_volume`, but no such attribute exists in the 1.0.8 schema (it has `storage_tier`). Treat the upstream examples as sketches, not as working code.
 
+### ✅ What Has Been Verified Against the Live API
+
+Everything below was checked with a real API key using **read-only calls and `terraform plan`**. No resources were created, so none of it cost anything.
+
+| Check | Result |
+|---|---|
+| `terraform init` on 1.15.8 | Provider `= 1.0.8` installs cleanly |
+| `terraform validate` (both labs) | Success |
+| `terraform plan` on `01-endpoint` | `Plan: 2 to add, 0 to change, 0 to destroy` — the template and endpoint resolve correctly against the real API |
+| `gpu_type_ids` defaults | `NVIDIA GeForce RTX 4090` and `NVIDIA RTX A4000` both appear in the live catalogue of 48 GPU types |
+| `data_center_id` default | `US-KS-2` exists among 49 data centers, and reports `global_network = true` |
+
+`terraform plan` reaching "2 to add" is the meaningful one: it proves the provider authenticates, the schema matches, and nothing in the config is rejected. Only `apply` would create anything.
+
+**Not yet verified:** `apply`, and therefore everything downstream of it — whether the endpoint actually serves traffic, and the whole of `02-pod`. Those create billable resources.
+
+### Discovering Valid IDs
+
+Rather than guessing GPU or data-center IDs, read them from the provider. This is a data-source-only config, so `apply` creates nothing:
+
+```hcl
+terraform {
+  required_providers {
+    runpod = { source = "runpod/runpod", version = "= 1.0.8" }
+  }
+}
+provider "runpod" {}
+
+data "runpod_data_centers" "all" {}
+data "runpod_gpu_types" "all" {}
+
+output "data_centers" { value = data.runpod_data_centers.all }
+output "gpu_types" { value = data.runpod_gpu_types.all }
+```
+
+Or from the SDK, which is quicker for a one-off:
+
+```bash
+python -c "
+import os, runpod
+runpod.api_key = os.environ['RUNPOD_API_KEY']
+for g in runpod.get_gpus(): print(g['id'])
+"
+```
+
+Available data sources: `gpu_types`, `data_centers`, `user`, `machine`, `machines`, `pod`, `template`, `container_registry_auths`, `billing_pod`, `billing_endpoint`, `billing_network_volume`.
+
 ### Authentication
 
 The provider reads `RUNPOD_API_KEY` from the environment, so **no key goes in any `.tf` or `.tfvars` file**:
@@ -169,6 +216,53 @@ AttributeName("workers"): must have Required, Optional, or Computed set..
 즉 1.0.8 에서 엔드포인트는 리소스 두 개로 구성됩니다. 이미지를 담은 템플릿을 먼저 등록하고, 엔드포인트가 그것을 가리킵니다. 실제로는 이 쪽이 콘솔의 흐름을 더 충실히 반영하며, 하나의 템플릿으로 여러 엔드포인트를 만들 수 있습니다.
 
 또한 공식 `examples/network_volume/main.tf` 는 `runpod_network_volume` 에 `type = ...` 을 설정하지만, 1.0.8 스키마에는 그런 속성이 없습니다(`storage_tier` 가 있음). 공식 예제는 동작하는 코드가 아니라 스케치로 취급하세요.
+
+### ✅ 실제 API 로 검증한 항목
+
+아래 내용은 실제 API 키로 **읽기 전용 호출과 `terraform plan`** 만 사용해 확인했습니다. 리소스를 생성하지 않았으므로 비용은 발생하지 않았습니다.
+
+| 확인 항목 | 결과 |
+|---|---|
+| 1.15.8 에서 `terraform init` | 프로바이더 `= 1.0.8` 정상 설치 |
+| `terraform validate` (두 실습 모두) | Success |
+| `01-endpoint` 의 `terraform plan` | `Plan: 2 to add, 0 to change, 0 to destroy` — 템플릿과 엔드포인트가 실제 API 기준으로 정상 해석됨 |
+| `gpu_type_ids` 기본값 | `NVIDIA GeForce RTX 4090`, `NVIDIA RTX A4000` 모두 실제 카탈로그(48종)에 존재 |
+| `data_center_id` 기본값 | `US-KS-2` 는 49개 데이터센터 중 실재하며 `global_network = true` |
+
+`terraform plan` 이 "2 to add" 까지 도달했다는 점이 핵심입니다. 프로바이더 인증이 되고, 스키마가 맞고, 설정 중 거부되는 항목이 없다는 뜻입니다. 실제로 무언가를 생성하는 것은 `apply` 뿐입니다.
+
+**아직 검증하지 않은 것:** `apply`, 그리고 그 이후의 모든 것 — 엔드포인트가 실제로 트래픽을 처리하는지, 그리고 `02-pod` 전체. 과금되는 리소스를 만들기 때문입니다.
+
+### 유효한 ID 조회하기
+
+GPU 나 데이터센터 ID 를 추측하지 말고 프로바이더에서 직접 읽으세요. 데이터소스만 있는 설정이라 `apply` 해도 생성되는 것이 없습니다.
+
+```hcl
+terraform {
+  required_providers {
+    runpod = { source = "runpod/runpod", version = "= 1.0.8" }
+  }
+}
+provider "runpod" {}
+
+data "runpod_data_centers" "all" {}
+data "runpod_gpu_types" "all" {}
+
+output "data_centers" { value = data.runpod_data_centers.all }
+output "gpu_types" { value = data.runpod_gpu_types.all }
+```
+
+일회성 조회라면 SDK 가 더 빠릅니다.
+
+```bash
+python -c "
+import os, runpod
+runpod.api_key = os.environ['RUNPOD_API_KEY']
+for g in runpod.get_gpus(): print(g['id'])
+"
+```
+
+사용 가능한 데이터소스: `gpu_types`, `data_centers`, `user`, `machine`, `machines`, `pod`, `template`, `container_registry_auths`, `billing_pod`, `billing_endpoint`, `billing_network_volume`.
 
 ### 인증
 

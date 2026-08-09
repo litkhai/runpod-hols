@@ -82,13 +82,27 @@ variable "volume_size_gb" {
 variable "data_center_id" {
   type        = string
   description = <<-EOT
-    Data center for the network volume. A Pod can only mount a volume in the
-    same data center, so this constrains where the Pod can land.
-    List valid IDs with the data_centers data source.
+    Data center for the network volume. Per the docs, location does not affect
+    price, but it "will determine which GPU types your network volume can be
+    used with" — so picking a small data center can quietly limit your GPU
+    choices later.
 
-    네트워크 볼륨을 생성할 데이터센터. Pod 는 같은 데이터센터의 볼륨만 마운트할 수 있으므로
-    Pod 가 배치될 위치도 여기에 제약된다.
-    유효한 ID 는 data_centers 데이터소스로 확인한다.
+    US-KS-2 is the default because it is one of the 20 (of 49) data centers
+    reporting global_network = true, and one of only five where the
+    S3-compatible API is available.
+
+    List the current set with the data_centers data source:
+      data "runpod_data_centers" "all" {}
+      output "dcs" { value = data.runpod_data_centers.all }
+
+    네트워크 볼륨을 생성할 데이터센터. 문서에 따르면 위치가 가격에 영향을 주지는 않지만,
+    "볼륨을 어떤 GPU 타입과 함께 쓸 수 있는지를 결정"한다. 작은 데이터센터를 고르면
+    나중에 GPU 선택지가 조용히 좁아질 수 있다.
+
+    US-KS-2 를 기본값으로 둔 이유는, 49곳 중 global_network = true 인 20곳에 속하고
+    S3 호환 API 를 지원하는 5곳 중 하나이기 때문이다.
+
+    현재 목록은 data_centers 데이터소스로 확인한다.
   EOT
   default     = "US-KS-2"
 }
