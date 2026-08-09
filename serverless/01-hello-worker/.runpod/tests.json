@@ -9,7 +9,9 @@
     },
     {
       "name": "default_name_test",
-      "input": {},
+      "input": {
+        "unused": true
+      },
       "timeout": 10000
     }
   ],

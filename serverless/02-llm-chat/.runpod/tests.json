@@ -12,16 +12,24 @@
       "name": "messages_form",
       "input": {
         "messages": [
-          { "role": "system", "content": "Answer with a single word." },
-          { "role": "user", "content": "What colour is the sky on a clear day?" }
+          {
+            "role": "system",
+            "content": "Answer with a single word."
+          },
+          {
+            "role": "user",
+            "content": "What colour is the sky on a clear day?"
+          }
         ],
         "max_tokens": 16
       },
       "timeout": 120000
     },
     {
-      "name": "rejects_empty_input",
-      "input": {},
+      "name": "rejects_missing_prompt",
+      "input": {
+        "max_tokens": 16
+      },
       "timeout": 60000
     }
   ],

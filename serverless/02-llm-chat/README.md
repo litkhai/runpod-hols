@@ -75,14 +75,14 @@ Nothing to build locally. Runpod clones the repo, builds the image and stores it
 
 1. Console → [Settings](https://console.runpod.io/user/settings) → **Connections** → **GitHub** → **Connect**.
 2. [Serverless](https://console.runpod.io/serverless) → **New Endpoint** → **Import Git Repository** → `runpod-hols`.
-3. **Branch** `main`, **Dockerfile Path** `/serverless/02-llm-chat/Dockerfile`, **Advanced settings → Build context** `/serverless/02-llm-chat`. The build context is required — without it the build fails with `"/handler.py": not found`.
+3. **Branch** `main`, **Dockerfile Path** `/serverless/02-llm-chat/Dockerfile`, **Advanced settings → Build context** `/serverless/02-llm-chat`. The build context is required and confirmed working — without it the build fails with `"/handler.py": not found`. Save it before triggering a build.
 4. In **Endpoint Configuration**, set **Model** to `Qwen/Qwen2.5-1.5B-Instruct`. The console shows the model size and the GPU it suggests.
 5. **Active Workers 0**, **Max Workers** 1–2, GPU per the console's suggestion (16GB is ample for 1.5B).
 6. **Deploy Endpoint**, then watch the **Builds** tab.
 
 > The first build pulls a ~4GB base image, so expect several minutes. Later builds reuse cached layers.
 
-> **A push does not redeploy.** Updating requires creating a **GitHub release**. Get the config right before you deploy, because the iteration loop is slow.
+> **Use a release to redeploy.** The docs say a **GitHub release** is required; in testing a plain push also triggered builds, but only on an endpoint with no successful build yet. Treat the release as the reliable trigger, and get the config right before deploying — the iteration loop is slow.
 
 ### Step 2 — Call it
 
@@ -137,7 +137,7 @@ python3 -c "from model_cache import snapshot_path; print(snapshot_path('Qwen/Qwe
 
 | Symptom | Cause |
 |---|---|
-| `"/handler.py": not found` during build | **Build context** not set. Put `/serverless/02-llm-chat` in Advanced settings — Runpod defaults it to the repo root |
+| `"/handler.py": not found` during build | **Build context** not set, or saved after the build was triggered. Put `/serverless/02-llm-chat` in Advanced settings and save before triggering |
 | `loaded_from: "hub"` on Runpod | The endpoint's **Model** field is empty or does not match `MODEL_ID` |
 | Very long first request | Model was downloaded, not cached — check the Model field |
 | CUDA OOM | GPU too small; raise it or pick a smaller model |
@@ -145,7 +145,7 @@ python3 -c "from model_cache import snapshot_path; print(snapshot_path('Qwen/Qwe
 
 ### Not yet verified
 
-The deploy itself has not been run. Unverified: that this lab's build succeeds, and actual cold-start numbers. The build context question is settled — a Lab 01 deploy proved Runpod defaults it to the repo root, so the endpoint's Build context field must point at this directory. Verified locally: `model_cache.py` against five fixture cases, the base image tag and model ID both resolve, and the handler compiles.
+The deploy itself has not been run. Unverified: that this lab's build succeeds, and actual cold-start numbers. The build context question is settled: a Lab 01 deploy proved the console's Build context field works when saved before the build is triggered. Verified locally: `model_cache.py` against five fixture cases, the base image tag and model ID both resolve, and the handler compiles.
 
 ---
 
@@ -220,14 +220,14 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 1. 콘솔 → [Settings](https://console.runpod.io/user/settings) → **Connections** → **GitHub** → **Connect**.
 2. [Serverless](https://console.runpod.io/serverless) → **New Endpoint** → **Import Git Repository** → `runpod-hols`.
-3. **Branch** `main`, **Dockerfile Path** `/serverless/02-llm-chat/Dockerfile`, **Advanced settings → Build context** `/serverless/02-llm-chat`. Build context 는 필수입니다. 지정하지 않으면 `"/handler.py": not found` 로 빌드가 실패합니다.
+3. **Branch** `main`, **Dockerfile Path** `/serverless/02-llm-chat/Dockerfile`, **Advanced settings → Build context** `/serverless/02-llm-chat`. Build context 는 필수이며 동작이 확인됐습니다. 지정하지 않으면 `"/handler.py": not found` 로 실패합니다. 빌드 트리거 전에 저장하세요.
 4. **Endpoint Configuration** 에서 **Model** 에 `Qwen/Qwen2.5-1.5B-Instruct` 입력. 콘솔이 모델 크기와 권장 GPU 를 표시합니다.
 5. **Active Workers 0**, **Max Workers** 1~2, GPU 는 콘솔 권장값 (1.5B 에는 16GB 로 충분).
 6. **Deploy Endpoint** 후 **Builds** 탭에서 진행 확인.
 
 > 첫 빌드는 약 4GB 베이스 이미지를 받으므로 수 분 걸립니다. 이후 빌드는 레이어 캐시를 재사용합니다.
 
-> **푸시만으로는 재배포되지 않습니다.** 갱신하려면 **GitHub 릴리스**를 만들어야 합니다. 반복 주기가 느리므로 배포 전에 설정을 제대로 잡아두세요.
+> **재배포는 릴리스로 하세요.** 문서는 **GitHub 릴리스**가 필요하다고 하고, 실제로는 일반 푸시도 빌드를 트리거했지만 성공한 빌드가 없던 엔드포인트에서만 확인됐습니다. 릴리스를 확실한 트리거로 보시고, 반복 주기가 느리므로 배포 전에 설정을 제대로 잡아두세요.
 
 ### 2단계 — 호출
 
@@ -282,7 +282,7 @@ python3 -c "from model_cache import snapshot_path; print(snapshot_path('Qwen/Qwe
 
 | 증상 | 원인 |
 |---|---|
-| 빌드 중 `"/handler.py": not found` | **Build context** 미지정. Advanced settings 에 `/serverless/02-llm-chat` 입력. Runpod 기본값은 저장소 루트다 |
+| 빌드 중 `"/handler.py": not found` | **Build context** 미지정이거나, 빌드 트리거 후에 저장한 경우. Advanced settings 에 `/serverless/02-llm-chat` 를 넣고 저장한 뒤 트리거할 것 |
 | Runpod 에서 `loaded_from: "hub"` | 엔드포인트 **Model** 필드가 비었거나 `MODEL_ID` 와 불일치 |
 | 첫 요청이 지나치게 오래 걸림 | 캐시가 아니라 다운로드한 것. Model 필드 확인 |
 | CUDA OOM | GPU 가 작음. 사양을 올리거나 더 작은 모델 사용 |
@@ -290,4 +290,4 @@ python3 -c "from model_cache import snapshot_path; print(snapshot_path('Qwen/Qwe
 
 ### 아직 검증하지 않은 것
 
-실제 배포는 아직 실행하지 않았습니다. 미검증: 이 랩의 빌드 성공 여부와 실제 콜드 스타트 수치. 빌드 컨텍스트 문제는 Lab 01 배포로 확인됐습니다. Runpod 기본값이 저장소 루트이므로 엔드포인트의 Build context 필드가 이 디렉토리를 가리켜야 합니다. 로컬에서 검증한 것: `model_cache.py` 픽스처 5개 케이스, 베이스 이미지 태그와 모델 ID 실재 확인, 핸들러 컴파일.
+실제 배포는 아직 실행하지 않았습니다. 미검증: 이 랩의 빌드 성공 여부와 실제 콜드 스타트 수치. 빌드 컨텍스트 문제는 Lab 01 배포로 해결됐습니다. 콘솔의 Build context 필드는 빌드 트리거 전에 저장하면 정상 동작합니다. 로컬에서 검증한 것: `model_cache.py` 픽스처 5개 케이스, 베이스 이미지 태그와 모델 ID 실재 확인, 핸들러 컴파일.

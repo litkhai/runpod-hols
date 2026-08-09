@@ -105,22 +105,33 @@ Two options.
 5. Configure the endpoint (see the settings table below) and **Deploy Endpoint**.
 6. Watch the **Builds** tab: Pending → Building → Uploading → Testing → Completed.
 
-> **Pushing to the branch does NOT redeploy.** The docs are explicit: *"When you make changes to your GitHub repository, they won't automatically be pushed to your endpoint. To trigger an update for the workers on your endpoint, create a new release."* So the update loop is commit → push → **create a GitHub release**. You can also roll back to any earlier build from the Builds tab.
+> **Redeploy behaviour — docs and observation disagree.** The docs say: *"When you make changes to your GitHub repository, they won't automatically be pushed to your endpoint. To trigger an update for the workers on your endpoint, create a new release."* In practice, two plain `git push`es to `main` each kicked off a build on this endpoint with no release involved — including an empty commit. Both happened while the endpoint had no successful build yet, so the documented behaviour may only apply once one exists. Treat a release as the reliable trigger and a push as a maybe. Either way, the Builds tab lets you roll back to an earlier build.
 
-> **Set the Build context, or the build fails.** Runpod defaults the build context to the repo root and only asks for a Dockerfile path on the main form. The first attempt at this lab failed with:
+> **Set the Build context, and save it before triggering a build.** Runpod defaults the build context to the repo root and the main form only asks for a Dockerfile path, so a nested Dockerfile using bare `COPY handler.py .` fails:
 >
 > ```
 > ERROR: failed to compute cache key: "/handler.py": not found
 > ```
 >
-> The build log shows why — the context is the last positional argument, and it is the clone root:
+> The build log names the culprit — the context is the last positional argument, and by default it is the clone root:
 >
 > ```
 > docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile \
 >                     /app/<id>/temp          <- context
 > ```
 >
-> The fix is the **Build context** field under Advanced settings, set to `/serverless/01-hello-worker`. The alternative — rewriting every `COPY` as `COPY serverless/01-hello-worker/handler.py .` — also works, but it ties the Dockerfile to its location in this repo and breaks `docker build .` inside the lab. Self-contained labs are worth more here.
+> Setting **Advanced settings → Build context** to `/serverless/01-hello-worker` fixes it. **Verified: with the field saved and a build triggered afterwards, the build succeeds.**
+>
+> The trap is ordering. A build triggered by a `git push` that races the save still uses the old configuration, so it fails identically and looks like the field does nothing. Save first, then trigger.
+
+This is also how Runpod structures its own repositories, which is why the Dockerfile here stays self-contained rather than using repo-root-relative `COPY` paths:
+
+| Repo | Approach |
+|---|---|
+| [`runpod-workers/*`](https://github.com/orgs/runpod-workers/repositories) | One repo per worker, `Dockerfile` at the root |
+| [`runpod/containers`](https://github.com/runpod/containers) | Monorepo; `docker-bake.hcl` sets `context = "official-templates/<name>"` per target, and shares files across directories with `COPY --from=<named-context>` |
+
+Nothing in the Runpod org uses root-relative `COPY` paths. The console's Build context field is the deployment-time equivalent of bake's `context =`.
 
 See [the GitHub integration guide](https://docs.runpod.io/serverless/github-integration).
 
@@ -156,7 +167,26 @@ curl -X POST "https://api.runpod.ai/v2/$RUNPOD_ENDPOINT_ID/runsync" \
   -d '{"input": {"name": "Runpod"}}'
 ```
 
-The `worker_id` in the response is the real worker ID now, not `local`. Fire several requests in a row and watch it change as workers scale out.
+The `worker_id` in the response is the real worker ID now, not `local`:
+
+```json
+{"delayTime":3704,"executionTime":222,"status":"COMPLETED",
+ "output":{"greeting":"Hello, Runpod!","worker_id":"fdvvjr22xrt5m7"},
+ "workerId":"fdvvjr22xrt5m7"}
+```
+
+Measured on this endpoint, CPU workers, `workers_min = 0`:
+
+| Request | `delayTime` | `executionTime` |
+|---|---|---|
+| First (cold) | 3,704 ms | 222 ms |
+| Warm | 776–806 ms | 194–217 ms |
+
+`delayTime` is queue plus worker startup; `executionTime` is your handler. The handler is a rounding error here — **almost all of the first request is cold start**, which is the whole reason `workers_min = 0` trades latency for cost. Fire several requests in a row and watch `worker_id` change as workers scale out.
+
+> **`{"input": {}}` never returns.** An empty input object hung for 90 seconds with a zero-byte response and `retries: 1`, repeatedly. It is not the handler — `{"input": {"other": 1}}` takes the identical default path and returns `Hello, World!` immediately. Send at least one key. The `.runpod/tests.json` case for the default path uses `{"unused": true}` for exactly this reason.
+
+> **`/runsync` does not always return `COMPLETED`.** It can return `IN_PROGRESS` with a job `id`, which you then poll at `/status/{id}`. Do not assume `output` is present in the first response.
 
 ### Step 7 — Clean up
 
@@ -280,22 +310,33 @@ docker run --rm --platform linux/amd64 <도커허브_사용자명>/hello-worker:
 5. 엔드포인트 설정(아래 표 참조) 후 **Deploy Endpoint**.
 6. **Builds** 탭에서 진행 확인: Pending → Building → Uploading → Testing → Completed.
 
-> **브랜치에 푸시해도 재배포되지 않습니다.** 공식 문서에 명시돼 있습니다. *"When you make changes to your GitHub repository, they won't automatically be pushed to your endpoint. To trigger an update for the workers on your endpoint, create a new release."* 즉 갱신 흐름은 커밋 → 푸시 → **GitHub 릴리스 생성** 입니다. Builds 탭에서 이전 빌드로 롤백할 수도 있습니다.
+> **재배포 동작 — 문서와 실제가 다릅니다.** 문서에는 이렇게 적혀 있습니다. *"When you make changes to your GitHub repository, they won't automatically be pushed to your endpoint. To trigger an update for the workers on your endpoint, create a new release."* 그런데 실제로는 `main` 에 대한 일반 `git push` 두 번이 모두 빌드를 트리거했습니다. 빈 커밋도 마찬가지였습니다. 두 경우 모두 엔드포인트에 성공한 빌드가 아직 없던 상태였으므로, 문서의 설명은 성공한 빌드가 존재한 이후에만 적용될 수도 있습니다. 릴리스는 확실한 트리거, 푸시는 될 수도 있는 트리거로 보시면 됩니다. 어느 쪽이든 Builds 탭에서 이전 빌드로 롤백할 수 있습니다.
 
-> **Build context 를 지정하지 않으면 빌드가 실패합니다.** Runpod 은 빌드 컨텍스트 기본값이 저장소 루트이고, 기본 화면에서는 Dockerfile 경로만 물어봅니다. 이 실습의 첫 시도는 다음과 같이 실패했습니다.
+> **Build context 를 지정하고, 빌드를 트리거하기 전에 저장하세요.** Runpod 은 빌드 컨텍스트 기본값이 저장소 루트이고 기본 화면에서는 Dockerfile 경로만 물어봅니다. 그래서 하위 디렉토리의 Dockerfile 이 `COPY handler.py .` 를 쓰면 실패합니다.
 >
 > ```
 > ERROR: failed to compute cache key: "/handler.py": not found
 > ```
 >
-> 빌드 로그가 이유를 보여줍니다. 컨텍스트는 마지막 위치 인자이고, 그것이 클론 루트입니다.
+> 빌드 로그가 원인을 알려줍니다. 컨텍스트는 마지막 위치 인자이고, 기본값이 클론 루트입니다.
 >
 > ```
 > docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile \
 >                     /app/<id>/temp          <- 컨텍스트
 > ```
 >
-> 해결책은 Advanced settings 의 **Build context** 필드에 `/serverless/01-hello-worker` 를 넣는 것입니다. 대안으로 모든 `COPY` 를 `COPY serverless/01-hello-worker/handler.py .` 로 바꿔도 동작하지만, Dockerfile 이 이 저장소 안의 위치에 묶이고 실습 디렉토리에서 `docker build .` 가 깨집니다. 여기서는 자체 완결적인 실습이 더 가치 있습니다.
+> **Advanced settings → Build context** 에 `/serverless/01-hello-worker` 를 넣으면 해결됩니다. **검증됨: 필드를 저장한 뒤 빌드를 트리거하면 성공합니다.**
+>
+> 함정은 순서입니다. 저장과 경쟁하듯 `git push` 로 트리거된 빌드는 이전 설정을 그대로 쓰기 때문에 똑같이 실패하고, 마치 필드가 동작하지 않는 것처럼 보입니다. 저장을 먼저, 트리거는 그 다음입니다.
+
+Runpod 이 자기 저장소를 구성하는 방식도 이와 같습니다. 이 실습의 Dockerfile 이 루트 기준 `COPY` 경로 대신 자체 완결형을 유지하는 이유입니다.
+
+| 저장소 | 방식 |
+|---|---|
+| [`runpod-workers/*`](https://github.com/orgs/runpod-workers/repositories) | 워커마다 저장소를 따로 두고 `Dockerfile` 을 루트에 배치 |
+| [`runpod/containers`](https://github.com/runpod/containers) | 모노레포. `docker-bake.hcl` 이 타겟마다 `context = "official-templates/<name>"` 을 지정하고, 디렉토리를 넘나드는 파일은 `COPY --from=<named-context>` 로 공유 |
+
+Runpod 조직 어디에도 루트 기준 `COPY` 경로는 없습니다. 콘솔의 Build context 필드가 bake 의 `context =` 에 해당하는 배포 시점 장치입니다.
 
 [GitHub 연동 가이드](https://docs.runpod.io/serverless/github-integration) 참고.
 
@@ -331,7 +372,26 @@ curl -X POST "https://api.runpod.ai/v2/$RUNPOD_ENDPOINT_ID/runsync" \
   -d '{"input": {"name": "Runpod"}}'
 ```
 
-이제 응답의 `worker_id` 는 `local` 이 아니라 실제 워커 ID 입니다. 요청을 연속으로 여러 번 보내면 워커가 늘어나면서 값이 바뀌는 것을 볼 수 있습니다.
+이제 응답의 `worker_id` 는 `local` 이 아니라 실제 워커 ID 입니다.
+
+```json
+{"delayTime":3704,"executionTime":222,"status":"COMPLETED",
+ "output":{"greeting":"Hello, Runpod!","worker_id":"fdvvjr22xrt5m7"},
+ "workerId":"fdvvjr22xrt5m7"}
+```
+
+이 엔드포인트에서 실측한 값입니다. CPU 워커, `workers_min = 0` 기준.
+
+| 요청 | `delayTime` | `executionTime` |
+|---|---|---|
+| 첫 요청 (콜드) | 3,704 ms | 222 ms |
+| 워밍 후 | 776~806 ms | 194~217 ms |
+
+`delayTime` 은 큐 대기와 워커 기동, `executionTime` 은 핸들러 실행 시간입니다. 여기서 핸들러는 오차 수준이고 **첫 요청의 대부분이 콜드 스타트**입니다. `workers_min = 0` 이 지연시간과 비용을 맞바꾼다는 말의 실체가 이것입니다. 요청을 연속으로 보내면 워커가 늘어나며 `worker_id` 가 바뀌는 것도 볼 수 있습니다.
+
+> **`{"input": {}}` 는 응답이 오지 않습니다.** 빈 입력 객체로 보내면 90초 동안 0바이트 응답에 `retries: 1` 이 붙은 채 멈췄고, 반복해도 같았습니다. 핸들러 문제가 아닙니다. `{"input": {"other": 1}}` 은 완전히 같은 기본값 경로를 타면서 즉시 `Hello, World!` 를 반환합니다. 키를 최소 하나는 넣으세요. `.runpod/tests.json` 의 기본값 테스트가 `{"unused": true}` 를 쓰는 이유입니다.
+
+> **`/runsync` 가 항상 `COMPLETED` 를 반환하지는 않습니다.** 작업 `id` 와 함께 `IN_PROGRESS` 가 올 수 있고, 그때는 `/status/{id}` 로 폴링해야 합니다. 첫 응답에 `output` 이 있다고 가정하지 마세요.
 
 ### 7단계 — 정리
 

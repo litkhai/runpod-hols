@@ -48,6 +48,38 @@ Base URL is `https://api.runpod.ai/v2/{ENDPOINT_ID}`, authenticated with `Author
 
 **Worker counts** — Active Workers stay warm and are billed continuously; Max Workers caps scale-out. Keep Active at 0 for labs.
 
+### Adding a New Lab
+
+Each lab is a **self-contained worker directory**. Its `Dockerfile` uses bare `COPY` paths, so the folder can be copied elsewhere and still build. Nothing references the repo root.
+
+```
+serverless/NN-name/
+├── Dockerfile          # COPY requirements.txt .   (no path prefix)
+├── handler.py
+├── requirements.txt
+├── test_input.json
+├── .dockerignore       # keeps .venv out of the build context
+└── .runpod/            # hub.json, tests.json
+```
+
+When deploying, point Runpod at it with **two** settings — the second is the one people miss:
+
+| Console field | Value |
+|---|---|
+| Dockerfile path | `/serverless/NN-name/Dockerfile` |
+| **Advanced settings → Build context** | `/serverless/NN-name` |
+
+Runpod defaults the build context to the repo root, so without the second field a nested Dockerfile fails with `"/handler.py": not found`. **Save the setting before triggering a build** — a build that a `git push` kicks off while the save is still in flight uses the old config and fails identically, which makes the field look broken.
+
+This mirrors how Runpod organises its own code, and is why the labs do not use repo-root-relative `COPY` paths:
+
+| Repo | Approach |
+|---|---|
+| [`runpod-workers/*`](https://github.com/orgs/runpod-workers/repositories) | One repo per worker, `Dockerfile` at the root. Checked six — all identical |
+| [`runpod/containers`](https://github.com/runpod/containers) | Monorepo. `docker-bake.hcl` sets `context = "official-templates/<name>"` per target; Dockerfiles use bare `COPY`, and cross-directory files arrive via `COPY --from=<named-context>` |
+
+So the scaling answer is simply: a new lab changes nothing structurally. It gets its own directory, its own bare-path Dockerfile, and its own Build context value at deploy time.
+
 ### 🔍 Review of the Official Reference Repo
 
 Lab 01 is based on [`runpod-workers/worker-template`](https://github.com/runpod-workers/worker-template). Reviewed at SDK v1.11.0. The upstream template is 5 files: `handler.py`, `requirements.txt`, `Dockerfile`, `test_input.json`, and `.runpod/{hub,tests}.json`.
@@ -122,6 +154,38 @@ Lab 02 의 진짜 주제입니다. 선택지는 셋이고, 보통 세 번째가 
 기본 URL 은 `https://api.runpod.ai/v2/{ENDPOINT_ID}` 이고, `Authorization: Bearer $RUNPOD_API_KEY` 로 인증합니다.
 
 **워커 수 설정** — Active Worker 는 상시 워밍 상태로 유지되어 계속 과금되고, Max Worker 는 스케일아웃 상한입니다. 실습에서는 Active 를 0 으로 둡니다.
+
+### 새 실습 추가하기
+
+각 실습은 **자체 완결적인 워커 디렉토리**입니다. `Dockerfile` 이 접두사 없는 `COPY` 경로를 쓰므로 폴더를 다른 곳으로 복사해도 그대로 빌드됩니다. 저장소 루트를 참조하는 곳이 없습니다.
+
+```
+serverless/NN-name/
+├── Dockerfile          # COPY requirements.txt .   (경로 접두사 없음)
+├── handler.py
+├── requirements.txt
+├── test_input.json
+├── .dockerignore       # .venv 가 빌드 컨텍스트에 들어가지 않게
+└── .runpod/            # hub.json, tests.json
+```
+
+배포할 때는 **두 개**의 설정으로 Runpod 에 위치를 알려줍니다. 두 번째를 빠뜨리기 쉽습니다.
+
+| 콘솔 필드 | 값 |
+|---|---|
+| Dockerfile path | `/serverless/NN-name/Dockerfile` |
+| **Advanced settings → Build context** | `/serverless/NN-name` |
+
+Runpod 은 빌드 컨텍스트 기본값이 저장소 루트라, 두 번째 필드가 없으면 하위 디렉토리의 Dockerfile 이 `"/handler.py": not found` 로 실패합니다. **빌드를 트리거하기 전에 설정을 저장하세요.** 저장이 반영되기 전에 `git push` 로 시작된 빌드는 이전 설정을 쓰므로 똑같이 실패하고, 필드가 고장난 것처럼 보입니다.
+
+이는 Runpod 이 자기 코드를 구성하는 방식과 같으며, 실습들이 루트 기준 `COPY` 경로를 쓰지 않는 이유입니다.
+
+| 저장소 | 방식 |
+|---|---|
+| [`runpod-workers/*`](https://github.com/orgs/runpod-workers/repositories) | 워커마다 저장소를 따로 두고 `Dockerfile` 을 루트에. 6개 확인, 전부 동일 |
+| [`runpod/containers`](https://github.com/runpod/containers) | 모노레포. `docker-bake.hcl` 이 타겟마다 `context = "official-templates/<name>"` 지정. Dockerfile 은 접두사 없는 `COPY` 를 쓰고, 디렉토리를 넘나드는 파일은 `COPY --from=<named-context>` 로 가져옴 |
+
+정리하면 확장에 대한 답은 간단합니다. 새 실습이 추가돼도 구조적으로 바뀌는 것은 없습니다. 디렉토리 하나, 접두사 없는 Dockerfile 하나, 그리고 배포 시점의 Build context 값 하나면 됩니다.
 
 ### 🔍 참조 공식 리포 검토
 

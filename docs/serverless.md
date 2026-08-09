@@ -87,20 +87,39 @@ Avoid `:latest`. Runpod caches images, so a mutable tag can leave workers servin
 Runpod can clone the repo, build the image itself and host it in its own registry — no Docker Hub account and no emulated builds. For this repo, set **Dockerfile Path** to `/serverless/01-hello-worker/Dockerfile`, since each lab lives in its own directory.
 
 <div class="warn" markdown="1">
-**Set the Build context, or a nested Dockerfile will not build.** Runpod defaults the context to the repo root and the main form only asks for a Dockerfile path, so `COPY handler.py .` fails with `"/handler.py": not found`. A failed build log shows the context as the last positional argument:
+**Set the Build context, and save it before triggering a build.** Runpod defaults the context to the repo root and the main form only asks for a Dockerfile path, so `COPY handler.py .` fails with `"/handler.py": not found`. The failed build log shows the context as the last positional argument:
 
 ```
 docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile \
                     /app/<id>/temp          <- context
 ```
 
-Fix it with **Advanced settings → Build context** = `/serverless/01-hello-worker`. That keeps each lab self-contained, so `docker build .` still works inside it.
+**Advanced settings → Build context** = `/serverless/01-hello-worker` fixes it — verified by a successful build. The trap is ordering: a build kicked off by a `git push` while the save is still in flight uses the old config and fails identically, which makes the field look broken.
+
+This keeps each lab self-contained, matching Runpod's own repos — `runpod-workers/*` put one worker per repo with the Dockerfile at the root, and the `runpod/containers` monorepo sets `context = "official-templates/<name>"` per bake target. Nothing in the org uses root-relative `COPY` paths.
 </div>
 
 <div class="note" markdown="1">
-**A push does not redeploy.** Per the docs, changes "won't automatically be pushed to your endpoint" — you must **create a GitHub release** to trigger a new build. Earlier builds can be rolled back from the endpoint's Builds tab.
+**Redeploy: docs and observation disagree.** The docs say changes "won't automatically be pushed to your endpoint" and that a **GitHub release** is required. In testing, two plain pushes each triggered a build — but only on an endpoint that had no successful build yet. Treat the release as the reliable trigger. Earlier builds can be rolled back from the Builds tab.
 
 Two console warnings are worth knowing: *"Could not find runpod.serverless.start() in your repo"* can be a false negative on a new repository, because the check relies on GitHub's code search index, which lags. The Dockerfile-found check is the one that actually gates deployment.
+</div>
+
+### Measured on a live endpoint
+
+Lab 01 deployed from GitHub, CPU workers, `workers_min = 0`:
+
+| Request | `delayTime` | `executionTime` |
+|---|---|---|
+| First (cold) | 3,704 ms | 222 ms |
+| Warm | 776–806 ms | 194–217 ms |
+
+`delayTime` is queue plus worker startup, `executionTime` is the handler. The handler is a rounding error — almost all of the first request is cold start, which is exactly what `workers_min = 0` buys you in cost and pays for in latency.
+
+<div class="warn" markdown="1">
+**`{"input": {}}` never returns.** An empty input object hung for 90 seconds with a zero-byte response and `retries: 1`, reproducibly. It is not a handler bug — `{"input": {"other": 1}}` takes the identical default path and returns immediately. Always send at least one key.
+
+**`/runsync` can return `IN_PROGRESS`.** It is not guaranteed to return `COMPLETED` with an `output`; be ready to poll `/status/{id}`.
 </div>
 
 ### Review of the official template
@@ -205,20 +224,39 @@ Apple Silicon 에서는 `--platform linux/amd64` 가 필수입니다. Runpod 워
 Runpod 이 저장소를 클론해 직접 이미지를 빌드하고 자체 레지스트리에 보관합니다. Docker Hub 계정도, 에뮬레이션 빌드도 필요 없습니다. 이 저장소는 실습마다 디렉토리가 나뉘므로 **Dockerfile Path** 를 `/serverless/01-hello-worker/Dockerfile` 로 지정하세요.
 
 <div class="warn" markdown="1">
-**Build context 를 지정하지 않으면 하위 디렉토리의 Dockerfile 은 빌드되지 않습니다.** Runpod 은 컨텍스트 기본값이 저장소 루트이고 기본 화면에서는 Dockerfile 경로만 묻기 때문에, `COPY handler.py .` 가 `"/handler.py": not found` 로 실패합니다. 실패한 빌드 로그에서 컨텍스트가 마지막 위치 인자로 드러납니다.
+**Build context 를 지정하고, 빌드 트리거 전에 저장하세요.** Runpod 은 컨텍스트 기본값이 저장소 루트이고 기본 화면에서는 Dockerfile 경로만 묻기 때문에, `COPY handler.py .` 가 `"/handler.py": not found` 로 실패합니다. 실패한 빌드 로그에서 컨텍스트가 마지막 위치 인자로 드러납니다.
 
 ```
 docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile \
                     /app/<id>/temp          <- 컨텍스트
 ```
 
-**Advanced settings → Build context** 에 `/serverless/01-hello-worker` 를 넣으면 해결됩니다. 이렇게 하면 각 실습이 자체 완결적으로 유지되어 실습 디렉토리에서 `docker build .` 도 그대로 동작합니다.
+**Advanced settings → Build context** 에 `/serverless/01-hello-worker` 를 넣으면 해결되며, 빌드 성공으로 확인했습니다. 함정은 순서입니다. 저장이 반영되기 전에 `git push` 로 시작된 빌드는 이전 설정을 써서 똑같이 실패하고, 필드가 고장난 것처럼 보입니다.
+
+이렇게 하면 각 실습이 자체 완결적으로 유지되며, 이는 Runpod 자체 저장소 방식과 같습니다. `runpod-workers/*` 는 워커마다 저장소를 두고 Dockerfile 을 루트에 놓고, `runpod/containers` 모노레포는 bake 타겟마다 `context = "official-templates/<name>"` 을 지정합니다. 조직 어디에도 루트 기준 `COPY` 경로는 없습니다.
 </div>
 
 <div class="note" markdown="1">
-**푸시만으로는 재배포되지 않습니다.** 문서에 따르면 변경사항은 "won't automatically be pushed to your endpoint" 이며, 새 빌드를 트리거하려면 **GitHub 릴리스를 생성**해야 합니다. 이전 빌드는 엔드포인트의 Builds 탭에서 롤백할 수 있습니다.
+**재배포 — 문서와 실제가 다릅니다.** 문서는 변경사항이 "won't automatically be pushed to your endpoint" 이며 **GitHub 릴리스**가 필요하다고 합니다. 그런데 실제로는 일반 푸시 두 번이 각각 빌드를 트리거했습니다. 다만 성공한 빌드가 없던 엔드포인트에서만 확인된 동작입니다. 릴리스를 확실한 트리거로 보세요. 이전 빌드는 Builds 탭에서 롤백할 수 있습니다.
 
 콘솔 경고 두 가지를 알아두면 좋습니다. *"Could not find runpod.serverless.start() in your repo"* 는 새 저장소에서 오탐일 수 있습니다. 이 검사는 색인이 늦는 GitHub 코드 검색에 의존하기 때문입니다. 실제로 배포를 막는 것은 Dockerfile 검사 쪽입니다.
+</div>
+
+### 실제 엔드포인트 실측
+
+GitHub 연동으로 배포한 Lab 01, CPU 워커, `workers_min = 0` 기준입니다.
+
+| 요청 | `delayTime` | `executionTime` |
+|---|---|---|
+| 첫 요청 (콜드) | 3,704 ms | 222 ms |
+| 워밍 후 | 776~806 ms | 194~217 ms |
+
+`delayTime` 은 큐 대기와 워커 기동, `executionTime` 은 핸들러 실행입니다. 핸들러는 오차 수준이고 첫 요청의 대부분이 콜드 스타트입니다. `workers_min = 0` 이 비용으로 얻고 지연시간으로 치르는 것이 정확히 이것입니다.
+
+<div class="warn" markdown="1">
+**`{"input": {}}` 는 응답이 오지 않습니다.** 빈 입력 객체는 90초 동안 0바이트 응답에 `retries: 1` 이 붙은 채 멈췄고, 재현됩니다. 핸들러 버그가 아닙니다. `{"input": {"other": 1}}` 은 완전히 같은 기본값 경로를 타면서 즉시 응답합니다. 키를 최소 하나는 보내세요.
+
+**`/runsync` 가 `IN_PROGRESS` 를 반환할 수 있습니다.** 항상 `output` 이 담긴 `COMPLETED` 가 오는 것은 아니므로 `/status/{id}` 폴링을 대비하세요.
 </div>
 
 ### 공식 템플릿 검토
