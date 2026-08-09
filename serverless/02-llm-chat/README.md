@@ -38,6 +38,8 @@ Cached models work with public, gated (supply a Hugging Face token) and private-
 | File | Role |
 |---|---|
 | `handler.py` | Loads the model at module scope, then answers one job per call |
+
+> The SDK's handler contract — control keys, exceptions, streaming, concurrency — is documented in [handler-reference.md](../handler-reference.md).
 | `model_cache.py` | Resolves the cached snapshot path. Dependency-free, so it is unit-testable without CUDA |
 | `requirements.txt` | `runpod`, `transformers`, `accelerate` — **not** `torch` |
 | `Dockerfile` | `pytorch/pytorch:2.9.1-cuda12.6-cudnn9-runtime` |
@@ -59,7 +61,16 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 `HF_HUB_OFFLINE` is read when `huggingface_hub` is imported. Set it afterwards and it silently does nothing — you would think you were serving from cache while actually downloading on the clock. Hence the dependency-free `model_cache` module: it can run before the heavy imports.
 
-**2. It falls back to the Hub when there is no cache.**
+**2. The docs and the SDK disagree about where the cache lives.**
+
+| Source | Path |
+|---|---|
+| Docs (`serverless/development/huggingface-models`) | `/runpod-volume/huggingface-cache/hub/models--<org>--<name>/snapshots/<rev>` |
+| SDK (`runpod.serverless.utils.rp_model_cache`, v1.11.0) | `/runpod/cache/<org>/<name>/<revision>` |
+
+Which one an endpoint actually populates is undocumented, so `model_cache.py` probes both — two `stat()` calls at import, and no guess.
+
+**3. It falls back to the Hub when there is no cache.**
 
 `snapshot_path()` returns `None` rather than raising, so the same file runs locally (downloads from the Hub) and on Runpod (loads from cache). Runpod's own example raises here, which makes its handler impossible to test off-platform.
 
@@ -183,6 +194,8 @@ Runpod 문서에 명시돼 있습니다. *"You aren't billed for worker time whi
 | 파일 | 역할 |
 |---|---|
 | `handler.py` | 모듈 스코프에서 모델을 로드하고, 호출마다 작업 1건을 처리 |
+
+> SDK 의 핸들러 계약(제어 키, 예외 처리, 스트리밍, 동시성)은 [handler-reference.md](../handler-reference.md) 에 정리돼 있습니다.
 | `model_cache.py` | 캐시된 스냅샷 경로 확인. 의존성이 없어 CUDA 없이도 단위 테스트 가능 |
 | `requirements.txt` | `runpod`, `transformers`, `accelerate` — `torch` 는 **없음** |
 | `Dockerfile` | `pytorch/pytorch:2.9.1-cuda12.6-cudnn9-runtime` |
@@ -204,7 +217,16 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 `HF_HUB_OFFLINE` 는 `huggingface_hub` 가 import 될 때 읽힙니다. 그 뒤에 설정하면 아무 효과 없이 조용히 무시되고, 캐시에서 서빙한다고 믿는 동안 실제로는 과금되며 다운로드하게 됩니다. 무거운 import 앞에서 실행될 수 있도록 `model_cache` 모듈을 의존성 없이 분리한 이유입니다.
 
-**2. 캐시가 없으면 Hub 로 폴백합니다.**
+**2. 문서와 SDK 가 캐시 위치를 다르게 말합니다.**
+
+| 출처 | 경로 |
+|---|---|
+| 문서 (`serverless/development/huggingface-models`) | `/runpod-volume/huggingface-cache/hub/models--<org>--<name>/snapshots/<rev>` |
+| SDK (`runpod.serverless.utils.rp_model_cache`, v1.11.0) | `/runpod/cache/<org>/<name>/<revision>` |
+
+엔드포인트가 실제로 어느 쪽을 채우는지는 문서화돼 있지 않습니다. 그래서 `model_cache.py` 가 양쪽을 모두 확인합니다. import 시점의 `stat()` 두 번이면 되므로 추측할 이유가 없습니다.
+
+**3. 캐시가 없으면 Hub 로 폴백합니다.**
 
 `snapshot_path()` 는 예외를 던지지 않고 `None` 을 반환합니다. 덕분에 같은 파일이 로컬(Hub 다운로드)과 Runpod(캐시 로드) 양쪽에서 동작합니다. Runpod 공식 예제는 여기서 예외를 던지기 때문에 플랫폼 밖에서는 테스트할 수 없습니다.
 

@@ -37,6 +37,9 @@ nav:
   - title: Serverless
     title_ko: Serverless
     url: /serverless/
+  - title: Handler
+    title_ko: 핸들러
+    url: /handler/
   - title: Pod
     title_ko: Pod
     url: /pod/

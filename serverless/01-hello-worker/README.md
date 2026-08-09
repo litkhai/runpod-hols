@@ -15,6 +15,8 @@
 | File | Role |
 |---|---|
 | `handler.py` | The worker. `handler(job)` reads `job["input"]` and returns the result |
+
+> The SDK's handler contract — control keys, exceptions, streaming, concurrency — is documented in [handler-reference.md](../handler-reference.md).
 | `test_input.json` | Sample input used automatically by local runs |
 | `requirements.txt` | Python dependencies (`runpod~=1.11.0`) |
 | `Dockerfile` | Image definition (`python:3.11-slim`) |
@@ -220,6 +222,8 @@ Move heavy work out of the handler: load a model at module scope and observe the
 | 파일 | 역할 |
 |---|---|
 | `handler.py` | 워커 본체. `handler(job)` 가 `job["input"]` 을 읽어 결과를 반환 |
+
+> SDK 의 핸들러 계약(제어 키, 예외 처리, 스트리밍, 동시성)은 [handler-reference.md](../handler-reference.md) 에 정리돼 있습니다.
 | `test_input.json` | 로컬 실행 시 자동으로 사용되는 샘플 입력 |
 | `requirements.txt` | Python 의존성 (`runpod~=1.11.0`) |
 | `Dockerfile` | 이미지 정의 (`python:3.11-slim`) |

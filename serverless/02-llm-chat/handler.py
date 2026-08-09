@@ -111,10 +111,15 @@ def handler(job):
     try:
         messages = _build_messages(job_input)
     except ValueError as exc:
-        # Returning an error object beats raising: the caller gets a 200 with a
-        # readable reason instead of an opaque worker failure.
-        # 예외를 던지는 것보다 오류 객체를 반환하는 편이 낫다. 호출자가 불투명한
-        # 워커 실패 대신 읽을 수 있는 사유를 받는다.
+        # `error` is a control key, not data: the SDK pops it and marks the job
+        # FAILED. Raising would fail it too, but would hand the caller a full
+        # traceback with absolute paths. This fails cleanly with one line.
+        # See ../handler-reference.md.
+        #
+        # `error` 는 데이터가 아니라 제어 키다. SDK 가 이 키를 꺼내 작업을 실패로
+        # 표시한다. 예외를 던져도 실패하지만 절대 경로가 담긴 전체 트레이스백이
+        # 호출자에게 전달된다. 이 방식은 한 줄로 깔끔하게 실패한다.
+        # ../handler-reference.md 참조.
         return {"error": str(exc)}
 
     # Clamp rather than reject — a runaway max_tokens is a cost problem, and

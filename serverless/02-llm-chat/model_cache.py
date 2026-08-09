@@ -24,6 +24,21 @@ DEFAULT_CACHE_ROOT = os.environ.get(
     "RUNPOD_HF_CACHE_ROOT", "/runpod-volume/huggingface-cache/hub"
 )
 
+# The docs and the SDK disagree about where cached models live, so check both.
+#
+#   docs (serverless/development/huggingface-models):
+#       /runpod-volume/huggingface-cache/hub/models--<org>--<name>/snapshots/<rev>
+#   SDK (runpod.serverless.utils.rp_model_cache, v1.11.0):
+#       /runpod/cache/<org>/<name>/<revision>
+#
+# Which one an endpoint actually populates is not documented. Probing both
+# costs two stat() calls at import and removes the guess.
+#
+# 문서와 SDK 가 캐시 위치를 다르게 말하므로 둘 다 확인한다.
+# 엔드포인트가 실제로 어느 쪽을 채우는지는 문서화돼 있지 않다.
+# import 시점에 stat() 두 번이면 되므로 추측할 이유가 없다.
+SDK_CACHE_ROOT = os.environ.get("RUNPOD_SDK_CACHE_ROOT", "/runpod/cache")
+
 
 def snapshot_path(model_id: str, cache_root: str = None):
     """Return the local snapshot directory for `model_id`, or None.
@@ -77,4 +92,20 @@ def snapshot_path(model_id: str, cache_root: str = None):
         if found:
             return os.path.join(snapshots_dir, found[0])
 
-    return None
+    # Nothing in the HF-style tree — try the layout the SDK's own helper builds.
+    # HF 형식 트리에 없으면 SDK 헬퍼가 만드는 구조를 확인한다.
+    return _sdk_style_path(model_id)
+
+
+def _sdk_style_path(model_id: str, cache_root: str = None):
+    """Check the flat `<root>/<org>/<name>/<revision>` layout the SDK uses.
+
+    SDK 가 사용하는 평면 구조 `<root>/<org>/<name>/<revision>` 를 확인한다.
+
+    Mirrors runpod.serverless.utils.rp_model_cache, which defaults the revision
+    to "main" when the model id carries no ":revision" suffix.
+    """
+    root = cache_root or SDK_CACHE_ROOT
+    model, _, revision = model_id.partition(":")
+    candidate = os.path.join(root, model, revision or "main")
+    return candidate if os.path.isdir(candidate) else None

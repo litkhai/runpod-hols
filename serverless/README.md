@@ -34,6 +34,8 @@ Note that the handler must be written for it — `HF_HUB_OFFLINE` is read at imp
 
 **Handler** — a function taking a `job` dict and returning any JSON-serializable value. `job["input"]` holds the caller's payload. `runpod.serverless.start({"handler": handler})` hands control to the SDK, which polls the job queue and invokes your handler per job.
 
+Two return keys are **control signals, not data**: `error` marks the job FAILED, and `refresh_worker` recycles the worker afterwards. Full details, all verified against the SDK source and by running it — streaming generators, `concurrency_modifier`, `progress_update`, the input validator, the 20 MB return limit — are in **[handler-reference.md](./handler-reference.md)**.
+
 **Cold start** — a request arriving with no warm worker must pull the image and start the container first. This is why model loading belongs at module scope, not inside the handler: module scope runs once per worker, the handler runs once per request.
 
 **Endpoint API** — three routes matter:
@@ -93,7 +95,7 @@ It is a sound scaffold, but a few things were adjusted for this lab:
 | Handler return | `str` | `dict` | Returns `worker_id` alongside the greeting so you can observe cold starts and scale-out |
 | Copy instruction | `ADD handler.py .` | `COPY handler.py .` | `ADD` has URL/archive-extraction side effects; `COPY` is correct for a plain local file |
 | `hub.json` `runsOn` | `GPU` | `CPU` | No GPU is needed, and CPU workers are cheaper to test with |
-| `tests.json` | 1 test | 2 tests | Added an empty-input case to exercise the `"World"` default |
+| `tests.json` | 1 test | 2 tests | Added a case that exercises the `"World"` default. It sends `{"unused": true}` rather than `{}` — an empty input object never returns |
 
 **One upstream documentation bug worth knowing:** the template README states *"It copies your `src` directory into the image."* There is no `src/` directory — the Dockerfile does `ADD handler.py .`. Ignore that line.
 
@@ -105,7 +107,7 @@ Also note `.runpod/hub.json` and `.runpod/tests.json` are only used when publish
 |---|---|
 | [runpod/runpod-python](https://github.com/runpod/runpod-python) | SDK. v1.11.0, `requires-python >=3.10`. Source of the `--rp_serve_api` local server |
 | [Serverless Get Started](https://docs.runpod.io/serverless/get-started) | The 9-step official tutorial Lab 01 follows |
-| [GitHub integration](https://docs.runpod.io/serverless/github-integration) | Runpod builds the image and hosts it in its own registry — no Docker Hub, no emulated builds on Apple Silicon. Note that redeploying requires a **GitHub release**, not just a push |
+| [GitHub integration](https://docs.runpod.io/serverless/github-integration) | Runpod builds the image and hosts it in its own registry — no Docker Hub, no emulated builds on Apple Silicon. Docs say redeploying requires a **GitHub release**; in testing a plain push also triggered builds, but only before the endpoint had a successful build |
 | [runpod-workers/worker-vllm](https://github.com/runpod-workers/worker-vllm) | Reference for Lab 02 |
 | [runpod/containers](https://github.com/runpod/containers/tree/main/official-templates/base) | What is actually inside `runpod/base` |
 
@@ -140,6 +142,8 @@ Lab 02 의 진짜 주제입니다. 선택지는 셋이고, 보통 세 번째가 
 ### 핵심 개념
 
 **Handler** — `job` 딕셔너리를 받아 JSON 직렬화 가능한 값을 반환하는 함수입니다. 호출자가 보낸 payload 는 `job["input"]` 에 들어옵니다. `runpod.serverless.start({"handler": handler})` 를 호출하면 SDK 가 제어권을 가져가 작업 큐를 폴링하면서 작업마다 handler 를 실행합니다.
+
+반환값의 키 두 개는 **데이터가 아니라 제어 신호**입니다. `error` 는 작업을 실패로 표시하고, `refresh_worker` 는 작업 후 워커를 재활용합니다. 스트리밍 제너레이터, `concurrency_modifier`, `progress_update`, 입력 검증기, 20MB 반환 제한까지 SDK 소스와 실행으로 확인한 전체 내용은 **[handler-reference.md](./handler-reference.md)** 에 있습니다.
 
 **콜드 스타트(Cold start)** — 워밍된 워커가 없는 상태에서 요청이 들어오면 이미지를 받고 컨테이너를 띄우는 시간이 먼저 필요합니다. 모델 로딩을 handler 안이 아니라 모듈 스코프에 둬야 하는 이유가 이것입니다. 모듈 스코프는 워커당 1회, handler 는 요청당 1회 실행됩니다.
 
@@ -200,7 +204,7 @@ Lab 01 은 [`runpod-workers/worker-template`](https://github.com/runpod-workers/
 | handler 반환값 | `str` | `dict` | 인사말과 함께 `worker_id` 를 반환해 콜드 스타트와 스케일아웃을 관찰 가능하게 함 |
 | 복사 명령 | `ADD handler.py .` | `COPY handler.py .` | `ADD` 는 URL 다운로드·압축 해제 부수효과가 있음. 단순 로컬 파일에는 `COPY` 가 맞음 |
 | `hub.json` 의 `runsOn` | `GPU` | `CPU` | GPU 가 필요 없고 CPU 워커가 테스트 비용이 저렴함 |
-| `tests.json` | 테스트 1개 | 테스트 2개 | 빈 입력 케이스를 추가해 `"World"` 기본값 경로를 검증 |
+| `tests.json` | 테스트 1개 | 테스트 2개 | `"World"` 기본값 경로를 검증하는 케이스 추가. `{}` 는 응답이 오지 않으므로 `{"unused": true}` 를 보냄 |
 
 **알아둘 만한 원본 문서 오류:** 템플릿 README 에 *"It copies your `src` directory into the image"* 라고 적혀 있지만, `src/` 디렉토리는 존재하지 않고 Dockerfile 은 `ADD handler.py .` 를 수행합니다. 해당 문장은 무시하면 됩니다.
 
@@ -212,6 +216,6 @@ Lab 01 은 [`runpod-workers/worker-template`](https://github.com/runpod-workers/
 |---|---|
 | [runpod/runpod-python](https://github.com/runpod/runpod-python) | SDK. v1.11.0, `requires-python >=3.10`. `--rp_serve_api` 로컬 서버 제공 |
 | [Serverless Get Started](https://docs.runpod.io/serverless/get-started) | Lab 01 이 따르는 9단계 공식 튜토리얼 |
-| [GitHub integration](https://docs.runpod.io/serverless/github-integration) | Runpod 이 이미지를 빌드해 자체 레지스트리에 보관. Docker Hub 불필요, Apple Silicon 에뮬레이션 빌드도 회피. 단 재배포에는 단순 푸시가 아니라 **GitHub 릴리스**가 필요 |
+| [GitHub integration](https://docs.runpod.io/serverless/github-integration) | Runpod 이 이미지를 빌드해 자체 레지스트리에 보관. Docker Hub 불필요, Apple Silicon 에뮬레이션 빌드도 회피. 문서상 재배포에는 **GitHub 릴리스**가 필요. 실제로는 일반 푸시도 빌드를 트리거했지만 성공한 빌드가 없던 시점에서만 확인됨 |
 | [runpod-workers/worker-vllm](https://github.com/runpod-workers/worker-vllm) | Lab 02 참조용 |
 | [runpod/containers](https://github.com/runpod/containers/tree/main/official-templates/base) | `runpod/base` 이미지 내부 구성 |
