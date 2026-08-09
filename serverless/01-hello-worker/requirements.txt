@@ -1,0 +1,4 @@
+# Python packages this worker needs, one per line. Installed during the Docker build.
+# 이 워커에 필요한 Python 패키지를 한 줄에 하나씩. Docker 빌드 시 설치된다.
+
+runpod~=1.11.0

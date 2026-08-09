@@ -1,0 +1,11 @@
+{
+  "title": "Hello Worker",
+  "description": "Runpod Serverless 입문용 hello-world 워커. handler / job / 엔드포인트 배포 흐름을 익힌다.",
+  "type": "serverless",
+  "category": "language",
+  "iconUrl": "https://dummyimage.com/100x100/5733ff/fff&text=HW",
+  "config": {
+    "runsOn": "CPU",
+    "containerDiskInGb": 5
+  }
+}

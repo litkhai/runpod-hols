@@ -1,0 +1,20 @@
+{
+  "tests": [
+    {
+      "name": "basic_test",
+      "input": {
+        "name": "Runpod"
+      },
+      "timeout": 10000
+    },
+    {
+      "name": "default_name_test",
+      "input": {},
+      "timeout": 10000
+    }
+  ],
+  "config": {
+    "gpuTypeId": "NVIDIA GeForce RTX 4090",
+    "gpuCount": 1
+  }
+}
