@@ -194,7 +194,18 @@ body {
   font-weight: 600;
 }
 
-.ko-label { opacity: 0.6; font-size: 12px; }
+/* Separates the three kinds of page — start, lab tracks, reference — without
+   spending a second nav row on group headings.
+   시작 / 실습 트랙 / 레퍼런스 세 종류를 구분한다.
+   그룹 제목을 위해 두 번째 줄을 쓰지 않아도 되도록. */
+.nav-divider {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 1px;
+  height: 14px;
+  margin: 0 10px;
+  background: var(--border-strong);
+}
 
 /* --- Content -------------------------------------------------------- */
 

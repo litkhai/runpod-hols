@@ -31,14 +31,14 @@ Everything here was verified by actually running it — the outputs, image sizes
     <span class="badge planned">Planned</span>
   </div>
   <div class="card">
-    <h3><a href="{{ '/terraform/' | relative_url }}">Terraform</a></h3>
-    <p>The same resources as infrastructure as code.</p>
-    <span class="badge ready">2 labs ready</span>
-  </div>
-  <div class="card">
     <h3><a href="{{ '/cluster/' | relative_url }}">Cluster</a></h3>
     <p>Multi-node distributed training.</p>
     <span class="badge tbd">TBD</span>
+  </div>
+  <div class="card">
+    <h3><a href="{{ '/terraform/' | relative_url }}">Terraform</a></h3>
+    <p>The same resources as infrastructure as code.</p>
+    <span class="badge ready">2 labs ready</span>
   </div>
 </div>
 
@@ -102,14 +102,14 @@ AI/ML 워크로드를 위한 GPU 클라우드 [Runpod](https://runpod.io) 의 �
     <span class="badge planned">계획됨</span>
   </div>
   <div class="card">
-    <h3><a href="{{ '/terraform/' | relative_url }}">Terraform</a></h3>
-    <p>같은 리소스를 코드형 인프라로.</p>
-    <span class="badge ready">2개 준비됨</span>
-  </div>
-  <div class="card">
     <h3><a href="{{ '/cluster/' | relative_url }}">Cluster</a></h3>
     <p>다중 노드 분산 학습.</p>
     <span class="badge tbd">TBD</span>
+  </div>
+  <div class="card">
+    <h3><a href="{{ '/terraform/' | relative_url }}">Terraform</a></h3>
+    <p>같은 리소스를 코드형 인프라로.</p>
+    <span class="badge ready">2개 준비됨</span>
   </div>
 </div>
 

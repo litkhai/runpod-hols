@@ -42,11 +42,14 @@
 <nav class="site-nav">
   <div class="wrap nav-inner">
     {% assign cur = page.url | remove: site.baseurl %}
+    {% assign prev_group = '' %}
     {% for item in site.nav %}
+      {% if prev_group != '' and item.group != prev_group %}
+        <span class="nav-divider" aria-hidden="true"></span>
+      {% endif %}
       <a href="{{ item.url | relative_url }}"
-         class="{% if cur == item.url %}current{% endif %}">
-        {{ item.title }}{% if item.title != item.title_ko %} <span class="ko-label">{{ item.title_ko }}</span>{% endif %}
-      </a>
+         class="{% if cur == item.url %}current{% endif %}">{{ item.title }}</a>
+      {% assign prev_group = item.group %}
     {% endfor %}
   </div>
 </nav>
