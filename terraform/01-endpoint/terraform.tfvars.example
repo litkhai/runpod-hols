@@ -10,7 +10,7 @@
 
 # Required — the image you built and pushed in serverless/01-hello-worker.
 # 필수 — serverless/01-hello-worker 에서 빌드해 푸시한 이미지.
-image_name = "docker.io/YOUR_DOCKERHUB_USERNAME/hello-worker:latest"
+image_name = "docker.io/YOUR_DOCKERHUB_USERNAME/hello-worker:v1.0.0"
 
 # Optional overrides / 선택적 재정의
 

@@ -57,11 +57,21 @@ The local API server returns exactly the shape the deployed endpoint does:
 Then build — note the platform flag:
 
 ```bash
-docker build --platform linux/amd64 -t <user>/hello-worker:latest .
+docker build --platform linux/amd64 -t <user>/hello-worker:v1.0.0 .
 ```
 
 <div class="warn" markdown="1">
 `--platform linux/amd64` is mandatory on Apple Silicon. Runpod workers are amd64, and an arm64 image fails to start with no useful log output.
+
+Avoid `:latest`. Runpod caches images, so a mutable tag can leave workers serving the previous build with no obvious sign.
+</div>
+
+### Deploying from GitHub
+
+Runpod can clone the repo, build the image itself and host it in its own registry — no Docker Hub account and no emulated builds. For this repo, set **Dockerfile Path** to `serverless/01-hello-worker/Dockerfile`, since each lab lives in its own directory.
+
+<div class="note" markdown="1">
+**A push does not redeploy.** Per the docs, changes "won't automatically be pushed to your endpoint" — you must **create a GitHub release** to trigger a new build. Earlier builds can be rolled back from the endpoint's Builds tab.
 </div>
 
 ### Review of the official template
@@ -136,11 +146,21 @@ uv pip install --python .venv/bin/python -r requirements.txt
 이후 빌드합니다. platform 플래그에 주의하세요.
 
 ```bash
-docker build --platform linux/amd64 -t <사용자>/hello-worker:latest .
+docker build --platform linux/amd64 -t <사용자>/hello-worker:v1.0.0 .
 ```
 
 <div class="warn" markdown="1">
 Apple Silicon 에서는 `--platform linux/amd64` 가 필수입니다. Runpod 워커는 amd64 이며, arm64 이미지는 쓸만한 로그도 없이 기동에 실패합니다.
+
+`:latest` 는 피하세요. Runpod 이 이미지를 캐시하므로, 가변 태그를 쓰면 워커가 이전 빌드를 계속 서빙하면서도 겉으로는 표시가 나지 않을 수 있습니다.
+</div>
+
+### GitHub 연동 배포
+
+Runpod 이 저장소를 클론해 직접 이미지를 빌드하고 자체 레지스트리에 보관합니다. Docker Hub 계정도, 에뮬레이션 빌드도 필요 없습니다. 이 저장소는 실습마다 디렉토리가 나뉘므로 **Dockerfile Path** 를 `serverless/01-hello-worker/Dockerfile` 로 지정하세요.
+
+<div class="note" markdown="1">
+**푸시만으로는 재배포되지 않습니다.** 문서에 따르면 변경사항은 "won't automatically be pushed to your endpoint" 이며, 새 빌드를 트리거하려면 **GitHub 릴리스를 생성**해야 합니다. 이전 빌드는 엔드포인트의 Builds 탭에서 롤백할 수 있습니다.
 </div>
 
 ### 공식 템플릿 검토

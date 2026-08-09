@@ -59,7 +59,7 @@ Also note `.runpod/hub.json` and `.runpod/tests.json` are only used when publish
 |---|---|
 | [runpod/runpod-python](https://github.com/runpod/runpod-python) | SDK. v1.11.0, `requires-python >=3.10`. Source of the `--rp_serve_api` local server |
 | [Serverless Get Started](https://docs.runpod.io/serverless/get-started) | The 9-step official tutorial Lab 01 follows |
-| [GitHub integration](https://docs.runpod.io/serverless/github-integration) | Let Runpod build the image on push — avoids slow emulated builds on Apple Silicon |
+| [GitHub integration](https://docs.runpod.io/serverless/github-integration) | Runpod builds the image and hosts it in its own registry — no Docker Hub, no emulated builds on Apple Silicon. Note that redeploying requires a **GitHub release**, not just a push |
 | [runpod-workers/worker-vllm](https://github.com/runpod-workers/worker-vllm) | Reference for Lab 02 |
 | [runpod/containers](https://github.com/runpod/containers/tree/main/official-templates/base) | What is actually inside `runpod/base` |
 
@@ -120,6 +120,6 @@ Lab 01 은 [`runpod-workers/worker-template`](https://github.com/runpod-workers/
 |---|---|
 | [runpod/runpod-python](https://github.com/runpod/runpod-python) | SDK. v1.11.0, `requires-python >=3.10`. `--rp_serve_api` 로컬 서버 제공 |
 | [Serverless Get Started](https://docs.runpod.io/serverless/get-started) | Lab 01 이 따르는 9단계 공식 튜토리얼 |
-| [GitHub integration](https://docs.runpod.io/serverless/github-integration) | 푸시하면 Runpod 이 이미지를 대신 빌드. Apple Silicon 의 느린 에뮬레이션 빌드를 피할 수 있음 |
+| [GitHub integration](https://docs.runpod.io/serverless/github-integration) | Runpod 이 이미지를 빌드해 자체 레지스트리에 보관. Docker Hub 불필요, Apple Silicon 에뮬레이션 빌드도 회피. 단 재배포에는 단순 푸시가 아니라 **GitHub 릴리스**가 필요 |
 | [runpod-workers/worker-vllm](https://github.com/runpod-workers/worker-vllm) | Lab 02 참조용 |
 | [runpod/containers](https://github.com/runpod/containers/tree/main/official-templates/base) | `runpod/base` 이미지 내부 구성 |

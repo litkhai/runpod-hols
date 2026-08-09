@@ -75,15 +75,17 @@ Note the response shape — `id` / `status` / `output` — is exactly what the d
 ### Step 4 — Build the image
 
 ```bash
-docker build --platform linux/amd64 -t <YOUR_DOCKERHUB_USERNAME>/hello-worker:latest .
+docker build --platform linux/amd64 -t <YOUR_DOCKERHUB_USERNAME>/hello-worker:v1.0.0 .
 ```
 
 `--platform linux/amd64` is mandatory on Apple Silicon. Runpod workers are amd64; an arm64 image will fail to start.
 
+> **Do not tag this `:latest`.** Runpod caches images to speed up worker startup, and because `:latest` is mutable, workers can keep serving the previous build after you push a new one — with no obvious sign that they are. Use `v1.0.0`, `v1.0.1`, … so you always know what is running and can roll back. Runpod also validates the image reference when you create an endpoint and rejects a tag that does not resolve to a published image.
+
 The slim base produces a ~106MB image in a few seconds. Verify it runs:
 
 ```bash
-docker run --rm --platform linux/amd64 <YOUR_DOCKERHUB_USERNAME>/hello-worker:latest
+docker run --rm --platform linux/amd64 <YOUR_DOCKERHUB_USERNAME>/hello-worker:v1.0.0
 ```
 
 You should see the same "Hello, Runpod!" output — `test_input.json` is not in the image, so the SDK reports it has no local input and waits; that is expected. Press Ctrl+C.
@@ -92,13 +94,25 @@ You should see the same "Hello, Runpod!" output — `test_input.json` is not in 
 
 Two options.
 
-**Option A — GitHub integration (recommended).** Connect this repo in the Runpod console and Runpod builds the image on every push. No local build, no registry, and no slow emulated builds on Apple Silicon. See [the GitHub integration guide](https://docs.runpod.io/serverless/github-integration).
+**Option A — GitHub integration (recommended).** Runpod clones the repo, builds the image itself, stores it in **Runpod's own registry**, and deploys it. No local build, no Docker Hub account, and no slow emulated builds on Apple Silicon.
+
+1. Console → [Settings](https://console.runpod.io/user/settings) → **Connections** → **GitHub** → **Connect**, and grant access to this repository.
+2. [Serverless](https://console.runpod.io/serverless) → **New Endpoint** → **Import Git Repository** → select `runpod-hols`.
+3. **Branch:** `main`. **Dockerfile Path:** `serverless/01-hello-worker/Dockerfile` — this repo keeps each lab in its own directory, so the path is required.
+4. Configure the endpoint (see the settings table below) and **Deploy Endpoint**.
+5. Watch the **Builds** tab: Pending → Building → Uploading → Testing → Completed.
+
+> **Pushing to the branch does NOT redeploy.** The docs are explicit: *"When you make changes to your GitHub repository, they won't automatically be pushed to your endpoint. To trigger an update for the workers on your endpoint, create a new release."* So the update loop is commit → push → **create a GitHub release**. You can also roll back to any earlier build from the Builds tab.
+
+> **Build context is not documented.** Runpod asks for a Dockerfile path but does not say whether the build context is the repo root or the Dockerfile's directory. This Dockerfile uses `COPY requirements.txt .`, which assumes the latter. If the build fails with something like `requirements.txt: not found`, the context is the repo root — change the two `COPY` lines to `COPY serverless/01-hello-worker/requirements.txt .` and likewise for `handler.py`.
+
+See [the GitHub integration guide](https://docs.runpod.io/serverless/github-integration).
 
 **Option B — manual push.**
 
 ```bash
 docker login
-docker push <YOUR_DOCKERHUB_USERNAME>/hello-worker:latest
+docker push <YOUR_DOCKERHUB_USERNAME>/hello-worker:v1.0.0
 ```
 
 Then in the console: **Serverless → New Endpoint → import your Docker image.**
@@ -219,15 +233,17 @@ curl -X POST http://localhost:8000/runsync \
 ### 4단계 — 이미지 빌드
 
 ```bash
-docker build --platform linux/amd64 -t <도커허브_사용자명>/hello-worker:latest .
+docker build --platform linux/amd64 -t <도커허브_사용자명>/hello-worker:v1.0.0 .
 ```
 
 Apple Silicon 에서는 `--platform linux/amd64` 가 필수입니다. Runpod 워커는 amd64 이며 arm64 이미지는 기동에 실패합니다.
 
+> **`:latest` 태그는 쓰지 마세요.** Runpod 은 워커 기동 속도를 위해 이미지를 캐시하는데, `:latest` 는 가변 태그이므로 새 이미지를 푸시해도 워커가 이전 빌드를 계속 서빙할 수 있습니다. 그것도 눈에 띄는 표시 없이요. `v1.0.0`, `v1.0.1` 처럼 버전을 붙이면 무엇이 돌고 있는지 항상 알 수 있고 롤백도 가능합니다. 또한 Runpod 은 엔드포인트 생성 시 이미지 참조를 검증하며, 실제로 게시되지 않은 태그는 거부합니다.
+
 slim 베이스 기준으로 약 106MB 이미지가 수 초 만에 만들어집니다. 동작을 확인하려면:
 
 ```bash
-docker run --rm --platform linux/amd64 <도커허브_사용자명>/hello-worker:latest
+docker run --rm --platform linux/amd64 <도커허브_사용자명>/hello-worker:v1.0.0
 ```
 
 이미지 안에는 `test_input.json` 이 없으므로 SDK 가 로컬 입력이 없다고 알리고 대기 상태로 들어갑니다. 정상 동작이며 Ctrl+C 로 종료하면 됩니다.
@@ -236,13 +252,25 @@ docker run --rm --platform linux/amd64 <도커허브_사용자명>/hello-worker:
 
 두 가지 방법이 있습니다.
 
-**방법 A — GitHub 연동 (권장).** 콘솔에서 이 저장소를 연결하면 푸시할 때마다 Runpod 이 이미지를 빌드합니다. 로컬 빌드도, 레지스트리도 필요 없고 Apple Silicon 의 느린 에뮬레이션 빌드도 피할 수 있습니다. [GitHub 연동 가이드](https://docs.runpod.io/serverless/github-integration) 참고.
+**방법 A — GitHub 연동 (권장).** Runpod 이 저장소를 클론해 직접 이미지를 빌드하고, **Runpod 자체 레지스트리**에 저장한 뒤 배포합니다. 로컬 빌드도 Docker Hub 계정도 필요 없고, Apple Silicon 의 느린 에뮬레이션 빌드도 피할 수 있습니다.
+
+1. 콘솔 → [Settings](https://console.runpod.io/user/settings) → **Connections** → **GitHub** → **Connect**, 이 저장소에 접근 권한 부여.
+2. [Serverless](https://console.runpod.io/serverless) → **New Endpoint** → **Import Git Repository** → `runpod-hols` 선택.
+3. **Branch:** `main`. **Dockerfile Path:** `serverless/01-hello-worker/Dockerfile` — 이 저장소는 실습마다 디렉토리를 나누므로 경로 지정이 필수입니다.
+4. 엔드포인트 설정(아래 표 참조) 후 **Deploy Endpoint**.
+5. **Builds** 탭에서 진행 확인: Pending → Building → Uploading → Testing → Completed.
+
+> **브랜치에 푸시해도 재배포되지 않습니다.** 공식 문서에 명시돼 있습니다. *"When you make changes to your GitHub repository, they won't automatically be pushed to your endpoint. To trigger an update for the workers on your endpoint, create a new release."* 즉 갱신 흐름은 커밋 → 푸시 → **GitHub 릴리스 생성** 입니다. Builds 탭에서 이전 빌드로 롤백할 수도 있습니다.
+
+> **빌드 컨텍스트는 문서화돼 있지 않습니다.** Runpod 은 Dockerfile 경로만 입력받을 뿐, 빌드 컨텍스트가 저장소 루트인지 Dockerfile 이 있는 디렉토리인지 밝히지 않습니다. 이 Dockerfile 은 `COPY requirements.txt .` 를 사용하므로 후자를 가정합니다. `requirements.txt: not found` 같은 오류로 빌드가 실패하면 컨텍스트가 루트라는 뜻이므로, `COPY` 두 줄을 `COPY serverless/01-hello-worker/requirements.txt .` 형태로 바꾸면 됩니다 (`handler.py` 도 동일).
+
+[GitHub 연동 가이드](https://docs.runpod.io/serverless/github-integration) 참고.
 
 **방법 B — 수동 푸시.**
 
 ```bash
 docker login
-docker push <도커허브_사용자명>/hello-worker:latest
+docker push <도커허브_사용자명>/hello-worker:v1.0.0
 ```
 
 이후 콘솔에서 **Serverless → New Endpoint → Docker 이미지 지정.**

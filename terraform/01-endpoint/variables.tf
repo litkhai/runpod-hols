@@ -1,10 +1,10 @@
 variable "image_name" {
   type        = string
   description = <<-EOT
-    Container image for the worker, e.g. "docker.io/<user>/hello-worker:latest".
+    Container image for the worker, e.g. "docker.io/<user>/hello-worker:v1.0.0".
     Build and push it first — see serverless/01-hello-worker.
 
-    워커 컨테이너 이미지. 예: "docker.io/<사용자>/hello-worker:latest".
+    워커 컨테이너 이미지. 예: "docker.io/<사용자>/hello-worker:v1.0.0".
     먼저 빌드해서 푸시해야 한다 — serverless/01-hello-worker 참조.
   EOT
 }
