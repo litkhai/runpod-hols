@@ -88,6 +88,37 @@ You can complete the console-only parts of the labs without a key, but calling e
 - **Serverless costs nothing when there are no requests.** But setting Active Workers above 0 bills continuously — keep it at 0 for these labs.
 - Check current rates at [Pods pricing](https://docs.runpod.io/pods/pricing) and [Serverless pricing](https://docs.runpod.io/serverless/pricing).
 
+### How This Repository Works
+
+Four conventions, each with a reason behind it.
+
+**Everything is verified by running it.** Command output, image sizes, latency figures and error messages in these docs were produced on a real account, not copied from vendor documentation. Where something has *not* been run — `terraform apply`, the Pod track — the page says so explicitly. That distinction is the point: this repo is worth more than the official docs only where it contradicts or completes them, and it can only do that honestly if you can tell verified from assumed.
+
+Several corrections came out of that discipline. Runpod's own `worker-template` README describes a `src/` directory it does not have; the console's Build context field is undocumented; `{"input": {}}` never returns; the SDK's cached-model path disagrees with the docs. None of these are visible from reading alone.
+
+**Labs are self-contained.** Each lab directory holds a `Dockerfile` with bare `COPY` paths, so the folder builds on its own and can be lifted out of this repo unchanged. This mirrors how Runpod structures its own code — `runpod-workers/*` is one repo per worker, and the `runpod/containers` monorepo sets a per-target `context` rather than reaching across directories. The cost is that deploying from a subdirectory needs the console's **Build context** field set; that trade is documented in [`serverless/README.md`](./serverless).
+
+**Docs are bilingual, English first.** Every README and site page carries a full English section and a full Korean one, in the format used by [`clickhouse-hols`](https://github.com/litkhai/clickhouse-hols). Interface text — nav, footer — stays English only; the language toggle governs content, not chrome.
+
+**The top level is flat.** `setup / serverless / pod / cluster / terraform` sit side by side rather than under a `labs/` wrapper, because the repository name already says these are labs.
+
+### The Documentation Site
+
+[`docs/`](./docs) builds to [litkhai.github.io/runpod-hols](https://litkhai.github.io/runpod-hols) through [`.github/workflows/pages.yml`](./.github/workflows/pages.yml) on every push that touches it.
+
+| Choice | Why |
+|---|---|
+| Jekyll with a hand-written layout, no remote theme | No upstream gem to break, and full control over the bilingual toggle |
+| Palette taken from Runpod's own assets | `docs.json` and the logo SVGs, not invented colours |
+| Dark by default, light opt-in | A `<head>` guard applies the saved theme before first paint |
+| Sidebar contents built in the browser | Each page holds both languages; a server-rendered list would duplicate every heading and half the anchors would point into a hidden block |
+
+To preview locally without installing Ruby:
+
+```bash
+docker run --rm -v "$PWD/docs":/site -w /site -p 4000:4000 ruby:3.3   bash -c "gem install jekyll -N && jekyll serve --host 0.0.0.0"
+```
+
 ### Referenced Official Runpod Resources
 
 Each track README contains a detailed review of the sources it draws on.
@@ -196,6 +227,38 @@ runpod-hols/
 - **Pod 는 idle 상태여도 켜져 있는 내내 과금됩니다.** 실습이 끝나면 반드시 **Stop** 또는 **Terminate** 하세요. Stop 만 하면 Volume 스토리지 요금은 계속 나가므로, 다시 쓰지 않을 Pod 는 Terminate 가 맞습니다.
 - **Serverless 는 요청이 없으면 비용이 발생하지 않습니다.** 다만 Active Worker 를 1 이상으로 두면 상시 과금되므로 실습에서는 0 으로 둡니다.
 - 실제 단가는 [Pods pricing](https://docs.runpod.io/pods/pricing) 과 [Serverless pricing](https://docs.runpod.io/serverless/pricing) 에서 확인하세요.
+
+### 이 저장소의 작동 방식
+
+네 가지 관례가 있고, 각각 이유가 있습니다.
+
+**모든 것은 실행해서 검증합니다.** 이 문서들의 명령 출력, 이미지 크기, 지연시간 수치, 오류 메시지는 실제 계정에서 얻은 것이지 벤더 문서를 옮긴 것이 아닙니다. 아직 실행하지 *않은* 것 — `terraform apply`, Pod 트랙 — 은 그렇다고 명시합니다. 이 구분이 핵심입니다. 이 저장소가 공식 문서보다 가치 있는 지점은 공식 문서와 어긋나거나 그것을 보완하는 부분뿐이고, 검증된 것과 가정한 것을 구별할 수 있어야 그 주장이 정직해집니다.
+
+이 원칙에서 여러 수정이 나왔습니다. Runpod 의 `worker-template` README 는 존재하지 않는 `src/` 디렉토리를 설명하고, 콘솔의 Build context 필드는 문서화돼 있지 않으며, `{"input": {}}` 은 응답이 오지 않고, SDK 의 모델 캐시 경로는 문서와 다릅니다. 읽기만 해서는 어느 것도 알 수 없습니다.
+
+**실습은 자체 완결적입니다.** 각 실습 디렉토리는 접두사 없는 `COPY` 경로를 쓰는 `Dockerfile` 을 갖고 있어, 폴더 단독으로 빌드되고 이 저장소 밖으로 그대로 옮겨도 동작합니다. Runpod 이 자기 코드를 구성하는 방식과 같습니다 — `runpod-workers/*` 는 워커마다 저장소를 따로 두고, `runpod/containers` 모노레포는 디렉토리를 가로지르는 대신 타겟마다 `context` 를 지정합니다. 대신 하위 디렉토리에서 배포할 때 콘솔의 **Build context** 필드를 설정해야 하는데, 그 맞바꿈은 [`serverless/README.md`](./serverless) 에 정리돼 있습니다.
+
+**문서는 영문 우선 이중 언어입니다.** 모든 README 와 사이트 페이지가 완전한 영문 절과 완전한 한글 절을 함께 담으며, [`clickhouse-hols`](https://github.com/litkhai/clickhouse-hols) 의 형식을 따릅니다. 인터페이스 텍스트(네비게이션, 푸터)는 영문만 사용합니다. 언어 토글이 관장하는 것은 본문이지 UI 가 아닙니다.
+
+**최상위는 평평합니다.** `setup / serverless / pod / cluster / terraform` 이 `labs/` 같은 상위 폴더 없이 나란히 놓입니다. 저장소 이름이 이미 이것들이 실습임을 말하고 있기 때문입니다.
+
+### 문서 사이트
+
+[`docs/`](./docs) 는 [`.github/workflows/pages.yml`](./.github/workflows/pages.yml) 을 통해 [litkhai.github.io/runpod-hols](https://litkhai.github.io/runpod-hols) 로 빌드되며, 해당 디렉토리를 건드리는 푸시마다 배포됩니다.
+
+| 선택 | 이유 |
+|---|---|
+| 원격 테마 없이 직접 작성한 Jekyll 레이아웃 | 깨질 외부 gem 이 없고 이중 언어 토글을 완전히 제어 |
+| Runpod 공식 자산에서 가져온 색상 | 임의로 고른 색이 아니라 `docs.json` 과 로고 SVG 기준 |
+| 기본 다크, 라이트는 선택 | `<head>` 가드가 첫 페인트 전에 저장된 테마를 적용 |
+| 사이드바 목차를 브라우저에서 생성 | 각 페이지가 두 언어를 담고 있어, 서버에서 만들면 제목이 두 배가 되고 앵커 절반이 숨겨진 블록을 가리킴 |
+
+Ruby 를 설치하지 않고 로컬에서 미리 보려면:
+
+```bash
+docker run --rm -v "$PWD/docs":/site -w /site -p 4000:4000 ruby:3.3 \
+  bash -c "gem install jekyll -N && jekyll serve --host 0.0.0.0"
+```
 
 ### 참조한 Runpod 공식 리소스
 
