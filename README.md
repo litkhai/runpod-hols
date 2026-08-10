@@ -144,7 +144,7 @@ Follow [serverless/01-hello-worker/README.md](./serverless/01-hello-worker/READM
 
 [MIT](./LICENSE). Take anything here and use it.
 
-`serverless/01-hello-worker` derives from [`runpod-workers/worker-template`](https://github.com/runpod-workers/worker-template), which is MIT licensed, and the LICENSE file carries its copyright notice as MIT requires. The other Runpod projects this repo builds on — the Python SDK, the container images and the Terraform provider — are MIT too.
+`serverless/01-hello-worker` derives from [`runpod-workers/worker-template`](https://github.com/runpod-workers/worker-template), which is MIT licensed. Its copyright notice travels with this repo in [NOTICE](./NOTICE), as MIT requires — kept out of LICENSE so GitHub still detects the licence as MIT rather than "Other". The Python SDK, container images and Terraform provider this repo builds on are MIT as well.
 
 Not affiliated with, reviewed by, or endorsed by Runpod.
 
@@ -293,7 +293,7 @@ cd serverless/01-hello-worker
 
 [MIT](./LICENSE). 여기 있는 것은 무엇이든 가져다 쓰셔도 됩니다.
 
-`serverless/01-hello-worker` 는 MIT 라이선스인 [`runpod-workers/worker-template`](https://github.com/runpod-workers/worker-template) 에서 파생됐으며, MIT 가 요구하는 대로 LICENSE 파일에 원본 저작권 표시를 포함했습니다. 이 저장소가 기반으로 삼는 다른 Runpod 프로젝트들 — Python SDK, 컨테이너 이미지, Terraform 프로바이더 — 도 모두 MIT 입니다.
+`serverless/01-hello-worker` 는 MIT 라이선스인 [`runpod-workers/worker-template`](https://github.com/runpod-workers/worker-template) 에서 파생됐습니다. MIT 가 요구하는 원본 저작권 표시는 [NOTICE](./NOTICE) 에 함께 담았습니다. LICENSE 에 덧붙이지 않은 이유는, 그러면 GitHub 이 라이선스를 MIT 가 아니라 "Other" 로 인식하기 때문입니다. 이 저장소가 기반으로 삼는 Python SDK, 컨테이너 이미지, Terraform 프로바이더도 모두 MIT 입니다.
 
 Runpod 과 제휴 관계가 없으며, Runpod 의 검토나 승인을 받지 않았습니다.
 

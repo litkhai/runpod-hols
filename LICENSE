@@ -19,18 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-Third-party notices
-
-serverless/01-hello-worker is derived from runpod-workers/worker-template,
-which is MIT licensed:
-
-    MIT License
-    Copyright (c) 2025 RunPod
-
-The other Runpod projects this repository builds on or documents —
-runpod/runpod-python, runpod/containers and runpod/terraform-provider-runpod —
-are likewise MIT licensed. This repository is not affiliated with, reviewed by,
-or endorsed by Runpod.
