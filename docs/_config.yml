@@ -55,5 +55,6 @@ nav:
   - { title: Worker SDK, url: /sdk/worker/, group: reference }
   - { title: Client SDK, url: /sdk/client/, group: reference }
 
-  # About the repository itself / 저장소 자체에 대한 설명
+  # Further material and repo meta / 참고 자료와 저장소 설명
+  - { title: Readings, url: /readings/, group: about }
   - { title: About, url: /about/, group: about }

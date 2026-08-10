@@ -131,17 +131,6 @@
     }
   });
 
-  // Sidebar table of contents for the current page.
-  //
-  // Built from the DOM rather than at build time because each page carries
-  // both languages: a server-rendered TOC would list every heading twice, and
-  // half of them would point into a hidden block, where anchors do not scroll.
-  //
-  // 현재 페이지의 사이드바 목차.
-  //
-  // 빌드 시점이 아니라 DOM 에서 만든다. 각 페이지가 두 언어를 모두 담고 있어서
-  // 서버에서 만들면 제목이 두 번씩 나열되고, 그 절반은 숨겨진 블록을 가리켜
-  // 앵커가 스크롤되지 않는다.
   // Publish the pinned bar's height so the sidebar's sticky offset and the
   // anchor scroll-margin can clear it. Measured rather than hardcoded: the
   // header wraps on narrow screens, which changes the height.
@@ -165,13 +154,32 @@
 
   var spy = null;
 
+  // Sidebar table of contents for the current page.
+  //
+  // Built from the DOM rather than at build time because each page carries
+  // both languages: a server-rendered list would name every heading twice, and
+  // half the anchors would point into a hidden block, where jumps do nothing.
+  //
+  // 현재 페이지의 사이드바 목차.
+  //
+  // 빌드 시점이 아니라 DOM 에서 만든다. 각 페이지가 두 언어를 모두 담고 있어
+  // 서버에서 만들면 제목이 두 번씩 나열되고, 앵커 절반이 숨겨진 블록을 가리켜
+  // 클릭해도 아무 일이 일어나지 않는다.
   function buildToc() {
     var list = document.getElementById('page-toc');
     var aside = document.getElementById('page-sidebar');
     if (!list) return;
 
     var visible = document.querySelector('.lang:not([hidden])') || document;
-    var headings = visible.querySelectorAll('h3[id]');
+
+    // h2 and h3, minus the language header each block opens with — that is
+    // always the first h2 and would read as "English" sitting above the real
+    // contents. Pages that use only h3 are unaffected.
+    //
+    // h2 와 h3 를 담되, 각 블록 첫머리의 언어 제목은 뺀다. 항상 첫 h2 이고,
+    // 목차 맨 위에 "English" 가 얹히는 꼴이 된다. h3 만 쓰는 페이지는 영향 없다.
+    var headings = Array.prototype.slice.call(visible.querySelectorAll('h2[id], h3[id]'));
+    if (headings.length && headings[0].tagName === 'H2') headings.shift();
 
     list.textContent = '';
     if (spy) { spy.disconnect(); spy = null; }
@@ -187,6 +195,7 @@
       a.href = '#' + h.id;
       a.textContent = h.textContent;
       a.dataset.target = h.id;
+      a.className = h.tagName === 'H2' ? 'lvl-2' : 'lvl-3';
       li.appendChild(a);
       list.appendChild(li);
     });

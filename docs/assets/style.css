@@ -166,6 +166,11 @@ body {
   border-radius: 4px;
 }
 
+/* Two levels: h2 sections, h3 beneath them.
+   두 단계: h2 섹션과 그 아래 h3. */
+.side-toc a.lvl-2 { font-weight: 600; color: var(--fg); }
+.side-toc a.lvl-3 { padding-left: 18px; }
+
 .side-toc a:hover { color: var(--fg); background: var(--bg-soft); }
 .side-toc a.active { color: var(--accent); background: var(--accent-soft); }
 

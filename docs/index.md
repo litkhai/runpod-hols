@@ -24,7 +24,7 @@ A GPU cloud that rents you accelerators by the second or the minute, without a r
 
 Around those sit a Hub of prebuilt workers, Network Volumes for shared storage, and a Python SDK that both runs inside your worker and drives the platform from outside.
 
-New to the platform? [Welcome to Runpod](https://docs.runpod.io/overview) and [Concepts](https://docs.runpod.io/get-started/concepts) are the two pages worth reading before starting, and [Product overview](https://docs.runpod.io/get-started/products) helps if you are unsure which of the three you want. More at [Recommended reading]({{ '/about/#recommended-reading' | relative_url }}).
+New to the platform? [Welcome to Runpod](https://docs.runpod.io/overview) and [Concepts](https://docs.runpod.io/get-started/concepts) are the two pages worth reading before starting, and [Product overview](https://docs.runpod.io/get-started/products) helps if you are unsure which of the three you want. A wider list — GPU, training, inference and deployment background — is under [Readings]({{ '/readings/' | relative_url }}).
 
 <div class="cards" markdown="0">
   <div class="card">
@@ -107,7 +107,7 @@ AI/ML 워크로드를 위한 GPU 클라우드 [Runpod](https://runpod.io) 의 �
 
 그 주변에 미리 만들어진 워커를 모아둔 Hub, 공유 스토리지인 Network Volume, 그리고 워커 안에서도 돌고 밖에서 플랫폼을 조종하기도 하는 Python SDK 가 있습니다.
 
-플랫폼이 처음이라면 [Welcome to Runpod](https://docs.runpod.io/overview) 과 [Concepts](https://docs.runpod.io/get-started/concepts) 두 페이지를 먼저 읽을 만하고, 셋 중 무엇을 쓸지 모르겠다면 [Product overview](https://docs.runpod.io/get-started/products) 가 도움이 됩니다. 더 많은 목록은 [추천 읽을거리]({{ '/about/#recommended-reading-ko' | relative_url }}) 에 있습니다.
+플랫폼이 처음이라면 [Welcome to Runpod](https://docs.runpod.io/overview) 과 [Concepts](https://docs.runpod.io/get-started/concepts) 두 페이지를 먼저 읽을 만하고, 셋 중 무엇을 쓸지 모르겠다면 [Product overview](https://docs.runpod.io/get-started/products) 가 도움이 됩니다. GPU·학습·추론·배포 배경까지 포함한 더 넓은 목록은 [Readings]({{ '/readings/' | relative_url }}) 에 있습니다.
 
 <div class="cards" markdown="0">
   <div class="card">
