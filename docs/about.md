@@ -61,6 +61,12 @@ docker run --rm -v "$PWD/docs":/site -w /site -p 4000:4000 ruby:3.3 \
   bash -c "gem install jekyll -N && jekyll serve --host 0.0.0.0"
 ```
 
+### License
+
+[MIT](https://github.com/litkhai/runpod-hols/blob/main/LICENSE). Take anything here and use it.
+
+`serverless/01-hello-worker` derives from `runpod-workers/worker-template`, which is MIT licensed, and the LICENSE file carries its copyright notice as MIT requires. The Python SDK, container images and Terraform provider this repo builds on are MIT as well.
+
 ### Not affiliated with Runpod
 
 An independent learning exercise. Nothing here is reviewed or endorsed by Runpod. Where it disagrees with the official documentation, the disagreement is recorded with the evidence — but the official docs remain the authority.
@@ -121,6 +127,12 @@ Ruby 설치 없이 로컬에서 미리 보려면:
 docker run --rm -v "$PWD/docs":/site -w /site -p 4000:4000 ruby:3.3 \
   bash -c "gem install jekyll -N && jekyll serve --host 0.0.0.0"
 ```
+
+### 라이선스
+
+[MIT](https://github.com/litkhai/runpod-hols/blob/main/LICENSE). 여기 있는 것은 무엇이든 가져다 쓰셔도 됩니다.
+
+`serverless/01-hello-worker` 는 MIT 라이선스인 `runpod-workers/worker-template` 에서 파생됐으며, MIT 가 요구하는 대로 LICENSE 파일에 원본 저작권 표시를 포함했습니다. 이 저장소가 기반으로 삼는 Python SDK, 컨테이너 이미지, Terraform 프로바이더도 모두 MIT 입니다.
 
 ### Runpod 과 무관합니다
 

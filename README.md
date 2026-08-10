@@ -140,6 +140,14 @@ cd serverless/01-hello-worker
 
 Follow [serverless/01-hello-worker/README.md](./serverless/01-hello-worker/README.md).
 
+### 📄 License
+
+[MIT](./LICENSE). Take anything here and use it.
+
+`serverless/01-hello-worker` derives from [`runpod-workers/worker-template`](https://github.com/runpod-workers/worker-template), which is MIT licensed, and the LICENSE file carries its copyright notice as MIT requires. The other Runpod projects this repo builds on — the Python SDK, the container images and the Terraform provider — are MIT too.
+
+Not affiliated with, reviewed by, or endorsed by Runpod.
+
 ### 🙏 Acknowledgements
 
 These labs grew out of an opportunity provided by **Kenny Lee** ([kenny.lee@runpod.io](mailto:kenny.lee@runpod.io)) and a technical introduction from **Hailong Yang**, both at Runpod. Special thanks to them.
@@ -280,6 +288,14 @@ cd serverless/01-hello-worker
 ```
 
 [serverless/01-hello-worker/README.md](./serverless/01-hello-worker/README.md) 를 따라가세요.
+
+### 📄 라이선스
+
+[MIT](./LICENSE). 여기 있는 것은 무엇이든 가져다 쓰셔도 됩니다.
+
+`serverless/01-hello-worker` 는 MIT 라이선스인 [`runpod-workers/worker-template`](https://github.com/runpod-workers/worker-template) 에서 파생됐으며, MIT 가 요구하는 대로 LICENSE 파일에 원본 저작권 표시를 포함했습니다. 이 저장소가 기반으로 삼는 다른 Runpod 프로젝트들 — Python SDK, 컨테이너 이미지, Terraform 프로바이더 — 도 모두 MIT 입니다.
+
+Runpod 과 제휴 관계가 없으며, Runpod 의 검토나 승인을 받지 않았습니다.
 
 ### 🙏 감사의 말
 
