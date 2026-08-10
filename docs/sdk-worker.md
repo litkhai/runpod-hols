@@ -50,10 +50,6 @@ def check_weights_present():
 **This is the answer to the 20 MB return limit** — upload the payload and return its URL. Credentials come from `BUCKET_ENDPOINT_URL`, `BUCKET_ACCESS_KEY_ID` and `BUCKET_SECRET_ACCESS_KEY`. With those unset the SDK writes locally instead: convenient in development, silently useless in production.
 </div>
 
-### Internals
-
-`rp_ping` heartbeats to Runpod with the jobs in flight. `worker_state` tracks those jobs and reads the `RUNPOD_*` variables — including `RUNPOD_POD_ID`, which the labs surface as `worker_id`. `rp_scale` runs the fetch loop that `concurrency_modifier` tunes. `rp_http` is the worker's own path back to Runpod, and notably does **not** carry the agent-detecting User-Agent that client calls do.
-
 ### The contract
 
 ```python
@@ -177,10 +173,6 @@ def check_weights_present():
 <div class="note" markdown="1">
 **20MB 반환 제한에 대한 답이 이것입니다** — 결과물을 업로드하고 URL 을 반환하세요. 자격 증명은 `BUCKET_ENDPOINT_URL`, `BUCKET_ACCESS_KEY_ID`, `BUCKET_SECRET_ACCESS_KEY` 에서 옵니다. 이 값들이 없으면 SDK 가 로컬에 씁니다. 개발에는 편하지만 프로덕션에서는 조용히 무용지물입니다.
 </div>
-
-### 내부 동작
-
-`rp_ping` 은 진행 중인 작업 정보를 실어 Runpod 에 하트비트를 보냅니다. `worker_state` 는 그 작업들을 추적하고 `RUNPOD_*` 변수를 읽습니다. 실습이 `worker_id` 로 노출하는 `RUNPOD_POD_ID` 도 여기서 옵니다. `rp_scale` 은 `concurrency_modifier` 가 조정하는 가져오기 루프를 돌립니다. `rp_http` 는 워커가 Runpod 으로 되돌아가는 자체 경로인데, 클라이언트 호출과 달리 에이전트를 감지하는 User-Agent 를 **싣지 않습니다.**
 
 ### 계약
 

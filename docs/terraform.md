@@ -109,10 +109,6 @@ terraform destroy    # when finished
 Not a hypothetical concern: the official Runpod provider repo has `examples/pytorch/terraform.tfstate` committed. Do not copy that habit.
 </div>
 
-### Honest assessment
-
-The provider works for the core cases, but it is young — 9 releases, roughly 2,000 downloads, no generated registry documentation, examples that do not match the pinned version, and a latest release that does not load. Pin exactly, read `terraform plan` carefully, and expect to consult the Go source when an attribute behaves oddly. For production use today the console or SDK is safer; this track is about understanding the IaC model.
-
 [Full track in the repo →](https://github.com/litkhai/runpod-hols/tree/main/terraform)
 
 </div>
@@ -219,10 +215,6 @@ terraform destroy    # 끝나면
 <div class="warn" markdown="1">
 가상의 우려가 아닙니다. Runpod 공식 프로바이더 레포에는 `examples/pytorch/terraform.tfstate` 가 커밋돼 있습니다. 이 습관은 따라하지 마세요.
 </div>
-
-### 솔직한 평가
-
-핵심 기능은 동작하지만 아직 초기 단계입니다. 릴리스 9개, 다운로드 약 2,000회, 레지스트리 생성 문서 없음, 고정 버전과 맞지 않는 예제, 로드조차 되지 않는 최신 릴리스. 버전을 정확히 고정하고, `terraform plan` 을 꼼꼼히 읽고, 속성이 이상하게 동작하면 Go 소스를 직접 확인할 각오가 필요합니다. 현시점에서 프로덕션 용도로는 콘솔이나 SDK 가 더 안전하며, 이 트랙의 목적은 IaC 모델을 이해하는 데 있습니다.
 
 [저장소에서 전체 트랙 보기 →](https://github.com/litkhai/runpod-hols/tree/main/terraform)
 

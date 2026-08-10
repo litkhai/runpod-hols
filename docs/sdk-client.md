@@ -10,14 +10,9 @@ permalink: /sdk/client/
 
 ## English
 
-Read out of the installed SDK source (`runpod` 1.11.0) and exercised against a live endpoint. Outputs shown are real.
+The half of the SDK that runs **on your own machine**. The other half is [Worker SDK]({{ '/sdk/worker/' | relative_url }}).
 
-### Two halves that never meet
-
-| Half | Runs | Documented in |
-|---|---|---|
-| **Worker runtime** | Inside the container, to *be* an endpoint | [Worker SDK]({{ '/sdk/worker/' | relative_url }}) |
-| **Client API** | On your machine, to *call and manage* Runpod | This page |
+Read out of the installed source (`runpod` 1.11.0) and exercised against a live endpoint. Outputs shown are real.
 
 ### Authentication
 
@@ -131,14 +126,9 @@ runpod config    runpod pod    runpod exec    runpod ssh    runpod project
 
 ## 한국어
 
-설치된 SDK 소스(`runpod` 1.11.0)를 읽고 실제 엔드포인트에 실행해 확인했습니다. 아래 출력은 실제 결과입니다.
+SDK 중 **내 컴퓨터에서 도는** 절반입니다. 나머지 절반은 [Worker SDK]({{ '/sdk/worker/' | relative_url }}) 에 있습니다.
 
-### 서로 만나지 않는 두 부분
-
-| 구분 | 실행 위치 | 문서 |
-|---|---|---|
-| **워커 런타임** | 컨테이너 안. 엔드포인트가 *되기* 위해 | [Worker SDK]({{ '/sdk/worker/' | relative_url }}) |
-| **클라이언트 API** | 내 컴퓨터. Runpod 을 *호출하고 관리*하기 위해 | 이 페이지 |
+설치된 소스(`runpod` 1.11.0)를 읽고 실제 엔드포인트에 실행해 확인했습니다. 아래 출력은 실제 결과입니다.
 
 ### 인증
 

@@ -122,23 +122,6 @@ Lab 01 deployed from GitHub, CPU workers, `workers_min = 0`:
 **`/runsync` can return `IN_PROGRESS`.** It is not guaranteed to return `COMPLETED` with an `output`; be ready to poll `/status/{id}`.
 </div>
 
-### Review of the official template
-
-Lab 01 is based on [`runpod-workers/worker-template`](https://github.com/runpod-workers/worker-template). It is a sound scaffold, but six things were changed:
-
-| Item | Upstream | Here | Why |
-|---|---|---|---|
-| SDK version | `runpod~=1.7.9` | `runpod~=1.11.0` | 1.7.9 is well behind current |
-| Base image | `runpod/base:0.6.3-cuda11.8.0` | `python:3.11-slim` | No GPU work in hello-world. Slim builds to **106MB in ~3s** vs multiple GB. The official Get Started guide also uses slim |
-| Handler return | `str` | `dict` | Returns `worker_id` so cold starts and scale-out are observable |
-| Copy instruction | `ADD handler.py .` | `COPY handler.py .` | `ADD` has URL and archive side effects |
-| `hub.json` `runsOn` | `GPU` | `CPU` | No GPU needed |
-| `tests.json` | 1 test | 2 tests | Added an empty-input case for the default path |
-
-<div class="note" markdown="1">
-**Upstream documentation bug.** The template README says *"It copies your `src` directory into the image."* There is no `src/` directory — the Dockerfile does `ADD handler.py .`. Ignore that line.
-</div>
-
 [Full lab in the repo →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
 </div>
@@ -257,23 +240,6 @@ GitHub 연동으로 배포한 Lab 01, CPU 워커, `workers_min = 0` 기준입니
 **`{"input": {}}` 는 응답이 오지 않습니다.** 빈 입력 객체는 90초 동안 0바이트 응답에 `retries: 1` 이 붙은 채 멈췄고, 재현됩니다. 핸들러 버그가 아닙니다. `{"input": {"other": 1}}` 은 완전히 같은 기본값 경로를 타면서 즉시 응답합니다. 키를 최소 하나는 보내세요.
 
 **`/runsync` 가 `IN_PROGRESS` 를 반환할 수 있습니다.** 항상 `output` 이 담긴 `COMPLETED` 가 오는 것은 아니므로 `/status/{id}` 폴링을 대비하세요.
-</div>
-
-### 공식 템플릿 검토
-
-Lab 01 은 [`runpod-workers/worker-template`](https://github.com/runpod-workers/worker-template) 를 기반으로 합니다. 스캐폴드 자체는 견실하지만 여섯 가지를 변경했습니다.
-
-| 항목 | 원본 | 이 저장소 | 이유 |
-|---|---|---|---|
-| SDK 버전 | `runpod~=1.7.9` | `runpod~=1.11.0` | 1.7.9 는 현재 릴리스보다 상당히 뒤처짐 |
-| 베이스 이미지 | `runpod/base:0.6.3-cuda11.8.0` | `python:3.11-slim` | hello-world 는 GPU 연산이 없음. slim 은 **106MB, 약 3초**에 빌드되는 반면 원본은 수 GB. 공식 Get Started 가이드도 slim 사용 |
-| handler 반환값 | `str` | `dict` | `worker_id` 를 반환해 콜드 스타트와 스케일아웃을 관찰 가능하게 함 |
-| 복사 명령 | `ADD handler.py .` | `COPY handler.py .` | `ADD` 는 URL·압축 해제 부수효과가 있음 |
-| `hub.json` 의 `runsOn` | `GPU` | `CPU` | GPU 가 필요 없음 |
-| `tests.json` | 테스트 1개 | 테스트 2개 | 빈 입력 케이스를 추가해 기본값 경로 검증 |
-
-<div class="note" markdown="1">
-**원본 문서 오류.** 템플릿 README 에 *"It copies your `src` directory into the image"* 라고 적혀 있지만 `src/` 디렉토리는 없고 Dockerfile 은 `ADD handler.py .` 를 수행합니다. 해당 문장은 무시하세요.
 </div>
 
 [저장소에서 전체 실습 보기 →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
