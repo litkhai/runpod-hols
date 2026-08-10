@@ -24,6 +24,7 @@ python setup/verify-auth.py     # 3. does the key actually work?
 | `init-env.sh` | Prompts for secrets and writes `.env`. Input is hidden, so the key never reaches your screen or shell history |
 | `verify-auth.py` | Read-only API calls proving the key works: `get_user`, `get_gpus`, `get_pods`. Creates nothing, costs nothing |
 | `mcp.md` | Connecting Runpod to Claude Code and other agents via the official MCP server |
+| `sdk-reference.md` | The client half of the Python SDK: calling endpoints, managing Pods, the bundled CLI |
 
 ### 1. API Key
 
@@ -87,7 +88,7 @@ uv pip install --python .venv/bin/python runpod
 |---|---|---|
 | Python 3.10+ | all | `uv venv --python 3.11` (macOS system Python is 3.9 — too old) |
 | Docker | `serverless/` | https://docs.docker.com/get-docker/ |
-| Terraform | `terraform/` | `brew install terraform` |
+| Terraform 1.6+ | `terraform/` | `brew install hashicorp/tap/terraform` — the core formula is frozen at 1.5.7, which cannot install the Runpod provider |
 | `runpodctl` | `pod/` (optional) | `brew install runpod/runpodctl/runpodctl` |
 | Node 18+ | MCP server (optional) | `brew install node` |
 
@@ -99,8 +100,8 @@ Before the first lab that creates anything, set a spending limit in the console.
 
 | Path | Best for | Notes |
 |---|---|---|
-| [Python SDK](https://github.com/runpod/runpod-python) | Scripts, the worker runtime itself | `pip install runpod`, requires 3.10+ |
-| [`runpodctl`](https://github.com/runpod/runpodctl) | Quick CLI operations, file transfer | Go binary, Homebrew tap |
+| [Python SDK](https://github.com/runpod/runpod-python) | Scripts, and the worker runtime itself | `pip install runpod`, requires 3.10+. See [sdk-reference.md](./sdk-reference.md) |
+| [`runpodctl`](https://github.com/runpod/runpodctl) | Quick CLI operations, file transfer | Go binary, Homebrew tap. Not the same as the `runpod` CLI the SDK installs |
 | [Terraform provider](https://registry.terraform.io/providers/runpod/runpod) | Reproducible infrastructure | See [`terraform/`](../terraform) |
 | [MCP server](https://github.com/runpod/runpod-mcp) | Driving Runpod from Claude Code / Cursor | See [`mcp.md`](./mcp.md) |
 | [REST / GraphQL API](https://docs.runpod.io/api-reference) | Anything else | What the SDK wraps |
@@ -127,6 +128,7 @@ python setup/verify-auth.py     # 3. 키가 실제로 동작하는가
 | `init-env.sh` | 비밀값을 입력받아 `.env` 를 생성. 입력이 화면에 표시되지 않아 키가 화면에도 셸 히스토리에도 남지 않음 |
 | `verify-auth.py` | 키 동작을 확인하는 읽기 전용 호출: `get_user`, `get_gpus`, `get_pods`. 생성하는 것이 없어 과금되지 않음 |
 | `mcp.md` | 공식 MCP 서버로 Runpod 을 Claude Code 등 에이전트에 연결하는 방법 |
+| `sdk-reference.md` | Python SDK 의 클라이언트 절반: 엔드포인트 호출, Pod 관리, 함께 설치되는 CLI |
 
 ### 1. API 키
 
@@ -190,7 +192,7 @@ uv pip install --python .venv/bin/python runpod
 |---|---|---|
 | Python 3.10+ | 전체 | `uv venv --python 3.11` (macOS 기본 Python 은 3.9 라 부족) |
 | Docker | `serverless/` | https://docs.docker.com/get-docker/ |
-| Terraform | `terraform/` | `brew install terraform` |
+| Terraform 1.6+ | `terraform/` | `brew install hashicorp/tap/terraform` — core 포뮬러는 1.5.7 에 멈춰 있어 Runpod 프로바이더를 설치할 수 없음 |
 | `runpodctl` | `pod/` (선택) | `brew install runpod/runpodctl/runpodctl` |
 | Node 18+ | MCP 서버 (선택) | `brew install node` |
 
@@ -202,8 +204,8 @@ uv pip install --python .venv/bin/python runpod
 
 | 경로 | 적합한 용도 | 비고 |
 |---|---|---|
-| [Python SDK](https://github.com/runpod/runpod-python) | 스크립트, 워커 런타임 자체 | `pip install runpod`, 3.10 이상 필요 |
-| [`runpodctl`](https://github.com/runpod/runpodctl) | 간단한 CLI 작업, 파일 전송 | Go 바이너리, Homebrew tap |
+| [Python SDK](https://github.com/runpod/runpod-python) | 스크립트, 그리고 워커 런타임 자체 | `pip install runpod`, 3.10 이상 필요. [sdk-reference.md](./sdk-reference.md) 참조 |
+| [`runpodctl`](https://github.com/runpod/runpodctl) | 간단한 CLI 작업, 파일 전송 | Go 바이너리, Homebrew tap. SDK 가 설치하는 `runpod` CLI 와 다른 도구 |
 | [Terraform provider](https://registry.terraform.io/providers/runpod/runpod) | 재현 가능한 인프라 | [`terraform/`](../terraform) 참조 |
 | [MCP 서버](https://github.com/runpod/runpod-mcp) | Claude Code / Cursor 에서 Runpod 조작 | [`mcp.md`](./mcp.md) 참조 |
 | [REST / GraphQL API](https://docs.runpod.io/api-reference) | 그 외 전부 | SDK 가 감싸고 있는 대상 |
