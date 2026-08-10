@@ -14,6 +14,18 @@ Practical labs for [Runpod](https://runpod.io), the GPU cloud for AI/ML workload
 
 Everything here was verified by actually running it — the outputs, image sizes and error messages in these docs are real, not transcribed from vendor documentation.
 
+### What Runpod is
+
+A GPU cloud that rents you accelerators by the second or the minute, without a reservation or a quota request. You reach it three ways, and picking the right one is most of the decision:
+
+- **Serverless** — you supply a container with a `handler` function; Runpod runs it as an HTTP endpoint, starting workers on demand and billing only while they execute. For inference.
+- **Pods** — you rent a GPU container and keep it, with SSH, JupyterLab and a persistent `/workspace`. Billed the whole time it runs. For development and fine-tuning.
+- **Instant Clusters** — 2–8 multi-GPU nodes wired together for distributed training.
+
+Around those sit a Hub of prebuilt workers, Network Volumes for shared storage, and a Python SDK that both runs inside your worker and drives the platform from outside.
+
+New to the platform? [Welcome to Runpod](https://docs.runpod.io/overview) and [Concepts](https://docs.runpod.io/get-started/concepts) are the two pages worth reading before starting, and [Product overview](https://docs.runpod.io/get-started/products) helps if you are unsure which of the three you want. More at [Recommended reading]({{ '/about/#recommended-reading' | relative_url }}).
+
 <div class="cards" markdown="0">
   <div class="card">
     <h3><a href="{{ '/setup/' | relative_url }}">Setup</a></h3>
@@ -84,6 +96,18 @@ cd runpod-hols
 AI/ML 워크로드를 위한 GPU 클라우드 [Runpod](https://runpod.io) 의 실습 자료입니다. Runpod 의 컴퓨트 제품별로 트랙을 나누고, 같은 작업을 코드로 하는 Terraform 트랙을 더했습니다.
 
 여기 있는 내용은 전부 실제로 실행해서 확인한 것입니다. 문서에 나오는 출력, 이미지 크기, 오류 메시지는 벤더 문서를 옮긴 것이 아니라 직접 얻은 결과입니다.
+
+### Runpod 이란
+
+예약이나 쿼터 신청 없이 초 단위·분 단위로 GPU 를 빌려 쓰는 클라우드입니다. 접근 방식이 세 가지이고, 어느 것을 고르느냐가 사실상 결정의 대부분입니다.
+
+- **Serverless** — `handler` 함수를 담은 컨테이너를 올리면 Runpod 이 HTTP 엔드포인트로 실행합니다. 요청이 오면 워커를 띄우고, 실행되는 동안만 과금합니다. 추론용.
+- **Pods** — GPU 컨테이너를 빌려 계속 점유합니다. SSH, JupyterLab, 유지되는 `/workspace` 를 쓸 수 있고, 켜져 있는 내내 과금됩니다. 개발과 파인튜닝용.
+- **Instant Clusters** — 분산 학습을 위해 2~8개의 멀티 GPU 노드를 묶은 구성.
+
+그 주변에 미리 만들어진 워커를 모아둔 Hub, 공유 스토리지인 Network Volume, 그리고 워커 안에서도 돌고 밖에서 플랫폼을 조종하기도 하는 Python SDK 가 있습니다.
+
+플랫폼이 처음이라면 [Welcome to Runpod](https://docs.runpod.io/overview) 과 [Concepts](https://docs.runpod.io/get-started/concepts) 두 페이지를 먼저 읽을 만하고, 셋 중 무엇을 쓸지 모르겠다면 [Product overview](https://docs.runpod.io/get-started/products) 가 도움이 됩니다. 더 많은 목록은 [추천 읽을거리]({{ '/about/#recommended-reading-ko' | relative_url }}) 에 있습니다.
 
 <div class="cards" markdown="0">
   <div class="card">
