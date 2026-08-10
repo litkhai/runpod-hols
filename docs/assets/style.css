@@ -122,8 +122,8 @@ body {
   .sidebar {
     display: block;
     position: sticky;
-    top: 108px;              /* clears the sticky header and the nav row */
-    max-height: calc(100vh - 130px);
+    top: calc(var(--topbar-h, 100px) + 20px);
+    max-height: calc(100vh - var(--topbar-h, 100px) - 40px);
     overflow-y: auto;
     padding: 32px 0 40px;
     font-size: 14px;
@@ -169,18 +169,27 @@ body {
 .side-toc a:hover { color: var(--fg); background: var(--bg-soft); }
 .side-toc a.active { color: var(--accent); background: var(--accent-soft); }
 
-/* Anchor jumps must clear the sticky header.
-   앵커 이동 시 고정 헤더에 가려지지 않도록. */
-h2[id], h3[id] { scroll-margin-top: 72px; }
+/* Anchor jumps must clear the pinned bar.
+   앵커 이동 시 고정된 상단 바에 가려지지 않도록. */
+h2[id], h3[id] { scroll-margin-top: calc(var(--topbar-h, 100px) + 16px); }
 
 /* --- Header --------------------------------------------------------- */
+
+/* Header + nav pinned together, so the menu stays reachable while reading.
+   Its measured height is published as --topbar-h by script, and anything that
+   needs to clear it reads that variable rather than guessing.
+   헤더와 네비게이션을 함께 고정해 읽는 동안에도 메뉴에 접근할 수 있게 한다.
+   실제 높이는 스크립트가 --topbar-h 로 노출하고, 이를 피해야 하는 요소들은
+   값을 추측하지 않고 그 변수를 읽는다. */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
 
 .site-header {
   border-bottom: 1px solid var(--border);
   background: var(--bg-soft);
-  position: sticky;
-  top: 0;
-  z-index: 10;
 }
 
 .header-inner {
@@ -242,7 +251,10 @@ h2[id], h3[id] { scroll-margin-top: 72px; }
 
 /* --- Nav ------------------------------------------------------------ */
 
-.site-nav { border-bottom: 1px solid var(--border); background: var(--bg); }
+.site-nav {
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
 
 .nav-inner {
   display: flex;
