@@ -1,8 +1,12 @@
-# Python SDK Reference — Driving Runpod from Code
+# Client SDK — Code That Runs on Your Machine
 
 [English](#english) | [한국어](#한국어)
 
+> The half of the SDK that runs **on your own machine**, calling and managing Runpod. The other half — the worker runtime, including the handler contract — is in [worker.md](./worker.md).
+>
 > Read out of the installed SDK source (`runpod` 1.11.0) and exercised against a live endpoint. Outputs shown are real.
+>
+> SDK 중 **내 컴퓨터에서 도는** 절반으로, Runpod 을 호출하고 관리합니다. 나머지 절반인 워커 런타임(핸들러 계약 포함)은 [worker.md](./worker.md) 에 있습니다.
 >
 > 설치된 SDK 소스(`runpod` 1.11.0)를 읽고 실제 엔드포인트에 실행해 확인했습니다. 아래 출력은 실제 결과입니다.
 
@@ -14,7 +18,7 @@
 
 | Half | You use it | Covered in |
 |---|---|---|
-| **Worker runtime** | Inside the container, to *be* an endpoint | [handler-reference.md](../serverless/handler-reference.md) |
+| **Worker runtime** | Inside the container, to *be* an endpoint | [worker.md](./worker.md) |
 | **Client API** | Outside, to *call and manage* Runpod | This document |
 
 They share a package but never meet: `runpod.serverless.start()` runs in the worker, everything below runs on your machine.
@@ -116,9 +120,29 @@ runpod.get_pods()          # everything currently costing you money
 runpod.terminate_pod(pod_id)
 ```
 
-`get_pods()` is the cheapest habit worth having — [`verify-auth.py`](./verify-auth.py) calls it precisely to surface Pods you forgot to stop.
+`get_pods()` is the cheapest habit worth having — [`verify-auth.py`](../setup/verify-auth.py) calls it precisely to surface Pods you forgot to stop.
 
 These wrap Runpod's GraphQL API, so responses come back shaped by GraphQL rather than by REST.
+
+### The SDK reports which AI agent is driving it
+
+Every client call carries a User-Agent, and the SDK inspects the environment to work out whether a coding agent is at the keyboard. Run from this repository, under Claude Code:
+
+```python
+>>> from runpod import agent, user_agent
+>>> agent.detect()
+'claude-code'
+>>> user_agent.USER_AGENT
+'RunPod-Python-SDK/1.11.0 (Darwin 25.6.0; arm64) Language/Python 3.11.14 (via claude-code)'
+```
+
+The trigger was `CLAUDECODE=1`. The registry covers 21 harnesses — Claude Code, Codex, Cursor, Gemini CLI, Copilot, Cline, Zed, Replit and more — and deliberately mirrors [Hugging Face's public agent-harnesses list](https://github.com/huggingface/huggingface.js/blob/main/packages/tasks/src/agent-harnesses.ts) so the same identifiers are used across tools. Any tool can also self-identify by setting `AI_AGENT`; the value is sanitised to `[A-Za-z0-9._-]` and capped at 64 characters so it cannot forge a header.
+
+Two details worth noticing. Order matters in the registry — `cowork` is checked before `claude-code`, and `cursor-cli` before `cursor`, because the broader signal can co-occur with the narrower one. And a bare `AGENT` variable is deliberately *not* honoured: it is too common in CI runners and shell setups, and would attribute traffic to noise.
+
+> **This is client-side only.** The worker's own HTTP path (`serverless/modules/rp_http.py`) does not use it, so traffic from inside a running worker is not tagged. It is the calls you make from your machine that are attributed.
+
+Nothing here is secret, but it is worth knowing that "an AI agent made this API call" is a fact Runpod collects.
 
 ### The bundled `runpod` CLI
 
@@ -153,7 +177,7 @@ runpod project   # new / start / deploy
 
 | 구분 | 사용하는 위치 | 문서 |
 |---|---|---|
-| **워커 런타임** | 컨테이너 안에서, 엔드포인트가 *되기* 위해 | [handler-reference.md](../serverless/handler-reference.md) |
+| **워커 런타임** | 컨테이너 안에서, 엔드포인트가 *되기* 위해 | [worker.md](./worker.md) |
 | **클라이언트 API** | 바깥에서, Runpod 을 *호출하고 관리*하기 위해 | 이 문서 |
 
 같은 패키지에 있지만 서로 만나지 않습니다. `runpod.serverless.start()` 는 워커에서 돌고, 아래 내용은 내 컴퓨터에서 돕니다.
@@ -255,9 +279,29 @@ runpod.get_pods()          # 지금 비용이 나가고 있는 모든 것
 runpod.terminate_pod(pod_id)
 ```
 
-`get_pods()` 는 습관으로 삼을 만합니다. [`verify-auth.py`](./verify-auth.py) 가 이 함수를 호출하는 이유도 끄는 것을 잊은 Pod 를 드러내기 위해서입니다.
+`get_pods()` 는 습관으로 삼을 만합니다. [`verify-auth.py`](../setup/verify-auth.py) 가 이 함수를 호출하는 이유도 끄는 것을 잊은 Pod 를 드러내기 위해서입니다.
 
 이들은 Runpod 의 GraphQL API 를 감싼 것이라, 응답이 REST 가 아니라 GraphQL 형태로 돌아옵니다.
+
+### SDK 는 자기를 구동하는 AI 에이전트를 보고합니다
+
+모든 클라이언트 호출에는 User-Agent 가 실리는데, SDK 가 환경을 검사해 코딩 에이전트가 키보드를 잡고 있는지 판별합니다. 이 저장소에서 Claude Code 로 실행한 결과입니다.
+
+```python
+>>> from runpod import agent, user_agent
+>>> agent.detect()
+'claude-code'
+>>> user_agent.USER_AGENT
+'RunPod-Python-SDK/1.11.0 (Darwin 25.6.0; arm64) Language/Python 3.11.14 (via claude-code)'
+```
+
+트리거는 `CLAUDECODE=1` 이었습니다. 레지스트리는 21개 하니스를 다룹니다 — Claude Code, Codex, Cursor, Gemini CLI, Copilot, Cline, Zed, Replit 등 — 그리고 도구 간 식별자를 통일하기 위해 [Hugging Face 의 공개 agent-harnesses 목록](https://github.com/huggingface/huggingface.js/blob/main/packages/tasks/src/agent-harnesses.ts)을 의도적으로 따릅니다. 어떤 도구든 `AI_AGENT` 를 설정해 스스로를 식별할 수도 있는데, 값은 `[A-Za-z0-9._-]` 로 정제되고 64자로 잘려서 헤더를 위조할 수 없습니다.
+
+눈여겨볼 점이 둘 있습니다. 레지스트리는 **순서가 중요**합니다. `cowork` 을 `claude-code` 보다, `cursor-cli` 를 `cursor` 보다 먼저 확인하는데, 넓은 신호가 좁은 신호와 함께 나타날 수 있기 때문입니다. 그리고 밋밋한 `AGENT` 변수는 **일부러 무시**합니다. CI 러너나 셸 설정에서 너무 흔해서, 트래픽이 엉뚱한 값으로 집계되기 때문입니다.
+
+> **클라이언트 쪽에만 적용됩니다.** 워커 자체의 HTTP 경로(`serverless/modules/rp_http.py`)는 이를 사용하지 않으므로, 실행 중인 워커 내부에서 나가는 트래픽에는 태그가 붙지 않습니다. 집계되는 것은 내 컴퓨터에서 하는 호출입니다.
+
+비밀스러운 내용은 아니지만, "AI 에이전트가 이 API 를 호출했다" 는 사실을 Runpod 이 수집한다는 점은 알아둘 만합니다.
 
 ### 함께 설치되는 `runpod` CLI
 

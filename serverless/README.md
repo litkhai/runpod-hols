@@ -34,7 +34,7 @@ Note that the handler must be written for it — `HF_HUB_OFFLINE` is read at imp
 
 **Handler** — a function taking a `job` dict and returning any JSON-serializable value. `job["input"]` holds the caller's payload. `runpod.serverless.start({"handler": handler})` hands control to the SDK, which polls the job queue and invokes your handler per job.
 
-Two return keys are **control signals, not data**: `error` marks the job FAILED, and `refresh_worker` recycles the worker afterwards. Full details, all verified against the SDK source and by running it — streaming generators, `concurrency_modifier`, `progress_update`, the input validator, the 20 MB return limit — are in **[handler-reference.md](./handler-reference.md)**.
+Two return keys are **control signals, not data**: `error` marks the job FAILED, and `refresh_worker` recycles the worker afterwards. Full details, all verified against the SDK source and by running it — streaming generators, `concurrency_modifier`, `progress_update`, the input validator, the 20 MB return limit — are in **[sdk/worker.md](../sdk/worker.md)**.
 
 **Cold start** — a request arriving with no warm worker must pull the image and start the container first. This is why model loading belongs at module scope, not inside the handler: module scope runs once per worker, the handler runs once per request.
 
@@ -143,7 +143,7 @@ Lab 02 의 진짜 주제입니다. 선택지는 셋이고, 보통 세 번째가 
 
 **Handler** — `job` 딕셔너리를 받아 JSON 직렬화 가능한 값을 반환하는 함수입니다. 호출자가 보낸 payload 는 `job["input"]` 에 들어옵니다. `runpod.serverless.start({"handler": handler})` 를 호출하면 SDK 가 제어권을 가져가 작업 큐를 폴링하면서 작업마다 handler 를 실행합니다.
 
-반환값의 키 두 개는 **데이터가 아니라 제어 신호**입니다. `error` 는 작업을 실패로 표시하고, `refresh_worker` 는 작업 후 워커를 재활용합니다. 스트리밍 제너레이터, `concurrency_modifier`, `progress_update`, 입력 검증기, 20MB 반환 제한까지 SDK 소스와 실행으로 확인한 전체 내용은 **[handler-reference.md](./handler-reference.md)** 에 있습니다.
+반환값의 키 두 개는 **데이터가 아니라 제어 신호**입니다. `error` 는 작업을 실패로 표시하고, `refresh_worker` 는 작업 후 워커를 재활용합니다. 스트리밍 제너레이터, `concurrency_modifier`, `progress_update`, 입력 검증기, 20MB 반환 제한까지 SDK 소스와 실행으로 확인한 전체 내용은 **[sdk/worker.md](../sdk/worker.md)** 에 있습니다.
 
 **콜드 스타트(Cold start)** — 워밍된 워커가 없는 상태에서 요청이 들어오면 이미지를 받고 컨테이너를 띄우는 시간이 먼저 필요합니다. 모델 로딩을 handler 안이 아니라 모듈 스코프에 둬야 하는 이유가 이것입니다. 모듈 스코프는 워커당 1회, handler 는 요청당 1회 실행됩니다.
 

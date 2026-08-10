@@ -1,16 +1,58 @@
 ---
 layout: default
-title: Handler
-permalink: /handler/
+title: Worker SDK
+permalink: /sdk/worker/
 ---
 
-# Handler Reference
+# Worker SDK
 
 <div class="lang" data-lang="en" markdown="1">
 
 ## English
 
-Read out of the installed SDK source (`runpod` 1.11.0) and confirmed by running each case. Where the behaviour is surprising, the observed output is shown.
+The half of the SDK that runs **inside your worker container**. The other half is [Client SDK]({{ '/sdk/client/' | relative_url }}).
+
+Read out of the installed source (`runpod` 1.11.0) and confirmed by running each case. Where behaviour is surprising, the observed output is shown.
+
+### Startup fitness checks
+
+Before your handler is ever called, the worker validates the machine it landed on. A failed check kills the process with `os._exit(1)` and the orchestrator routes the job elsewhere, rather than letting it fail slowly on bad hardware. At ~1,125 lines this is the largest part of the worker half, and it runs whether you ask for it or not.
+
+| Always | Only when a GPU is present |
+|---|---|
+| Memory, disk, network | CUDA version, CUDA init, compute benchmark, GPU health binary |
+
+Thresholds are environment variables, so you set them on the endpoint: `RUNPOD_MIN_MEMORY_GB` (4.0), `RUNPOD_MIN_DISK_PERCENT` (10.0), `RUNPOD_MIN_CUDA_VERSION` (11.8), and `RUNPOD_SKIP_GPU_CHECK` / `RUNPOD_SKIP_AUTO_SYSTEM_CHECKS` to turn groups off.
+
+Add your own with a decorator — sync or async, raise to fail:
+
+```python
+@runpod.serverless.register_fitness_check
+def check_weights_present():
+    if not os.path.exists("/runpod-volume/model.safetensors"):
+        raise RuntimeError("model weights missing")
+```
+
+<div class="warn" markdown="1">
+**Failure is `os._exit(1)`, not an exception** — no `finally`, no cleanup. Deliberate: a worker that cannot serve should vanish rather than linger and accept jobs.
+</div>
+
+### Handler utilities
+
+| Import | Use |
+|---|---|
+| `rp_validator.validate` | Types, defaults, constraint lambdas, rejects unknown keys |
+| `utils.download_files_from_urls` | Caller-supplied URLs to local files |
+| `utils.upload_file_to_bucket` / `upload_in_memory_object` | S3-compatible storage, returns a URL |
+| `rp_progress.progress_update` | Visible via `/status`, runs off-thread |
+
+<div class="note" markdown="1">
+**This is the answer to the 20 MB return limit** — upload the payload and return its URL. Credentials come from `BUCKET_ENDPOINT_URL`, `BUCKET_ACCESS_KEY_ID` and `BUCKET_SECRET_ACCESS_KEY`. With those unset the SDK writes locally instead: convenient in development, silently useless in production.
+</div>
+
+### Internals
+
+`rp_ping` heartbeats to Runpod with the jobs in flight. `worker_state` tracks those jobs and reads the `RUNPOD_*` variables — including `RUNPOD_POD_ID`, which the labs surface as `worker_id`. `rp_scale` runs the fetch loop that `concurrency_modifier` tunes. `rp_http` is the worker's own path back to Runpod, and notably does **not** carry the agent-detecting User-Agent that client calls do.
 
 ### The contract
 
@@ -90,7 +132,7 @@ Local `test_input.json` runs do **not** exercise streaming — the generator com
 | `--rp_log_level` | `ERROR`, `WARN`, `INFO`, `DEBUG` |
 | `--rp_debugger` | Attach the SDK debugger |
 
-[Full reference in the repo →](https://github.com/litkhai/runpod-hols/blob/main/serverless/handler-reference.md)
+[Full reference in the repo →](https://github.com/litkhai/runpod-hols/blob/main/sdk/worker.md)
 
 </div>
 
@@ -99,6 +141,46 @@ Local `test_input.json` runs do **not** exercise streaming — the generator com
 ## 한국어
 
 설치된 SDK 소스(`runpod` 1.11.0)를 직접 읽고 각 경우를 실행해 확인한 내용입니다. 동작이 직관과 다른 부분은 실제 출력을 함께 실었습니다.
+
+### 기동 시 fitness check
+
+핸들러가 호출되기 전에 워커가 자기가 배치된 머신을 검증합니다. 검사가 실패하면 `os._exit(1)` 로 프로세스를 종료하고 오케스트레이터가 작업을 다른 곳으로 보냅니다. 불량 하드웨어 위에서 천천히 실패하게 두지 않는 것입니다. 약 1,125줄로 워커 절반에서 가장 큰 부분이며, 요청하지 않아도 실행됩니다.
+
+| 항상 | GPU 가 있을 때만 |
+|---|---|
+| 메모리, 디스크, 네트워크 | CUDA 버전, CUDA 초기화, 연산 벤치마크, GPU 헬스 바이너리 |
+
+임계값은 환경변수라 엔드포인트에서 설정합니다. `RUNPOD_MIN_MEMORY_GB` (4.0), `RUNPOD_MIN_DISK_PERCENT` (10.0), `RUNPOD_MIN_CUDA_VERSION` (11.8), 그리고 그룹을 끄려면 `RUNPOD_SKIP_GPU_CHECK` / `RUNPOD_SKIP_AUTO_SYSTEM_CHECKS`.
+
+데코레이터로 직접 추가할 수 있습니다. 동기·비동기 모두 되고, 실패시키려면 예외를 던집니다.
+
+```python
+@runpod.serverless.register_fitness_check
+def check_weights_present():
+    if not os.path.exists("/runpod-volume/model.safetensors"):
+        raise RuntimeError("model weights missing")
+```
+
+<div class="warn" markdown="1">
+**실패는 예외가 아니라 `os._exit(1)` 입니다.** `finally` 도 정리 코드도 실행되지 않습니다. 의도된 동작입니다. 서비스할 수 없는 워커는 남아서 작업을 받는 대신 사라져야 합니다.
+</div>
+
+### Handler 유틸리티
+
+| import | 용도 |
+|---|---|
+| `rp_validator.validate` | 타입, 기본값, 제약 람다, 알 수 없는 키 거부 |
+| `utils.download_files_from_urls` | 호출자가 준 URL 을 로컬 파일로 |
+| `utils.upload_file_to_bucket` / `upload_in_memory_object` | S3 호환 스토리지, URL 반환 |
+| `rp_progress.progress_update` | `/status` 로 노출, 별도 스레드 실행 |
+
+<div class="note" markdown="1">
+**20MB 반환 제한에 대한 답이 이것입니다** — 결과물을 업로드하고 URL 을 반환하세요. 자격 증명은 `BUCKET_ENDPOINT_URL`, `BUCKET_ACCESS_KEY_ID`, `BUCKET_SECRET_ACCESS_KEY` 에서 옵니다. 이 값들이 없으면 SDK 가 로컬에 씁니다. 개발에는 편하지만 프로덕션에서는 조용히 무용지물입니다.
+</div>
+
+### 내부 동작
+
+`rp_ping` 은 진행 중인 작업 정보를 실어 Runpod 에 하트비트를 보냅니다. `worker_state` 는 그 작업들을 추적하고 `RUNPOD_*` 변수를 읽습니다. 실습이 `worker_id` 로 노출하는 `RUNPOD_POD_ID` 도 여기서 옵니다. `rp_scale` 은 `concurrency_modifier` 가 조정하는 가져오기 루프를 돌립니다. `rp_http` 는 워커가 Runpod 으로 되돌아가는 자체 경로인데, 클라이언트 호출과 달리 에이전트를 감지하는 User-Agent 를 **싣지 않습니다.**
 
 ### 계약
 
@@ -178,6 +260,6 @@ SDK 가 잡습니다. 워커는 살아남고 작업만 실패하며, `error_type
 | `--rp_log_level` | `ERROR`, `WARN`, `INFO`, `DEBUG` |
 | `--rp_debugger` | SDK 디버거 연결 |
 
-[저장소에서 전체 레퍼런스 보기 →](https://github.com/litkhai/runpod-hols/blob/main/serverless/handler-reference.md)
+[저장소에서 전체 레퍼런스 보기 →](https://github.com/litkhai/runpod-hols/blob/main/sdk/worker.md)
 
 </div>

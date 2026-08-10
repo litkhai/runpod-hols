@@ -1,10 +1,10 @@
 ---
 layout: default
-title: SDK
-permalink: /sdk/
+title: Client SDK
+permalink: /sdk/client/
 ---
 
-# Python SDK
+# Client SDK
 
 <div class="lang" data-lang="en" markdown="1">
 
@@ -16,7 +16,7 @@ Read out of the installed SDK source (`runpod` 1.11.0) and exercised against a l
 
 | Half | Runs | Documented in |
 |---|---|---|
-| **Worker runtime** | Inside the container, to *be* an endpoint | [Handler]({{ '/handler/' | relative_url }}) |
+| **Worker runtime** | Inside the container, to *be* an endpoint | [Worker SDK]({{ '/sdk/worker/' | relative_url }}) |
 | **Client API** | On your machine, to *call and manage* Runpod | This page |
 
 ### Authentication
@@ -95,6 +95,24 @@ is_completed(s) -> s in ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED"]
 
 `get_pods()` is the habit worth keeping — it lists everything currently costing money.
 
+### The SDK reports which AI agent is driving it
+
+Every client call carries a User-Agent, and the SDK inspects the environment to see whether a coding agent is at the keyboard. Run from this repository, under Claude Code:
+
+```python
+>>> from runpod import agent, user_agent
+>>> agent.detect()
+'claude-code'
+>>> user_agent.USER_AGENT
+'RunPod-Python-SDK/1.11.0 (Darwin 25.6.0; arm64) Language/Python 3.11.14 (via claude-code)'
+```
+
+`CLAUDECODE=1` was the trigger. The registry covers 21 harnesses — Claude Code, Codex, Cursor, Gemini CLI, Copilot, Cline, Zed, Replit and others — and mirrors [Hugging Face's public agent-harnesses list](https://github.com/huggingface/huggingface.js/blob/main/packages/tasks/src/agent-harnesses.ts) so identifiers match across tools. Any tool can self-identify with `AI_AGENT`; the value is sanitised and capped at 64 characters so it cannot forge a header. A bare `AGENT` is deliberately ignored — too common in CI to mean anything.
+
+<div class="note" markdown="1">
+**Client-side only.** The worker's own HTTP path does not use it, so traffic from inside a running worker is untagged. It is the calls from your machine that get attributed.
+</div>
+
 ### The bundled `runpod` CLI
 
 Installing the SDK also installs a `runpod` command. **This is not `runpodctl`**, which is a separate Go binary from a Homebrew tap.
@@ -105,7 +123,7 @@ runpod config    runpod pod    runpod exec    runpod ssh    runpod project
 
 `runpod project` is the least advertised and most interesting: `new` scaffolds a worker (`default` and `llama2` templates), `start` brings up a dev Pod from `runpod.toml`, `deploy` ships it. A hot-reload loop against real GPUs — a different workflow from the image-build cycle these labs use.
 
-[Full reference in the repo →](https://github.com/litkhai/runpod-hols/blob/main/setup/sdk-reference.md)
+[Full reference in the repo →](https://github.com/litkhai/runpod-hols/blob/main/sdk/client.md)
 
 </div>
 
@@ -119,7 +137,7 @@ runpod config    runpod pod    runpod exec    runpod ssh    runpod project
 
 | 구분 | 실행 위치 | 문서 |
 |---|---|---|
-| **워커 런타임** | 컨테이너 안. 엔드포인트가 *되기* 위해 | [Handler]({{ '/handler/' | relative_url }}) |
+| **워커 런타임** | 컨테이너 안. 엔드포인트가 *되기* 위해 | [Worker SDK]({{ '/sdk/worker/' | relative_url }}) |
 | **클라이언트 API** | 내 컴퓨터. Runpod 을 *호출하고 관리*하기 위해 | 이 페이지 |
 
 ### 인증
@@ -198,6 +216,24 @@ is_completed(s) -> s in ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED"]
 
 `get_pods()` 는 습관으로 삼을 만합니다. 지금 비용이 나가고 있는 모든 것을 나열해 줍니다.
 
+### SDK 는 자기를 구동하는 AI 에이전트를 보고합니다
+
+모든 클라이언트 호출에는 User-Agent 가 실리고, SDK 가 환경을 검사해 코딩 에이전트가 키보드를 잡고 있는지 확인합니다. 이 저장소에서 Claude Code 로 실행한 결과입니다.
+
+```python
+>>> from runpod import agent, user_agent
+>>> agent.detect()
+'claude-code'
+>>> user_agent.USER_AGENT
+'RunPod-Python-SDK/1.11.0 (Darwin 25.6.0; arm64) Language/Python 3.11.14 (via claude-code)'
+```
+
+트리거는 `CLAUDECODE=1` 이었습니다. 레지스트리는 21개 하니스를 다루며 — Claude Code, Codex, Cursor, Gemini CLI, Copilot, Cline, Zed, Replit 등 — 도구 간 식별자를 맞추기 위해 [Hugging Face 의 공개 agent-harnesses 목록](https://github.com/huggingface/huggingface.js/blob/main/packages/tasks/src/agent-harnesses.ts)을 따릅니다. 어떤 도구든 `AI_AGENT` 로 스스로를 식별할 수 있고, 값은 정제 후 64자로 잘려 헤더를 위조할 수 없습니다. 밋밋한 `AGENT` 는 일부러 무시합니다. CI 에서 너무 흔해 의미가 없기 때문입니다.
+
+<div class="note" markdown="1">
+**클라이언트 쪽에만 적용됩니다.** 워커 자체의 HTTP 경로는 이를 쓰지 않으므로 실행 중인 워커 내부 트래픽에는 태그가 붙지 않습니다. 집계되는 것은 내 컴퓨터에서 하는 호출입니다.
+</div>
+
 ### 함께 설치되는 `runpod` CLI
 
 SDK 를 설치하면 `runpod` 명령도 함께 설치됩니다. **`runpodctl` 과 다릅니다** — 그쪽은 Homebrew tap 으로 설치하는 별도의 Go 바이너리입니다.
@@ -208,6 +244,6 @@ runpod config    runpod pod    runpod exec    runpod ssh    runpod project
 
 `runpod project` 가 가장 덜 알려져 있으면서 흥미롭습니다. `new` 는 워커를 스캐폴딩하고(`default`, `llama2` 템플릿), `start` 는 `runpod.toml` 기반 개발용 Pod 를 띄우고, `deploy` 는 배포합니다. 실제 GPU 를 상대로 하는 핫 리로드 루프이며, 이 실습들의 이미지 빌드 주기와는 다른 워크플로입니다.
 
-[저장소에서 전체 레퍼런스 보기 →](https://github.com/litkhai/runpod-hols/blob/main/setup/sdk-reference.md)
+[저장소에서 전체 레퍼런스 보기 →](https://github.com/litkhai/runpod-hols/blob/main/sdk/client.md)
 
 </div>

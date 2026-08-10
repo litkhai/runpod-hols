@@ -52,8 +52,8 @@ nav:
   - { title: Terraform, url: /terraform/, group: iac }
 
   # Reference / 레퍼런스
-  - { title: SDK, url: /sdk/, group: reference }
-  - { title: Handler, url: /handler/, group: reference }
+  - { title: Worker SDK, url: /sdk/worker/, group: reference }
+  - { title: Client SDK, url: /sdk/client/, group: reference }
 
   # About the repository itself / 저장소 자체에 대한 설명
   - { title: About, url: /about/, group: about }
