@@ -55,6 +55,8 @@ nav:
   - { title: Worker SDK, url: /sdk/worker/, group: reference }
   - { title: Client SDK, url: /sdk/client/, group: reference }
 
-  # Further material and repo meta / 참고 자료와 저장소 설명
-  - { title: Readings, url: /readings/, group: about }
+  # Further material / 참고 자료
+  - { title: Readings, url: /readings/, group: readings }
+
+  # The repository itself — the only meta item / 저장소 자체. 유일한 메타 항목
   - { title: About, url: /about/, group: about }
