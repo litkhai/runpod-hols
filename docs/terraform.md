@@ -19,8 +19,6 @@ Everything the Serverless and Pod tracks do by hand in the console, done declara
 
 ### Read this first — two blocking issues
 
-Both were found by actually running `init` and `validate`, not by reading documentation.
-
 <div class="danger" markdown="1">
 **1. Terraform 1.5.x cannot install this provider.**
 
@@ -47,7 +45,7 @@ These labs pin **exactly** `= 1.0.8`. A range like `~> 1.0.8` would silently res
 
 ### The 1.0.8 vs 1.0.9 schema difference
 
-This matters because the provider's own examples target 1.0.9 and will not work on 1.0.8:
+The provider's own examples target 1.0.9 and will not work on 1.0.8:
 
 | | v1.0.8 (used here) | v1.0.9 (broken) |
 |---|---|---|
@@ -60,7 +58,7 @@ Also, the upstream `examples/network_volume/main.tf` sets `type = ...` on `runpo
 
 ### Verified against the live API
 
-Checked with a real key using read-only calls and `terraform plan`. Nothing was created, so nothing cost anything.
+Read-only calls and `terraform plan` against a real key. Nothing created, nothing billed.
 
 | Check | Result |
 |---|---|
@@ -126,8 +124,6 @@ Serverless 와 Pod 트랙에서 콘솔로 직접 하던 작업을 선언적으�
 
 ### 먼저 읽을 것 — 두 가지 차단 이슈
 
-둘 다 문서를 읽어서가 아니라 실제로 `init` 과 `validate` 를 돌려서 확인한 내용입니다.
-
 <div class="danger" markdown="1">
 **1. Terraform 1.5.x 에서는 이 프로바이더를 설치할 수 없습니다.**
 
@@ -154,7 +150,7 @@ AttributeName("workers"): must have Required, Optional, or Computed set..
 
 ### 1.0.8 과 1.0.9 의 스키마 차이
 
-프로바이더 공식 예제가 1.0.9 기준이라 1.0.8 에서는 동작하지 않으므로 알아둘 필요가 있습니다.
+프로바이더 공식 예제는 1.0.9 기준이라 1.0.8 에서는 동작하지 않습니다.
 
 | | v1.0.8 (여기서 사용) | v1.0.9 (깨짐) |
 |---|---|---|
@@ -167,7 +163,7 @@ AttributeName("workers"): must have Required, Optional, or Computed set..
 
 ### 실제 API 로 검증한 항목
 
-실제 키로 읽기 전용 호출과 `terraform plan` 만 사용해 확인했습니다. 생성한 것이 없으므로 비용도 없습니다.
+실제 키로 읽기 전용 호출과 `terraform plan` 만 실행했습니다. 생성한 것 없음, 과금 없음.
 
 | 확인 항목 | 결과 |
 |---|---|

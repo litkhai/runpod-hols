@@ -18,8 +18,6 @@ The aim is to understand the Runpod SDK and the AI infrastructure around it by r
 
 Command output, image sizes, latency figures and error messages are from a real account. Where something has **not** been run — `terraform apply`, the Pod track — the page says so.
 
-That matters because it is what makes the disagreements trustworthy:
-
 | Finding | Where it is documented |
 |---|---|
 | The console's **Build context** field is undocumented, and required for a nested Dockerfile | [Serverless]({{ '/serverless/' | relative_url }}) |
@@ -54,8 +52,6 @@ An independent learning exercise. Nothing here is reviewed or endorsed by Runpod
 ### 여기 있는 것은 전부 실행해본 것입니다
 
 명령 출력, 이미지 크기, 지연시간 수치, 오류 메시지는 실제 계정에서 얻었습니다. 아직 실행하지 **않은** 것 — `terraform apply`, Pod 트랙 — 은 그렇다고 명시합니다.
-
-공식 문서와 어긋나는 지점을 신뢰할 수 있게 만드는 것이 이 원칙입니다.
 
 | 발견 | 문서 위치 |
 |---|---|

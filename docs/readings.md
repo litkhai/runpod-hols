@@ -10,12 +10,8 @@ permalink: /readings/
 
 ## English
 
-Two different kinds of material, kept apart because you read them differently.
-
-**Runpod docs** you consult while doing something. **Background** you read before or between labs, to build the mental model the labs assume.
-
 <div class="note" markdown="1">
-Everything below is published by Runpod. The background articles are genuinely instructional — VRAM arithmetic, batching strategy, precision trade-offs — and mostly apply to any GPU provider. Competitor comparisons and "why teams choose us" pieces are excluded; they exist, and they are not on this list.
+All published by Runpod. Competitor comparisons and marketing pieces are excluded. The rest is largely provider-agnostic — VRAM arithmetic, batching, precision trade-offs.
 </div>
 
 ## Background — GPU, training, inference, deployment
@@ -62,8 +58,6 @@ Everything below is published by Runpod. The background articles are genuinely i
 
 ## Runpod documentation
 {: #runpod-docs }
-
-Pages from Runpod's own documentation worth the time, in roughly the order these labs touch them. Descriptions are Runpod's, trimmed.
 
 **Before you start**
 
@@ -119,12 +113,8 @@ Pages from Runpod's own documentation worth the time, in roughly the order these
 
 ## 한국어
 
-성격이 다른 두 종류를 분리해 두었습니다. 읽는 방식이 다르기 때문입니다.
-
-**Runpod 문서**는 작업하면서 찾아보는 것이고, **배경 자료**는 실습 전후로 읽어 실습이 전제하는 사고 틀을 만드는 것입니다.
-
 <div class="note" markdown="1">
-아래는 모두 Runpod 이 발행한 자료입니다. 배경 자료들은 실제로 교육적인 내용입니다 — VRAM 계산, 배칭 전략, 정밀도 트레이드오프 — 그리고 대부분 다른 GPU 제공사에도 적용됩니다. 경쟁사 비교나 "왜 우리를 선택하는가" 류의 글은 제외했습니다. 존재하지만 이 목록에는 없습니다.
+모두 Runpod 이 발행한 자료입니다. 경쟁사 비교와 마케팅성 글은 제외했습니다. 나머지는 대체로 제공사와 무관한 내용입니다 — VRAM 계산, 배칭, 정밀도 트레이드오프.
 </div>
 
 ## 배경 — GPU, 학습, 추론, 배포
@@ -171,8 +161,6 @@ Pages from Runpod's own documentation worth the time, in roughly the order these
 
 ## Runpod 공식 문서
 {: #runpod-docs-ko }
-
-Runpod 공식 문서 중 시간을 들일 만한 페이지들을, 이 실습들이 다루는 순서에 가깝게 정리했습니다. 설명은 Runpod 의 것을 다듬었습니다.
 
 **시작 전에**
 

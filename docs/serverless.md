@@ -22,7 +22,7 @@ Runpod Serverless runs your code as an autoscaling HTTP endpoint. Workers start 
 
 ### Where the model lives
 
-The subject of Lab 02, and the thing hello-world cannot teach. Three options:
+Three options:
 
 | Where | Cold start | Image size | Download billed? |
 |---|---|---|---|
@@ -102,7 +102,7 @@ This keeps each lab self-contained, matching Runpod's own repos — `runpod-work
 <div class="note" markdown="1">
 **Redeploy: docs and observation disagree.** The docs say changes "won't automatically be pushed to your endpoint" and that a **GitHub release** is required. In testing, two plain pushes each triggered a build — but only on an endpoint that had no successful build yet. Treat the release as the reliable trigger. Earlier builds can be rolled back from the Builds tab.
 
-Two console warnings are worth knowing: *"Could not find runpod.serverless.start() in your repo"* can be a false negative on a new repository, because the check relies on GitHub's code search index, which lags. The Dockerfile-found check is the one that actually gates deployment.
+*"Could not find runpod.serverless.start() in your repo"* can be a false negative on a new repository — the check relies on GitHub's code search index, which lags. Only the Dockerfile check gates deployment.
 </div>
 
 ### Measured on a live endpoint
@@ -142,7 +142,7 @@ Runpod Serverless 는 코드를 오토스케일 HTTP 엔드포인트로 실행�
 
 ### 모델은 어디에 두는가
 
-Lab 02 의 주제이자 hello-world 로는 가르칠 수 없는 부분입니다. 선택지는 셋입니다.
+선택지는 셋입니다.
 
 | 위치 | 콜드 스타트 | 이미지 크기 | 다운로드 과금 |
 |---|---|---|---|
@@ -222,7 +222,7 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 <div class="note" markdown="1">
 **재배포 — 문서와 실제가 다릅니다.** 문서는 변경사항이 "won't automatically be pushed to your endpoint" 이며 **GitHub 릴리스**가 필요하다고 합니다. 그런데 실제로는 일반 푸시 두 번이 각각 빌드를 트리거했습니다. 다만 성공한 빌드가 없던 엔드포인트에서만 확인된 동작입니다. 릴리스를 확실한 트리거로 보세요. 이전 빌드는 Builds 탭에서 롤백할 수 있습니다.
 
-콘솔 경고 두 가지를 알아두면 좋습니다. *"Could not find runpod.serverless.start() in your repo"* 는 새 저장소에서 오탐일 수 있습니다. 이 검사는 색인이 늦는 GitHub 코드 검색에 의존하기 때문입니다. 실제로 배포를 막는 것은 Dockerfile 검사 쪽입니다.
+*"Could not find runpod.serverless.start() in your repo"* 는 새 저장소에서 오탐일 수 있습니다. 색인이 늦는 GitHub 코드 검색에 의존하는 검사입니다. 배포를 막는 것은 Dockerfile 검사뿐입니다.
 </div>
 
 ### 실제 엔드포인트 실측

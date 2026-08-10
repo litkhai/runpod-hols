@@ -30,8 +30,6 @@ ep.run_sync({"name": "SDK"}, timeout=180)
 # {'greeting': 'Hello, SDK!', 'worker_id': 'rrlm8trcnfn5of'}
 ```
 
-Two conveniences worth knowing about:
-
 - **Input is auto-wrapped.** `{"name": "SDK"}` becomes `{"input": {"name": "SDK"}}`. Passing `{"input": {...}}` yourself also works.
 - **`run_sync` falls back to polling.** `/runsync` can return `IN_PROGRESS` rather than a finished job; the SDK notices and waits. Over raw HTTP you write that loop yourself.
 
@@ -145,8 +143,6 @@ ep = runpod.Endpoint("ku3jultxavac2v")
 ep.run_sync({"name": "SDK"}, timeout=180)
 # {'greeting': 'Hello, SDK!', 'worker_id': 'rrlm8trcnfn5of'}
 ```
-
-알아둘 편의 기능 두 가지입니다.
 
 - **입력이 자동으로 감싸집니다.** `{"name": "SDK"}` 가 `{"input": {"name": "SDK"}}` 로 바뀝니다. 직접 `{"input": {...}}` 를 넘겨도 동작합니다.
 - **`run_sync` 가 폴링으로 전환합니다.** `/runsync` 는 완료된 작업 대신 `IN_PROGRESS` 를 반환할 수 있는데, SDK 가 이를 감지해 기다립니다. 순수 HTTP 로는 이 루프를 직접 짜야 합니다.
