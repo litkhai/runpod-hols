@@ -56,35 +56,20 @@
 
 <div class="wrap layout">
 
-  <!-- Sidebar takes over from the horizontal nav on wide screens; below the
-       breakpoint it is hidden and .site-nav is shown instead.
-       넓은 화면에서는 사이드바가 가로 네비게이션을 대체하고,
-       그보다 좁으면 사이드바를 숨기고 .site-nav 를 보여준다. -->
-  <aside class="sidebar">
-    <nav aria-label="Sections">
-      {% assign cur = page.url | remove: site.baseurl %}
-      {% assign prev_group = '' %}
-      {% for item in site.nav %}
-        {% if item.group != prev_group %}
-          {% unless prev_group == '' %}</ul>{% endunless %}
-          <p class="side-group">{{ site.nav_groups[item.group] }}</p>
-          <ul class="side-list">
-        {% endif %}
-        <li>
-          <a href="{{ item.url | relative_url }}"
-             class="{% if cur == item.url %}current{% endif %}">{{ item.title }}</a>
-          {%- if cur == item.url -%}
-            <!-- Filled in by script: the headings of whichever language block
-                 is visible. Building it server-side would list every heading
-                 twice, once per language.
-                 스크립트가 채운다. 현재 보이는 언어 블록의 제목만 넣는다.
-                 서버 사이드로 만들면 언어마다 한 번씩 두 배로 나열된다. -->
-            <ul class="side-toc" id="page-toc"></ul>
-          {%- endif -%}
-        </li>
-        {% assign prev_group = item.group %}
-      {% endfor %}
-      </ul>
+  <!-- Page-level navigation stays in the header bar. This sidebar carries only
+       the current page's sections, and appears on wide screens.
+       페이지 단위 이동은 상단 바가 담당한다. 이 사이드바는 현재 페이지의
+       섹션만 담으며 넓은 화면에서만 나타난다.
+
+       Filled in by script: the headings of whichever language block is
+       visible. Building it server-side would list every heading twice, once
+       per language, and half the anchors would point into a hidden block.
+       스크립트가 채운다. 현재 보이는 언어 블록의 제목만 넣는다. 서버 사이드로
+       만들면 제목이 두 배로 나열되고, 앵커 절반이 숨겨진 블록을 가리킨다. -->
+  <aside class="sidebar" id="page-sidebar" hidden>
+    <nav aria-label="On this page">
+      <p class="side-group">On this page</p>
+      <ul class="side-toc" id="page-toc"></ul>
     </nav>
   </aside>
 
@@ -151,13 +136,18 @@
 
   function buildToc() {
     var list = document.getElementById('page-toc');
-    if (!list) return;                       // not a nav page
+    var aside = document.getElementById('page-sidebar');
+    if (!list) return;
 
     var visible = document.querySelector('.lang:not([hidden])') || document;
     var headings = visible.querySelectorAll('h3[id]');
 
     list.textContent = '';
     if (spy) { spy.disconnect(); spy = null; }
+
+    // A page with no sections gets no sidebar, rather than an empty heading.
+    // 섹션이 없는 페이지는 빈 제목만 남기지 말고 사이드바 자체를 숨긴다.
+    if (aside) aside.hidden = headings.length === 0;
     if (!headings.length) return;
 
     headings.forEach(function (h) {
