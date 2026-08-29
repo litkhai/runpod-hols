@@ -2,8 +2,8 @@
 
 [English](#english) | [한국어](#한국어)
 
-> **Status: 📋 Planned.** The structure and references below are settled; the lab files are not written yet.
-> **상태: 📋 계획됨.** 아래 구조와 참조 자료는 확정했고, 실습 파일은 아직 작성 전입니다.
+> **Status:** Lab 01 has working scripts, verified read-only against a real account. An actual Pod launch has not been run — it bills.
+> **상태:** Lab 01 은 스크립트가 동작하며 실제 계정에 읽기 전용으로 검증했습니다. 실제 Pod 기동은 과금되므로 아직 실행하지 않았습니다.
 
 ---
 
@@ -11,14 +11,14 @@
 
 A Pod is a **GPU or CPU container you rent and control**. Unlike Serverless, it stays up until you stop it, keeps its filesystem, and you get shell access. This is where development, experimentation, and fine-tuning happen.
 
-### 📚 Planned Labs
+### 📚 Labs
 
-| Lab | Contents |
+| Lab | Status |
 |---|---|
-| 01-launch-and-connect | Pick a GPU, launch from a template, connect via SSH / JupyterLab / VS Code, verify with `nvidia-smi` |
-| 02-storage | Container Disk vs Volume vs Network Volume — what survives a stop, what does not |
-| 03-custom-template | Build a custom Pod template, environment variables, secrets |
-| 04-pod-to-serverless | Develop on a Pod, then package the result as a Serverless worker |
+| [01-launch-connect](./01-launch-connect) | ✅ Scripts ready — launch from Python, connect over SSH, tear down. CPU by default |
+| 02-storage | 📋 Planned — Container Disk vs Volume vs Network Volume — what survives a stop, what does not |
+| 03-custom-template | 📋 Planned — build a custom Pod template, environment variables, secrets |
+| 04-pod-to-serverless | 📋 Planned — develop on a Pod, then package the result as a Serverless worker |
 
 ### Core Concepts
 
@@ -76,14 +76,14 @@ Set a spending limit in the console, and get into the habit of terminating Pods 
 
 Pod 는 **직접 빌려서 제어하는 GPU 또는 CPU 컨테이너**입니다. Serverless 와 달리 중지할 때까지 계속 떠 있고, 파일시스템이 유지되며, 셸 접속이 가능합니다. 개발, 실험, 파인튜닝이 이루어지는 곳입니다.
 
-### 📚 계획된 실습
+### 📚 실습 목록
 
-| 실습 | 내용 |
+| 실습 | 상태 |
 |---|---|
-| 01-launch-and-connect | GPU 선택, 템플릿으로 Pod 기동, SSH / JupyterLab / VS Code 접속, `nvidia-smi` 확인 |
-| 02-storage | Container Disk vs Volume vs Network Volume — 중지 시 무엇이 남고 무엇이 사라지는가 |
-| 03-custom-template | 커스텀 Pod 템플릿 제작, 환경변수, 시크릿 |
-| 04-pod-to-serverless | Pod 에서 개발한 결과물을 Serverless 워커로 패키징 |
+| [01-launch-connect](./01-launch-connect) | ✅ 스크립트 준비됨 — Python 으로 기동, SSH 접속, 정리. 기본값 CPU |
+| 02-storage | 📋 계획됨 — Container Disk vs Volume vs Network Volume, 중지 시 무엇이 남고 무엇이 사라지는가 |
+| 03-custom-template | 📋 계획됨 — 커스텀 Pod 템플릿 제작, 환경변수, 시크릿 |
+| 04-pod-to-serverless | 📋 계획됨 — Pod 에서 개발한 결과물을 Serverless 워커로 패키징 |
 
 ### 핵심 개념
 

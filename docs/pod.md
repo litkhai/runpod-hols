@@ -11,19 +11,19 @@ permalink: /pod/
 ## English
 
 <div class="note" markdown="1">
-**Status: planned.** The structure and references are settled; the lab files are not written yet. The Terraform track already provisions a Pod — see [02-pod]({{ '/terraform/' | relative_url }}).
+**Lab 01 has working scripts** — launch from Python, connect over SSH, tear down, CPU by default. Verified read-only against a real account; an actual launch has not been run because it bills. [See the lab](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect).
 </div>
 
 A Pod is a GPU or CPU container you rent and control. Unlike Serverless it stays up until you stop it, keeps its filesystem, and gives you shell access. This is where development, experimentation and fine-tuning happen.
 
-### Planned labs
+### Labs
 
-| Lab | Contents |
+| Lab | Status |
 |---|---|
-| 01-launch-and-connect | Pick a GPU, launch from a template, connect via SSH / JupyterLab / VS Code, verify with `nvidia-smi` |
-| 02-storage | Container Disk vs Volume vs Network Volume — what survives a stop |
-| 03-custom-template | Build a custom Pod template, environment variables, secrets |
-| 04-pod-to-serverless | Develop on a Pod, then package the result as a Serverless worker |
+| [01-launch-connect](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect) | ✅ Scripts ready — launch from Python, connect over SSH, tear down. CPU by default |
+| 02-storage | 📋 Planned — Container Disk vs Volume vs Network Volume, what survives a stop |
+| 03-custom-template | 📋 Planned — build a custom Pod template, environment variables, secrets |
+| 04-pod-to-serverless | 📋 Planned — develop on a Pod, then package the result as a Serverless worker |
 
 ### Storage — the concept that matters most
 
@@ -67,19 +67,19 @@ Note that `runpod/containers` is shared ground with the Serverless track — `ru
 ## 한국어
 
 <div class="note" markdown="1">
-**상태: 계획됨.** 구조와 참조 자료는 확정했고 실습 파일은 아직 작성 전입니다. Terraform 트랙에서는 이미 Pod 를 프로비저닝합니다 — [02-pod]({{ '/terraform/' | relative_url }}) 참조.
+**Lab 01 은 스크립트가 동작합니다** — Python 으로 기동, SSH 접속, 정리, 기본값 CPU. 실제 계정에 읽기 전용으로 검증했고, 실제 기동은 과금되므로 아직 실행하지 않았습니다. [실습 보기](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect).
 </div>
 
 Pod 는 직접 빌려서 제어하는 GPU 또는 CPU 컨테이너입니다. Serverless 와 달리 중지할 때까지 떠 있고, 파일시스템이 유지되며, 셸 접속이 가능합니다. 개발, 실험, 파인튜닝이 이루어지는 곳입니다.
 
-### 계획된 실습
+### 실습 목록
 
-| 실습 | 내용 |
+| 실습 | 상태 |
 |---|---|
-| 01-launch-and-connect | GPU 선택, 템플릿으로 기동, SSH / JupyterLab / VS Code 접속, `nvidia-smi` 확인 |
-| 02-storage | Container Disk vs Volume vs Network Volume — 중지 시 무엇이 남는가 |
-| 03-custom-template | 커스텀 Pod 템플릿 제작, 환경변수, 시크릿 |
-| 04-pod-to-serverless | Pod 에서 개발한 결과물을 Serverless 워커로 패키징 |
+| [01-launch-connect](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect) | ✅ 스크립트 준비됨 — Python 으로 기동, SSH 접속, 정리. 기본값 CPU |
+| 02-storage | 📋 계획됨 — Container Disk vs Volume vs Network Volume, 중지 시 무엇이 남는가 |
+| 03-custom-template | 📋 계획됨 — 커스텀 Pod 템플릿 제작, 환경변수, 시크릿 |
+| 04-pod-to-serverless | 📋 계획됨 — Pod 에서 개발한 결과물을 Serverless 워커로 패키징 |
 
 ### 스토리지 — 가장 중요한 개념
 

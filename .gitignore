@@ -45,6 +45,12 @@ docs/.jekyll-cache/
 docs/.jekyll-metadata
 docs/Gemfile.lock
 
+# Pod lab state — launch.py records the Pod it created so teardown.py needs
+# no argument. Machine-local, not source.
+# Pod 실습 상태 — launch.py 가 생성한 Pod 을 기록해 teardown.py 가 인자 없이
+# 동작하게 한다. 이 머신에만 해당하는 상태이며 소스가 아니다.
+**/.pod-id
+
 # Lab artifacts / 실습 중 생성되는 산출물
 *.log
 outputs/

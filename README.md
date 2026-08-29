@@ -34,6 +34,7 @@ runpod-hols/
 │   ├── 01-endpoint/     # runpod_template + runpod_endpoint
 │   └── 02-pod/          # runpod_pod + optional network volume
 ├── pod/                 # GPU containers (SSH / Jupyter)
+│   └── 01-launch-connect/ # launch, connect, tear down — CPU by default
 ├── cluster/             # Multi-node distributed training — TBD
 └── docs/                # GitHub Pages source
 ```
@@ -43,7 +44,7 @@ runpod-hols/
 | [`setup/`](./setup) | ✅ Ready | API key, tool checks, auth smoke test, MCP server |
 | [`serverless/`](./serverless) | ✅ 2 labs ready | Write handler → test locally → containerize → deploy endpoint |
 | [`terraform/`](./terraform) | ✅ 2 labs ready | Provision endpoint and Pod declaratively |
-| [`pod/`](./pod) | 📋 Planned | Launch Pod → connect → storage → custom template |
+| [`pod/`](./pod) | ✅ Lab 01 ready | Launch from Python → connect over SSH → tear down |
 | [`cluster/`](./cluster) | 🚧 TBD | Multi-node PyTorch / Slurm / Axolotl |
 
 ### Comparing the Three Products
@@ -183,6 +184,7 @@ runpod-hols/
 │   ├── 01-endpoint/     # runpod_template + runpod_endpoint
 │   └── 02-pod/          # runpod_pod + 선택적 network volume
 ├── pod/                 # GPU 컨테이너 (SSH / Jupyter)
+│   └── 01-launch-connect/ # 기동·접속·정리 — 기본값 CPU
 ├── cluster/             # 다중 노드 분산 학습 — TBD
 └── docs/                # GitHub Pages 소스
 ```
@@ -192,7 +194,7 @@ runpod-hols/
 | [`setup/`](./setup) | ✅ 준비됨 | API 키, 도구 검사, 인증 스모크 테스트, MCP 서버 |
 | [`serverless/`](./serverless) | ✅ 2개 준비됨 | handler 작성 → 로컬 테스트 → 컨테이너화 → 엔드포인트 배포 |
 | [`terraform/`](./terraform) | ✅ 2개 준비됨 | 엔드포인트와 Pod 를 선언적으로 프로비저닝 |
-| [`pod/`](./pod) | 📋 계획됨 | Pod 기동 → 접속 → 스토리지 → 커스텀 템플릿 |
+| [`pod/`](./pod) | ✅ Lab 01 준비됨 | Python 으로 기동 → SSH 접속 → 정리 |
 | [`cluster/`](./cluster) | 🚧 TBD | 다중 노드 PyTorch / Slurm / Axolotl |
 
 ### 세 제품의 차이
