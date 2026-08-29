@@ -37,6 +37,48 @@ def check_weights_present():
 **Failure is `os._exit(1)`, not an exception** — no `finally`, no cleanup. Deliberate: a worker that cannot serve should vanish rather than linger and accept jobs.
 </div>
 
+### The local API server
+
+`--rp_serve_api` starts a FastAPI app that mimics the endpoint. Read off the running server's own OpenAPI document:
+
+| Route | Method |
+|---|---|
+| `/run` | POST |
+| `/runsync` | POST |
+| `/status/{job_id}` | **POST** |
+| `/stream/{job_id}` | **POST** |
+
+Docs are at `/`, not `/docs` — that path is a 307 redirect.
+
+<div class="warn" markdown="1">
+**`/status` takes POST locally and GET on the platform.** `GET /status/{id}` against the local server returns **405**; `POST` returns 200. The real API documents GET. Pick the method by target, not from memory.
+</div>
+
+### How the SDK knows it is not in production
+
+```python
+IS_LOCAL_TEST = os.environ.get("RUNPOD_WEBHOOK_GET_JOB", None) is None
+```
+
+One variable decides it. The platform sets it; its absence means local. `rp_scale` reads the flag to decide whether `jobs_fetcher` / `jobs_handler` overrides are honoured — outside a local test they are ignored, which is why those config keys look inert in production.
+
+### Environment variables
+
+Platform-set, readable from your handler: `RUNPOD_POD_ID` (worker id, a random UUID locally), `RUNPOD_POD_HOSTNAME`, `RUNPOD_ENDPOINT_ID`, `RUNPOD_AI_API_KEY`, and four webhook URLs — `GET_JOB`, `PING`, `POST_OUTPUT`, `POST_STREAM`.
+
+Yours to tune:
+
+| Variable | Default |
+|---|---|
+| `RUNPOD_PING_INTERVAL` | `10000` ms |
+| `RUNPOD_MIN_MEMORY_GB` | `4.0` |
+| `RUNPOD_MIN_DISK_PERCENT` | `10.0` |
+| `RUNPOD_MIN_CUDA_VERSION` | `11.8` |
+| `RUNPOD_SKIP_GPU_CHECK` / `RUNPOD_SKIP_AUTO_SYSTEM_CHECKS` | unset |
+| `RUNPOD_LOG_LEVEL` / `RUNPOD_DEBUG_LEVEL` / `UVICORN_LOG_LEVEL` | — |
+
+The heartbeat posts `{"job_id": <ids in flight>, "runpod_version": …}` to `RUNPOD_WEBHOOK_PING`. The console's view of what a worker is doing comes from that, not from your handler.
+
 ### Handler utilities
 
 | Import | Use |
@@ -160,6 +202,48 @@ def check_weights_present():
 <div class="warn" markdown="1">
 **실패는 예외가 아니라 `os._exit(1)` 입니다.** `finally` 도 정리 코드도 실행되지 않습니다. 의도된 동작입니다. 서비스할 수 없는 워커는 남아서 작업을 받는 대신 사라져야 합니다.
 </div>
+
+### 로컬 API 서버
+
+`--rp_serve_api` 는 엔드포인트를 흉내 내는 FastAPI 앱을 띄웁니다. 실행 중인 서버의 OpenAPI 문서에서 읽은 내용입니다.
+
+| 경로 | 메서드 |
+|---|---|
+| `/run` | POST |
+| `/runsync` | POST |
+| `/status/{job_id}` | **POST** |
+| `/stream/{job_id}` | **POST** |
+
+문서는 `/docs` 가 아니라 `/` 에 있습니다. `/docs` 는 307 리다이렉트입니다.
+
+<div class="warn" markdown="1">
+**`/status` 는 로컬에서 POST, 플랫폼에서 GET 입니다.** 로컬 서버에 `GET /status/{id}` 는 **405**, `POST` 는 200 입니다. 실제 API 는 GET 으로 문서화돼 있습니다. 메서드는 기억이 아니라 대상에 맞춰 고르세요.
+</div>
+
+### SDK 는 프로덕션이 아님을 어떻게 아는가
+
+```python
+IS_LOCAL_TEST = os.environ.get("RUNPOD_WEBHOOK_GET_JOB", None) is None
+```
+
+변수 하나로 판별합니다. 플랫폼이 설정하고, 없으면 로컬입니다. `rp_scale` 이 이 플래그를 보고 `jobs_fetcher` / `jobs_handler` 덮어쓰기 반영 여부를 결정합니다. 로컬 테스트가 아니면 무시되며, 그래서 프로덕션에서 이 설정 키들이 죽은 것처럼 보입니다.
+
+### 환경변수
+
+플랫폼이 설정하며 핸들러에서 읽을 수 있는 것: `RUNPOD_POD_ID` (워커 id, 로컬에서는 랜덤 UUID), `RUNPOD_POD_HOSTNAME`, `RUNPOD_ENDPOINT_ID`, `RUNPOD_AI_API_KEY`, 그리고 webhook URL 네 개 — `GET_JOB`, `PING`, `POST_OUTPUT`, `POST_STREAM`.
+
+내가 조정하는 것:
+
+| 변수 | 기본값 |
+|---|---|
+| `RUNPOD_PING_INTERVAL` | `10000` ms |
+| `RUNPOD_MIN_MEMORY_GB` | `4.0` |
+| `RUNPOD_MIN_DISK_PERCENT` | `10.0` |
+| `RUNPOD_MIN_CUDA_VERSION` | `11.8` |
+| `RUNPOD_SKIP_GPU_CHECK` / `RUNPOD_SKIP_AUTO_SYSTEM_CHECKS` | 미설정 |
+| `RUNPOD_LOG_LEVEL` / `RUNPOD_DEBUG_LEVEL` / `UVICORN_LOG_LEVEL` | — |
+
+하트비트는 `RUNPOD_WEBHOOK_PING` 으로 `{"job_id": <진행 중인 id 들>, "runpod_version": …}` 를 보냅니다. 콘솔이 워커 상태를 아는 경로는 핸들러가 아니라 이 하트비트입니다.
 
 ### Handler 유틸리티
 

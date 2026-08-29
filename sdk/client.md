@@ -124,6 +124,17 @@ runpod.terminate_pod(pod_id)
 
 These wrap Runpod's GraphQL API, so responses come back shaped by GraphQL rather than by REST.
 
+### Pointing the SDK somewhere else
+
+Both base URLs are environment variables, which is how you aim the client at a mock or a proxy without touching code:
+
+| Variable | Default | Used by |
+|---|---|---|
+| `RUNPOD_ENDPOINT_BASE_URL` | `https://api.runpod.ai/v2` | `Endpoint` / `Job` |
+| `RUNPOD_API_BASE_URL` | `https://api.runpod.io` | the GraphQL control plane |
+
+`RUNPOD_UA_INTEGRATION` appends `Integration/<value>` to the User-Agent. Set it when the SDK is embedded in something and you want that attributed separately from the agent detection below.
+
 ### The SDK reports which AI agent is driving it
 
 Every client call carries a User-Agent, and the SDK inspects the environment to work out whether a coding agent is at the keyboard. Run from this repository, under Claude Code:
@@ -283,6 +294,17 @@ runpod.terminate_pod(pod_id)
 
 이들은 Runpod 의 GraphQL API 를 감싼 것이라, 응답이 REST 가 아니라 GraphQL 형태로 돌아옵니다.
 
+### SDK 를 다른 곳으로 향하게 하기
+
+두 base URL 모두 환경변수라서, 코드를 건드리지 않고 모의 서버나 프록시를 가리키게 할 수 있습니다.
+
+| 변수 | 기본값 | 사용처 |
+|---|---|---|
+| `RUNPOD_ENDPOINT_BASE_URL` | `https://api.runpod.ai/v2` | `Endpoint` / `Job` |
+| `RUNPOD_API_BASE_URL` | `https://api.runpod.io` | GraphQL 컨트롤 플레인 |
+
+`RUNPOD_UA_INTEGRATION` 은 User-Agent 에 `Integration/<값>` 을 덧붙입니다. SDK 를 다른 무언가에 내장했고 그것을 아래의 에이전트 감지와 별개로 집계하고 싶을 때 설정합니다.
+
 ### SDK 는 자기를 구동하는 AI 에이전트를 보고합니다
 
 모든 클라이언트 호출에는 User-Agent 가 실리는데, SDK 가 환경을 검사해 코딩 에이전트가 키보드를 잡고 있는지 판별합니다. 이 저장소에서 Claude Code 로 실행한 결과입니다.
@@ -295,7 +317,7 @@ runpod.terminate_pod(pod_id)
 'RunPod-Python-SDK/1.11.0 (Darwin 25.6.0; arm64) Language/Python 3.11.14 (via claude-code)'
 ```
 
-트리거는 `CLAUDECODE=1` 이었습니다. 레지스트리는 21개 하니스를 다룹니다 — Claude Code, Codex, Cursor, Gemini CLI, Copilot, Cline, Zed, Replit 등 — 그리고 도구 간 식별자를 통일하기 위해 [Hugging Face 의 공개 agent-harnesses 목록](https://github.com/huggingface/huggingface.js/blob/main/packages/tasks/src/agent-harnesses.ts)을 의도적으로 따릅니다. 어떤 도구든 `AI_AGENT` 를 설정해 스스로를 식별할 수도 있는데, 값은 `[A-Za-z0-9._-]` 로 정제되고 64자로 잘려서 헤더를 위조할 수 없습니다.
+트리거는 `CLAUDECODE=1` 이었습니다. 헤더는 네 부분으로 조립됩니다 — SDK 버전, OS 와 아키텍처, Python 버전, 그리고 `RUNPOD_UA_INTEGRATION` 이 설정돼 있으면 `Integration/<값>`, 에이전트가 감지되면 `(via <에이전트>)`. 레지스트리는 21개 하니스를 다룹니다 — Claude Code, Codex, Cursor, Gemini CLI, Copilot, Cline, Zed, Replit 등 — 그리고 도구 간 식별자를 통일하기 위해 [Hugging Face 의 공개 agent-harnesses 목록](https://github.com/huggingface/huggingface.js/blob/main/packages/tasks/src/agent-harnesses.ts)을 의도적으로 따릅니다. 어떤 도구든 `AI_AGENT` 를 설정해 스스로를 식별할 수도 있는데, 값은 `[A-Za-z0-9._-]` 로 정제되고 64자로 잘려서 헤더를 위조할 수 없습니다.
 
 눈여겨볼 점이 둘 있습니다. 레지스트리는 **순서가 중요**합니다. `cowork` 을 `claude-code` 보다, `cursor-cli` 를 `cursor` 보다 먼저 확인하는데, 넓은 신호가 좁은 신호와 함께 나타날 수 있기 때문입니다. 그리고 밋밋한 `AGENT` 변수는 **일부러 무시**합니다. CI 러너나 셸 설정에서 너무 흔해서, 트래픽이 엉뚱한 값으로 집계되기 때문입니다.
 

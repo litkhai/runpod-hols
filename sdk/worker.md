@@ -72,6 +72,71 @@ Async functions work too — the decorator detects them with `inspect.iscoroutin
 
 > This is the difference between a job failing on your handler and never being routed to a broken worker at all. Worth a check for anything your handler assumes exists.
 
+### The local API server
+
+`--rp_serve_api` starts a FastAPI app that mimics the endpoint. Four routes, taken from the running server's own OpenAPI document:
+
+| Route | Method |
+|---|---|
+| `/run` | POST |
+| `/runsync` | POST |
+| `/status/{job_id}` | **POST** |
+| `/stream/{job_id}` | **POST** |
+
+Interactive docs are served at `/`, not `/docs` — `/docs` is a 307 redirect to it.
+
+> **`/status` takes POST locally and GET on the platform.** Verified: `GET /status/{id}` against the local server returns **405**, `POST` returns 200. The real API documents `GET /status/{id}`. A client written against one will fail against the other, so pick the method by target rather than by memory.
+
+A fifth route, `POST /{RUNPOD_ENDPOINT_ID}/realtime`, appears only when `RUNPOD_ENDPOINT_ID` is set in the environment.
+
+### How the SDK knows it is not in production
+
+```python
+IS_LOCAL_TEST = os.environ.get("RUNPOD_WEBHOOK_GET_JOB", None) is None
+```
+
+One environment variable decides it. The platform sets `RUNPOD_WEBHOOK_GET_JOB`; its absence means local. `rp_scale` reads the flag to decide whether your `jobs_fetcher` / `jobs_handler` overrides are honoured — outside a local test they are ignored, which is why those config keys appear to do nothing in production.
+
+### Environment variables
+
+**Set by the platform**, readable from your handler:
+
+| Variable | Use |
+|---|---|
+| `RUNPOD_POD_ID` | Worker id. `worker_state` falls back to a random UUID locally |
+| `RUNPOD_POD_HOSTNAME` | Host, included in the error payload on an exception |
+| `RUNPOD_ENDPOINT_ID` | The endpoint this worker serves |
+| `RUNPOD_AI_API_KEY` | Injected key for calling back into Runpod |
+| `RUNPOD_WEBHOOK_GET_JOB` | Job queue URL — also the local/production flag above |
+| `RUNPOD_WEBHOOK_PING` | Heartbeat target |
+| `RUNPOD_WEBHOOK_POST_OUTPUT` | Where results go |
+| `RUNPOD_WEBHOOK_POST_STREAM` | Where generator partials go |
+| `RUNPOD_REALTIME_PORT`, `RUNPOD_REALTIME_CONCURRENCY` | Enable the realtime server |
+
+**You set**, to tune behaviour:
+
+| Variable | Default |
+|---|---|
+| `RUNPOD_PING_INTERVAL` | `10000` ms |
+| `RUNPOD_LOG_LEVEL`, `RUNPOD_DEBUG_LEVEL`, `UVICORN_LOG_LEVEL` | — |
+| `RUNPOD_MIN_MEMORY_GB` | `4.0` |
+| `RUNPOD_MIN_DISK_PERCENT` | `10.0` |
+| `RUNPOD_MIN_CUDA_VERSION` | `11.8` |
+| `RUNPOD_NETWORK_CHECK_TIMEOUT` | `5` |
+| `RUNPOD_GPU_BENCHMARK_TIMEOUT` | `2` |
+| `RUNPOD_GPU_TEST_TIMEOUT` | `30` |
+| `RUNPOD_SKIP_GPU_CHECK`, `RUNPOD_SKIP_AUTO_SYSTEM_CHECKS` | unset |
+
+### What the heartbeat reports
+
+`rp_ping` posts to `RUNPOD_WEBHOOK_PING` every `RUNPOD_PING_INTERVAL` milliseconds with two parameters:
+
+```python
+{"job_id": <ids currently in flight>, "runpod_version": "1.11.0"}
+```
+
+The job ids come from a shared mirror that `JobsProgress` updates as jobs start and finish, so the console's view of what a worker is doing comes from this, not from your handler.
+
 ### Handler utilities
 
 Small helpers that save writing the same code in every worker.
@@ -334,6 +399,71 @@ def check_weights_present():
 > **실패는 예외가 아니라 `os._exit(1)` 입니다.** `finally` 블록도, 정리 핸들러도 실행되지 않습니다. 의도된 동작입니다. 서비스할 수 없는 워커는 남아서 작업을 받는 대신 즉시 사라져야 하니까요.
 
 > 이것이 "핸들러에서 작업이 실패하는 것" 과 "망가진 워커로 아예 라우팅되지 않는 것" 의 차이입니다. 핸들러가 존재를 전제하는 것이 있다면 검사를 하나 추가할 가치가 있습니다.
+
+### 로컬 API 서버
+
+`--rp_serve_api` 는 엔드포인트를 흉내 내는 FastAPI 앱을 띄웁니다. 라우트는 네 개이며, 실행 중인 서버의 OpenAPI 문서에서 그대로 가져온 것입니다.
+
+| 경로 | 메서드 |
+|---|---|
+| `/run` | POST |
+| `/runsync` | POST |
+| `/status/{job_id}` | **POST** |
+| `/stream/{job_id}` | **POST** |
+
+인터랙티브 문서는 `/docs` 가 아니라 `/` 에서 제공됩니다. `/docs` 는 그쪽으로 가는 307 리다이렉트입니다.
+
+> **`/status` 는 로컬에서 POST, 플랫폼에서 GET 입니다.** 확인 결과 로컬 서버에 `GET /status/{id}` 를 보내면 **405**, `POST` 는 200 입니다. 실제 API 는 `GET /status/{id}` 로 문서화돼 있습니다. 한쪽 기준으로 작성한 클라이언트는 다른 쪽에서 실패하므로, 메서드는 기억이 아니라 대상에 맞춰 골라야 합니다.
+
+다섯 번째 라우트 `POST /{RUNPOD_ENDPOINT_ID}/realtime` 은 환경변수 `RUNPOD_ENDPOINT_ID` 가 설정돼 있을 때만 등록됩니다.
+
+### SDK 는 프로덕션이 아님을 어떻게 아는가
+
+```python
+IS_LOCAL_TEST = os.environ.get("RUNPOD_WEBHOOK_GET_JOB", None) is None
+```
+
+환경변수 하나로 판별합니다. 플랫폼이 `RUNPOD_WEBHOOK_GET_JOB` 을 설정하고, 없으면 로컬입니다. `rp_scale` 이 이 플래그를 보고 `jobs_fetcher` / `jobs_handler` 덮어쓰기를 반영할지 결정합니다. 로컬 테스트가 아니면 무시되며, 그래서 이 설정 키들이 프로덕션에서는 아무 효과가 없어 보입니다.
+
+### 환경변수
+
+**플랫폼이 설정**하며 핸들러에서 읽을 수 있는 것들:
+
+| 변수 | 용도 |
+|---|---|
+| `RUNPOD_POD_ID` | 워커 id. 로컬에서는 `worker_state` 가 랜덤 UUID 로 대체 |
+| `RUNPOD_POD_HOSTNAME` | 호스트. 예외 발생 시 오류 payload 에 포함됨 |
+| `RUNPOD_ENDPOINT_ID` | 이 워커가 서빙하는 엔드포인트 |
+| `RUNPOD_AI_API_KEY` | Runpod 으로 되돌아 호출할 때 쓰도록 주입되는 키 |
+| `RUNPOD_WEBHOOK_GET_JOB` | 작업 큐 URL. 위의 로컬/프로덕션 판별 기준이기도 함 |
+| `RUNPOD_WEBHOOK_PING` | 하트비트 대상 |
+| `RUNPOD_WEBHOOK_POST_OUTPUT` | 결과가 가는 곳 |
+| `RUNPOD_WEBHOOK_POST_STREAM` | 제너레이터 조각이 가는 곳 |
+| `RUNPOD_REALTIME_PORT`, `RUNPOD_REALTIME_CONCURRENCY` | realtime 서버 활성화 |
+
+**내가 설정**해 동작을 조정하는 것들:
+
+| 변수 | 기본값 |
+|---|---|
+| `RUNPOD_PING_INTERVAL` | `10000` ms |
+| `RUNPOD_LOG_LEVEL`, `RUNPOD_DEBUG_LEVEL`, `UVICORN_LOG_LEVEL` | — |
+| `RUNPOD_MIN_MEMORY_GB` | `4.0` |
+| `RUNPOD_MIN_DISK_PERCENT` | `10.0` |
+| `RUNPOD_MIN_CUDA_VERSION` | `11.8` |
+| `RUNPOD_NETWORK_CHECK_TIMEOUT` | `5` |
+| `RUNPOD_GPU_BENCHMARK_TIMEOUT` | `2` |
+| `RUNPOD_GPU_TEST_TIMEOUT` | `30` |
+| `RUNPOD_SKIP_GPU_CHECK`, `RUNPOD_SKIP_AUTO_SYSTEM_CHECKS` | 미설정 |
+
+### 하트비트가 보고하는 것
+
+`rp_ping` 은 `RUNPOD_PING_INTERVAL` 밀리초마다 `RUNPOD_WEBHOOK_PING` 으로 두 개의 파라미터를 보냅니다.
+
+```python
+{"job_id": <진행 중인 작업 id 들>, "runpod_version": "1.11.0"}
+```
+
+작업 id 는 `JobsProgress` 가 작업 시작·종료에 따라 갱신하는 공유 미러에서 옵니다. 즉 콘솔이 워커가 무엇을 하는지 아는 경로는 핸들러가 아니라 이 하트비트입니다.
 
 ### Handler 유틸리티
 

@@ -72,7 +72,7 @@ curl -X POST http://localhost:8000/runsync \
 {"id":"test-1bec00ea-...","status":"COMPLETED","output":{"greeting":"Hello, Kee Hoon!","worker_id":"local"}}
 ```
 
-Note the response shape — `id` / `status` / `output` — is exactly what the deployed endpoint returns. Interactive API docs are at `http://localhost:8000/docs`. Change the port with `--rp_api_port`.
+Note the response shape — `id` / `status` / `output` — is exactly what the deployed endpoint returns. Interactive API docs are at `http://localhost:8000/` — `/docs` redirects there. Change the port with `--rp_api_port`.
 
 ### Step 4 — Build the image
 
@@ -279,7 +279,7 @@ curl -X POST http://localhost:8000/runsync \
 {"id":"test-1bec00ea-...","status":"COMPLETED","output":{"greeting":"Hello, Kee Hoon!","worker_id":"local"}}
 ```
 
-응답 형태(`id` / `status` / `output`)가 배포된 엔드포인트와 정확히 같다는 점을 눈여겨보세요. `http://localhost:8000/docs` 에서 인터랙티브 API 문서를 볼 수 있고, 포트는 `--rp_api_port` 로 변경합니다.
+응답 형태(`id` / `status` / `output`)가 배포된 엔드포인트와 정확히 같다는 점을 눈여겨보세요. 인터랙티브 API 문서는 `http://localhost:8000/` 에 있습니다 — `/docs` 는 그쪽으로 리다이렉트됩니다. 포트는 `--rp_api_port` 로 변경합니다.
 
 ### 4단계 — 이미지 빌드
 

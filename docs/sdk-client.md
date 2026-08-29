@@ -88,6 +88,15 @@ is_completed(s) -> s in ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED"]
 
 `get_pods()` is the habit worth keeping — it lists everything currently costing money.
 
+### Pointing the SDK somewhere else
+
+| Variable | Default | Used by |
+|---|---|---|
+| `RUNPOD_ENDPOINT_BASE_URL` | `https://api.runpod.ai/v2` | `Endpoint` / `Job` |
+| `RUNPOD_API_BASE_URL` | `https://api.runpod.io` | GraphQL control plane |
+
+`RUNPOD_UA_INTEGRATION` appends `Integration/<value>` to the User-Agent.
+
 ### The SDK reports which AI agent is driving it
 
 Every client call carries a User-Agent, and the SDK inspects the environment to see whether a coding agent is at the keyboard. Run from this repository, under Claude Code:
@@ -201,6 +210,15 @@ is_completed(s) -> s in ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED"]
 | 레지스트리 | `create_container_registry_auth`, `update_…`, `delete_…` |
 
 `get_pods()` 는 습관으로 삼을 만합니다. 지금 비용이 나가고 있는 모든 것을 나열해 줍니다.
+
+### SDK 를 다른 곳으로 향하게 하기
+
+| 변수 | 기본값 | 사용처 |
+|---|---|---|
+| `RUNPOD_ENDPOINT_BASE_URL` | `https://api.runpod.ai/v2` | `Endpoint` / `Job` |
+| `RUNPOD_API_BASE_URL` | `https://api.runpod.io` | GraphQL 컨트롤 플레인 |
+
+`RUNPOD_UA_INTEGRATION` 은 User-Agent 에 `Integration/<값>` 을 덧붙입니다.
 
 ### SDK 는 자기를 구동하는 AI 에이전트를 보고합니다
 
