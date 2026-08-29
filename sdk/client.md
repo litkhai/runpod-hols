@@ -50,7 +50,7 @@ ep.run_sync({"name": "SDK"}, timeout=180)
 # {'greeting': 'Hello, SDK!', 'worker_id': 'rrlm8trcnfn5of'}
 ```
 
-Two conveniences are easy to miss:
+Two things it does for you:
 
 - **It wraps your input.** `{"name": "SDK"}` becomes `{"input": {"name": "SDK"}}`. Pass `{"input": {...}}` yourself and it is left alone, so both forms work.
 - **It falls back to polling.** `/runsync` does not always return a finished job — it can hand back `IN_PROGRESS`. `run_sync` notices the non-final status and polls until the job settles. Doing this over raw HTTP means writing that loop yourself.
@@ -142,7 +142,7 @@ Two details worth noticing. Order matters in the registry — `cowork` is checke
 
 > **This is client-side only.** The worker's own HTTP path (`serverless/modules/rp_http.py`) does not use it, so traffic from inside a running worker is not tagged. It is the calls you make from your machine that are attributed.
 
-Nothing here is secret, but it is worth knowing that "an AI agent made this API call" is a fact Runpod collects.
+"An AI agent made this API call" is therefore a fact Runpod collects.
 
 ### The bundled `runpod` CLI
 
@@ -209,7 +209,7 @@ ep.run_sync({"name": "SDK"}, timeout=180)
 # {'greeting': 'Hello, SDK!', 'worker_id': 'rrlm8trcnfn5of'}
 ```
 
-놓치기 쉬운 편의 기능이 두 가지 있습니다.
+대신 처리해 주는 것이 두 가지 있습니다.
 
 - **입력을 자동으로 감쌉니다.** `{"name": "SDK"}` 가 `{"input": {"name": "SDK"}}` 로 바뀝니다. 직접 `{"input": {...}}` 를 넘기면 그대로 두므로 두 형태 모두 동작합니다.
 - **폴링으로 자동 전환합니다.** `/runsync` 가 항상 완료된 작업을 돌려주지는 않습니다. `IN_PROGRESS` 가 올 수 있는데, `run_sync` 는 이를 알아채고 작업이 끝날 때까지 폴링합니다. 순수 HTTP 로 호출하면 이 루프를 직접 작성해야 합니다.
@@ -301,7 +301,7 @@ runpod.terminate_pod(pod_id)
 
 > **클라이언트 쪽에만 적용됩니다.** 워커 자체의 HTTP 경로(`serverless/modules/rp_http.py`)는 이를 사용하지 않으므로, 실행 중인 워커 내부에서 나가는 트래픽에는 태그가 붙지 않습니다. 집계되는 것은 내 컴퓨터에서 하는 호출입니다.
 
-비밀스러운 내용은 아니지만, "AI 에이전트가 이 API 를 호출했다" 는 사실을 Runpod 이 수집한다는 점은 알아둘 만합니다.
+따라서 "AI 에이전트가 이 API 를 호출했다" 는 사실이 Runpod 에 수집됩니다.
 
 ### 함께 설치되는 `runpod` CLI
 

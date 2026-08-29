@@ -18,7 +18,7 @@ Runpod Serverless runs your code as an **autoscaling HTTP endpoint**. Workers sp
 
 ### Where the model lives
 
-Lab 02's real subject. Three options, and the third is usually right:
+Three options, and the third is usually right:
 
 | Where | Cold start | Image size | Download billed? |
 |---|---|---|---|
@@ -97,7 +97,7 @@ It is a sound scaffold, but a few things were adjusted for this lab:
 | `hub.json` `runsOn` | `GPU` | `CPU` | No GPU is needed, and CPU workers are cheaper to test with |
 | `tests.json` | 1 test | 2 tests | Added a case that exercises the `"World"` default. It sends `{"unused": true}` rather than `{}` — an empty input object never returns |
 
-**One upstream documentation bug worth knowing:** the template README states *"It copies your `src` directory into the image."* There is no `src/` directory — the Dockerfile does `ADD handler.py .`. Ignore that line.
+**An upstream documentation bug:** the template README states *"It copies your `src` directory into the image."* There is no `src/` directory — the Dockerfile does `ADD handler.py .`. Ignore that line.
 
 Also note `.runpod/hub.json` and `.runpod/tests.json` are only used when publishing to the [Runpod Hub](https://www.runpod.io/product/runpod-hub). They are harmless to keep and are included here for reference; the labs do not require publishing.
 
@@ -206,7 +206,7 @@ Lab 01 은 [`runpod-workers/worker-template`](https://github.com/runpod-workers/
 | `hub.json` 의 `runsOn` | `GPU` | `CPU` | GPU 가 필요 없고 CPU 워커가 테스트 비용이 저렴함 |
 | `tests.json` | 테스트 1개 | 테스트 2개 | `"World"` 기본값 경로를 검증하는 케이스 추가. `{}` 는 응답이 오지 않으므로 `{"unused": true}` 를 보냄 |
 
-**알아둘 만한 원본 문서 오류:** 템플릿 README 에 *"It copies your `src` directory into the image"* 라고 적혀 있지만, `src/` 디렉토리는 존재하지 않고 Dockerfile 은 `ADD handler.py .` 를 수행합니다. 해당 문장은 무시하면 됩니다.
+**원본 문서 오류:** 템플릿 README 에 *"It copies your `src` directory into the image"* 라고 적혀 있지만, `src/` 디렉토리는 존재하지 않고 Dockerfile 은 `ADD handler.py .` 를 수행합니다. 해당 문장은 무시하면 됩니다.
 
 또한 `.runpod/hub.json` 과 `.runpod/tests.json` 은 [Runpod Hub](https://www.runpod.io/product/runpod-hub) 에 게시할 때만 사용됩니다. 그대로 둬도 무해하며 참고용으로 포함해 두었습니다. 실습에서 게시 과정은 필요하지 않습니다.
 

@@ -92,7 +92,7 @@ You can complete the console-only parts of the labs without a key, but calling e
 
 Four conventions, each with a reason behind it.
 
-**Everything is verified by running it.** Command output, image sizes, latency figures and error messages in these docs were produced on a real account, not copied from vendor documentation. Where something has *not* been run — `terraform apply`, the Pod track — the page says so explicitly. That distinction is the point: this repo is worth more than the official docs only where it contradicts or completes them, and it can only do that honestly if you can tell verified from assumed.
+**Everything is verified by running it.** Command output, image sizes, latency figures and error messages in these docs were produced on a real account, not copied from vendor documentation. Where something has *not* been run — `terraform apply`, the Pod track — the page says so explicitly.
 
 Several corrections came out of that discipline. Runpod's own `worker-template` README describes a `src/` directory it does not have; the console's Build context field is undocumented; `{"input": {}}` never returns; the SDK's cached-model path disagrees with the docs. None of these are visible from reading alone.
 
@@ -116,7 +116,8 @@ Several corrections came out of that discipline. Runpod's own `worker-template` 
 To preview locally without installing Ruby:
 
 ```bash
-docker run --rm -v "$PWD/docs":/site -w /site -p 4000:4000 ruby:3.3   bash -c "gem install jekyll -N && jekyll serve --host 0.0.0.0"
+docker run --rm -v "$PWD/docs":/site -w /site -p 4000:4000 ruby:3.3 \
+  bash -c "gem install jekyll -N && jekyll serve --host 0.0.0.0"
 ```
 
 ### Referenced Official Runpod Resources
@@ -240,7 +241,7 @@ runpod-hols/
 
 네 가지 관례가 있고, 각각 이유가 있습니다.
 
-**모든 것은 실행해서 검증합니다.** 이 문서들의 명령 출력, 이미지 크기, 지연시간 수치, 오류 메시지는 실제 계정에서 얻은 것이지 벤더 문서를 옮긴 것이 아닙니다. 아직 실행하지 *않은* 것 — `terraform apply`, Pod 트랙 — 은 그렇다고 명시합니다. 이 구분이 핵심입니다. 이 저장소가 공식 문서보다 가치 있는 지점은 공식 문서와 어긋나거나 그것을 보완하는 부분뿐이고, 검증된 것과 가정한 것을 구별할 수 있어야 그 주장이 정직해집니다.
+**모든 것은 실행해서 검증합니다.** 이 문서들의 명령 출력, 이미지 크기, 지연시간 수치, 오류 메시지는 실제 계정에서 얻은 것이지 벤더 문서를 옮긴 것이 아닙니다. 아직 실행하지 *않은* 것 — `terraform apply`, Pod 트랙 — 은 그렇다고 명시합니다.
 
 이 원칙에서 여러 수정이 나왔습니다. Runpod 의 `worker-template` README 는 존재하지 않는 `src/` 디렉토리를 설명하고, 콘솔의 Build context 필드는 문서화돼 있지 않으며, `{"input": {}}` 은 응답이 오지 않고, SDK 의 모델 캐시 경로는 문서와 다릅니다. 읽기만 해서는 어느 것도 알 수 없습니다.
 

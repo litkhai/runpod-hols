@@ -95,7 +95,7 @@ BUCKET_SECRET_ACCESS_KEY
 
 > **This is the answer to the 20 MB return limit.** Rather than returning a large payload, upload it and return the URL. If the bucket variables are absent the SDK falls back to writing locally, which is convenient in development and silently useless in production — check that they are set.
 
-### Internals worth knowing
+### Internals
 
 You do not call these, but they explain what you see in logs and billing.
 
@@ -137,7 +137,7 @@ A dict with at least `id` and `input`. `job["input"]` is exactly the JSON object
 {"id": "abc-123", "input": {"name": "Runpod"}}
 ```
 
-### What the handler returns — the part worth knowing
+### What the handler returns
 
 The SDK inspects your return value and **treats two dict keys as control signals**, not data. Verified by running each case:
 
@@ -358,7 +358,7 @@ BUCKET_SECRET_ACCESS_KEY
 
 > **20MB 반환 제한에 대한 답이 이것입니다.** 큰 결과물을 반환하는 대신 업로드하고 URL 을 돌려주세요. 버킷 변수가 없으면 SDK 가 로컬 저장으로 폴백하는데, 개발에는 편하지만 프로덕션에서는 조용히 무용지물이 됩니다. 설정 여부를 확인하세요.
 
-### 알아둘 내부 동작
+### 내부 동작
 
 직접 호출하지는 않지만, 로그와 과금에서 보이는 것들을 설명해 줍니다.
 
@@ -400,7 +400,7 @@ runpod.serverless.start({"handler": handler})
 {"id": "abc-123", "input": {"name": "Runpod"}}
 ```
 
-### 핸들러가 반환하는 것 — 알아둬야 할 부분
+### 핸들러가 반환하는 것
 
 SDK 는 반환값을 검사해서 **딕셔너리의 특정 키 두 개를 데이터가 아니라 제어 신호로 취급합니다.** 각 경우를 직접 실행해 확인했습니다.
 

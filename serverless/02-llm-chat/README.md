@@ -38,14 +38,14 @@ Cached models work with public, gated (supply a Hugging Face token) and private-
 | File | Role |
 |---|---|
 | `handler.py` | Loads the model at module scope, then answers one job per call |
-
-> The SDK's handler contract — control keys, exceptions, streaming, concurrency — is documented in [sdk/worker.md](../../sdk/worker.md).
 | `model_cache.py` | Resolves the cached snapshot path. Dependency-free, so it is unit-testable without CUDA |
 | `requirements.txt` | `runpod`, `transformers`, `accelerate` — **not** `torch` |
 | `Dockerfile` | `pytorch/pytorch:2.9.1-cuda12.6-cudnn9-runtime` |
 | `.runpod/hub.json` | Hub metadata, exposes `MODEL_ID` as a configurable env var |
 
-### Two things in `handler.py` worth reading
+> The SDK's handler contract — control keys, exceptions, streaming, concurrency — is documented in [sdk/worker.md](../../sdk/worker.md).
+
+### Three things `handler.py` does deliberately
 
 **1. Import order is load-bearing.**
 
@@ -194,14 +194,14 @@ Runpod 문서에 명시돼 있습니다. *"You aren't billed for worker time whi
 | 파일 | 역할 |
 |---|---|
 | `handler.py` | 모듈 스코프에서 모델을 로드하고, 호출마다 작업 1건을 처리 |
-
-> SDK 의 핸들러 계약(제어 키, 예외 처리, 스트리밍, 동시성)은 [sdk/worker.md](../../sdk/worker.md) 에 정리돼 있습니다.
 | `model_cache.py` | 캐시된 스냅샷 경로 확인. 의존성이 없어 CUDA 없이도 단위 테스트 가능 |
 | `requirements.txt` | `runpod`, `transformers`, `accelerate` — `torch` 는 **없음** |
 | `Dockerfile` | `pytorch/pytorch:2.9.1-cuda12.6-cudnn9-runtime` |
 | `.runpod/hub.json` | Hub 메타데이터, `MODEL_ID` 를 설정 가능한 환경변수로 노출 |
 
-### `handler.py` 에서 눈여겨볼 두 가지
+> SDK 의 핸들러 계약(제어 키, 예외 처리, 스트리밍, 동시성)은 [sdk/worker.md](../../sdk/worker.md) 에 정리돼 있습니다.
+
+### `handler.py` 가 의도적으로 하는 세 가지
 
 **1. import 순서가 동작에 영향을 줍니다.**
 
