@@ -21,7 +21,7 @@ Lab 01 taught the deploy loop, but a hello-world handler cannot show the thing t
 | Deploy | Docker Hub or GitHub | GitHub |
 | Teaches | handler, job, endpoint | cached models, cold start, module-scope loading |
 
-### The key idea — three places a model can live
+### The key idea — where a model can live
 
 | Where | Cold start | Image size | Download billed? |
 |---|---|---|---|
@@ -178,7 +178,7 @@ Lab 01 은 배포 흐름을 가르쳤지만, hello-world 핸들러로는 Serverl
 | 배포 | Docker Hub 또는 GitHub | GitHub |
 | 다루는 것 | handler, job, 엔드포인트 | 모델 캐싱, 콜드 스타트, 모듈 스코프 로딩 |
 
-### 핵심 — 모델이 있을 수 있는 세 곳
+### 핵심 — 모델이 있을 수 있는 곳
 
 | 위치 | 콜드 스타트 | 이미지 크기 | 다운로드 과금 |
 |---|---|---|---|
