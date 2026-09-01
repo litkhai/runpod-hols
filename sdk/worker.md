@@ -160,15 +160,58 @@ BUCKET_SECRET_ACCESS_KEY
 
 > **This is the answer to the 20 MB return limit.** Rather than returning a large payload, upload it and return the URL. If the bucket variables are absent the SDK falls back to writing locally, which is convenient in development and silently useless in production — check that they are set.
 
-### Internals
+### The worker loop
 
-You do not call these, but they explain what you see in logs and billing.
+`JobScaler` runs three coroutines concurrently for the life of the worker:
+
+| Task | Job |
+|---|---|
+| `get_jobs` | Pulls from the queue into a bounded `asyncio.Queue` |
+| `run_jobs` | Hands each job to your handler |
+| `monitor_stop_signals` | Watches for per-job cancellation requests |
+
+**Concurrency changes wait for the worker to drain.** `set_scale` calls your `concurrency_modifier`, and if the number changed it polls once a second until no jobs are in flight before swapping the queue:
+
+```python
+while self.current_occupancy() > 0:
+    await asyncio.sleep(1)      # not safe to scale when jobs are in flight
+```
+
+So a modifier that reacts to load takes effect at the next idle moment, not immediately.
+
+**A cancelled job cancels its task, not the worker.** `jobs_tasks` maps job ids to `asyncio.Task` objects, and `stop_job` calls `task.cancel()` on one of them. A `job.cancel()` from the client therefore raises `CancelledError` inside your handler at its next `await`, while other jobs on the same worker keep running. A synchronous handler with no `await` points cannot be interrupted this way.
+
+**SIGTERM and SIGINT shut down gracefully.** `start()` installs handlers that set a shutdown event, so the loops finish rather than dying mid-job. It logs a warning instead if it is not running in the main thread.
+
+### Logging
+
+`RunPodLogger` has six levels — `NOTSET`, `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR` — and defaults to `DEBUG`. `RUNPOD_LOG_LEVEL` sets it, falling back to `RUNPOD_DEBUG_LEVEL`.
+
+**The output format switches on its own.** If `RUNPOD_ENDPOINT_ID` is set — which it is on the platform — every line is emitted as JSON:
+
+```json
+{"requestId": "<job id>", "message": "...", "level": "INFO"}
+```
+
+Locally you get `INFO   | message` instead. Same call, different shape, which is why console logs and local logs do not look alike.
+
+Messages over 10 MB are truncated from the middle, leaving a `...TRUNCATED n CHARACTERS...` marker between the two halves.
+
+`log.secret(name, value)` redacts everything but the first and last character:
+
+```
+log.secret("key", "sk-abcdef123456")   ->  key: s*************6
+```
+
+> It does not redact very short values. `"ab"` prints as `ab`, and `"a"` prints as `aa`, because the mask is `"*" * (len - 2)`. Not a practical problem for real credentials, but do not rely on it for anything short.
+
+### Internals
 
 | Module | What it does |
 |---|---|
-| `rp_ping` | Heartbeat to Runpod, carrying the jobs currently in flight. This is how the console knows a worker is alive |
-| `worker_state` | Tracks jobs in progress and reads the `RUNPOD_*` environment variables. Source of `RUNPOD_POD_ID`, which the labs return as `worker_id` |
-| `rp_scale` | The job-fetch loop and the concurrency the `concurrency_modifier` adjusts |
+| `rp_ping` | Heartbeat, described above |
+| `worker_state` | Job tracking and the `RUNPOD_*` variables. Source of `RUNPOD_POD_ID`, which the labs return as `worker_id` |
+| `rp_scale` | The loop described above |
 | `rp_http` | The worker's own HTTP path back to Runpod — separate from the client SDK's, and notably it does **not** carry the agent-detecting User-Agent |
 
 ### Local development
@@ -488,15 +531,58 @@ BUCKET_SECRET_ACCESS_KEY
 
 > **20MB 반환 제한에 대한 답이 이것입니다.** 큰 결과물을 반환하는 대신 업로드하고 URL 을 돌려주세요. 버킷 변수가 없으면 SDK 가 로컬 저장으로 폴백하는데, 개발에는 편하지만 프로덕션에서는 조용히 무용지물이 됩니다. 설정 여부를 확인하세요.
 
-### 내부 동작
+### 워커 루프
 
-직접 호출하지는 않지만, 로그와 과금에서 보이는 것들을 설명해 줍니다.
+`JobScaler` 는 워커가 사는 동안 코루틴 세 개를 동시에 돌립니다.
+
+| 태스크 | 역할 |
+|---|---|
+| `get_jobs` | 큐에서 가져와 크기 제한된 `asyncio.Queue` 에 넣음 |
+| `run_jobs` | 각 작업을 핸들러에 넘김 |
+| `monitor_stop_signals` | 작업별 취소 요청을 감시 |
+
+**동시성 변경은 워커가 빌 때까지 기다립니다.** `set_scale` 이 `concurrency_modifier` 를 호출하고, 값이 바뀌었으면 진행 중인 작업이 없어질 때까지 1초 간격으로 확인한 뒤에 큐를 교체합니다.
+
+```python
+while self.current_occupancy() > 0:
+    await asyncio.sleep(1)      # 작업이 진행 중일 때 스케일 변경은 안전하지 않다
+```
+
+따라서 부하에 반응하는 modifier 는 즉시가 아니라 다음 유휴 시점에 적용됩니다.
+
+**작업 취소는 워커가 아니라 그 작업의 태스크만 취소합니다.** `jobs_tasks` 가 작업 id 를 `asyncio.Task` 에 매핑하고, `stop_job` 이 그중 하나에 `task.cancel()` 을 호출합니다. 클라이언트의 `job.cancel()` 은 핸들러의 다음 `await` 지점에서 `CancelledError` 를 일으키며, 같은 워커의 다른 작업은 계속 돕니다. `await` 지점이 없는 동기 핸들러는 이 방식으로 중단되지 않습니다.
+
+**SIGTERM 과 SIGINT 는 정상 종료로 처리됩니다.** `start()` 가 종료 이벤트를 세팅하는 핸들러를 등록하므로, 루프가 작업 중간에 죽지 않고 마무리됩니다. 메인 스레드가 아니면 경고만 남깁니다.
+
+### 로깅
+
+`RunPodLogger` 의 레벨은 여섯 개입니다 — `NOTSET`, `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR` — 기본값은 `DEBUG` 입니다. `RUNPOD_LOG_LEVEL` 로 설정하며, 없으면 `RUNPOD_DEBUG_LEVEL` 을 봅니다.
+
+**출력 형식이 스스로 바뀝니다.** 플랫폼에서는 설정돼 있는 `RUNPOD_ENDPOINT_ID` 가 있으면 모든 줄이 JSON 으로 출력됩니다.
+
+```json
+{"requestId": "<job id>", "message": "...", "level": "INFO"}
+```
+
+로컬에서는 대신 `INFO   | message` 형태입니다. 같은 호출인데 형태가 다르며, 콘솔 로그와 로컬 로그가 달라 보이는 이유입니다.
+
+10MB 를 넘는 메시지는 가운데를 잘라내고 `...TRUNCATED n CHARACTERS...` 표시를 남깁니다.
+
+`log.secret(name, value)` 는 첫 글자와 마지막 글자만 남기고 가립니다.
+
+```
+log.secret("key", "sk-abcdef123456")   ->  key: s*************6
+```
+
+> 아주 짧은 값은 가리지 못합니다. 마스크가 `"*" * (len - 2)` 라서 `"ab"` 는 `ab` 로, `"a"` 는 `aa` 로 출력됩니다. 실제 자격 증명에서는 문제되지 않지만, 짧은 값에 의존하지 마세요.
+
+### 내부 동작
 
 | 모듈 | 하는 일 |
 |---|---|
-| `rp_ping` | Runpod 으로 보내는 하트비트. 진행 중인 작업 정보를 함께 실어 보냄. 콘솔이 워커 생존을 아는 경로 |
-| `worker_state` | 진행 중인 작업 추적과 `RUNPOD_*` 환경변수 읽기. 실습이 `worker_id` 로 반환하는 `RUNPOD_POD_ID` 의 출처 |
-| `rp_scale` | 작업 가져오기 루프와, `concurrency_modifier` 가 조정하는 동시성 |
+| `rp_ping` | 위에서 설명한 하트비트 |
+| `worker_state` | 작업 추적과 `RUNPOD_*` 변수. 실습이 `worker_id` 로 반환하는 `RUNPOD_POD_ID` 의 출처 |
+| `rp_scale` | 위에서 설명한 루프 |
 | `rp_http` | 워커가 Runpod 으로 되돌아가는 자체 HTTP 경로. 클라이언트 SDK 와 별개이며, 에이전트를 감지하는 User-Agent 를 **싣지 않음** |
 
 ### 로컬 개발

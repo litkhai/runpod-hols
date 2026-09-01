@@ -79,6 +79,32 @@ Yours to tune:
 
 The heartbeat posts `{"job_id": <ids in flight>, "runpod_version": …}` to `RUNPOD_WEBHOOK_PING`. The console's view of what a worker is doing comes from that, not from your handler.
 
+### The worker loop
+
+`JobScaler` runs three coroutines for the life of the worker: `get_jobs` fills a bounded queue, `run_jobs` hands each to your handler, `monitor_stop_signals` watches for cancellations.
+
+**Concurrency changes wait for the worker to drain.** `set_scale` polls once a second until nothing is in flight before resizing the queue, so a load-reactive `concurrency_modifier` takes effect at the next idle moment rather than immediately.
+
+**Cancelling a job cancels its task, not the worker.** `job.cancel()` from the client raises `CancelledError` inside your handler at its next `await`; other jobs on the same worker keep running. A synchronous handler with no `await` points cannot be interrupted this way.
+
+SIGTERM and SIGINT set a shutdown event, so the loops finish rather than dying mid-job.
+
+### Logging
+
+Six levels — `NOTSET`, `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR` — default `DEBUG`, set by `RUNPOD_LOG_LEVEL`.
+
+**The format switches on its own.** With `RUNPOD_ENDPOINT_ID` set, which it is on the platform, every line is JSON:
+
+```json
+{"requestId": "<job id>", "message": "...", "level": "INFO"}
+```
+
+Locally you get `INFO   | message`. Same call, different shape — which is why console and local logs do not look alike. Messages over 10 MB are truncated from the middle.
+
+<div class="note" markdown="1">
+`log.secret(name, value)` masks all but the first and last character. It does not redact very short values: `"ab"` prints as `ab` and `"a"` as `aa`, because the mask is `"*" * (len - 2)`.
+</div>
+
 ### Handler utilities
 
 | Import | Use |
@@ -152,7 +178,7 @@ Local `test_input.json` runs do **not** exercise streaming — the generator com
 | `return_aggregate_stream` | Collect generator output for `/runsync` and `/status` |
 | `concurrency_modifier` | `fn(current: int) -> int` — one worker takes several jobs at once |
 
-### Worth knowing
+### Also in the toolbox
 
 - **`progress_update(job, msg)`** — visible to callers via `/status`, runs on a background thread.
 - **`rp_validator.validate(input, schema)`** — type checks, defaults, `constraints` lambdas, rejects unexpected keys.
@@ -245,6 +271,32 @@ IS_LOCAL_TEST = os.environ.get("RUNPOD_WEBHOOK_GET_JOB", None) is None
 
 하트비트는 `RUNPOD_WEBHOOK_PING` 으로 `{"job_id": <진행 중인 id 들>, "runpod_version": …}` 를 보냅니다. 콘솔이 워커 상태를 아는 경로는 핸들러가 아니라 이 하트비트입니다.
 
+### 워커 루프
+
+`JobScaler` 는 워커가 사는 동안 코루틴 세 개를 돌립니다. `get_jobs` 가 크기 제한된 큐를 채우고, `run_jobs` 가 각각을 핸들러에 넘기며, `monitor_stop_signals` 가 취소 요청을 감시합니다.
+
+**동시성 변경은 워커가 빌 때까지 기다립니다.** `set_scale` 이 진행 중인 작업이 없어질 때까지 1초 간격으로 확인한 뒤 큐 크기를 바꾸므로, 부하에 반응하는 `concurrency_modifier` 는 즉시가 아니라 다음 유휴 시점에 적용됩니다.
+
+**작업 취소는 워커가 아니라 그 작업의 태스크만 취소합니다.** 클라이언트의 `job.cancel()` 은 핸들러의 다음 `await` 지점에서 `CancelledError` 를 일으키고, 같은 워커의 다른 작업은 계속 돕니다. `await` 지점이 없는 동기 핸들러는 이 방식으로 중단되지 않습니다.
+
+SIGTERM 과 SIGINT 는 종료 이벤트를 세팅하므로 루프가 작업 중간에 죽지 않고 마무리됩니다.
+
+### 로깅
+
+레벨 여섯 개 — `NOTSET`, `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR` — 기본값 `DEBUG`, `RUNPOD_LOG_LEVEL` 로 설정합니다.
+
+**형식이 스스로 바뀝니다.** 플랫폼에서는 설정돼 있는 `RUNPOD_ENDPOINT_ID` 가 있으면 모든 줄이 JSON 입니다.
+
+```json
+{"requestId": "<job id>", "message": "...", "level": "INFO"}
+```
+
+로컬에서는 `INFO   | message` 입니다. 같은 호출인데 형태가 달라, 콘솔 로그와 로컬 로그가 달라 보입니다. 10MB 를 넘는 메시지는 가운데가 잘립니다.
+
+<div class="note" markdown="1">
+`log.secret(name, value)` 는 첫 글자와 마지막 글자만 남기고 가립니다. 아주 짧은 값은 가리지 못합니다. 마스크가 `"*" * (len - 2)` 라서 `"ab"` 는 `ab`, `"a"` 는 `aa` 로 나옵니다.
+</div>
+
 ### Handler 유틸리티
 
 | import | 용도 |
@@ -318,7 +370,7 @@ SDK 가 잡습니다. 워커는 살아남고 작업만 실패하며, `error_type
 | `return_aggregate_stream` | 제너레이터 출력을 모아 `/runsync`·`/status` 에서 반환 |
 | `concurrency_modifier` | `fn(current: int) -> int` — 워커 하나가 여러 작업을 동시에 |
 
-### 알아두면 좋은 것
+### 도구 상자의 나머지
 
 - **`progress_update(job, msg)`** — 호출자가 `/status` 에서 확인. 백그라운드 스레드에서 실행되어 핸들러를 막지 않음
 - **`rp_validator.validate(input, schema)`** — 타입 검사, 기본값, `constraints` 람다, 예상치 못한 키 거부

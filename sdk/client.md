@@ -167,7 +167,29 @@ runpod ssh       # manage SSH keys
 runpod project   # new / start / deploy
 ```
 
-`runpod project` is the most interesting and the least advertised: `new` scaffolds a worker (there are `default` and `llama2` starter templates), `start` brings up a development Pod described by a `runpod.toml`, and `deploy` ships it. It is a hot-reload loop against real GPU hardware, which is a different workflow from the image-build cycle these labs use.
+`runpod project` is the least advertised part of the SDK and the most different from everything else here. It does not build images at all — it syncs your working directory onto a live Pod.
+
+| Command | What it does |
+|---|---|
+| `new` | Scaffolds a project. Starter templates: `default`, `llama2` |
+| `start` | Brings up a dev Pod from `runpod.toml`, rsyncs the current directory to it, creates a venv there, installs `requirements.txt`, then watches for changes and re-syncs |
+| `deploy` | Ships the result as an endpoint |
+
+`runpod.toml` carries two tables:
+
+```toml
+[project]
+name, uuid, gpu, gpu_count, base_image,
+container_disk_size_gb, volume_mount_path, ports, env_vars,
+storage_id          # a network volume, so the dev environment survives
+
+[runtime]
+handler_path, python_version, requirements_path
+```
+
+`.runpodignore` controls what gets synced, on top of the built-in exclusions `__pycache__/`, `*.pyc`, `.*.swp`, `.git/`, `*.tmp`, `*.log`.
+
+The trade against the image-build cycle these labs teach: edits land on the Pod in seconds rather than minutes, but a Pod bills the whole time it is up, and what you end up deploying is not the artefact you were editing.
 
 ### Gotchas worth remembering
 
@@ -337,7 +359,29 @@ runpod ssh       # SSH 키 관리
 runpod project   # new / start / deploy
 ```
 
-`runpod project` 가 가장 흥미로우면서 가장 덜 알려져 있습니다. `new` 는 워커를 스캐폴딩하고(`default`, `llama2` 스타터 템플릿 제공), `start` 는 `runpod.toml` 에 기술된 개발용 Pod 를 띄우고, `deploy` 는 배포합니다. 실제 GPU 하드웨어를 상대로 하는 핫 리로드 루프이며, 이 실습들이 사용하는 이미지 빌드 주기와는 다른 워크플로입니다.
+`runpod project` 는 SDK 에서 가장 덜 알려졌고, 여기 있는 다른 어떤 것과도 가장 다릅니다. 이미지를 아예 빌드하지 않고, 작업 디렉토리를 살아 있는 Pod 으로 동기화합니다.
+
+| 명령 | 하는 일 |
+|---|---|
+| `new` | 프로젝트 스캐폴딩. 스타터 템플릿: `default`, `llama2` |
+| `start` | `runpod.toml` 기반으로 개발용 Pod 을 띄우고, 현재 디렉토리를 rsync 하고, 그곳에 venv 를 만들어 `requirements.txt` 를 설치한 뒤, 변경을 감시하며 재동기화 |
+| `deploy` | 결과물을 엔드포인트로 배포 |
+
+`runpod.toml` 은 테이블 두 개를 담습니다.
+
+```toml
+[project]
+name, uuid, gpu, gpu_count, base_image,
+container_disk_size_gb, volume_mount_path, ports, env_vars,
+storage_id          # 네트워크 볼륨. 개발 환경이 살아남도록
+
+[runtime]
+handler_path, python_version, requirements_path
+```
+
+무엇을 동기화할지는 `.runpodignore` 로 제어하며, 기본 제외 항목 `__pycache__/`, `*.pyc`, `.*.swp`, `.git/`, `*.tmp`, `*.log` 위에 얹힙니다.
+
+이 실습들이 가르치는 이미지 빌드 주기와의 맞바꿈은 이렇습니다. 수정이 분 단위가 아니라 초 단위로 Pod 에 반영되지만, Pod 은 떠 있는 내내 과금되고, 최종적으로 배포되는 것은 방금까지 편집하던 그 산출물이 아닙니다.
 
 ### 기억해둘 함정
 
