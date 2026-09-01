@@ -12,7 +12,7 @@ permalink: /sdk/worker/
 
 The half of the SDK that runs **inside your worker container**. The other half is [Client SDK]({{ '/sdk/client/' | relative_url }}).
 
-Read out of the installed source (`runpod` 1.11.0) and confirmed by running each case. Where behaviour is surprising, the observed output is shown.
+Read out of the installed source at 1.11.0 and 1.12.0, and confirmed by running each case. Where behaviour is surprising, the observed output is shown.
 
 ### Startup fitness checks
 
@@ -99,10 +99,39 @@ Six levels — `NOTSET`, `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR` — default `
 {"requestId": "<job id>", "message": "...", "level": "INFO"}
 ```
 
-Locally you get `INFO   | message`. Same call, different shape — which is why console and local logs do not look alike. Messages over 10 MB are truncated from the middle.
+Locally you get `INFO   | message`. Same call, different shape — which is why console and local logs do not look alike. Messages over **4096 characters** are truncated from the middle — the SDK's comment says 10MB, but the constant is 4096. Easy to hit with a stack trace.
 
 <div class="note" markdown="1">
 `log.secret(name, value)` masks all but the first and last character. It does not redact very short values: `"ab"` prints as `ab` and `"a"` as `aa`, because the mask is `"*" * (len - 2)`.
+</div>
+
+### A fourth place a model can live
+
+SDK 1.12.0 added `VolumeCache`, which sits between "download every cold start" and "bake it into the image". It mirrors chosen directories onto a mounted network volume:
+
+```python
+from runpod.serverless import VolumeCache
+
+with VolumeCache(dirs=["/root/.cache/huggingface"]):
+    model = load_model()      # downloads land in the cached directory
+```
+
+On enter it hydrates the container from the volume; on exit it syncs new files back. It needs a network volume at `/runpod-volume` and scopes the mirror by `RUNPOD_ENDPOINT_ID`.
+
+| | Endpoint **Model** field | `VolumeCache` |
+|---|---|---|
+| Scope | Hugging Face model ids | Any directory |
+| Storage | Runpod's host cache | A network volume you attach |
+| Set up | One console field | A network volume plus code |
+
+With no volume attached every operation is a no-op, and it is best-effort throughout — a failure degrades to a cold worker rather than raising into your handler.
+
+### Downloading caller-supplied URLs
+
+`download_files_from_urls(job_id, urls)` fetches URLs from the job input to local files. Since 1.12.0 it refuses private address space: loopback, link-local — including the `169.254.169.254` metadata endpoint — RFC1918, and CGNAT `100.64.0.0/10`. The connection is pinned to the validated IP, so a hostname resolving to a private address is rejected rather than followed.
+
+<div class="warn" markdown="1">
+If your handler legitimately fetched from an internal host, that stops working on 1.12.0. A job input is attacker-controlled: without this, a caller could point your worker at instance metadata.
 </div>
 
 ### Timing your handler
@@ -212,7 +241,7 @@ Local `test_input.json` runs do **not** exercise streaming — the generator com
 
 ## 한국어
 
-설치된 SDK 소스(`runpod` 1.11.0)를 직접 읽고 각 경우를 실행해 확인한 내용입니다. 동작이 직관과 다른 부분은 실제 출력을 함께 실었습니다.
+1.11.0 과 1.12.0 의 설치된 SDK 소스를 직접 읽고 각 경우를 실행해 확인한 내용입니다. 동작이 직관과 다른 부분은 실제 출력을 함께 실었습니다.
 
 ### 기동 시 fitness check
 
@@ -299,10 +328,39 @@ SIGTERM 과 SIGINT 는 종료 이벤트를 세팅하므로 루프가 작업 중�
 {"requestId": "<job id>", "message": "...", "level": "INFO"}
 ```
 
-로컬에서는 `INFO   | message` 입니다. 같은 호출인데 형태가 달라, 콘솔 로그와 로컬 로그가 달라 보입니다. 10MB 를 넘는 메시지는 가운데가 잘립니다.
+로컬에서는 `INFO   | message` 입니다. 같은 호출인데 형태가 달라, 콘솔 로그와 로컬 로그가 달라 보입니다. **4096자**를 넘는 메시지는 가운데가 잘립니다. SDK 주석은 10MB 라고 하지만 상수는 4096 입니다. 스택 트레이스면 쉽게 넘습니다.
 
 <div class="note" markdown="1">
 `log.secret(name, value)` 는 첫 글자와 마지막 글자만 남기고 가립니다. 아주 짧은 값은 가리지 못합니다. 마스크가 `"*" * (len - 2)` 라서 `"ab"` 는 `ab`, `"a"` 는 `aa` 로 나옵니다.
+</div>
+
+### 모델이 있을 수 있는 네 번째 장소
+
+SDK 1.12.0 에 `VolumeCache` 가 추가됐습니다. "콜드 스타트마다 다운로드" 와 "이미지에 굽기" 사이의 선택지로, 지정한 디렉토리를 마운트된 네트워크 볼륨에 미러링합니다.
+
+```python
+from runpod.serverless import VolumeCache
+
+with VolumeCache(dirs=["/root/.cache/huggingface"]):
+    model = load_model()      # 다운로드가 캐시 디렉토리에 떨어진다
+```
+
+진입 시 볼륨에서 컨테이너로 채우고, 종료 시 새 파일을 볼륨으로 되돌립니다. `/runpod-volume` 에 마운트된 네트워크 볼륨이 필요하며, 미러 범위는 `RUNPOD_ENDPOINT_ID` 로 나눕니다.
+
+| | 엔드포인트 **Model** 필드 | `VolumeCache` |
+|---|---|---|
+| 범위 | Hugging Face 모델 ID | 임의의 디렉토리 |
+| 저장 위치 | Runpod 호스트 캐시 | 내가 붙인 네트워크 볼륨 |
+| 설정 | 콘솔 필드 하나 | 네트워크 볼륨 + 코드 |
+
+볼륨이 없으면 모든 동작이 no-op 이고, 전 구간이 best-effort 라서 실패해도 핸들러로 예외가 올라오지 않고 콜드 워커로 떨어집니다.
+
+### 호출자가 준 URL 다운로드
+
+`download_files_from_urls(job_id, urls)` 는 작업 입력의 URL 을 로컬 파일로 받아옵니다. 1.12.0 부터 사설 주소 대역을 거부합니다 — 루프백, 링크로컬(`169.254.169.254` 메타데이터 포함), RFC1918, CGNAT `100.64.0.0/10`. 검증된 IP 로 연결을 고정하므로 사설 주소로 해석되는 호스트명은 따라가지 않고 거부합니다.
+
+<div class="warn" markdown="1">
+내부 호스트에서 정당하게 받아오던 핸들러라면 1.12.0 에서 동작이 멈춥니다. 작업 입력은 공격자가 제어할 수 있는 값이라, 이것이 없으면 호출자가 워커를 인스턴스 메타데이터로 향하게 할 수 있습니다.
 </div>
 
 ### 핸들러 시간 재기

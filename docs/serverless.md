@@ -22,13 +22,14 @@ Runpod Serverless runs your code as an autoscaling HTTP endpoint. Workers start 
 
 ### Where the model lives
 
-Three options:
+Four options. The third is the usual answer; the fourth arrived in SDK 1.12.
 
 | Where | Cold start | Image size | Download billed? |
 |---|---|---|---|
 | Downloaded at runtime | Slow, every new worker | Small | **Yes** |
 | Baked into the image | Fast | Huge | No, but builds and pulls are slow |
 | **Runpod cached model** | Seconds | Small | **No** |
+| **`VolumeCache`** (SDK 1.12+) | Seconds after the first | Small | No — a network volume you pay for |
 
 Put a Hugging Face ID in the endpoint's **Model** field and Runpod caches the weights on the host at `/runpod-volume/huggingface-cache/hub`, shared across workers there. Code stays in Git, weights stay out of it — the two compose rather than compete.
 
@@ -142,13 +143,14 @@ Runpod Serverless 는 코드를 오토스케일 HTTP 엔드포인트로 실행�
 
 ### 모델은 어디에 두는가
 
-선택지는 셋입니다.
+선택지는 넷입니다. 보통은 세 번째가 답이고, 네 번째는 SDK 1.12 에 추가됐습니다.
 
 | 위치 | 콜드 스타트 | 이미지 크기 | 다운로드 과금 |
 |---|---|---|---|
 | 런타임 다운로드 | 느림, 새 워커마다 | 작음 | **있음** |
 | 이미지에 굽기 | 빠름 | 매우 큼 | 없음, 대신 빌드·pull 이 느림 |
 | **Runpod 모델 캐시** | 수 초 | 작음 | **없음** |
+| **`VolumeCache`** (SDK 1.12+) | 첫 회 이후 수 초 | 작음 | 없음 — 대신 네트워크 볼륨 비용 |
 
 엔드포인트의 **Model** 필드에 Hugging Face ID 를 넣으면 Runpod 이 호스트의 `/runpod-volume/huggingface-cache/hub` 에 가중치를 캐시하고 그 호스트의 워커들이 공유합니다. 코드는 Git 에, 가중치는 Git 밖에 — 둘은 경쟁 관계가 아니라 함께 쓰는 관계입니다.
 

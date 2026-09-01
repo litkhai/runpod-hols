@@ -28,6 +28,7 @@ Lab 01 taught the deploy loop, but a hello-world handler cannot show the thing t
 | Downloaded at runtime | Slow, every new worker | Small | **Yes** — you pay while it downloads |
 | Baked into the image | Fast | Huge | No, but builds and pulls are slow |
 | **Runpod cached model** | Seconds | Small | **No** |
+| **`VolumeCache`** (SDK 1.12+) | Seconds after the first | Small | No — a network volume you pay for |
 
 Runpod's docs are explicit: *"You aren't billed for worker time while your model is being downloaded."* Workers on the same host share one copy. That is why this repo puts **code in Git and weights in the Model field** — they are not alternatives, they compose.
 
@@ -66,7 +67,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 | Source | Path |
 |---|---|
 | Docs (`serverless/development/huggingface-models`) | `/runpod-volume/huggingface-cache/hub/models--<org>--<name>/snapshots/<rev>` |
-| SDK (`runpod.serverless.utils.rp_model_cache`, v1.11.0) | `/runpod/cache/<org>/<name>/<revision>` |
+| SDK (`runpod.serverless.utils.rp_model_cache`, unchanged through 1.12.0) | `/runpod/cache/<org>/<name>/<revision>` |
 
 Which one an endpoint actually populates is undocumented, so `model_cache.py` probes both — two `stat()` calls at import, and no guess.
 
@@ -184,6 +185,7 @@ Lab 01 은 배포 흐름을 가르쳤지만, hello-world 핸들러로는 Serverl
 | 런타임 다운로드 | 느림, 새 워커마다 | 작음 | **있음** — 받는 동안 과금 |
 | 이미지에 굽기 | 빠름 | 매우 큼 | 없음, 대신 빌드·pull 이 느림 |
 | **Runpod 모델 캐시** | 수 초 | 작음 | **없음** |
+| **`VolumeCache`** (SDK 1.12+) | 첫 회 이후 수 초 | 작음 | 없음 — 대신 네트워크 볼륨 비용 |
 
 Runpod 문서에 명시돼 있습니다. *"You aren't billed for worker time while your model is being downloaded."* 같은 호스트의 워커들은 사본 하나를 공유합니다. 이 저장소가 **코드는 Git 에, 가중치는 Model 필드에** 두는 이유입니다. 둘은 양자택일이 아니라 함께 씁니다.
 
@@ -222,7 +224,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 | 출처 | 경로 |
 |---|---|
 | 문서 (`serverless/development/huggingface-models`) | `/runpod-volume/huggingface-cache/hub/models--<org>--<name>/snapshots/<rev>` |
-| SDK (`runpod.serverless.utils.rp_model_cache`, v1.11.0) | `/runpod/cache/<org>/<name>/<revision>` |
+| SDK (`runpod.serverless.utils.rp_model_cache`, unchanged through 1.12.0) | `/runpod/cache/<org>/<name>/<revision>` |
 
 엔드포인트가 실제로 어느 쪽을 채우는지는 문서화돼 있지 않습니다. 그래서 `model_cache.py` 가 양쪽을 모두 확인합니다. import 시점의 `stat()` 두 번이면 되므로 추측할 이유가 없습니다.
 

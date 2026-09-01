@@ -18,13 +18,14 @@ Runpod Serverless runs your code as an **autoscaling HTTP endpoint**. Workers sp
 
 ### Where the model lives
 
-Three options, and the third is usually right:
+Four options. The third is the usual answer; the fourth arrived in SDK 1.12.
 
 | Where | Cold start | Image size | Download billed? |
 |---|---|---|---|
 | Downloaded at runtime | Slow, every new worker | Small | **Yes** |
 | Baked into the image | Fast | Huge | No, but builds and pulls are slow |
 | **Runpod cached model** | Seconds | Small | **No** |
+| **`VolumeCache`** (SDK 1.12+) | Seconds after the first | Small | No — a network volume you pay for |
 
 Set the endpoint's **Model** field to a Hugging Face ID and Runpod caches the weights on the host at `/runpod-volume/huggingface-cache/hub`, shared by every worker there. Code stays in Git, weights stay out of it. Works with public, gated (token required) and private-on-Hugging-Face models; a private model hosted elsewhere has to be baked in.
 
@@ -84,13 +85,13 @@ So the scaling answer is simply: a new lab changes nothing structurally. It gets
 
 ### 🔍 Review of the Official Reference Repo
 
-Lab 01 is based on [`runpod-workers/worker-template`](https://github.com/runpod-workers/worker-template). Reviewed at SDK v1.11.0. The upstream template is 5 files: `handler.py`, `requirements.txt`, `Dockerfile`, `test_input.json`, and `.runpod/{hub,tests}.json`.
+Lab 01 is based on [`runpod-workers/worker-template`](https://github.com/runpod-workers/worker-template). Reviewed 2026-08. The upstream template is 5 files: `handler.py`, `requirements.txt`, `Dockerfile`, `test_input.json`, and `.runpod/{hub,tests}.json`.
 
 It is a sound scaffold, but a few things were adjusted for this lab:
 
 | Item | Upstream | Here | Why |
 |---|---|---|---|
-| SDK version | `runpod~=1.7.9` | `runpod~=1.11.0` | 1.7.9 is well behind the current release |
+| SDK version | `runpod~=1.7.9` | `runpod~=1.12.0` | 1.7.9 is well behind the current release |
 | Base image | `runpod/base:0.6.3-cuda11.8.0` | `python:3.11-slim` | Hello-world does no GPU work. The CUDA base is multi-GB; slim builds to **106MB in ~3s**. The [official Get Started guide](https://docs.runpod.io/serverless/get-started) also uses `python:3.10-slim`. Swap to the CUDA base when you add a real model |
 | Handler return | `str` | `dict` | Returns `worker_id` alongside the greeting so you can observe cold starts and scale-out |
 | Copy instruction | `ADD handler.py .` | `COPY handler.py .` | `ADD` has URL/archive-extraction side effects; `COPY` is correct for a plain local file |
@@ -105,7 +106,7 @@ Also note `.runpod/hub.json` and `.runpod/tests.json` are only used when publish
 
 | Resource | Notes |
 |---|---|
-| [runpod/runpod-python](https://github.com/runpod/runpod-python) | SDK. v1.11.0, `requires-python >=3.10`. Source of the `--rp_serve_api` local server |
+| [runpod/runpod-python](https://github.com/runpod/runpod-python) | SDK. v1.12.0, `requires-python >=3.10`. Source of the `--rp_serve_api` local server |
 | [Serverless Get Started](https://docs.runpod.io/serverless/get-started) | The 9-step official tutorial Lab 01 follows |
 | [GitHub integration](https://docs.runpod.io/serverless/github-integration) | Runpod builds the image and hosts it in its own registry — no Docker Hub, no emulated builds on Apple Silicon. Docs say redeploying requires a **GitHub release**; in testing a plain push also triggered builds, but only before the endpoint had a successful build |
 | [runpod-workers/worker-vllm](https://github.com/runpod-workers/worker-vllm) | Reference for Lab 02 |
@@ -134,6 +135,7 @@ Lab 02 의 진짜 주제입니다. 선택지는 셋이고, 보통 세 번째가 
 | 런타임 다운로드 | 느림, 새 워커마다 | 작음 | **있음** |
 | 이미지에 굽기 | 빠름 | 매우 큼 | 없음, 대신 빌드·pull 이 느림 |
 | **Runpod 모델 캐시** | 수 초 | 작음 | **없음** |
+| **`VolumeCache`** (SDK 1.12+) | 첫 회 이후 수 초 | 작음 | 없음 — 대신 네트워크 볼륨 비용 |
 
 엔드포인트의 **Model** 필드에 Hugging Face ID 를 넣으면 Runpod 이 호스트의 `/runpod-volume/huggingface-cache/hub` 에 가중치를 캐시하고, 그 호스트의 모든 워커가 공유합니다. 코드는 Git 에, 가중치는 Git 밖에 둡니다. public, gated(토큰 필요), Hugging Face 상의 private 모델까지 지원하며, 다른 곳에 있는 private 모델은 이미지에 구워야 합니다.
 
@@ -193,13 +195,13 @@ Runpod 은 빌드 컨텍스트 기본값이 저장소 루트라, 두 번째 필�
 
 ### 🔍 참조 공식 리포 검토
 
-Lab 01 은 [`runpod-workers/worker-template`](https://github.com/runpod-workers/worker-template) 를 기반으로 합니다. SDK v1.11.0 기준으로 검토했습니다. 원본 템플릿은 `handler.py`, `requirements.txt`, `Dockerfile`, `test_input.json`, `.runpod/{hub,tests}.json` 총 5개 파일입니다.
+Lab 01 은 [`runpod-workers/worker-template`](https://github.com/runpod-workers/worker-template) 를 기반으로 합니다. 2026-08 기준으로 검토했습니다. 원본 템플릿은 `handler.py`, `requirements.txt`, `Dockerfile`, `test_input.json`, `.runpod/{hub,tests}.json` 총 5개 파일입니다.
 
 스캐폴드 자체는 견실하지만, 이 실습에 맞게 몇 가지를 조정했습니다.
 
 | 항목 | 원본 | 이 저장소 | 이유 |
 |---|---|---|---|
-| SDK 버전 | `runpod~=1.7.9` | `runpod~=1.11.0` | 1.7.9 는 현재 릴리스보다 상당히 뒤처짐 |
+| SDK 버전 | `runpod~=1.7.9` | `runpod~=1.12.0` | 1.7.9 는 현재 릴리스보다 상당히 뒤처짐 |
 | 베이스 이미지 | `runpod/base:0.6.3-cuda11.8.0` | `python:3.11-slim` | hello-world 는 GPU 연산이 없음. CUDA 베이스는 수 GB 인 반면 slim 은 **106MB, 약 3초**에 빌드됨. [공식 Get Started 가이드](https://docs.runpod.io/serverless/get-started)도 `python:3.10-slim` 을 사용. 실제 모델을 올릴 때 CUDA 베이스로 교체 |
 | handler 반환값 | `str` | `dict` | 인사말과 함께 `worker_id` 를 반환해 콜드 스타트와 스케일아웃을 관찰 가능하게 함 |
 | 복사 명령 | `ADD handler.py .` | `COPY handler.py .` | `ADD` 는 URL 다운로드·압축 해제 부수효과가 있음. 단순 로컬 파일에는 `COPY` 가 맞음 |
@@ -214,7 +216,7 @@ Lab 01 은 [`runpod-workers/worker-template`](https://github.com/runpod-workers/
 
 | 리소스 | 비고 |
 |---|---|
-| [runpod/runpod-python](https://github.com/runpod/runpod-python) | SDK. v1.11.0, `requires-python >=3.10`. `--rp_serve_api` 로컬 서버 제공 |
+| [runpod/runpod-python](https://github.com/runpod/runpod-python) | SDK. v1.12.0, `requires-python >=3.10`. `--rp_serve_api` 로컬 서버 제공 |
 | [Serverless Get Started](https://docs.runpod.io/serverless/get-started) | Lab 01 이 따르는 9단계 공식 튜토리얼 |
 | [GitHub integration](https://docs.runpod.io/serverless/github-integration) | Runpod 이 이미지를 빌드해 자체 레지스트리에 보관. Docker Hub 불필요, Apple Silicon 에뮬레이션 빌드도 회피. 문서상 재배포에는 **GitHub 릴리스**가 필요. 실제로는 일반 푸시도 빌드를 트리거했지만 성공한 빌드가 없던 시점에서만 확인됨 |
 | [runpod-workers/worker-vllm](https://github.com/runpod-workers/worker-vllm) | Lab 02 참조용 |

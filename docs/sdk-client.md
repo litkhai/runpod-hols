@@ -12,7 +12,7 @@ permalink: /sdk/client/
 
 The half of the SDK that runs **on your own machine**. The other half is [Worker SDK]({{ '/sdk/worker/' | relative_url }}).
 
-Read out of the installed source (`runpod` 1.11.0) and exercised against a live endpoint. Outputs shown are real.
+Read out of the installed source at 1.11.0 and 1.12.0, and exercised against a live endpoint. Outputs shown are real.
 
 ### Authentication
 
@@ -108,7 +108,7 @@ Every client call carries a User-Agent, and the SDK inspects the environment to 
 >>> agent.detect()
 'claude-code'
 >>> user_agent.USER_AGENT
-'RunPod-Python-SDK/1.11.0 (Darwin 25.6.0; arm64) Language/Python 3.11.14 (via claude-code)'
+'RunPod-Python-SDK/1.12.0 (Darwin 25.6.0; arm64) Language/Python 3.11.14 (via claude-code)'
 ```
 
 `CLAUDECODE=1` was the trigger. The registry covers 21 harnesses — Claude Code, Codex, Cursor, Gemini CLI, Copilot, Cline, Zed, Replit and others — and mirrors [Hugging Face's public agent-harnesses list](https://github.com/huggingface/huggingface.js/blob/main/packages/tasks/src/agent-harnesses.ts) so identifiers match across tools. Any tool can self-identify with `AI_AGENT`; the value is sanitised and capped at 64 characters so it cannot forge a header. A bare `AGENT` is deliberately ignored — too common in CI to mean anything.
@@ -137,7 +137,7 @@ runpod config    runpod pod    runpod exec    runpod ssh    runpod project
 
 SDK 중 **내 컴퓨터에서 도는** 절반입니다. 나머지 절반은 [Worker SDK]({{ '/sdk/worker/' | relative_url }}) 에 있습니다.
 
-설치된 소스(`runpod` 1.11.0)를 읽고 실제 엔드포인트에 실행해 확인했습니다. 아래 출력은 실제 결과입니다.
+1.11.0 과 1.12.0 의 설치된 소스를 읽고 실제 엔드포인트에 실행해 확인했습니다. 아래 출력은 실제 결과입니다.
 
 ### 인증
 
@@ -233,7 +233,7 @@ is_completed(s) -> s in ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED"]
 >>> agent.detect()
 'claude-code'
 >>> user_agent.USER_AGENT
-'RunPod-Python-SDK/1.11.0 (Darwin 25.6.0; arm64) Language/Python 3.11.14 (via claude-code)'
+'RunPod-Python-SDK/1.12.0 (Darwin 25.6.0; arm64) Language/Python 3.11.14 (via claude-code)'
 ```
 
 트리거는 `CLAUDECODE=1` 이었습니다. 레지스트리는 21개 하니스를 다루며 — Claude Code, Codex, Cursor, Gemini CLI, Copilot, Cline, Zed, Replit 등 — 도구 간 식별자를 맞추기 위해 [Hugging Face 의 공개 agent-harnesses 목록](https://github.com/huggingface/huggingface.js/blob/main/packages/tasks/src/agent-harnesses.ts)을 따릅니다. 어떤 도구든 `AI_AGENT` 로 스스로를 식별할 수 있고, 값은 정제 후 64자로 잘려 헤더를 위조할 수 없습니다. 밋밋한 `AGENT` 는 일부러 무시합니다. CI 에서 너무 흔해 의미가 없기 때문입니다.

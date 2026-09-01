@@ -16,7 +16,7 @@
 |---|---|
 | `handler.py` | The worker. `handler(job)` reads `job["input"]` and returns the result |
 | `test_input.json` | Sample input used automatically by local runs |
-| `requirements.txt` | Python dependencies (`runpod~=1.11.0`) |
+| `requirements.txt` | Python dependencies (`runpod~=1.12.0`) |
 | `Dockerfile` | Image definition (`python:3.11-slim`) |
 | `.runpod/hub.json` | Runpod Hub listing metadata (only needed when publishing) |
 | `.runpod/tests.json` | Test definitions run by Hub CI |
@@ -44,7 +44,7 @@ Without `uv`, use any Python 3.10+: `python3.11 -m venv .venv && .venv/bin/pip i
 With no arguments the SDK picks up `test_input.json`, runs one job, and exits:
 
 ```
---- Starting Serverless Worker |  Version 1.11.0 ---
+--- Starting Serverless Worker |  Version 1.12.0 ---
 INFO   | Using test_input.json as job input.
 INFO   | local_test | Started.
 INFO   | Job local_test completed successfully.
@@ -223,7 +223,7 @@ Move heavy work out of the handler: load a model at module scope and observe the
 |---|---|
 | `handler.py` | 워커 본체. `handler(job)` 가 `job["input"]` 을 읽어 결과를 반환 |
 | `test_input.json` | 로컬 실행 시 자동으로 사용되는 샘플 입력 |
-| `requirements.txt` | Python 의존성 (`runpod~=1.11.0`) |
+| `requirements.txt` | Python 의존성 (`runpod~=1.12.0`) |
 | `Dockerfile` | 이미지 정의 (`python:3.11-slim`) |
 | `.runpod/hub.json` | Runpod Hub 게시용 메타데이터 (게시할 때만 필요) |
 | `.runpod/tests.json` | Hub CI 가 실행하는 테스트 정의 |
@@ -251,7 +251,7 @@ macOS 시스템 `python3` 는 3.9 이므로 사용하지 마세요. SDK 가 3.10
 인자 없이 실행하면 SDK 가 `test_input.json` 을 읽어 작업 1건을 처리하고 종료합니다.
 
 ```
---- Starting Serverless Worker |  Version 1.11.0 ---
+--- Starting Serverless Worker |  Version 1.12.0 ---
 INFO   | Using test_input.json as job input.
 INFO   | local_test | Started.
 INFO   | Job local_test completed successfully.
