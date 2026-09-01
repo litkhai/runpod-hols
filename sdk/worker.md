@@ -137,6 +137,43 @@ One environment variable decides it. The platform sets `RUNPOD_WEBHOOK_GET_JOB`;
 
 The job ids come from a shared mirror that `JobsProgress` updates as jobs start and finish, so the console's view of what a worker is doing comes from this, not from your handler.
 
+### Timing your handler
+
+`--rp_debugger` collects timings and returns them inside the job output. Two ways to mark a span:
+
+```python
+from runpod.serverless.utils.rp_debugger import LineTimer, FunctionTimer
+
+@FunctionTimer
+def load_model(): ...
+
+def handler(job):
+    with LineTimer("preprocess"):
+        ...
+```
+
+The flag adds an `rp_debugger` key to `output`, carrying `system_info` (os, processor, python version, SDK version), the collected `timestamps`, and a `ready_delay_ms`.
+
+> **It does nothing locally.** The injection lives in `handle_job`, which only `rp_scale` — the production loop — calls. Both `rp_local` (plain `python handler.py`) and the `--rp_serve_api` simulator call `run_job` directly and bypass it. Verified: running a handler with `LineTimer` and `FunctionTimer` under `--rp_debugger` locally returns `{'output': {'answer': 42}}`, byte-identical to the run without the flag. Use it on a deployed endpoint.
+
+### Uploading results
+
+`boto3>=1.43.51` is a hard dependency of the `runpod` package, so the S3 helpers are always available.
+
+```python
+from runpod.serverless.utils import upload_file_to_bucket, upload_in_memory_object
+
+url = upload_file_to_bucket("result.png", "/tmp/result.png")
+url = upload_in_memory_object("result.png", png_bytes)
+```
+
+Credentials come from `BUCKET_ENDPOINT_URL`, `BUCKET_ACCESS_KEY_ID` and `BUCKET_SECRET_ACCESS_KEY`, or from a `bucket_creds` dict whose keys are `endpointUrl`, `accessId` and `accessSecret` — note those are not the env var names.
+
+Two behaviours to know:
+
+- **Multipart kicks in at 25 KiB**, with 25 KiB chunks and `max_concurrency` set to the CPU count. That is `1024 * 25`, not megabytes, so nearly every upload is chunked.
+- **With no endpoint configured it writes to disk instead**, into a `local_upload/` directory, and logs a warning. Convenient locally; on a live endpoint it means your results go into a container that is about to disappear.
+
 ### Handler utilities
 
 Small helpers that save writing the same code in every worker.
@@ -507,6 +544,43 @@ IS_LOCAL_TEST = os.environ.get("RUNPOD_WEBHOOK_GET_JOB", None) is None
 ```
 
 작업 id 는 `JobsProgress` 가 작업 시작·종료에 따라 갱신하는 공유 미러에서 옵니다. 즉 콘솔이 워커가 무엇을 하는지 아는 경로는 핸들러가 아니라 이 하트비트입니다.
+
+### 핸들러 시간 재기
+
+`--rp_debugger` 는 타이밍을 수집해 작업 출력에 실어 반환합니다. 구간을 표시하는 방법은 두 가지입니다.
+
+```python
+from runpod.serverless.utils.rp_debugger import LineTimer, FunctionTimer
+
+@FunctionTimer
+def load_model(): ...
+
+def handler(job):
+    with LineTimer("preprocess"):
+        ...
+```
+
+이 플래그는 `output` 에 `rp_debugger` 키를 추가하며, 그 안에 `system_info`(os, 프로세서, python 버전, SDK 버전), 수집된 `timestamps`, 그리고 `ready_delay_ms` 가 담깁니다.
+
+> **로컬에서는 아무 효과가 없습니다.** 주입 코드가 `handle_job` 안에 있는데, 이 함수는 프로덕션 루프인 `rp_scale` 만 호출합니다. `rp_local`(그냥 `python handler.py`)도 `--rp_serve_api` 시뮬레이터도 `run_job` 을 직접 호출해 이 경로를 건너뜁니다. 확인 결과, `LineTimer` 와 `FunctionTimer` 를 쓴 핸들러를 로컬에서 `--rp_debugger` 로 실행하면 `{'output': {'answer': 42}}` 가 나오며, 플래그 없이 실행한 것과 완전히 동일합니다. 배포된 엔드포인트에서 쓰세요.
+
+### 결과물 업로드
+
+`boto3>=1.43.51` 이 `runpod` 패키지의 필수 의존성이라 S3 헬퍼는 항상 사용 가능합니다.
+
+```python
+from runpod.serverless.utils import upload_file_to_bucket, upload_in_memory_object
+
+url = upload_file_to_bucket("result.png", "/tmp/result.png")
+url = upload_in_memory_object("result.png", png_bytes)
+```
+
+자격 증명은 `BUCKET_ENDPOINT_URL`, `BUCKET_ACCESS_KEY_ID`, `BUCKET_SECRET_ACCESS_KEY` 에서 오거나, `endpointUrl` · `accessId` · `accessSecret` 를 키로 갖는 `bucket_creds` 딕셔너리로 넘깁니다. 환경변수 이름과 다르다는 점에 주의하세요.
+
+알아둘 동작 두 가지입니다.
+
+- **멀티파트가 25 KiB 에서 시작됩니다.** 청크도 25 KiB, `max_concurrency` 는 CPU 개수입니다. `1024 * 25` 이지 메가바이트가 아니라서, 사실상 거의 모든 업로드가 청크로 나뉩니다.
+- **엔드포인트가 설정돼 있지 않으면 디스크에 씁니다.** `local_upload/` 디렉토리에 저장하고 경고를 남깁니다. 로컬에서는 편하지만, 실제 엔드포인트에서는 곧 사라질 컨테이너 안에 결과물을 넣는다는 뜻입니다.
 
 ### Handler 유틸리티
 

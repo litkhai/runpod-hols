@@ -105,6 +105,14 @@ Locally you get `INFO   | message`. Same call, different shape — which is why 
 `log.secret(name, value)` masks all but the first and last character. It does not redact very short values: `"ab"` prints as `ab` and `"a"` as `aa`, because the mask is `"*" * (len - 2)`.
 </div>
 
+### Timing your handler
+
+`--rp_debugger` collects timings with `LineTimer` (context manager) and `FunctionTimer` (decorator), returning them as an `rp_debugger` key inside `output` alongside `system_info` and `ready_delay_ms`.
+
+<div class="warn" markdown="1">
+**It does nothing locally.** The injection lives in `handle_job`, which only the production loop calls. Plain `python handler.py` and `--rp_serve_api` both call `run_job` directly and skip it — verified: the output is byte-identical with and without the flag. Use it on a deployed endpoint.
+</div>
+
 ### Handler utilities
 
 | Import | Use |
@@ -295,6 +303,14 @@ SIGTERM 과 SIGINT 는 종료 이벤트를 세팅하므로 루프가 작업 중�
 
 <div class="note" markdown="1">
 `log.secret(name, value)` 는 첫 글자와 마지막 글자만 남기고 가립니다. 아주 짧은 값은 가리지 못합니다. 마스크가 `"*" * (len - 2)` 라서 `"ab"` 는 `ab`, `"a"` 는 `aa` 로 나옵니다.
+</div>
+
+### 핸들러 시간 재기
+
+`--rp_debugger` 는 `LineTimer`(컨텍스트 매니저)와 `FunctionTimer`(데코레이터)로 타이밍을 수집해, `output` 안에 `rp_debugger` 키로 `system_info`, `ready_delay_ms` 와 함께 반환합니다.
+
+<div class="warn" markdown="1">
+**로컬에서는 아무 효과가 없습니다.** 주입 코드가 프로덕션 루프만 호출하는 `handle_job` 안에 있습니다. `python handler.py` 도 `--rp_serve_api` 도 `run_job` 을 직접 호출해 이 경로를 건너뜁니다. 확인 결과 플래그 유무에 관계없이 출력이 완전히 같았습니다. 배포된 엔드포인트에서 쓰세요.
 </div>
 
 ### Handler 유틸리티

@@ -99,7 +99,23 @@ is_completed(s) -> s in ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED"]
 
 ### Async
 
-`AsyncioEndpoint` and `AsyncioJob` mirror the above for `asyncio`, taking an `aiohttp` session. Use them when firing many requests at once; the sync client blocks per call.
+`AsyncioEndpoint` and `AsyncioJob` cover the same ground for `asyncio`, taking an `aiohttp` session. Use them when firing many requests at once; the sync client blocks per call.
+
+```python
+async with aiohttp.ClientSession() as session:
+    ep = runpod.AsyncioEndpoint("<endpoint id>", session)
+    job = await ep.run({"name": "SDK"})
+    print(await job.output(timeout=180))
+```
+
+They are not a drop-in swap:
+
+| | Sync | Async |
+|---|---|---|
+| `run_sync` | Yes | **Absent** — use `run()` then `output()` |
+| `output(timeout=0)` | Returns whatever exists now | **Raises `TimeoutError`** |
+
+> **The async `output()` default is a trap.** It wraps the wait in `asyncio.wait_for(..., timeout)`, and `asyncio.wait_for(coro, 0)` raises `TimeoutError` even for a coroutine that returns immediately — verified. So unless the output is already cached on the object, calling `await job.output()` with no argument always raises. Always pass a timeout.
 
 ### Managing infrastructure
 
@@ -291,7 +307,23 @@ is_completed(s) -> s in ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED"]
 
 ### 비동기
 
-`AsyncioEndpoint` 와 `AsyncioJob` 이 위 내용을 `asyncio` 용으로 제공하며 `aiohttp` 세션을 받습니다. 요청을 많이 동시에 던질 때 사용하세요. 동기 클라이언트는 호출마다 블로킹합니다.
+`AsyncioEndpoint` 와 `AsyncioJob` 이 같은 영역을 `asyncio` 용으로 제공하며 `aiohttp` 세션을 받습니다. 요청을 많이 동시에 던질 때 사용하세요. 동기 클라이언트는 호출마다 블로킹합니다.
+
+```python
+async with aiohttp.ClientSession() as session:
+    ep = runpod.AsyncioEndpoint("<엔드포인트 id>", session)
+    job = await ep.run({"name": "SDK"})
+    print(await job.output(timeout=180))
+```
+
+그대로 바꿔 끼울 수는 없습니다.
+
+| | 동기 | 비동기 |
+|---|---|---|
+| `run_sync` | 있음 | **없음** — `run()` 후 `output()` |
+| `output(timeout=0)` | 현재 있는 값을 반환 | **`TimeoutError` 발생** |
+
+> **비동기 `output()` 의 기본값이 함정입니다.** 내부에서 `asyncio.wait_for(..., timeout)` 로 감싸는데, `asyncio.wait_for(coro, 0)` 은 즉시 반환하는 코루틴에도 `TimeoutError` 를 냅니다 — 직접 확인했습니다. 따라서 객체에 결과가 이미 캐시돼 있지 않은 한, 인자 없이 `await job.output()` 을 호출하면 항상 예외가 납니다. 타임아웃을 반드시 넘기세요.
 
 ### 인프라 관리
 

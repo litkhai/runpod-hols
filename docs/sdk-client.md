@@ -37,6 +37,8 @@ ep.run_sync({"name": "SDK"}, timeout=180)
 **`run_sync`'s default timeout is 86,400 seconds — a full day.** A wedged job blocks your script until tomorrow. Pass a realistic value.
 </div>
 
+`AsyncioEndpoint` / `AsyncioJob` cover the same ground for `asyncio`, but are not a drop-in swap: there is no `run_sync`, and `output(timeout=0)` raises `TimeoutError` instead of returning what exists — `asyncio.wait_for(coro, 0)` times out even on a coroutine that returns immediately. Always pass a timeout.
+
 Async form returns a `Job`:
 
 ```python
@@ -159,6 +161,8 @@ ep.run_sync({"name": "SDK"}, timeout=180)
 <div class="warn" markdown="1">
 **`run_sync` 의 기본 타임아웃은 86,400초, 하루입니다.** 멈춘 작업 하나가 스크립트를 내일까지 붙잡습니다. 현실적인 값을 넘기세요.
 </div>
+
+`AsyncioEndpoint` / `AsyncioJob` 이 같은 영역을 `asyncio` 용으로 제공하지만 그대로 바꿔 끼울 수는 없습니다. `run_sync` 가 없고, `output(timeout=0)` 은 현재 값을 반환하는 대신 `TimeoutError` 를 냅니다 — `asyncio.wait_for(coro, 0)` 은 즉시 반환하는 코루틴에도 타임아웃을 냅니다. 타임아웃을 반드시 넘기세요.
 
 비동기 형태는 `Job` 을 반환합니다.
 
