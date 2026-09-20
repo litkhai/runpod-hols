@@ -143,6 +143,8 @@ cd serverless/01-hello-worker
 
 Follow [serverless/01-hello-worker/README.md](./serverless/01-hello-worker/README.md).
 
+[STATUS.md](./STATUS.md) records what has been run against a real account and what has only been written — worth checking before assuming a lab is deployed. [AGENTS.md](./AGENTS.md) holds the conventions and working rules, and `python3 scripts/check-docs.py` enforces the ones that can be checked.
+
 ### 📄 License
 
 [MIT](./LICENSE). Take anything here and use it.
@@ -293,6 +295,8 @@ cd serverless/01-hello-worker
 ```
 
 [serverless/01-hello-worker/README.md](./serverless/01-hello-worker/README.md) 를 따라가세요.
+
+[STATUS.md](./STATUS.md) 에 실제 계정에서 실행한 것과 작성만 한 것이 정리돼 있습니다. 어떤 랩이 배포됐다고 가정하기 전에 확인할 만합니다. [AGENTS.md](./AGENTS.md) 는 작업 규칙과 관례를 담고 있으며, 검사 가능한 항목은 `python3 scripts/check-docs.py` 가 강제합니다.
 
 ### 📄 라이선스
 
