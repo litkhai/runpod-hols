@@ -14,6 +14,8 @@ permalink: /readings/
 All published by Runpod. Competitor comparisons and marketing pieces are excluded. The rest is largely provider-agnostic — VRAM arithmetic, batching, precision trade-offs.
 </div>
 
+Written here rather than linked: [GPU Topology]({{ '/gpu-topology/' | relative_url }}) — what NVLink and MIG are, and which of them you can actually control on Runpod.
+
 ## Background — GPU, training, inference, deployment
 {: #background }
 
@@ -116,6 +118,8 @@ All published by Runpod. Competitor comparisons and marketing pieces are exclude
 <div class="note" markdown="1">
 모두 Runpod 이 발행한 자료입니다. 경쟁사 비교와 마케팅성 글은 제외했습니다. 나머지는 대체로 제공사와 무관한 내용입니다 — VRAM 계산, 배칭, 정밀도 트레이드오프.
 </div>
+
+링크가 아니라 직접 쓴 글: [GPU Topology]({{ '/gpu-topology/' | relative_url }}) — NVLink 와 MIG 가 무엇인지, 그리고 Runpod 에서 그중 무엇을 실제로 제어할 수 있는지.
 
 ## 배경 — GPU, 학습, 추론, 배포
 {: #background-ko }

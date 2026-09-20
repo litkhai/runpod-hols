@@ -57,6 +57,7 @@ nav:
 
   # Further material / 참고 자료
   - { title: Readings, url: /readings/, group: readings }
+  - { title: GPU Topology, url: /gpu-topology/, group: readings }
 
   # The repository itself — the only meta item / 저장소 자체. 유일한 메타 항목
   - { title: About, url: /about/, group: about }

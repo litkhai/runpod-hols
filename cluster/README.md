@@ -20,6 +20,8 @@
 | Interconnect | 1600–3200 Gbps between nodes, exposed as `ens1`–`ens8` |
 | Frameworks | PyTorch distributed, TensorFlow, Slurm, Axolotl |
 
+Clusters give you more GPUs, not more privilege — they run as Docker containers, so MIG partitioning stays out of reach. See [GPU Topology](../gpu-topology/README.md).
+
 ### Possible Labs
 
 | Lab | Contents |
@@ -59,6 +61,8 @@ Instant Clusters are considerably more expensive than a single Pod — you lease
 | 클러스터 규모 | 2~8 노드 (16~64 GPU), 영업 문의 시 최대 512 GPU |
 | 인터커넥트 | 노드 간 1600~3200 Gbps, `ens1`~`ens8` 인터페이스로 노출 |
 | 프레임워크 | PyTorch distributed, TensorFlow, Slurm, Axolotl |
+
+클러스터는 GPU 를 더 주는 것이지 권한을 더 주지 않습니다. Docker 컨테이너로 돌기 때문에 MIG 파티셔닝은 여전히 불가능합니다. [GPU Topology](../gpu-topology/README.md) 참조.
 
 ### 검토 중인 실습
 

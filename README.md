@@ -46,6 +46,7 @@ runpod-hols/
 | [`terraform/`](./terraform) | ✅ 2 labs ready | Provision endpoint and Pod declaratively |
 | [`pod/`](./pod) | ✅ Lab 01 ready | Launch from Python → connect over SSH → tear down |
 | [`cluster/`](./cluster) | 🚧 TBD | Multi-node PyTorch / Slurm / Axolotl |
+| [`gpu-topology/`](./gpu-topology) | 📖 Reference | NVLink and MIG — what they are, what Runpod lets you control |
 
 ### Comparing the Three Products
 
@@ -196,6 +197,7 @@ runpod-hols/
 | [`terraform/`](./terraform) | ✅ 2개 준비됨 | 엔드포인트와 Pod 를 선언적으로 프로비저닝 |
 | [`pod/`](./pod) | ✅ Lab 01 준비됨 | Python 으로 기동 → SSH 접속 → 정리 |
 | [`cluster/`](./cluster) | 🚧 TBD | 다중 노드 PyTorch / Slurm / Axolotl |
+| [`gpu-topology/`](./gpu-topology) | 📖 레퍼런스 | NVLink 와 MIG — 무엇이며, Runpod 에서 무엇을 제어할 수 있는가 |
 
 ### 세 제품의 차이
 
