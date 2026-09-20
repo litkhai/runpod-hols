@@ -56,8 +56,12 @@ nav:
   - { title: Client SDK, url: /sdk/client/, group: reference }
 
   # Further material / 참고 자료
+  # `parent` makes an item a child page: it is kept out of the top bar and
+  # listed in the sidebar under its parent instead.
+  # `parent` 가 있으면 자식 페이지다. 상단 바에서 빠지고 사이드바에서
+  # 부모 아래에 나열된다.
   - { title: Readings, url: /readings/, group: readings }
-  - { title: GPU Topology, url: /gpu-topology/, group: readings }
+  - { title: GPU Topology, url: /readings/gpu-topology/, group: readings, parent: Readings }
 
   # The repository itself — the only meta item / 저장소 자체. 유일한 메타 항목
   - { title: About, url: /about/, group: about }

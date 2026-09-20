@@ -50,14 +50,20 @@
 <nav class="site-nav">
   <div class="wrap nav-inner">
     {% assign cur = page.url | remove: site.baseurl %}
+    {% assign here = '' %}
+    {% for item in site.nav %}
+      {% if cur == item.url %}{% assign here = item %}{% endif %}
+    {% endfor %}
     {% assign prev_group = '' %}
     {% for item in site.nav %}
-      {% if prev_group != '' and item.group != prev_group %}
-        <span class="nav-divider" aria-hidden="true"></span>
-      {% endif %}
-      <a href="{{ item.url | relative_url }}"
-         class="{% if cur == item.url %}current{% endif %}">{{ item.title }}</a>
-      {% assign prev_group = item.group %}
+      {% unless item.parent %}
+        {% if prev_group != '' and item.group != prev_group %}
+          <span class="nav-divider" aria-hidden="true"></span>
+        {% endif %}
+        <a href="{{ item.url | relative_url }}"
+           class="{% if cur == item.url or here.parent == item.title %}current{% endif %}">{{ item.title }}</a>
+        {% assign prev_group = item.group %}
+      {% endunless %}
     {% endfor %}
   </div>
 </nav>
@@ -76,7 +82,31 @@
        per language, and half the anchors would point into a hidden block.
        스크립트가 채운다. 현재 보이는 언어 블록의 제목만 넣는다. 서버 사이드로
        만들면 제목이 두 배로 나열되고, 앵커 절반이 숨겨진 블록을 가리킨다. -->
-  <aside class="sidebar" id="page-sidebar" hidden>
+  {%- comment -%}
+    Child pages of the current section. Server-side, because the tree is the
+    same in both languages — only the heading list below it is per-language.
+    현재 섹션의 자식 페이지. 트리는 두 언어가 같으므로 서버 사이드로 만든다.
+    언어마다 달라지는 것은 그 아래 제목 목록뿐이다.
+  {%- endcomment -%}
+  {% if here.parent %}{% assign section = here.parent %}{% else %}{% assign section = here.title %}{% endif %}
+  {% assign kids = site.nav | where: 'parent', section %}
+  {% assign parent_item = site.nav | where: 'title', section | first %}
+
+  <aside class="sidebar {% if kids.size > 0 %}has-section{% endif %}" id="page-sidebar"
+         {% if kids.size == 0 %}hidden{% endif %}>
+    {% if kids.size > 0 %}
+    <nav aria-label="In this section">
+      <p class="side-group">In this section</p>
+      <ul class="side-tree">
+        <li><a href="{{ parent_item.url | relative_url }}"
+               class="{% if cur == parent_item.url %}current{% endif %}">{{ parent_item.title }}</a></li>
+        {% for kid in kids %}
+        <li class="side-child"><a href="{{ kid.url | relative_url }}"
+               class="{% if cur == kid.url %}current{% endif %}">{{ kid.title }}</a></li>
+        {% endfor %}
+      </ul>
+    </nav>
+    {% endif %}
     <nav aria-label="On this page">
       <p class="side-group">On this page</p>
       <ul class="side-toc" id="page-toc"></ul>
@@ -184,9 +214,18 @@
     list.textContent = '';
     if (spy) { spy.disconnect(); spy = null; }
 
-    // A page with no sections gets no sidebar, rather than an empty heading.
+    // A page with no sections gets no sidebar, rather than an empty heading —
+    // unless it carries a section tree, which is server-rendered and stands on
+    // its own.
     // 섹션이 없는 페이지는 빈 제목만 남기지 말고 사이드바 자체를 숨긴다.
-    if (aside) aside.hidden = headings.length === 0;
+    // 단 섹션 트리가 있으면 예외다. 서버에서 렌더링되며 그 자체로 의미가 있다.
+    var hasTree = aside && aside.classList.contains('has-section');
+    if (aside) aside.hidden = headings.length === 0 && !hasTree;
+
+    // The "On this page" heading would sit above nothing on a page with only
+    // a tree. / 트리만 있는 페이지에서는 "On this page" 제목만 남게 된다.
+    var tocNav = list.parentElement;
+    if (tocNav) tocNav.hidden = headings.length === 0;
     if (!headings.length) return;
 
     headings.forEach(function (h) {

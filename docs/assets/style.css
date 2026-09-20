@@ -145,6 +145,38 @@ body {
   opacity: 0.75;
 }
 
+/* The page tree for the current section, rendered server-side. Sits above the
+   heading list and is separated from it, because it moves you between pages
+   while the list below only moves you within one.
+   현재 섹션의 페이지 트리. 서버에서 렌더링한다. 제목 목록 위에 두되 구분한다.
+   이것은 페이지 사이를 이동하고, 아래 목록은 한 페이지 안에서만 이동한다. */
+.side-tree {
+  list-style: none;
+  margin: 0 0 22px;
+  padding: 0 0 0 10px;
+  border-left: 1px solid var(--border);
+}
+
+.side-tree a {
+  display: block;
+  padding: 3px 8px;
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--fg);
+  text-decoration: none;
+  border-radius: 4px;
+}
+
+.side-tree .side-child a {
+  padding-left: 18px;
+  font-weight: 400;
+  color: var(--fg-muted);
+}
+
+.side-tree a:hover { color: var(--fg); background: var(--bg-soft); }
+.side-tree a.current { color: var(--accent); background: var(--accent-soft); }
+
 /* In-page headings for the current page, injected by script.
    현재 페이지의 제목 목록. 스크립트가 삽입한다. */
 .side-toc {

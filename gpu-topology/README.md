@@ -2,17 +2,19 @@
 
 [English](#english) | [한국어](#한국어)
 
-> Two questions people arrive with — "does Runpod do NVLink?" and "can I slice a GPU with MIG?" — have opposite answers, and neither is a yes/no.
+> NVLink and MIG decide two things about a GPU: how fast it can talk to its neighbours, and whether it can be split. Both are worth understanding on their own, independently of any provider. What Runpod does with them comes second — and the two answers are opposite.
 >
-> Read out of the live GPU catalogue, the published REST OpenAPI spec, and vendor documentation. Nothing here required renting a multi-GPU machine; the parts that would are marked as unverified.
+> Concepts are from vendor documentation. The Runpod half is from the live GPU catalogue and the published REST OpenAPI spec; no multi-GPU machine was rented, and anything that would need one is marked as unverified.
 >
-> "Runpod 이 NVLink 를 지원하나?" 와 "MIG 로 GPU 를 쪼갤 수 있나?" 는 답이 서로 반대이며, 둘 다 예/아니오로 끝나지 않습니다.
+> NVLink 와 MIG 는 GPU 에 대해 두 가지를 결정합니다. 옆의 GPU 와 얼마나 빠르게 대화하는가, 그리고 쪼갤 수 있는가. 둘 다 특정 제공사와 무관하게 그 자체로 알아둘 가치가 있는 개념이며, Runpod 이 이를 어떻게 제공하는지는 그 다음 이야기입니다. 두 답이 서로 반대입니다.
 >
-> 살아있는 GPU 카탈로그, 발행된 REST OpenAPI 스펙, 벤더 문서를 읽어 확인했습니다. 멀티 GPU 머신을 빌려야만 확인되는 항목은 미검증으로 표시했습니다.
+> 개념은 벤더 문서 기준입니다. Runpod 쪽은 살아있는 GPU 카탈로그와 발행된 REST OpenAPI 스펙에서 확인했으며, 멀티 GPU 머신은 빌리지 않았고 그것이 필요한 항목은 미검증으로 표시했습니다.
 
 ---
 
 ## English
+
+## The concepts
 
 ### What NVLink is
 
@@ -43,6 +45,8 @@ This is what separates MIG from the other ways to share a card:
 | CUDA MPS | No | No |
 
 That hardware isolation is the whole point — and the reason it cannot be set up from inside a container.
+
+## How Runpod exposes them
 
 ### The short answer
 
@@ -208,6 +212,8 @@ Inter-node traffic runs over interfaces `ens1`–`ens8`; the primary node reache
 
 ## 한국어
 
+## 개념
+
 ### NVLink 란
 
 GPU 끼리 직접 연결하는 링크입니다. 없으면 한 GPU 가 다른 GPU 에 닿기 위해 PCIe 로 나가 CPU 와 시스템 메모리를 거쳐 돌아와야 하고, GPU 들이 매 스텝 데이터를 주고받아야 하는 순간 이 우회가 병목이 됩니다.
@@ -237,6 +243,8 @@ Multi-Instance GPU 는 물리 카드 하나를 **GPU Instance** 로 잘라 각�
 | CUDA MPS | 없음 | 안 됨 |
 
 그 하드웨어 격리가 MIG 의 존재 이유이자, 컨테이너 안에서 설정할 수 없는 이유입니다.
+
+## Runpod 은 이를 어떻게 제공하는가
 
 ### 짧은 답
 

@@ -1,7 +1,7 @@
 ---
 layout: default
 title: GPU Topology
-permalink: /gpu-topology/
+permalink: /readings/gpu-topology/
 ---
 
 # GPU Topology
@@ -10,9 +10,14 @@ permalink: /gpu-topology/
 
 ## English
 
-Two questions people arrive with — "does Runpod do NVLink?" and "can I slice a GPU with MIG?" — have opposite answers, and neither is a yes/no.
+NVLink and MIG decide two things about a GPU: how fast it can talk to its neighbours, and whether it can be split. Both are worth understanding on their own, independently of any provider.
 
-Read out of the live GPU catalogue, the published REST OpenAPI spec, and vendor documentation. Nothing here required renting a multi-GPU machine; the parts that would are marked unverified.
+What Runpod does with them comes second — and the two answers are opposite. NVLink is available but never configurable. MIG is available only as slices Runpod has already cut.
+
+Concepts are from vendor documentation. The Runpod half is from the live GPU catalogue and the published REST OpenAPI spec; no multi-GPU machine was rented, and anything that would need one is marked unverified.
+
+## The concepts
+{: #concepts }
 
 ### What NVLink is
 
@@ -43,6 +48,9 @@ This is what separates MIG from the other ways to share a card:
 | CUDA MPS | No | No |
 
 That hardware isolation is the whole point — and the reason it cannot be set up from inside a container.
+
+## How Runpod exposes them
+{: #on-runpod }
 
 ### The short answer
 
@@ -215,9 +223,14 @@ Runpod's cluster documentation never names the interconnect technology. It quote
 
 ## 한국어
 
-"Runpod 이 NVLink 를 지원하나?" 와 "MIG 로 GPU 를 쪼갤 수 있나?" 는 답이 서로 반대이며, 둘 다 예/아니오로 끝나지 않습니다.
+NVLink 와 MIG 는 GPU 에 대해 두 가지를 결정합니다. 옆의 GPU 와 얼마나 빠르게 대화하는가, 그리고 쪼갤 수 있는가. 둘 다 특정 제공사와 무관하게 그 자체로 알아둘 가치가 있는 개념입니다.
 
-살아있는 GPU 카탈로그, 발행된 REST OpenAPI 스펙, 벤더 문서를 읽어 확인했습니다. 멀티 GPU 머신을 빌려야만 확인되는 항목은 미검증으로 표시했습니다.
+Runpod 이 이를 어떻게 제공하는지는 그 다음 이야기이고, 두 답이 서로 반대입니다. NVLink 는 제공되지만 설정할 수 없고, MIG 는 Runpod 이 이미 잘라놓은 조각으로만 제공됩니다.
+
+개념은 벤더 문서 기준입니다. Runpod 쪽은 살아있는 GPU 카탈로그와 발행된 REST OpenAPI 스펙에서 확인했으며, 멀티 GPU 머신은 빌리지 않았고 그것이 필요한 항목은 미검증으로 표시했습니다.
+
+## 개념
+{: #concepts-ko }
 
 ### NVLink 란
 
@@ -248,6 +261,9 @@ Multi-Instance GPU 는 물리 카드 하나를 **GPU Instance** 로 잘라 각�
 | CUDA MPS | 없음 | 안 됨 |
 
 그 하드웨어 격리가 MIG 의 존재 이유이자, 컨테이너 안에서 설정할 수 없는 이유입니다.
+
+## Runpod 은 이를 어떻게 제공하는가
+{: #on-runpod-ko }
 
 ### 짧은 답
 
