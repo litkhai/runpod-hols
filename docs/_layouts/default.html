@@ -95,22 +95,34 @@
   <aside class="sidebar {% if kids.size > 0 %}has-section{% endif %}" id="page-sidebar"
          {% if kids.size == 0 %}hidden{% endif %}>
     {% if kids.size > 0 %}
+    <!-- One tree, not two lists: the current page's headings nest under the
+         page they belong to, so there is a single place to look and a single
+         thing highlighted.
+         목록 두 개가 아니라 트리 하나다. 현재 페이지의 제목들이 그 페이지 아래에
+         중첩되므로, 볼 곳도 강조되는 것도 하나뿐이다. -->
     <nav aria-label="In this section">
       <p class="side-group">In this section</p>
       <ul class="side-tree">
-        <li><a href="{{ parent_item.url | relative_url }}"
-               class="{% if cur == parent_item.url %}current{% endif %}">{{ parent_item.title }}</a></li>
+        <li>
+          <a href="{{ parent_item.url | relative_url }}"
+             class="{% if cur == parent_item.url %}here{% endif %}">{{ parent_item.title }}</a>
+          {% if cur == parent_item.url %}<ul class="side-toc" id="page-toc"></ul>{% endif %}
+        </li>
         {% for kid in kids %}
-        <li class="side-child"><a href="{{ kid.url | relative_url }}"
-               class="{% if cur == kid.url %}current{% endif %}">{{ kid.title }}</a></li>
+        <li class="side-child">
+          <a href="{{ kid.url | relative_url }}"
+             class="{% if cur == kid.url %}here{% endif %}">{{ kid.title }}</a>
+          {% if cur == kid.url %}<ul class="side-toc" id="page-toc"></ul>{% endif %}
+        </li>
         {% endfor %}
       </ul>
     </nav>
-    {% endif %}
+    {% else %}
     <nav aria-label="On this page">
       <p class="side-group">On this page</p>
       <ul class="side-toc" id="page-toc"></ul>
     </nav>
+    {% endif %}
   </aside>
 
   <main class="content">
@@ -219,13 +231,15 @@
     // its own.
     // 섹션이 없는 페이지는 빈 제목만 남기지 말고 사이드바 자체를 숨긴다.
     // 단 섹션 트리가 있으면 예외다. 서버에서 렌더링되며 그 자체로 의미가 있다.
+    // With a section tree the sidebar has something to show even for a page
+    // with no headings, so only hide it when both are empty. Do not touch the
+    // list's parent here — in tree mode that is the <li> holding the current
+    // page's own link.
+    // 섹션 트리가 있으면 제목이 없는 페이지에서도 보여줄 것이 있으므로, 둘 다
+    // 비었을 때만 숨긴다. list 의 부모는 건드리지 않는다. 트리 모드에서는 그것이
+    // 현재 페이지 링크를 담은 <li> 다.
     var hasTree = aside && aside.classList.contains('has-section');
     if (aside) aside.hidden = headings.length === 0 && !hasTree;
-
-    // The "On this page" heading would sit above nothing on a page with only
-    // a tree. / 트리만 있는 페이지에서는 "On this page" 제목만 남게 된다.
-    var tocNav = list.parentElement;
-    if (tocNav) tocNav.hidden = headings.length === 0;
     if (!headings.length) return;
 
     headings.forEach(function (h) {

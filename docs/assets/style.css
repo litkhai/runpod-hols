@@ -152,12 +152,14 @@ body {
    이것은 페이지 사이를 이동하고, 아래 목록은 한 페이지 안에서만 이동한다. */
 .side-tree {
   list-style: none;
-  margin: 0 0 22px;
+  margin: 0;
   padding: 0 0 0 10px;
   border-left: 1px solid var(--border);
 }
 
-.side-tree a {
+.side-tree li { margin: 0; }
+
+.side-tree > li > a {
   display: block;
   padding: 3px 8px;
   font-size: 13px;
@@ -168,14 +170,36 @@ body {
   border-radius: 4px;
 }
 
-.side-tree .side-child a {
+.side-tree > li.side-child > a {
   padding-left: 18px;
   font-weight: 400;
   color: var(--fg-muted);
 }
 
-.side-tree a:hover { color: var(--fg); background: var(--bg-soft); }
-.side-tree a.current { color: var(--accent); background: var(--accent-soft); }
+.side-tree > li > a:hover { color: var(--fg); background: var(--bg-soft); }
+
+/* The page you are on is marked, not filled. The filled accent belongs to the
+   heading you are currently reading, and two filled rows read as two
+   selections.
+   현재 페이지는 표시만 하고 배경은 채우지 않는다. 채워진 강조는 지금 읽고 있는
+   제목의 몫이며, 채워진 행이 둘이면 선택이 둘로 보인다. */
+.side-tree > li > a.here {
+  color: var(--accent);
+  font-weight: 700;
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* Headings of the current page, nested one level below it.
+   현재 페이지의 제목들. 그 페이지보다 한 단계 아래에 중첩된다. */
+.side-tree .side-toc {
+  margin: 2px 0 6px;
+  padding-left: 8px;
+  border-left: 0;
+}
+
+.side-tree .side-toc a { font-size: 12.5px; }
+.side-tree .side-toc a.lvl-2 { padding-left: 18px; }
+.side-tree .side-toc a.lvl-3 { padding-left: 30px; }
 
 /* In-page headings for the current page, injected by script.
    현재 페이지의 제목 목록. 스크립트가 삽입한다. */
