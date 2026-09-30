@@ -4,15 +4,10 @@
 
 Conventions are in [`README.md`](./README.md) → *How This Repository Works*.
 What has been run and what has not: [`STATUS.md`](./STATUS.md).
+Written is not deployed — check `STATUS.md` before saying something works.
 
-## Never
+## Never (besides the shared principles below)
 
-- **Spend without asking.** Deploying an endpoint, launching a Pod,
-  `terraform apply`. Read-only queries need no permission.
-- **Commit secrets.** `.env` holds a live key, mode 600, gitignored.
-- **State a version, API shape or limit from memory.** Read the installed
-  source, the live API or the published spec, and record in the page how it was
-  confirmed.
 - **Put a count in a heading.** "three places a model can live" broke when a
   fourth row was added under it.
 - **Write about the document.** Not "this section covers X" — say the thing.
@@ -42,17 +37,6 @@ nav-to-permalink consistency, internal links, tracked secrets.
 - **Repo doc and site page are separate files** — `sdk/worker.md` and
   `docs/sdk-worker.md`. Change both. A verification pass caught `VolumeCache`
   living only in the repo copy while the site page linked to it.
-
-## Mistakes already made
-
-| What happened | Lesson |
-|---|---|
-| Documented log truncation as 10 MB, copying the SDK's own comment. The constant is `MAX_MESSAGE_LENGTH = 4096` | Vendor comments are not evidence |
-| Bumped an SDK pin, left "read at 1.11.0" across six files | Version claims have locations; grep for all of them |
-| Inserted a section at an anchor a previous trim had removed — the edit silently no-op'd | Assert the anchor exists before replacing |
-| Claimed GitHub's index lacked the repo; the control query also returned zero | A negative with no positive control is not a result |
-| Shipped a docs checker that passed on first run | Passing proves nothing. Inject the fault and watch it fire |
-| Flip-flopped on `COPY` paths instead of researching the Build context field | Find the documentation first. When it does not exist, say so |
 
 <!-- harness:core start — khai-harness core@4b0e565 · context public · 손으로 고치지 마세요 -->
 **Context: public.** Public sources only — nothing from company connectors, internal hosts, internal wikis or
