@@ -1,0 +1,237 @@
+{"source":"system","line":"worker is ready","ts":"2026-10-06T15:15:36Z"}
+{"source":"system","line":"create container runpod/worker-v1-vllm:v2.28.0","ts":"2026-10-06T15:15:56Z"}
+{"source":"system","line":"v2.28.0 Pulling from runpod/worker-v1-vllm","ts":"2026-10-06T15:15:58Z"}
+{"source":"system","line":"Digest: sha256:6d8e4ff417e09aeffe6a55e547ed81203b02228533c5305e726caaa7dab34571","ts":"2026-10-06T15:15:58Z"}
+{"source":"system","line":"Status: Image is up to date for runpod/worker-v1-vllm:v2.28.0","ts":"2026-10-06T15:15:58Z"}
+{"source":"system","line":"worker is ready","ts":"2026-10-06T15:15:58Z"}
+{"source":"system","line":"start container for runpod/worker-v1-vllm:v2.28.0: begin","ts":"2026-10-06T15:15:58Z"}
+{"source":"container","line":"2026-10-06 15:16:02,300 INFO httpx: HTTP Request: GET https://huggingface.co/api/agent-harnesses \"HTTP/1.1 200 OK\"","ts":"2026-10-06T15:16:02.301104099Z"}
+{"source":"container","line":"2026-10-06 15:16:02,422 INFO httpx: HTTP Request: GET https://huggingface.co/api/models/Qwen/Qwen2.5-7B-Instruct \"HTTP/1.1 200 OK\"","ts":"2026-10-06T15:16:02.422810528Z"}
+{"source":"container","line":"2026-10-06 15:16:02,425 INFO root: Model pre-flight: Qwen/Qwen2.5-7B-Instruct is fetchable","ts":"2026-10-06T15:16:02.425876883Z"}
+{"source":"container","line":"2026-10-06 15:16:02,426 INFO root: Starting vLLM: vllm serve --host 127.0.0.1 --port 8000 --max-model-len 8192 --model Qwen/Qwen2.5-7B-Instruct","ts":"2026-10-06T15:16:02.426193991Z"}
+{"source":"container","line":"INFO 10-06 15:16:18 [import_utils.py:499] DeepEP v2 requires NCCL \u003e= 2.30.4 but found 2.29.7. deepep_v2 backend will not be available.","ts":"2026-10-06T15:16:18.982139421Z"}
+{"source":"container","line":"INFO 10-06 15:16:19 [__init__.py:112] Registered model loader `\u003cclass 'vllm_bnb_plugin.bitsandbytes_loader.BitsAndBytesModelLoader'\u003e` with load format `bitsandbytes`","ts":"2026-10-06T15:16:19.581907949Z"}
+{"source":"container","line":"WARNING 10-06 15:16:19 [argparse_utils.py:276] With `vllm serve`, you should provide the model as a positional argument or in a config file instead of via the `--model` option. The `--model` option will be removed in a future version.","ts":"2026-10-06T15:16:19.631295332Z"}
+{"source":"container","line":"(APIServer pid=52) INFO 10-06 15:16:19 [api_utils.py:347]","ts":"2026-10-06T15:16:19.633467314Z"}
+{"source":"container","line":"(APIServer pid=52) INFO 10-06 15:16:19 [api_utils.py:347]        █     █     █▄   ▄█","ts":"2026-10-06T15:16:19.633491034Z"}
+{"source":"container","line":"(APIServer pid=52) INFO 10-06 15:16:19 [api_utils.py:347]  ▄▄ ▄█ █     █     █ ▀▄▀ █  version 0.30.0","ts":"2026-10-06T15:16:19.633497894Z"}
+{"source":"container","line":"(APIServer pid=52) INFO 10-06 15:16:19 [api_utils.py:347]   █▄█▀ █     █     █     █  model   Qwen/Qwen2.5-7B-Instruct","ts":"2026-10-06T15:16:19.633504304Z"}
+{"source":"container","line":"(APIServer pid=52) INFO 10-06 15:16:19 [api_utils.py:347]    ▀▀  ▀▀▀▀▀ ▀▀▀▀▀ ▀     ▀","ts":"2026-10-06T15:16:19.633511054Z"}
+{"source":"container","line":"(APIServer pid=52) INFO 10-06 15:16:19 [api_utils.py:347]","ts":"2026-10-06T15:16:19.633517494Z"}
+{"source":"container","line":"(APIServer pid=52) INFO 10-06 15:16:19 [api_utils.py:286] non-default args: {'model_tag': 'Qwen/Qwen2.5-7B-Instruct', 'host': '127.0.0.1', 'model': 'Qwen/Qwen2.5-7B-Instruct', 'max_model_len': 8192}","ts":"2026-10-06T15:16:19.640207179Z"}
+{"source":"container","line":"(APIServer pid=52) Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.","ts":"2026-10-06T15:16:19.905595636Z"}
+{"source":"container","line":"(APIServer pid=52) INFO 10-06 15:16:32 [model.py:692] Resolved architecture: Qwen2ForCausalLM","ts":"2026-10-06T15:16:32.124647700Z"}
+{"source":"container","line":"(APIServer pid=52) INFO 10-06 15:16:32 [model.py:2030] Using max model len 8192","ts":"2026-10-06T15:16:32.124924408Z"}
+{"source":"container","line":"(APIServer pid=52) INFO 10-06 15:16:32 [kernel.py:416] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'], gelu_and_mul_sparse=['triton', 'native'])","ts":"2026-10-06T15:16:32.133428418Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:16:47 [import_utils.py:499] DeepEP v2 requires NCCL \u003e= 2.30.4 but found 2.29.7. deepep_v2 backend will not be available.","ts":"2026-10-06T15:16:47.688610758Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:16:48 [__init__.py:112] Registered model loader `\u003cclass 'vllm_bnb_plugin.bitsandbytes_loader.BitsAndBytesModelLoader'\u003e` with load format `bitsandbytes`","ts":"2026-10-06T15:16:48.201980207Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:16:48 [core.py:123] Initializing a V1 LLM engine (v0.30.0) with config: model='Qwen/Qwen2.5-7B-Instruct', speculative_config=None, tokenizer='Qwen/Qwen2.5-7B-Instruct', skip_tokenizer_init=False, tokenizer_mode=auto, revision=main, tokenizer_revision=main, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=8192, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, data_parallel_size=1, decode_context_parallel_size=1, dcp_comm_backend=ag_rs, disable_custom_all_reduce=False, quantization=None, quantization_config=None, enforce_eager=False, enable_return_routed_experts=False, kv_cache_dtype=auto, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None, per_request_spec_decode_metrics='none', kv_cache_metrics=False, kv_cache_metrics_sample=0.01, cudagraph_metrics=False, enable_layerwise_nvtx_tracing=False, enable_mfu_metrics=False, enable_mm_processor_stats=False, enable_logging_iteration_details=False, jit_monitor_mode='warn', jit_monitor_verbose=False), seed=0, served_model_name=Qwen/Qwen2.5-7B-Instruct, enable_prefix_caching=True, enable_chunked_prefill=True, pooler_config=None, compilation_config={'mode': \u003cCompilationMode.VLLM_COMPILE: 3\u003e, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['none'], 'ir_enable_torch_wrap': True, 'splitting_ops': ['vllm::unified_attention_with_output', 'vllm::unified_mla_attention_with_output', 'vllm::mamba_mixer2', 'vllm::mamba_mixer', 'vllm::short_conv', 'vllm::qwen4_exp_ple_short_conv', 'vllm::qwen4_exp_qsa_with_output', 'vllm::linear_attention', 'vllm::qwen_gdn_attention_core', 'vllm::qwen_gdn_attention_core_fused_norm_packed', 'vllm::gdn_attention_core_xpu', 'vllm::olmo_hybrid_gdn_full_forward', 'vllm::sparse_attn_indexer', 'vllm::rocm_aiter_sparse_attn_indexer', 'vllm::deepseek_v4_attention', 'vllm::hpc_rope_norm_forward', 'vllm::unified_kv_cache_update', 'vllm::unified_mla_kv_cache_update'], 'compile_mm_encoder': False, 'cudagraph_mm_encoder': False, 'encoder_cudagraph_token_budgets': [], 'encoder_cudagraph_max_vision_items_per_batch': 0, 'encoder_cudagraph_max_frames_per_batch': None, 'compile_sizes': [], 'compile_ranges_endpoints': [2048], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': \u003cCUDAGraphMode.FULL_AND_PIECEWISE: (2, 1)\u003e, 'cudagraph_num_of_warmups': 1, 'cudagraph_capture_sizes': [1, 2, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 248, 256, 272, 288, 304, 320, 336, 352, 368, 384, 400, 416, 432, 448, 464, 480, 496, 512], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {'fuse_norm_quant': False, 'fuse_act_quant': False, 'fuse_attn_quant': False, 'enable_sp': False, 'fuse_gemm_comms': False, 'fuse_allreduce_rms': False, 'enable_qk_norm_rope_fusion': False, 'fuse_rope_kvcache_cat_mla': False, 'fuse_act_padding': False, 'fuse_qk_norm_rope_kvcache': False}, 'max_cudagraph_capture_size': 512, 'dynamic_shapes_config': {'type': \u003cDynamicShapesType.BACKED: 'backed'\u003e, 'evaluate_guards': False, 'assume_32_bit_indexing': False}, 'local_cache_dir': None, 'fast_moe_cold_start': False, 'static_all_moe_layers': []}, kernel_config=KernelConfig(ir_op_priority=IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'], gelu_and_mul_sparse=['triton', 'native']), enable_flashinfer_autotune=True, enable_cutedsl_warmup=True, enable_jit_warmup=True, moe_backend='auto', sparse_indexer_topk_backend='auto', linear_backend='auto', linear_backend_per_quant=None)","ts":"2026-10-06T15:16:48.224234544Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:16:50 [parallel_state.py:1827] world_size=1 rank=0 local_rank=0 distributed_init_method=file:///tmp/vllm_dist_7dec5fbe3ad645e6873cb9ab6e91b648 backend=nccl","ts":"2026-10-06T15:16:50.443042287Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:16:50 [parallel_state.py:2267] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, PCP rank 0, TP rank 0, ETP rank 0, EP rank N/A, EPLB rank N/A","ts":"2026-10-06T15:16:50.470168774Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:16:50 [gpu_worker.py:441] Using V2 Model Runner","ts":"2026-10-06T15:16:50.470200194Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:16:52 [model_runner.py:396] Loading model from scratch...","ts":"2026-10-06T15:16:52.585787696Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:16:55 [cuda.py:538] Using FLASH_ATTN attention backend out of potential backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION'].","ts":"2026-10-06T15:16:55.755500469Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:16:55 [flash_attn.py:1116] Using FlashAttention version 2","ts":"2026-10-06T15:16:55.756421681Z"}
+{"source":"container","line":"(EngineCore pid=452) Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.","ts":"2026-10-06T15:16:57.630498279Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:17:12 [weight_utils.py:558] Time spent downloading weights for Qwen/Qwen2.5-7B-Instruct: 15.002091 seconds","ts":"2026-10-06T15:17:12.710008090Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:17:12 [weight_utils.py:895] Filesystem type for checkpoints: OVERLAY. Checkpoint size: 14.19 GiB. Available RAM: 70.36 GiB.","ts":"2026-10-06T15:17:12.719757700Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:17:12 [weight_utils.py:918] Auto-prefetch is disabled because the filesystem (OVERLAY) is not a recognized network FS (NFS/Lustre). If you want to force prefetching, start vLLM with --safetensors-load-strategy=prefetch.","ts":"2026-10-06T15:17:12.720641682Z"}
+{"source":"container","line":"(EngineCore pid=452)","ts":"2026-10-06T15:17:12.721719953Z"}
+{"source":"container","line":"Loading safetensors checkpoint shards:   0% Completed | 0/4 [00:00\u003c?, ?it/s]","ts":"2026-10-06T15:17:12.721747963Z"}
+{"source":"container","line":"(EngineCore pid=452)","ts":"2026-10-06T15:17:13.214260923Z"}
+{"source":"container","line":"Loading safetensors checkpoint shards:  25% Completed | 1/4 [00:00\u003c00:01,  2.03it/s]","ts":"2026-10-06T15:17:13.214314073Z"}
+{"source":"container","line":"(EngineCore pid=452)","ts":"2026-10-06T15:17:13.850697659Z"}
+{"source":"container","line":"Loading safetensors checkpoint shards:  50% Completed | 2/4 [00:01\u003c00:01,  1.73it/s]","ts":"2026-10-06T15:17:13.850750819Z"}
+{"source":"container","line":"(EngineCore pid=452)","ts":"2026-10-06T15:17:14.570979445Z"}
+{"source":"container","line":"Loading safetensors checkpoint shards:  75% Completed | 3/4 [00:01\u003c00:00,  1.56it/s]","ts":"2026-10-06T15:17:14.571020005Z"}
+{"source":"container","line":"(EngineCore pid=452)","ts":"2026-10-06T15:17:15.202670021Z"}
+{"source":"container","line":"Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:02\u003c00:00,  1.57it/s]","ts":"2026-10-06T15:17:15.202751120Z"}
+{"source":"container","line":"(EngineCore pid=452)","ts":"2026-10-06T15:17:15.202758880Z"}
+{"source":"container","line":"Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:02\u003c00:00,  1.61it/s]","ts":"2026-10-06T15:17:15.202764830Z"}
+{"source":"container","line":"(EngineCore pid=452)","ts":"2026-10-06T15:17:15.202770930Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:17:15 [default_loader.py:430] Loading weights took 2.65 seconds","ts":"2026-10-06T15:17:15.369458609Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:17:16 [model_runner.py:428] Model loading took 14.29 GiB memory and 23.764948 seconds","ts":"2026-10-06T15:17:16.041110615Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:17:16 [topk_topp_sampler.py:78] Using FlashInfer for top-p \u0026 top-k sampling.","ts":"2026-10-06T15:17:16.120614052Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:17:16 [utils.py:320] Using LBNHC KV cache layout.","ts":"2026-10-06T15:17:16.121531985Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:17:22 [backends.py:1094] Using cache directory: /root/.cache/vllm/torch_compile_cache/d865acc8fd/rank_0_0/backbone for vLLM's torch.compile","ts":"2026-10-06T15:17:22.378495779Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:17:22 [backends.py:1155] Dynamo bytecode transform time: 5.33 s","ts":"2026-10-06T15:17:22.378929996Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:17:30 [backends.py:393] Compiling a graph for compile range (1, 2048) takes 8.26 s","ts":"2026-10-06T15:17:30.791020178Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:17:34 [backends.py:920] collected artifacts: 29 entries, 3 artifacts, 4751043 bytes total","ts":"2026-10-06T15:17:34.592148838Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:17:34 [decorators.py:719] saved AOT compiled function to /root/.cache/vllm/torch_compile_cache/torch_aot_compile/42debfb781f1e7d5b0146435a2c3e192e811aad13ccfb38ac69775ae005f5e4c/rank_0_0/model","ts":"2026-10-06T15:17:34.611357811Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:17:34 [monitor.py:53] torch.compile took 17.56 s in total","ts":"2026-10-06T15:17:34.611398140Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:17:34 [monitor.py:81] Initial profiling/warmup run took 0.32 s","ts":"2026-10-06T15:17:34.930526166Z"}
+{"source":"container","line":"(EngineCore pid=452)","ts":"2026-10-06T15:17:37.318206150Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):   0%|          | 0/51 [00:00\u003c?, ?it/s]","ts":"2026-10-06T15:17:37.933564279Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):   2%|▏         | 1/51 [00:00\u003c00:30,  1.63it/s]","ts":"2026-10-06T15:17:38.632958518Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):   4%|▍         | 2/51 [00:01\u003c00:32,  1.50it/s]","ts":"2026-10-06T15:17:39.715105269Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):   6%|▌         | 3/51 [00:02\u003c00:41,  1.17it/s]","ts":"2026-10-06T15:17:40.544060752Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):   8%|▊         | 4/51 [00:03\u003c00:39,  1.18it/s]","ts":"2026-10-06T15:17:41.247557766Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  10%|▉         | 5/51 [00:03\u003c00:36,  1.26it/s]","ts":"2026-10-06T15:17:41.851662618Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  12%|█▏        | 6/51 [00:04\u003c00:32,  1.37it/s]","ts":"2026-10-06T15:17:42.312952785Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  14%|█▎        | 7/51 [00:04\u003c00:28,  1.56it/s]","ts":"2026-10-06T15:17:42.898945446Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  16%|█▌        | 8/51 [00:05\u003c00:26,  1.60it/s]","ts":"2026-10-06T15:17:43.949522386Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  18%|█▊        | 9/51 [00:06\u003c00:31,  1.32it/s]","ts":"2026-10-06T15:17:44.705388260Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  20%|█▉        | 10/51 [00:07\u003c00:31,  1.32it/s]","ts":"2026-10-06T15:17:45.332638062Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  22%|██▏       | 11/51 [00:08\u003c00:28,  1.39it/s]","ts":"2026-10-06T15:17:46.060789494Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  24%|██▎       | 12/51 [00:08\u003c00:28,  1.39it/s]","ts":"2026-10-06T15:17:46.541226683Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  25%|██▌       | 13/51 [00:09\u003c00:24,  1.54it/s]","ts":"2026-10-06T15:17:47.001603826Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  27%|██▋       | 14/51 [00:09\u003c00:21,  1.69it/s]","ts":"2026-10-06T15:17:47.530364568Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  29%|██▉       | 15/51 [00:10\u003c00:20,  1.75it/s]","ts":"2026-10-06T15:17:48.183577226Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  31%|███▏      | 16/51 [00:10\u003c00:20,  1.68it/s]","ts":"2026-10-06T15:17:48.498924403Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  33%|███▎      | 17/51 [00:11\u003c00:17,  1.95it/s]","ts":"2026-10-06T15:17:49.100163519Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  35%|███▌      | 18/51 [00:11\u003c00:17,  1.86it/s]","ts":"2026-10-06T15:17:49.703884364Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  37%|███▋      | 19/51 [00:12\u003c00:17,  1.79it/s]","ts":"2026-10-06T15:17:50.763472330Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  39%|███▉      | 20/51 [00:13\u003c00:21,  1.41it/s]","ts":"2026-10-06T15:17:51.345003427Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  41%|████      | 21/51 [00:14\u003c00:20,  1.49it/s]","ts":"2026-10-06T15:17:51.856799299Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  43%|████▎     | 22/51 [00:14\u003c00:18,  1.61it/s]","ts":"2026-10-06T15:17:52.432242946Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  45%|████▌     | 23/51 [00:15\u003c00:17,  1.64it/s]","ts":"2026-10-06T15:17:52.751453931Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  47%|████▋     | 24/51 [00:15\u003c00:14,  1.92it/s]","ts":"2026-10-06T15:17:53.309718380Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  49%|████▉     | 25/51 [00:15\u003c00:13,  1.88it/s]","ts":"2026-10-06T15:17:53.887554118Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  51%|█████     | 26/51 [00:16\u003c00:13,  1.83it/s]","ts":"2026-10-06T15:17:54.465088729Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  53%|█████▎    | 27/51 [00:17\u003c00:13,  1.80it/s]","ts":"2026-10-06T15:17:54.890839438Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  55%|█████▍    | 28/51 [00:17\u003c00:11,  1.94it/s]","ts":"2026-10-06T15:17:55.496663276Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  57%|█████▋    | 29/51 [00:18\u003c00:11,  1.84it/s]","ts":"2026-10-06T15:17:55.983011866Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  59%|█████▉    | 30/51 [00:18\u003c00:11,  1.90it/s]","ts":"2026-10-06T15:17:56.631855440Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  61%|██████    | 31/51 [00:19\u003c00:11,  1.78it/s]","ts":"2026-10-06T15:17:57.307110947Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  63%|██████▎   | 32/51 [00:19\u003c00:11,  1.68it/s]","ts":"2026-10-06T15:17:57.818643381Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  65%|██████▍   | 33/51 [00:20\u003c00:10,  1.75it/s]","ts":"2026-10-06T15:17:57.993260174Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  67%|██████▋   | 34/51 [00:20\u003c00:07,  2.21it/s]","ts":"2026-10-06T15:17:58.474146070Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  69%|██████▊   | 35/51 [00:21\u003c00:07,  2.17it/s]","ts":"2026-10-06T15:17:59.010339531Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  71%|███████   | 36/51 [00:21\u003c00:07,  2.07it/s]","ts":"2026-10-06T15:17:59.621065338Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  73%|███████▎  | 37/51 [00:22\u003c00:07,  1.92it/s]","ts":"2026-10-06T15:18:00.225659076Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  75%|███████▍  | 38/51 [00:22\u003c00:07,  1.83it/s]","ts":"2026-10-06T15:18:00.800481309Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  76%|███████▋  | 39/51 [00:23\u003c00:06,  1.80it/s]","ts":"2026-10-06T15:18:01.333608195Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  78%|███████▊  | 40/51 [00:24\u003c00:06,  1.82it/s]","ts":"2026-10-06T15:18:01.772022270Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  80%|████████  | 41/51 [00:24\u003c00:05,  1.94it/s]","ts":"2026-10-06T15:18:02.207523528Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  82%|████████▏ | 42/51 [00:24\u003c00:04,  2.03it/s]","ts":"2026-10-06T15:18:02.811953278Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  84%|████████▍ | 43/51 [00:25\u003c00:04,  1.90it/s]","ts":"2026-10-06T15:18:03.349399207Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  86%|████████▋ | 44/51 [00:26\u003c00:03,  1.89it/s]","ts":"2026-10-06T15:18:03.877808372Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  88%|████████▊ | 45/51 [00:26\u003c00:03,  1.89it/s]","ts":"2026-10-06T15:18:04.335764186Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  90%|█████████ | 46/51 [00:27\u003c00:02,  1.97it/s]","ts":"2026-10-06T15:18:05.091663009Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  92%|█████████▏| 47/51 [00:27\u003c00:02,  1.72it/s]","ts":"2026-10-06T15:18:05.869624801Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  94%|█████████▍| 48/51 [00:28\u003c00:01,  1.56it/s]","ts":"2026-10-06T15:18:06.924383187Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  96%|█████████▌| 49/51 [00:29\u003c00:01,  1.31it/s]","ts":"2026-10-06T15:18:08.256248024Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  98%|█████████▊| 50/51 [00:30\u003c00:00,  1.07it/s]","ts":"2026-10-06T15:18:08.884943394Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE): 100%|██████████| 51/51 [00:31\u003c00:00,  1.19it/s]","ts":"2026-10-06T15:18:08.884991313Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE): 100%|██████████| 51/51 [00:31\u003c00:00,  1.62it/s]","ts":"2026-10-06T15:18:08.884998183Z"}
+{"source":"container","line":"(EngineCore pid=452)","ts":"2026-10-06T15:18:08.885069803Z"}
+{"source":"container","line":"Capturing CUDA graphs (FULL):   0%|          | 0/2 [00:00\u003c?, ?it/s]","ts":"2026-10-06T15:18:09.086175779Z"}
+{"source":"container","line":"Capturing CUDA graphs (FULL):  50%|█████     | 1/2 [00:00\u003c00:00,  4.98it/s]","ts":"2026-10-06T15:18:09.336532660Z"}
+{"source":"container","line":"Capturing CUDA graphs (FULL): 100%|██████████| 2/2 [00:00\u003c00:00,  4.35it/s]","ts":"2026-10-06T15:18:09.336586369Z"}
+{"source":"container","line":"Capturing CUDA graphs (FULL): 100%|██████████| 2/2 [00:00\u003c00:00,  4.43it/s]","ts":"2026-10-06T15:18:09.336593280Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:18:09 [model_runner.py:1066] Graph capturing finished in 33 secs, took 0.33 GiB","ts":"2026-10-06T15:18:09.852057110Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:18:10 [gpu_worker.py:640] Available KV cache memory: 4.64 GiB","ts":"2026-10-06T15:18:10.376023741Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:18:10 [gpu_worker.py:655] CUDA graph memory profiling is enabled (default since v0.21.0). The current --gpu-memory-utilization=0.9200 is equivalent to --gpu-memory-utilization=0.9030 without CUDA graph memory profiling. To maintain the same effective KV cache size as before, increase --gpu-memory-utilization to 0.9370. To disable, set VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS=0.","ts":"2026-10-06T15:18:10.376089251Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:18:10 [kv_cache_utils.py:2395] GPU KV cache size: 86,816 tokens, Maximum concurrency for 8,192 tokens per request: 10.60x","ts":"2026-10-06T15:18:10.377055223Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:18:10 [kernel_warmup.py:172] JIT kernel warmup starting.","ts":"2026-10-06T15:18:10.444250800Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:18:10 [kernel_warmup.py:185] JIT kernel warmup finished in 0.00s.","ts":"2026-10-06T15:18:10.444311420Z"}
+{"source":"container","line":"(EngineCore pid=452)","ts":"2026-10-06T15:18:15.153642431Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):   0%|          | 0/51 [00:00\u003c?, ?it/s]","ts":"2026-10-06T15:18:16.187507589Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):   2%|▏         | 1/51 [00:01\u003c00:51,  1.03s/it]","ts":"2026-10-06T15:18:17.189068913Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):   4%|▍         | 2/51 [00:02\u003c00:49,  1.01s/it]","ts":"2026-10-06T15:18:18.091057566Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):   6%|▌         | 3/51 [00:02\u003c00:46,  1.04it/s]","ts":"2026-10-06T15:18:19.285929509Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):   8%|▊         | 4/51 [00:04\u003c00:49,  1.05s/it]","ts":"2026-10-06T15:18:20.044648740Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  10%|▉         | 5/51 [00:04\u003c00:43,  1.05it/s]","ts":"2026-10-06T15:18:21.706429923Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  12%|█▏        | 6/51 [00:06\u003c00:53,  1.19s/it]","ts":"2026-10-06T15:18:22.611377892Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  14%|█▎        | 7/51 [00:07\u003c00:48,  1.10s/it]","ts":"2026-10-06T15:18:23.502573053Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  16%|█▌        | 8/51 [00:08\u003c00:44,  1.03s/it]","ts":"2026-10-06T15:18:24.311706429Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  18%|█▊        | 9/51 [00:09\u003c00:40,  1.04it/s]","ts":"2026-10-06T15:18:25.193933874Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  20%|█▉        | 10/51 [00:10\u003c00:38,  1.07it/s]","ts":"2026-10-06T15:18:26.098066129Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  22%|██▏       | 11/51 [00:10\u003c00:37,  1.08it/s]","ts":"2026-10-06T15:18:26.999376617Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  24%|██▎       | 12/51 [00:11\u003c00:35,  1.09it/s]","ts":"2026-10-06T15:18:27.613230299Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  25%|██▌       | 13/51 [00:12\u003c00:31,  1.21it/s]","ts":"2026-10-06T15:18:28.068933911Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  27%|██▋       | 14/51 [00:12\u003c00:26,  1.40it/s]","ts":"2026-10-06T15:18:28.668403731Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  29%|██▉       | 15/51 [00:13\u003c00:24,  1.47it/s]","ts":"2026-10-06T15:18:29.008171817Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  31%|███▏      | 16/51 [00:13\u003c00:20,  1.73it/s]","ts":"2026-10-06T15:18:29.297544108Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  33%|███▎      | 17/51 [00:14\u003c00:16,  2.04it/s]","ts":"2026-10-06T15:18:29.752315388Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  35%|███▌      | 18/51 [00:14\u003c00:15,  2.08it/s]","ts":"2026-10-06T15:18:30.213966501Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  37%|███▋      | 19/51 [00:15\u003c00:15,  2.11it/s]","ts":"2026-10-06T15:18:30.824343222Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  39%|███▉      | 20/51 [00:15\u003c00:15,  1.94it/s]","ts":"2026-10-06T15:18:31.441881754Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  41%|████      | 21/51 [00:16\u003c00:16,  1.83it/s]","ts":"2026-10-06T15:18:32.140697477Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  43%|████▎     | 22/51 [00:16\u003c00:17,  1.69it/s]","ts":"2026-10-06T15:18:32.796342095Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  45%|████▌     | 23/51 [00:17\u003c00:17,  1.64it/s]","ts":"2026-10-06T15:18:33.648594676Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  47%|████▋     | 24/51 [00:18\u003c00:18,  1.46it/s]","ts":"2026-10-06T15:18:34.454605328Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  49%|████▉     | 25/51 [00:19\u003c00:18,  1.39it/s]","ts":"2026-10-06T15:18:35.070132306Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  51%|█████     | 26/51 [00:19\u003c00:17,  1.45it/s]","ts":"2026-10-06T15:18:35.681509748Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  53%|█████▎    | 27/51 [00:20\u003c00:15,  1.50it/s]","ts":"2026-10-06T15:18:36.290640689Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  55%|█████▍    | 28/51 [00:21\u003c00:14,  1.54it/s]","ts":"2026-10-06T15:18:36.899530493Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  57%|█████▋    | 29/51 [00:21\u003c00:14,  1.57it/s]","ts":"2026-10-06T15:18:37.799964248Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  59%|█████▉    | 30/51 [00:22\u003c00:15,  1.40it/s]","ts":"2026-10-06T15:18:38.561626824Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  61%|██████    | 31/51 [00:23\u003c00:14,  1.37it/s]","ts":"2026-10-06T15:18:39.240999667Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  63%|██████▎   | 32/51 [00:24\u003c00:13,  1.40it/s]","ts":"2026-10-06T15:18:40.072479269Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  65%|██████▍   | 33/51 [00:24\u003c00:13,  1.33it/s]","ts":"2026-10-06T15:18:40.684146349Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  67%|██████▋   | 34/51 [00:25\u003c00:12,  1.41it/s]","ts":"2026-10-06T15:18:41.293907104Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  69%|██████▊   | 35/51 [00:26\u003c00:10,  1.47it/s]","ts":"2026-10-06T15:18:42.050981878Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  71%|███████   | 36/51 [00:26\u003c00:10,  1.42it/s]","ts":"2026-10-06T15:18:43.330039210Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  73%|███████▎  | 37/51 [00:28\u003c00:12,  1.14it/s]","ts":"2026-10-06T15:18:44.154201562Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  75%|███████▍  | 38/51 [00:29\u003c00:11,  1.16it/s]","ts":"2026-10-06T15:18:44.813778938Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  76%|███████▋  | 39/51 [00:29\u003c00:09,  1.25it/s]","ts":"2026-10-06T15:18:45.368843663Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  78%|███████▊  | 40/51 [00:30\u003c00:07,  1.38it/s]","ts":"2026-10-06T15:18:45.829251007Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  80%|████████  | 41/51 [00:30\u003c00:06,  1.55it/s]","ts":"2026-10-06T15:18:46.435552051Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  82%|████████▏ | 42/51 [00:31\u003c00:05,  1.58it/s]","ts":"2026-10-06T15:18:47.189240094Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  84%|████████▍ | 43/51 [00:32\u003c00:05,  1.49it/s]","ts":"2026-10-06T15:18:47.945846353Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  86%|████████▋ | 44/51 [00:32\u003c00:04,  1.44it/s]","ts":"2026-10-06T15:18:48.410009265Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  88%|████████▊ | 45/51 [00:33\u003c00:03,  1.60it/s]","ts":"2026-10-06T15:18:49.165584043Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  90%|█████████ | 46/51 [00:34\u003c00:03,  1.50it/s]","ts":"2026-10-06T15:18:50.916022567Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  92%|█████████▏| 47/51 [00:35\u003c00:03,  1.01it/s]","ts":"2026-10-06T15:18:51.717297538Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  94%|█████████▍| 48/51 [00:36\u003c00:02,  1.07it/s]","ts":"2026-10-06T15:18:52.313766193Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  96%|█████████▌| 49/51 [00:37\u003c00:01,  1.20it/s]","ts":"2026-10-06T15:18:52.834664609Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE):  98%|█████████▊| 50/51 [00:37\u003c00:00,  1.35it/s]","ts":"2026-10-06T15:18:52.933144609Z"}
+{"source":"container","line":"Capturing CUDA graphs (PIECEWISE): 100%|██████████| 51/51 [00:37\u003c00:00,  1.35it/s]","ts":"2026-10-06T15:18:52.933212688Z"}
+{"source":"container","line":"(EngineCore pid=452)","ts":"2026-10-06T15:18:52.933495216Z"}
+{"source":"container","line":"Capturing CUDA graphs (FULL):   0%|          | 0/35 [00:00\u003c?, ?it/s]","ts":"2026-10-06T15:18:53.056366116Z"}
+{"source":"container","line":"Capturing CUDA graphs (FULL):   9%|▊         | 3/35 [00:00\u003c00:01, 24.42it/s]","ts":"2026-10-06T15:18:53.176527247Z"}
+{"source":"container","line":"Capturing CUDA graphs (FULL):  17%|█▋        | 6/35 [00:00\u003c00:01, 24.75it/s]","ts":"2026-10-06T15:18:53.293141848Z"}
+{"source":"container","line":"Capturing CUDA graphs (FULL):  26%|██▌       | 9/35 [00:00\u003c00:01, 25.18it/s]","ts":"2026-10-06T15:18:53.398091525Z"}
+{"source":"container","line":"Capturing CUDA graphs (FULL):  34%|███▍      | 12/35 [00:00\u003c00:00, 26.42it/s]","ts":"2026-10-06T15:18:53.504521050Z"}
+{"source":"container","line":"Capturing CUDA graphs (FULL):  43%|████▎     | 15/35 [00:00\u003c00:00, 27.04it/s]","ts":"2026-10-06T15:18:53.718317482Z"}
+{"source":"container","line":"Capturing CUDA graphs (FULL):  51%|█████▏    | 18/35 [00:00\u003c00:00, 20.56it/s]","ts":"2026-10-06T15:18:53.850421685Z"}
+{"source":"container","line":"Capturing CUDA graphs (FULL):  63%|██████▎   | 22/35 [00:00\u003c00:00, 23.52it/s]","ts":"2026-10-06T15:18:53.976274781Z"}
+{"source":"container","line":"Capturing CUDA graphs (FULL):  74%|███████▍  | 26/35 [00:01\u003c00:00, 25.95it/s]","ts":"2026-10-06T15:18:54.080834861Z"}
+{"source":"container","line":"Capturing CUDA graphs (FULL):  83%|████████▎ | 29/35 [00:01\u003c00:00, 26.66it/s]","ts":"2026-10-06T15:18:54.197474442Z"}
+{"source":"container","line":"Capturing CUDA graphs (FULL):  94%|█████████▍| 33/35 [00:01\u003c00:00, 28.88it/s]","ts":"2026-10-06T15:18:54.254186895Z"}
+{"source":"container","line":"Capturing CUDA graphs (FULL): 100%|██████████| 35/35 [00:01\u003c00:00, 26.50it/s]","ts":"2026-10-06T15:18:54.254231375Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:18:54 [model_runner.py:1066] Graph capturing finished in 40 secs, took 0.24 GiB","ts":"2026-10-06T15:18:54.907125295Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:18:54 [gpu_worker.py:825] CUDA graph pool memory: 0.24 GiB (actual), 0.4 GiB (estimated), difference: 0.16 GiB (68.0%).","ts":"2026-10-06T15:18:54.907181465Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:18:54 [gpu_worker.py:888] Free memory on device (23.13/23.52 GiB) on startup. Desired GPU memory utilization is (0.92, 21.64 GiB). Actual usage is 15.56 GiB for consumed memory (weights + non-torch), 1.44 GiB for peak activation, and 0.24 GiB for CUDAGraph memory. Replace gpu_memory_utilization config with `--kv-cache-memory=4565866886` (4.25 GiB) to fit into requested memory, or `--kv-cache-memory=6171766272` (5.75 GiB) to fully utilize gpu memory. Current kv cache memory in use is 4.64 GiB.","ts":"2026-10-06T15:18:54.907193105Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:18:56 [jit_monitor.py:85] Kernel JIT monitor activated; monitored JIT compilations during inference will use mode=warn.","ts":"2026-10-06T15:18:56.352783727Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:18:56 [torch_utils.py:287] Reducing Torch threads from 64 to 1 for serving. Set OMP_NUM_THREADS in the external environment to override.","ts":"2026-10-06T15:18:56.950248983Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:18:56 [core.py:372] init engine (profile, create kv cache, warmup model) took 100.83 s (compilation: 17.56 s)","ts":"2026-10-06T15:18:56.950418232Z"}
+{"source":"container","line":"(EngineCore pid=452) INFO 10-06 15:18:58 [kernel.py:416] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'], gelu_and_mul_sparse=['triton', 'native'])","ts":"2026-10-06T15:18:58.264000040Z"}
+{"source":"container","line":"(APIServer pid=52) INFO 10-06 15:18:58 [entry.py:135] Supported tasks: ['generate']","ts":"2026-10-06T15:18:58.297798751Z"}
+{"source":"container","line":"(APIServer pid=52) INFO 10-06 15:18:58 [factories.py:76] Scale-out endpoints are disabled. Set --enable-scale-out to enable them.","ts":"2026-10-06T15:18:58.620380169Z"}
+{"source":"container","line":"(APIServer pid=52) INFO 10-06 15:19:00 [hf.py:642] Detected the chat template content format to be 'string'. You can set `--chat-template-content-format` to override this.","ts":"2026-10-06T15:19:00.209909097Z"}
+{"source":"container","line":"(APIServer pid=52) WARNING 10-06 15:19:00 [model.py:1772] Default vLLM sampling parameters have been overridden by the model's `generation_config.json`: `{'repetition_penalty': 1.05, 'temperature': 0.7, 'top_k': 20, 'top_p': 0.8}`. If this is not intended, please relaunch vLLM instance with `--generation-config vllm`.","ts":"2026-10-06T15:19:00.225479649Z"}
+{"source":"container","line":"(APIServer pid=52) INFO 10-06 15:19:00 [entry.py:139] Starting vLLM server on http://127.0.0.1:8000","ts":"2026-10-06T15:19:00.259147882Z"}
+{"source":"container","line":"(APIServer pid=52) INFO 10-06 15:19:00 [launcher.py:61] Available routes are:","ts":"2026-10-06T15:19:00.259177462Z"}
+{"source":"container","line":"(APIServer pid=52) INFO 10-06 15:19:00 [launcher.py:70] Route: /openapi.json, Methods: HEAD, GET","ts":"2026-10-06T15:19:00.259185752Z"}
+{"source":"container","line":"(APIServer pid=52) INFO 10-06 15:19:00 [launcher.py:70] Route: /docs, Methods: HEAD, GET","ts":"2026-10-06T15:19:00.259192941Z"}
+{"source":"container","line":"(APIServer pid=52) INFO 10-06 15:19:00 [launcher.py:70] Route: /docs/oauth2-redirect, Methods: HEAD, GET","ts":"2026-10-06T15:19:00.259199332Z"}
+{"source":"container","line":"(APIServer pid=52) INFO 10-06 15:19:00 [launcher.py:70] Route: /redoc, Methods: HEAD, GET","ts":"2026-10-06T15:19:00.259206001Z"}
+{"source":"container","line":"(APIServer pid=52) INFO 10-06 15:19:00 [launcher.py:70] Route: /metrics, Methods: GET","ts":"2026-10-06T15:19:00.259213071Z"}
+{"source":"container","line":"(APIServer pid=52) INFO:     Started server process [52]","ts":"2026-10-06T15:19:00.323995808Z"}
+{"source":"container","line":"(APIServer pid=52) INFO:     Waiting for application startup.","ts":"2026-10-06T15:19:00.324030668Z"}
+{"source":"container","line":"(APIServer pid=52) INFO:     Application startup complete.","ts":"2026-10-06T15:19:00.700312534Z"}
+{"source":"container","line":"(APIServer pid=52) INFO:     127.0.0.1:54152 - \"GET /health HTTP/1.1\" 200 OK","ts":"2026-10-06T15:19:02.520243367Z"}
+{"source":"container","line":"2026-10-06 15:19:02,520 INFO root: vLLM is healthy","ts":"2026-10-06T15:19:02.520607464Z"}
+{"source":"container","line":"--- Starting Serverless Worker |  Version 1.12.0 ---","ts":"2026-10-06T15:19:04.509299361Z"}
+{"source":"container","line":"{\"requestId\": null, \"message\": \"Running 7 fitness check(s)...\", \"level\": \"INFO\"}","ts":"2026-10-06T15:19:04.509355960Z"}
+{"source":"container","line":"{\"requestId\": null, \"message\": \"GPU binary test passed: 1 GPU(s) healthy (CUDA 13.2)\", \"level\": \"INFO\"}","ts":"2026-10-06T15:19:07.501283067Z"}
+{"source":"container","line":"{\"requestId\": null, \"message\": \"Memory check passed: 707.01GB available (of 755.70GB total)\", \"level\": \"INFO\"}","ts":"2026-10-06T15:19:07.521977316Z"}
+{"source":"container","line":"{\"requestId\": null, \"message\": \"Disk space check passed: 45.67GB free (76.1% available)\", \"level\": \"INFO\"}","ts":"2026-10-06T15:19:07.522065576Z"}
+{"source":"container","line":"{\"requestId\": null, \"message\": \"Network connectivity passed: Connected to 8.8.8.8 (36ms)\", \"level\": \"INFO\"}","ts":"2026-10-06T15:19:07.558648575Z"}
+{"source":"container","line":"{\"requestId\": null, \"message\": \"CUDA version check passed: 13.0 (minimum: 11.8)\", \"level\": \"INFO\"}","ts":"2026-10-06T15:19:07.563923251Z"}
+{"source":"container","line":"{\"requestId\": null, \"message\": \"CUDA initialization passed: 1 device(s) initialized successfully\", \"level\": \"INFO\"}","ts":"2026-10-06T15:19:11.035375453Z"}
+{"source":"container","line":"{\"requestId\": null, \"message\": \"GPU compute benchmark passed: Matrix multiply completed in 124ms\", \"level\": \"INFO\"}","ts":"2026-10-06T15:19:11.262822332Z"}
+{"source":"container","line":"{\"requestId\": null, \"message\": \"All fitness checks passed. (6753.52ms)\", \"level\": \"INFO\"}","ts":"2026-10-06T15:19:11.262889422Z"}
+{"source":"container","line":"{\"requestId\": null, \"message\": \"Jobs in queue: 1\", \"level\": \"INFO\"}","ts":"2026-10-06T15:19:12.043734460Z"}
+{"source":"container","line":"{\"requestId\": null, \"message\": \"Jobs in progress: 1\", \"level\": \"INFO\"}","ts":"2026-10-06T15:19:12.100794431Z"}
+{"source":"container","line":"(APIServer pid=52) INFO:     127.0.0.1:41240 - \"GET /v1/models HTTP/1.1\" 200 OK","ts":"2026-10-06T15:19:12.111625772Z"}
+{"source":"container","line":"(APIServer pid=52) INFO:     127.0.0.1:41242 - \"POST /v1/completions HTTP/1.1\" 200 OK","ts":"2026-10-06T15:19:12.357190532Z"}
+{"source":"container","line":"{\"requestId\": \"a3753318-9700-485b-a2e4-fd3d249e9495-e2\", \"message\": \"Finished running generator.\", \"level\": \"INFO\"}","ts":"2026-10-06T15:19:12.490069870Z"}
+{"source":"container","line":"{\"requestId\": \"a3753318-9700-485b-a2e4-fd3d249e9495-e2\", \"message\": \"Finished.\", \"level\": \"INFO\"}","ts":"2026-10-06T15:19:12.625344987Z"}
+{"source":"container","line":"{\"requestId\": null, \"message\": \"Jobs in queue: 1\", \"level\": \"INFO\"}","ts":"2026-10-06T15:19:13.368150809Z"}
+{"source":"container","line":"(APIServer pid=52) INFO:     127.0.0.1:41256 - \"POST /v1/completions HTTP/1.1\" 200 OK","ts":"2026-10-06T15:19:13.627295718Z"}
+{"source":"container","line":"{\"requestId\": \"c330399b-ab78-4f0a-ae02-e73833628b69-e2\", \"message\": \"Finished running generator.\", \"level\": \"INFO\"}","ts":"2026-10-06T15:19:13.673625436Z"}
+{"source":"container","line":"{\"requestId\": \"c330399b-ab78-4f0a-ae02-e73833628b69-e2\", \"message\": \"Finished.\", \"level\": \"INFO\"}","ts":"2026-10-06T15:19:13.813614835Z"}
+{"source":"container","line":"(APIServer pid=52) INFO 10-06 15:19:20 [loggers.py:315] Engine 000: Avg prompt throughput: 1.2 tokens/s, Avg generation throughput: 2.2 tokens/s, Running: 0 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%, Prefix cache hit rate: 0.0%","ts":"2026-10-06T15:19:20.700891727Z"}

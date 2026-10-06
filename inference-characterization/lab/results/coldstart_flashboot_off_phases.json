@@ -1,0 +1,72 @@
+{
+  "cold_starts": [
+    {
+      "probe": 0,
+      "workerId": "gen3hjitlrbrcg",
+      "delay_s": 258.2,
+      "execution_s": 0.68,
+      "container_create_utc": "2026-10-06T15:15:56Z",
+      "container_to_vllm_start_s": 6.4,
+      "vllm_start_to_engine_ready_s": 178.3,
+      "weights_download_s": 15.002091,
+      "weights_load_s": 2.65,
+      "compile_s": 17.56,
+      "graph_capture_s": 73.0,
+      "engine_init_s": 100.83,
+      "engine_ready_to_fitness_done_s": 10.6,
+      "fitness_checks_s": 6.753520000000001,
+      "fitness_done_to_job_pickup_s": 0.8,
+      "container_create_to_job_pickup_s": 196.1,
+      "has_container_log": true,
+      "before_container_s": 62.1
+    },
+    {
+      "probe": 1,
+      "workerId": "31qxzmw3g31jlo",
+      "delay_s": 276.3,
+      "execution_s": 0.66,
+      "container_create_utc": "2026-10-06T15:25:25Z",
+      "container_to_vllm_start_s": 10.8,
+      "vllm_start_to_engine_ready_s": 186.1,
+      "weights_download_s": 46.749358,
+      "weights_load_s": 1.99,
+      "compile_s": 14.64,
+      "graph_capture_s": 62.0,
+      "engine_init_s": 84.68,
+      "engine_ready_to_fitness_done_s": 8.4,
+      "fitness_checks_s": 6.165979999999999,
+      "fitness_done_to_job_pickup_s": 0.6,
+      "container_create_to_job_pickup_s": 206.0,
+      "has_container_log": true,
+      "before_container_s": 70.3
+    },
+    {
+      "probe": 2,
+      "workerId": "gen3hjitlrbrcg",
+      "delay_s": 181.5,
+      "execution_s": 0.74,
+      "container_create_utc": "2026-10-06T15:33:57Z",
+      "container_to_vllm_start_s": 3.1,
+      "vllm_start_to_engine_ready_s": null,
+      "weights_download_s": 25.388971,
+      "weights_load_s": 4.02,
+      "compile_s": 18.56,
+      "graph_capture_s": null,
+      "engine_init_s": null,
+      "engine_ready_to_fitness_done_s": null,
+      "fitness_checks_s": null,
+      "fitness_done_to_job_pickup_s": null,
+      "container_create_to_job_pickup_s": null,
+      "has_container_log": true,
+      "before_container_s": null,
+      "note": "container session captured only in part (no job pickup in the saved logs)"
+    }
+  ],
+  "image_loads_from_cache": [
+    {
+      "workerId": "qri59x6c7vztd7",
+      "start_utc": "2026-10-06T15:15:18Z",
+      "seconds": 197.0
+    }
+  ]
+}

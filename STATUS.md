@@ -1,6 +1,6 @@
 # STATUS.md
 
-Updated 2026-09-02.
+Updated 2026-10-07.
 
 ## Tracks
 
@@ -13,6 +13,7 @@ Updated 2026-09-02.
 | [`terraform/01-endpoint`](./terraform/01-endpoint) | No — `plan` only |
 | [`terraform/02-pod`](./terraform/02-pod) | No — `plan` only |
 | [`cluster/`](./cluster) | No — README only, deferred on cost |
+| [`inference-characterization/`](./inference-characterization) | **Yes** — Pod sweeps on Secure Cloud GPU types, Serverless cold-start probes with worker logs, 2026-10-06/07; Community Cloud Pod never reachable over SSH; per-run seed not re-run ([#6](https://github.com/litkhai/runpod-hols/issues/6)) |
 | [`sdk/`](./sdk) | Source read at 1.11.0 and 1.12.0; client exercised live |
 | [`gpu-topology/`](./gpu-topology) | Catalogue and OpenAPI queried live; hardware claims unrun |
 | [`docs/`](./docs) | <https://litkhai.github.io/runpod-hols> |

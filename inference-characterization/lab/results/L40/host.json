@@ -1,0 +1,31 @@
+{
+  "runpod_env": {
+    "RUNPOD_CPU_COUNT": "32",
+    "RUNPOD_DC_ID": "US-KS-2",
+    "RUNPOD_GPU_COUNT": "1",
+    "RUNPOD_GPU_NAME": "NVIDIA+L40",
+    "RUNPOD_MEM_GB": "250",
+    "RUNPOD_POD_HOSTNAME": "ot3itakmny5al6-64411ed7",
+    "RUNPOD_POD_ID": "ot3itakmny5al6"
+  },
+  "gpus": [
+    {
+      "index": "0",
+      "name": "NVIDIA L40",
+      "uuid": "GPU-c2f11c96-4df3-9d78-ef5d-639f698e47e2",
+      "driver": "580.178.04",
+      "mem_mib": "46068",
+      "pcie_gen": "4",
+      "pcie_gen_max": "4",
+      "pcie_width": "16",
+      "pcie_width_max": "16",
+      "sm_clock_max_mhz": "2490",
+      "power_limit_w": "300.00"
+    }
+  ],
+  "nvlink_topology": "\tGPU0\tCPU Affinity\tNUMA Affinity\tGPU NUMA ID\nGPU0\t X \t64-127,192-255\t1\t\tN/A\n\nLegend:\n\n  X    = Self\n  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)\n  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node\n  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)\n  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)\n  PIX  = Connection traversing at most a single PCIe bridge\n  NV#  = Connection traversing a bonded set of # NVLinks",
+  "cpu": "CPU(s): 256\nModel name: AMD EPYC 7773X 64-Core Processor\nThread(s) per core: 2\nSocket(s): 2\nCPU(s) scaling MHz: 75%\nNUMA node(s): 2",
+  "cuda": "CUDA Version: 13.0",
+  "vllm_version": "0.31.0",
+  "kernel": "6.8.0-137-generic"
+}

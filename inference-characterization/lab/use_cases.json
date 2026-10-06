@@ -1,0 +1,5 @@
+{
+  "chat":      {"input_len": 512,  "output_len": 256,  "num_prompts": 300, "rates": [1, 2, 4, 8, 16], "slo": "ttft:1000 tpot:50"},
+  "rag":       {"input_len": 4096, "output_len": 256,  "num_prompts": 200, "rates": [0.5, 1, 2, 4, 8],  "slo": "ttft:2000 tpot:50"},
+  "summarize": {"input_len": 2048, "output_len": 1024, "num_prompts": 150, "rates": [0.5, 1, 2, 4],     "slo": "ttft:2000 tpot:60"}
+}

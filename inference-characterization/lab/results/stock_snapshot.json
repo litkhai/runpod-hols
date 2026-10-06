@@ -1,0 +1,66 @@
+{
+  "queried_at": "20261007T003227+0900",
+  "query": "gpuTypes.lowestPrice(gpuCount:1, secureCloud:true[, minCudaVersion:13.0]).stockStatus",
+  "rows": [
+    {
+      "id": "NVIDIA A100 80GB PCIe",
+      "secure_cuda13": "Low",
+      "secure_any_cuda": "Low"
+    },
+    {
+      "id": "NVIDIA A100-SXM4-40GB",
+      "secure_cuda13": null,
+      "secure_any_cuda": null
+    },
+    {
+      "id": "NVIDIA A100-SXM4-80GB",
+      "secure_cuda13": "Low",
+      "secure_any_cuda": "Low"
+    },
+    {
+      "id": "NVIDIA GeForce RTX 4090",
+      "secure_cuda13": "Low",
+      "secure_any_cuda": "Low"
+    },
+    {
+      "id": "NVIDIA H100 80GB HBM3",
+      "secure_cuda13": "Low",
+      "secure_any_cuda": "Medium"
+    },
+    {
+      "id": "NVIDIA H100 NVL",
+      "secure_cuda13": "Low",
+      "secure_any_cuda": "Low"
+    },
+    {
+      "id": "NVIDIA H100 PCIe",
+      "secure_cuda13": "Low",
+      "secure_any_cuda": "Low"
+    },
+    {
+      "id": "NVIDIA H200",
+      "secure_cuda13": "Low",
+      "secure_any_cuda": "Low"
+    },
+    {
+      "id": "NVIDIA H200 NVL",
+      "secure_cuda13": null,
+      "secure_any_cuda": null
+    },
+    {
+      "id": "NVIDIA L4",
+      "secure_cuda13": "Low",
+      "secure_any_cuda": "Low"
+    },
+    {
+      "id": "NVIDIA L40",
+      "secure_cuda13": null,
+      "secure_any_cuda": null
+    },
+    {
+      "id": "NVIDIA L40S",
+      "secure_cuda13": null,
+      "secure_any_cuda": null
+    }
+  ]
+}

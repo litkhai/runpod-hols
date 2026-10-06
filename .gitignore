@@ -54,3 +54,13 @@ docs/Gemfile.lock
 # Lab artifacts / 실습 중 생성되는 산출물
 *.log
 outputs/
+
+# Inference characterization — the source brief and instructions stay local;
+# the public README carries the test scenario.
+# 추론 특성화 — 원본 브리프와 지침은 로컬에만 둔다. 공개 README 에 테스트 시나리오를 둔다.
+inference-characterization/ONE-PAGER.md
+inference-characterization/LAB-INSTRUCTIONS.md
+inference-characterization/lab/results/*.lock
+inference-characterization/lab/results/_backup/
+inference-characterization/ONE-PAGER-DRAFT.md
+inference-characterization/lab/results/serverless.json

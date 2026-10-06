@@ -1,0 +1,31 @@
+{
+  "runpod_env": {
+    "RUNPOD_CPU_COUNT": "12",
+    "RUNPOD_DC_ID": "EUR-IS-2",
+    "RUNPOD_GPU_COUNT": "1",
+    "RUNPOD_GPU_NAME": "NVIDIA+GeForce+RTX+4090",
+    "RUNPOD_MEM_GB": "100",
+    "RUNPOD_POD_HOSTNAME": "3qcqba8ssaru8k-6441143f",
+    "RUNPOD_POD_ID": "3qcqba8ssaru8k"
+  },
+  "gpus": [
+    {
+      "index": "0",
+      "name": "NVIDIA GeForce RTX 4090",
+      "uuid": "GPU-7b9f1ead-4052-6cf2-5df4-c4719c937e1f",
+      "driver": "580.159.04",
+      "mem_mib": "24564",
+      "pcie_gen": "4",
+      "pcie_gen_max": "4",
+      "pcie_width": "16",
+      "pcie_width_max": "16",
+      "sm_clock_max_mhz": "3135",
+      "power_limit_w": "450.00"
+    }
+  ],
+  "nvlink_topology": "\tGPU0\tCPU Affinity\tNUMA Affinity\tGPU NUMA ID\nGPU0\t X \t0-63\t0\t\tN/A\n\nLegend:\n\n  X    = Self\n  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)\n  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node\n  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)\n  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)\n  PIX  = Connection traversing at most a single PCIe bridge\n  NV#  = Connection traversing a bonded set of # NVLinks",
+  "cpu": "CPU(s): 64\nModel name: AMD EPYC 7532 32-Core Processor\nThread(s) per core: 2\nSocket(s): 1\nCPU(s) scaling MHz: 70%\nNUMA node(s): 1",
+  "cuda": "CUDA Version: 13.0",
+  "vllm_version": "0.31.0",
+  "kernel": "6.8.0-124-generic"
+}

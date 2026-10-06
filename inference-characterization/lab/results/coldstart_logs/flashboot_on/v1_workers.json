@@ -1,0 +1,91 @@
+{
+  "queried_at": "2026-10-07T00:49:23+0900",
+  "request": "GET https://rest.runpod.io/v1/endpoints/{id}?includeWorkers=true",
+  "note": "each worker's env removed (it carries endpoint secrets)",
+  "workers": [
+    {
+      "aiApiId": "h6rod3j5a14nvc",
+      "consumerUserId": "user_3Gyr4SkCD1hlpgomd0CRLZBq8XK",
+      "containerDiskInGb": 60,
+      "costPerHr": 0.74,
+      "createdAt": "2026-10-06 15:37:12.236 +0000 UTC",
+      "desiredStatus": "EXITED",
+      "endpointId": "h6rod3j5a14nvc",
+      "gpuCount": 1,
+      "id": "woylujqk91186x",
+      "imageName": "runpod/worker-v1-vllm:v2.28.0",
+      "lastStartedAt": "2026-10-06 15:46:03.374 +0000 UTC",
+      "lastStatusChange": "Exited by Runpod: Tue Oct 06 2026 15:48:45 GMT+0000 (Coordinated Universal Time)",
+      "machine": {},
+      "machineId": "fb1xdi5t6oie",
+      "memoryInGb": 100,
+      "name": "h6rod3j5a14nvc",
+      "ports": [
+        "8888/http",
+        "22/tcp"
+      ],
+      "publicIp": "",
+      "slsVersion": 1,
+      "templateId": "i78kuzps9m",
+      "vcpuCount": 12,
+      "volumeInGb": 0,
+      "volumeMountPath": "/runpod-volume"
+    },
+    {
+      "aiApiId": "h6rod3j5a14nvc",
+      "consumerUserId": "user_3Gyr4SkCD1hlpgomd0CRLZBq8XK",
+      "containerDiskInGb": 60,
+      "costPerHr": 0.74,
+      "createdAt": "2026-10-06 15:38:14.252 +0000 UTC",
+      "desiredStatus": "EXITED",
+      "endpointId": "h6rod3j5a14nvc",
+      "gpuCount": 1,
+      "id": "j8waiygi9xq4p9",
+      "imageName": "runpod/worker-v1-vllm:v2.28.0",
+      "lastStartedAt": "2026-10-06 15:38:14.219 +0000 UTC",
+      "lastStatusChange": "Rented by User: Tue Oct 06 2026 15:38:14 GMT+0000 (Coordinated Universal Time)",
+      "machine": {},
+      "machineId": "0gp2twgvc2bs",
+      "memoryInGb": 41,
+      "name": "h6rod3j5a14nvc",
+      "ports": [
+        "8888/http",
+        "22/tcp"
+      ],
+      "publicIp": "",
+      "slsVersion": 1,
+      "templateId": "i78kuzps9m",
+      "vcpuCount": 21,
+      "volumeInGb": 0,
+      "volumeMountPath": "/runpod-volume"
+    },
+    {
+      "aiApiId": "h6rod3j5a14nvc",
+      "consumerUserId": "user_3Gyr4SkCD1hlpgomd0CRLZBq8XK",
+      "containerDiskInGb": 60,
+      "costPerHr": 0.74,
+      "createdAt": "2026-10-06 15:38:34.346 +0000 UTC",
+      "desiredStatus": "EXITED",
+      "endpointId": "h6rod3j5a14nvc",
+      "gpuCount": 1,
+      "id": "rkdi41vq7pt180",
+      "imageName": "runpod/worker-v1-vllm:v2.28.0",
+      "lastStartedAt": "2026-10-06 15:38:34.323 +0000 UTC",
+      "lastStatusChange": "Rented by User: Tue Oct 06 2026 15:38:34 GMT+0000 (Coordinated Universal Time)",
+      "machine": {},
+      "machineId": "6ej1wzbcjdu7",
+      "memoryInGb": 62,
+      "name": "h6rod3j5a14nvc",
+      "ports": [
+        "8888/http",
+        "22/tcp"
+      ],
+      "publicIp": "",
+      "slsVersion": 1,
+      "templateId": "i78kuzps9m",
+      "vcpuCount": 16,
+      "volumeInGb": 0,
+      "volumeMountPath": "/runpod-volume"
+    }
+  ]
+}
