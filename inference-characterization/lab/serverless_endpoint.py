@@ -2,7 +2,7 @@
 """Create, inspect and remove the Serverless endpoint used by coldstart_probe.py.
 
 Usage:
-    python3 serverless_endpoint.py create [--flashboot on|off] [--gpu "NVIDIA GeForce RTX 4090"]
+    python3 serverless_endpoint.py create [--flashboot on|off] [--gpu "NVIDIA GeForce RTX 4090"] [--workers-max 1]
     python3 serverless_endpoint.py show
     python3 serverless_endpoint.py delete
 
@@ -29,6 +29,7 @@ def main():
     ap.add_argument("action", choices=["create", "show", "delete"])
     ap.add_argument("--flashboot", default="on", choices=["on", "off"])
     ap.add_argument("--gpu", default="NVIDIA GeForce RTX 4090")
+    ap.add_argument("--workers-max", type=int, default=1)
     a = ap.parse_args()
     load_env()
     st = jload(STATE, {})
@@ -45,11 +46,11 @@ def main():
         ep = api("POST", "/endpoints", {
             "name": "ic-coldstart-flashboot-" + a.flashboot, "templateId": tpl["id"],
             "computeType": "GPU", "gpuTypeIds": [a.gpu], "gpuCount": 1,
-            "workersMin": 0, "workersMax": 1, "idleTimeout": 5,
+            "workersMin": 0, "workersMax": a.workers_max, "idleTimeout": 5,
             # Same driver floor as the Pods; a CUDA 13 driver also runs a CUDA 12.x image.
             "minCudaVersion": "13.0",
             "flashboot": a.flashboot == "on"})
-        st.update(endpoint_id=ep["id"], flashboot=a.flashboot, gpu=a.gpu)
+        st.update(endpoint_id=ep["id"], flashboot=a.flashboot, gpu=a.gpu, workers_max=a.workers_max)
         jsave(STATE, st)
         print(json.dumps(st, indent=2))
         print("ENDPOINT_ID=%s" % ep["id"])

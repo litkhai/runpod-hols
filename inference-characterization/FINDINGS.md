@@ -6,7 +6,7 @@
 
 ## English
 
-Run on 2026-10-06 and 2026-10-07 (KST) against a real Runpod account. Every claim has an ID, an evidence grade and a way to re-check it from the files in [`lab/results/`](./lab/results). Grades: **measured** (run in this lab), **vendor doc** (link and date read), **observed once** (seen in one run, cause not established).
+Run on 2026-10-06 and 2026-10-07 (KST) against a real Runpod account; C22–C26 come from the morning of 2026-10-07. Every claim has an ID, an evidence grade and a way to re-check it from the files in [`lab/results/`](./lab/results). Grades: **measured** (run in this lab), **vendor doc** (link and date read), **observed once** (seen in one run, cause not established).
 
 ### Scope and spend
 
@@ -15,7 +15,7 @@ Run on 2026-10-06 and 2026-10-07 (KST) against a real Runpod account. Every clai
 | Model and engine | `Qwen/Qwen2.5-7B-Instruct`, vLLM 0.31.0 on Pods; `runpod/worker-v1-vllm:v2.28.0` (vLLM 0.30.0) on Serverless |
 | Pods | Secure Cloud: RTX 4090 (twice, on different hosts), H100 SXM, H100 PCIe, H100 NVL, H200, A100 SXM 80GB, A100 80GB PCIe, L40, L4. Community Cloud: RTX 4090, functional check only |
 | Serverless | RTX 4090, workers 0–1, idle timeout 5 s, FlashBoot on and off |
-| Spend | Billing API: Pods USD 14.47, Serverless USD 0.37 ([`billing.json`](./lab/results/billing.json)). The lab's own ledger, wall time × rate, says USD 15.79 for Pods ([`runs.json`](./lab/results/runs.json), [`ledger.json`](./lab/results/ledger.json)). The account balance fell by USD 16.34; the USD 1.50 gap to billing was not reconciled |
+| Spend | The account balance fell by USD 16.34 over the night: the lab's ledger, wall time × rate, gives USD 15.79 for Pods ([`runs.json`](./lab/results/runs.json), [`ledger.json`](./lab/results/ledger.json)) plus USD 0.37 for Serverless and USD 0.18 unassigned. The billing API snapshot ([`billing.json`](./lab/results/billing.json), Pods USD 14.47) was read 42 s after the last Pod stopped and under-posts the last three Pods (H100 PCIe 28.6 billed vs 46.9 wall minutes, A100 80GB PCIe 41.8 vs 46.3, L4 41.7 vs 103.1: USD 1.48), and its `pods` list holds the three Serverless worker ids (USD 0.09). The morning tests of 2026-10-07 (C22–C25) cost USD 0.28 by balance |
 | Hourly prices | The API's `costPerHr` at creation ([`prices.json`](./lab/results/prices.json)); the console showed USD 0.01 more on each of the seven Pods visible at the time |
 
 ### Claims
@@ -40,9 +40,14 @@ Run on 2026-10-06 and 2026-10-07 (KST) against a real Runpod account. Every clai
 | C16 | Among the platforms reviewed, Modal also combines a wide per-second GPU menu with functions and sandboxes from one image; fal documents per-state cold-start timing | vendor doc | [`RESEARCH.md`](./RESEARCH.md) |
 | C17 | With FlashBoot on, three cold starts on the same worker spent 56, 13 and 47 s before a container existed; with it off, 62 and 70 s. Every logged cold start, on or off, created a new container, restarted vLLM from scratch and downloaded the weights again (14.19 GiB on an `OVERLAY` filesystem) | measured | [`coldstart_flashboot_on_phases.json`](./lab/results/coldstart_flashboot_on_phases.json), [`coldstart_flashboot_off_phases.json`](./lab/results/coldstart_flashboot_off_phases.json); system lines `create container` / `remove container` |
 | C18 | Between the system line "worker is ready" and "create container", up to 56 s passed with nothing logged | measured | `coldstart_logs/flashboot_on/woylujqk91186x.jsonl` (15:37:13 → 15:38:09 UTC) |
-| C19 | CUDA graph capture (two passes per start, summed) took 9 s on the FlashBoot-on worker's host and 62–73 s on the FlashBoot-off hosts, for the same image and model. The fitness-check lines show three different machines (host RAM 503.55, 755.70 and 503.49 GB; matrix-multiply check 61–71 ms vs 124 and 96 ms) | measured | `graph_capture_s` in the two phases files |
+| C19 | CUDA graph capture (two passes per start, summed) took 9 s on the FlashBoot-on worker's host and 62–73 s on the FlashBoot-off hosts, for the same image and model. The fitness-check lines show three different machines (host RAM 503.55, 755.70 and 503.49 GB; matrix-multiply check 61–71 ms vs 124 and 96 ms) | measured; see C23 for a second reading | `graph_capture_s` in the two phases files |
 | C21 | The sweep used vLLM's `random` dataset with one fixed seed, so every rate of a use case sent the same prompts, and `chat` and `summarize` prompts are prefixes of the `rag` prompts. vLLM ran with prefix caching on. On the GPUs whose KV cache holds over a million tokens (A100, H100, H200), 97–100% of prompt tokens were served from the prefix cache in every run after the first of each use case; on RTX 4090 and L4 (73k–97k tokens) the share was 0–6%; L40 (448k) was mixed. Latency and throughput on the large-KV GPUs after their first runs therefore measured little prefill work, and are not comparable with RTX 4090 and L4. `run_sweep.sh` now gives each run its own seed; that change has not been re-run | measured | `prefix hit` column in [`PROFILE.md`](./lab/results/PROFILE.md) (from `vllm:prefix_cache_hits_total` and `vllm:prefix_cache_queries_total`), `enable_prefix_caching=True` and "GPU KV cache size" in each `vllm.log` |
 | C20 | In nine stock readings (00:32, then every 10 minutes from 00:50 to 02:00 KST), nine of the thirteen tracked types changed status at least once — between `Low` and none, or `Low` and `Medium`. A100 SXM 80GB and H200 stayed `Low`; A100 SXM 40GB and H200 NVL never showed stock. With and without the CUDA 13 floor the status matched in all but five type-readings | measured | [`stock_snapshots.jsonl`](./lab/results/stock_snapshots.jsonl), [`stock_snapshot.json`](./lab/results/stock_snapshot.json), [`stock_snapshots.sh`](./lab/stock_snapshots.sh) |
+| C22 | With FlashBoot on and a 5 s idle timeout, the container that served a request also served the requests sent 15 s and 30 s after the previous one (`delayTime` 1.9 and 1.3 s) and was stopped 23 s after the last of them. From a 60 s gap on, every request got a new container (97–104 s). "Before a container existed" was 43 s on the first start and 1–4 s afterwards, when spare workers that had logged `worker is ready` 11–18 min earlier were used | measured | [`coldstart_gaps.json`](./lab/results/coldstart_gaps.json), [`coldstart_gaps_phases.json`](./lab/results/coldstart_gaps_phases.json), `coldstart_logs/flashboot_on_gaps/`; `GAPS=15,30,60,120,300` in [`coldstart_probe.py`](./lab/coldstart_probe.py) |
+| C23 | On one worker, the first container loaded the weights in 151.8 s and captured graphs in 135 s; the next container on the same worker took 1.9 s and 7 s, and two other workers in other datacenters started in 90–94 s with 9 s of graph capture. C19's 9 s against 62–73 s therefore has a second reading — a host's first start of this image against a repeat — that the data cannot separate from host hardware | measured, cause not established | same files, `weights_load_s` and `graph_capture_s`; `Loading weights took` lines in `g17xiqon7kw30a.jsonl` |
+| C24 | Five requests sent at once to an endpoint with `workersMax` 3 were all served by the one container that came up, with the same `delayTime` to within 0.1 s (152.2–152.3 s); five more sent at once afterwards took 96–190 ms on the same worker. Meanwhile the worker list held five workers, and one of them created a container 5 s after the first engine was ready and served nothing | observed once | [`concurrent.json`](./lab/results/concurrent.json), `coldstart_logs/concurrent_w3/`, [`concurrent_probe.py`](./lab/concurrent_probe.py) |
+| C25 | In 20 create attempts over ten minutes, a type whose `stockStatus` read `Low` was created 9 times in 10 (2.1–2.6 s each; the failure was B200), and a type with no stock reading failed 10 times in 10 with "There are no instances currently available". Each Pod was deleted within 3 s | measured | [`stock_create_probe.jsonl`](./lab/results/stock_create_probe.jsonl), [`stock_create_probe.py`](./lab/stock_create_probe.py) |
+| C26 | `delayTime` and `executionTime` are milliseconds: on all 18 requests of C9, wall time minus their sum is +0.45 to +2.07 s, the client's submit and 0.5 s status polling | measured | the three C9 files, `wall_s` against `delayTime_ms` + `executionTime_ms` |
 
 ### Host facts
 
@@ -78,6 +83,19 @@ From the worker logs (C12). Seconds. Produced by `python3 lab/coldstart_phases.p
 
 "Before a container existed" is `delayTime` minus the logged time from container creation to job pickup: queueing, host selection, attempts on other workers and image load. The engine phase is set by the model and engine configuration; the phases before it are set by the platform. FlashBoot-off probe 2 was captured only up to model loading: the endpoint was deleted before the next log poll. The first FlashBoot-on run ([`coldstart_flashboot_on_run1.json`](./lab/results/coldstart_flashboot_on_run1.json)) has no logs.
 
+Idle-gap run of 2026-10-07 (C22, C23), FlashBoot on, same endpoint settings, gap = idle seconds before the request:
+
+| Gap | delayTime | Container | Before a container existed | vLLM start to engine ready | of which: weights download | weights load | compile | graph capture | Worker boot and checks | Pickup |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 439.6 | new | 43.2 | 379.1 | 13.8 | 151.8 | 15.7 | 135.0 | 13.0 | 0.6 |
+| 15 | 1.9 | reused | - | - | - | - | - | - | - | - |
+| 30 | 1.3 | reused | - | - | - | - | - | - | - | - |
+| 60 | 102.4 | new, same worker | 4.3 | 90.2 | 15.1 | 1.9 | 13.7 | 7.0 | 5.0 | 0.6 |
+| 120 | 96.8 | new, other worker | 1.1 | 89.6 | 9.6 | 1.8 | 14.8 | 9.0 | 4.1 | 0.3 |
+| 300 | 104.3 | new, other worker | 3.7 | 93.7 | 15.2 | 2.1 | 14.1 | 9.0 | 3.8 | 0.4 |
+
+"reused": the container that served the previous request was still running (no `create container` between the request and its pickup); the parser marks such rows "no cold start".
+
 ### Reference data
 
 Not used as pass/fail criteria. Full table: [`PROFILE.md`](./lab/results/PROFILE.md).
@@ -100,13 +118,14 @@ Not used as pass/fail criteria. Full table: [`PROFILE.md`](./lab/results/PROFILE
 - Whether the host differences in C4 change throughput or latency. One host per GPU type was measured, two for RTX 4090; those two ran the same prompt schedule, and paired per-request end-to-end latency was about 1% higher on the repeat host at `chat` 8 and 16 req/s, a difference the pairing resolves but cannot attribute.
 - Performance on the large-KV GPUs without prefix-cache reuse (C21).
 - C3, C5 and C6 on Community Cloud (C7).
-- Why individual cold starts differ, beyond the phases in C12.
+- Why individual cold starts differ, beyond the phases in C12 and C22.
+- Whether the slow first start in C23 is the host's first use of the image or the host itself; and whether the multi-worker case in C24 can hide a cold start behind a warm `delayTime`, since the second container never served a job.
 
 ---
 
 ## 한국어
 
-2026-10-06~07(KST)에 실제 Runpod 계정에서 실행했다. 모든 주장에는 ID, 근거 등급, [`lab/results/`](./lab/results)의 파일로 다시 확인하는 방법이 붙어 있다. 등급: **실측**(이 lab에서 실행), **공급사 문서**(링크와 확인일), **1회 관측**(한 번 보았고 원인은 확인하지 않음).
+2026-10-06~07(KST)에 실제 Runpod 계정에서 실행했다. C22–C26은 2026-10-07 아침에 추가로 실행한 것이다. 모든 주장에는 ID, 근거 등급, [`lab/results/`](./lab/results)의 파일로 다시 확인하는 방법이 붙어 있다. 등급: **실측**(이 lab에서 실행), **공급사 문서**(링크와 확인일), **1회 관측**(한 번 보았고 원인은 확인하지 않음).
 
 ### 범위와 비용
 
@@ -115,7 +134,7 @@ Not used as pass/fail criteria. Full table: [`PROFILE.md`](./lab/results/PROFILE
 | 모델과 엔진 | `Qwen/Qwen2.5-7B-Instruct`, Pod에서는 vLLM 0.31.0, Serverless에서는 `runpod/worker-v1-vllm:v2.28.0`(vLLM 0.30.0) |
 | Pod | Secure Cloud: RTX 4090(서로 다른 호스트에서 두 번), H100 SXM, H100 PCIe, H100 NVL, H200, A100 SXM 80GB, A100 80GB PCIe, L40, L4. Community Cloud: RTX 4090, 기능 점검만 |
 | Serverless | RTX 4090, 워커 0–1, 유휴 타임아웃 5초, FlashBoot 켬과 끔 |
-| 비용 | 청구 API 기준 Pod USD 14.47, Serverless USD 0.37 ([`billing.json`](./lab/results/billing.json)). lab 자체 장부(벽시계 시간 × 요금)는 Pod USD 15.79 ([`runs.json`](./lab/results/runs.json), [`ledger.json`](./lab/results/ledger.json)). 계정 잔액은 USD 16.34 줄었고, 청구와의 차이 USD 1.50은 맞춰 보지 못했다 |
+| 비용 | 하룻밤 사이 계정 잔액이 USD 16.34 줄었다. lab 장부(벽시계 시간 × 요금)로 Pod USD 15.79 ([`runs.json`](./lab/results/runs.json), [`ledger.json`](./lab/results/ledger.json)), Serverless USD 0.37, 미배정 USD 0.18이다. 청구 API 스냅샷([`billing.json`](./lab/results/billing.json), Pod USD 14.47)은 마지막 Pod가 멈춘 42초 뒤에 읽어 마지막 Pod 3개가 덜 반영됐고(H100 PCIe 청구 28.6분 대 벽시계 46.9분, A100 80GB PCIe 41.8 대 46.3, L4 41.7 대 103.1: USD 1.48), `pods` 목록에 Serverless 워커 id 세 개(USD 0.09)가 들어 있다. 2026-10-07 아침 테스트(C22–C25)는 잔액 기준 USD 0.28이 들었다 |
 | 시간당 가격 | 생성 시 API의 `costPerHr` ([`prices.json`](./lab/results/prices.json)). 그때 보이던 Pod 7개 모두 콘솔에는 USD 0.01 높게 표시됐다 |
 
 ### 주장
@@ -140,9 +159,14 @@ Not used as pass/fail criteria. Full table: [`PROFILE.md`](./lab/results/PROFILE
 | C16 | 조사한 플랫폼 가운데 Modal도 초 단위 과금의 넓은 GPU 메뉴와 한 이미지로 쓰는 함수·샌드박스를 함께 갖고 있고, fal은 상태별 콜드스타트 시간을 문서화한다 | 공급사 문서 | [`RESEARCH.md`](./RESEARCH.md) |
 | C17 | FlashBoot 켬에서 같은 워커의 콜드스타트 세 번은 컨테이너가 생기기 전까지 56, 13, 47초를 썼고, 끔에서는 62, 70초였다. 로그가 있는 콜드스타트는 켬과 끔 모두 매번 새 컨테이너를 만들고 vLLM을 처음부터 다시 띄우고 가중치를 다시 받았다(14.19 GiB, `OVERLAY` 파일시스템) | 실측 | [`coldstart_flashboot_on_phases.json`](./lab/results/coldstart_flashboot_on_phases.json), [`coldstart_flashboot_off_phases.json`](./lab/results/coldstart_flashboot_off_phases.json), 시스템 로그 `create container` / `remove container` |
 | C18 | 시스템 로그의 "worker is ready"와 "create container" 사이에 기록 없이 최대 56초가 지났다 | 실측 | `coldstart_logs/flashboot_on/woylujqk91186x.jsonl`(15:37:13 → 15:38:09 UTC) |
-| C19 | 같은 이미지와 모델에서 CUDA 그래프 캡처(시작마다 두 번, 합산)가 FlashBoot 켬 워커의 호스트에서는 9초, 끔 워커들의 호스트에서는 62–73초 걸렸다. 적합성 검사 로그로 보아 세 대의 서로 다른 머신이었다(호스트 RAM 503.55, 755.70, 503.49 GB, 행렬곱 점검 61–71 ms 대 124, 96 ms) | 실측 | 두 단계 분석 파일의 `graph_capture_s` |
+| C19 | 같은 이미지와 모델에서 CUDA 그래프 캡처(시작마다 두 번, 합산)가 FlashBoot 켬 워커의 호스트에서는 9초, 끔 워커들의 호스트에서는 62–73초 걸렸다. 적합성 검사 로그로 보아 세 대의 서로 다른 머신이었다(호스트 RAM 503.55, 755.70, 503.49 GB, 행렬곱 점검 61–71 ms 대 124, 96 ms) | 실측, 다른 해석은 C23 | 두 단계 분석 파일의 `graph_capture_s` |
 | C21 | 스윕은 vLLM의 `random` 데이터셋을 고정 시드 하나로 썼다. 그래서 한 유즈케이스의 모든 요청률이 같은 프롬프트를 보냈고, `chat`과 `summarize` 프롬프트는 `rag` 프롬프트의 앞부분이다. vLLM은 프리픽스 캐싱이 켜진 상태였다. KV 캐시가 100만 토큰을 넘는 GPU(A100, H100, H200)에서는 유즈케이스별 첫 실행 이후 모든 실행에서 프롬프트 토큰의 97–100%를 프리픽스 캐시에서 처리했고, RTX 4090과 L4(7만 3천–9만 7천 토큰)에서는 0–6%, L40(44만 8천)은 섞여 있었다. 따라서 대형 KV GPU의 첫 실행 이후 지연과 처리량은 prefill을 거의 하지 않은 값이며 RTX 4090, L4와 비교할 수 없다. `run_sweep.sh`는 이제 실행마다 다른 시드를 쓰지만 이 변경으로 다시 돌리지는 않았다 | 실측 | [`PROFILE.md`](./lab/results/PROFILE.md)의 `prefix hit` 열(`vllm:prefix_cache_hits_total`, `vllm:prefix_cache_queries_total`에서 계산), 각 `vllm.log`의 `enable_prefix_caching=True`와 "GPU KV cache size" |
 | C20 | 재고 조회 9회(00:32, 그리고 00:50부터 02:00까지 10분마다, KST)에서 추적한 13종 가운데 9종이 한 번 이상 상태가 바뀌었다(`Low`와 없음, 또는 `Low`와 `Medium` 사이). A100 SXM 80GB와 H200은 계속 `Low`, A100 SXM 40GB와 H200 NVL은 한 번도 재고가 없었다. CUDA 13 조건 유무에 따른 상태는 다섯 번을 빼고 모두 같았다 | 실측 | [`stock_snapshots.jsonl`](./lab/results/stock_snapshots.jsonl), [`stock_snapshot.json`](./lab/results/stock_snapshot.json), [`stock_snapshots.sh`](./lab/stock_snapshots.sh) |
+| C22 | FlashBoot 켬, 유휴 타임아웃 5초에서 요청을 처리한 컨테이너가 직전 요청 15초·30초 뒤에 보낸 요청도 그대로 처리했고(`delayTime` 1.9초, 1.3초) 마지막 요청 23초 뒤에 멈췄다. 간격 60초부터는 매번 새 컨테이너였다(97–104초). "컨테이너 생성 전"은 첫 시작에서 43초, 그 뒤로는 1–4초였는데, 11–18분 전에 `worker is ready`를 남긴 예비 워커가 쓰였기 때문이다 | 실측 | [`coldstart_gaps.json`](./lab/results/coldstart_gaps.json), [`coldstart_gaps_phases.json`](./lab/results/coldstart_gaps_phases.json), `coldstart_logs/flashboot_on_gaps/`, [`coldstart_probe.py`](./lab/coldstart_probe.py)의 `GAPS=15,30,60,120,300` |
+| C23 | 한 워커에서 첫 컨테이너는 가중치 로드 151.8초, 그래프 캡처 135초였고, 같은 워커의 다음 컨테이너는 1.9초와 7초였다. 다른 데이터센터의 워커 둘도 90–94초에 기동했고 그래프 캡처는 9초였다. 따라서 C19의 9초 대 62–73초에는 호스트 하드웨어 차이 말고도 "그 호스트에서 이 이미지의 첫 기동 대 재기동"이라는 해석이 가능하며, 데이터로는 둘을 가를 수 없다 | 실측, 원인 미확인 | 같은 파일의 `weights_load_s`, `graph_capture_s`, `g17xiqon7kw30a.jsonl`의 `Loading weights took` 줄 |
+| C24 | `workersMax` 3인 엔드포인트에 동시에 보낸 요청 5건을 먼저 뜬 컨테이너 하나가 모두 처리했고 `delayTime`은 0.1초 안에서 같았다(152.2–152.3초). 이어서 동시에 보낸 5건은 같은 워커에서 96–190 ms였다. 그동안 워커 목록에는 워커 5개가 있었고, 그중 하나는 첫 엔진이 준비된 5초 뒤 컨테이너를 만들었지만 아무 작업도 처리하지 않았다 | 1회 관측 | [`concurrent.json`](./lab/results/concurrent.json), `coldstart_logs/concurrent_w3/`, [`concurrent_probe.py`](./lab/concurrent_probe.py) |
+| C25 | 10분 동안 생성 20회를 시도해, `stockStatus`가 `Low`인 종류는 10번 중 9번 생성됐고(각 2.1–2.6초, 실패 1건은 B200), 재고 표시가 없는 종류는 10번 모두 "There are no instances currently available"로 실패했다. 생성된 Pod는 모두 3초 안에 삭제했다 | 실측 | [`stock_create_probe.jsonl`](./lab/results/stock_create_probe.jsonl), [`stock_create_probe.py`](./lab/stock_create_probe.py) |
+| C26 | `delayTime`과 `executionTime`은 밀리초다. C9의 요청 18건 모두에서 벽시계 시간에서 둘의 합을 뺀 값이 +0.45~+2.07초로, 클라이언트의 제출과 0.5초 상태 폴링에 해당한다 | 실측 | C9의 세 파일, `wall_s`와 `delayTime_ms` + `executionTime_ms` |
 
 ### 호스트 정보
 
@@ -178,6 +202,19 @@ NVIDIA는 H100 NVL의 기본 전력을 전원 케이블이 450 또는 600 W로 �
 
 "컨테이너 생성 전"은 `delayTime`에서 로그상 컨테이너 생성부터 작업 수령까지의 시간을 뺀 값이다. 대기, 호스트 선택, 다른 워커 시도, 이미지 로드가 여기에 들어간다. 엔진 구간은 모델과 엔진 설정이 정하고, 그 앞 구간은 플랫폼이 정한다. FlashBoot 끔 프로브 2는 모델 로딩까지만 수집됐다. 다음 로그 수집 전에 엔드포인트가 삭제됐기 때문이다. 첫 FlashBoot 켬 실행([`coldstart_flashboot_on_run1.json`](./lab/results/coldstart_flashboot_on_run1.json))에는 로그가 없다.
 
+2026-10-07의 유휴 간격 실행(C22, C23). FlashBoot 켬, 같은 엔드포인트 설정, 간격 = 요청 전 유휴 초:
+
+| 간격 | delayTime | 컨테이너 | 컨테이너 생성 전 | vLLM 시작부터 엔진 준비까지 | 그중 가중치 다운로드 | 가중치 로드 | 컴파일 | 그래프 캡처 | 워커 기동과 점검 | 작업 수령 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 439.6 | 새로 | 43.2 | 379.1 | 13.8 | 151.8 | 15.7 | 135.0 | 13.0 | 0.6 |
+| 15 | 1.9 | 재사용 | - | - | - | - | - | - | - | - |
+| 30 | 1.3 | 재사용 | - | - | - | - | - | - | - | - |
+| 60 | 102.4 | 새로, 같은 워커 | 4.3 | 90.2 | 15.1 | 1.9 | 13.7 | 7.0 | 5.0 | 0.6 |
+| 120 | 96.8 | 새로, 다른 워커 | 1.1 | 89.6 | 9.6 | 1.8 | 14.8 | 9.0 | 4.1 | 0.3 |
+| 300 | 104.3 | 새로, 다른 워커 | 3.7 | 93.7 | 15.2 | 2.1 | 14.1 | 9.0 | 3.8 | 0.4 |
+
+"재사용": 직전 요청을 처리한 컨테이너가 아직 돌고 있었다(요청과 수령 사이에 `create container`가 없음). 파서는 이런 행을 "콜드스타트 없음"으로 표시한다.
+
 ### 참고 데이터
 
 판정 기준으로 쓰지 않는다. 전체 표는 [`PROFILE.md`](./lab/results/PROFILE.md)에 있다.
@@ -200,4 +237,5 @@ NVIDIA는 H100 NVL의 기본 전력을 전원 케이블이 450 또는 600 W로 �
 - C4의 호스트 차이가 처리량이나 지연을 바꾸는지. GPU 종류마다 호스트 1곳(RTX 4090은 2곳)만 측정했다. 두 RTX 4090은 같은 프롬프트 일정으로 돌았고, 요청별로 짝지어 보면 `chat` 8과 16 req/s에서 반복 호스트의 종단 지연이 약 1% 높았다. 짝지은 비교로 구분되는 차이지만 원인은 알 수 없다.
 - 프리픽스 캐시 재사용이 없을 때 대형 KV GPU의 성능(C21).
 - Community Cloud에서의 C3, C5, C6(C7).
-- C12의 단계 너머에서 개별 콜드스타트가 서로 다른 이유.
+- C12와 C22의 단계 너머에서 개별 콜드스타트가 서로 다른 이유.
+- C23의 느린 첫 기동이 그 호스트에서 이미지를 처음 쓴 탓인지 호스트 자체 탓인지. C24의 다중 워커 상황에서 콜드스타트가 웜 `delayTime` 뒤에 숨을 수 있는지 — 두 번째 컨테이너는 작업을 받지 못해 확인하지 못했다.

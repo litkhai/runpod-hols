@@ -22,7 +22,7 @@ and a phase whose marker is missing is reported as null.
 Other workers' image loads ("loading container image from cache" -> "Loaded image") are listed too.
 """
 import glob, json, os, re, sys
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def ts(s):
@@ -135,9 +135,24 @@ def main():
         served = [s for s in sess if first(s, lambda r: "Jobs in progress" in r.get("line", ""))]
         # A session cut off before pickup (logs saved too late, or the endpoint deleted) still yields
         # the phases it covers; take sessions in order once the served ones are used up.
-        ph = phases(served[k]) if k < len(served) else (phases(sess[k]) if k < len(sess) else None)
-        used[w] = k + 1
         delay_s = round((row.get("delayTime_ms") or 0) / 1000, 1)
+        reused = None
+        if row.get("submitted_utc"):
+            # Rows that carry the submit time are matched to the session whose container was created
+            # between the request and its pickup. No such session: a container that already existed
+            # served the request, i.e. no cold start happened (seen with 15 s and 30 s idle gaps).
+            t0 = ts(row["submitted_utc"]) - timedelta(seconds=2)
+            t1 = ts(row["submitted_utc"]) + timedelta(seconds=delay_s + 5)
+            hits = [x for x in sess if t0 <= ts(x[0]["ts"]) <= t1]
+            if hits:
+                ph = phases(hits[0])
+            else:
+                ph = None
+                prev = [x for x in sess if ts(x[0]["ts"]) < t0]
+                reused = prev[-1][0]["ts"] if prev else None
+        else:
+            ph = phases(served[k]) if k < len(served) else (phases(sess[k]) if k < len(sess) else None)
+            used[w] = k + 1
         rec = {"probe": row.get("probe"), "workerId": w, "delay_s": delay_s, "execution_s": round((row.get("executionTime_ms") or 0) / 1000, 2)}
         if ph:
             rec.update(ph)
@@ -145,6 +160,9 @@ def main():
             rec["before_container_s"] = round(delay_s - inside, 1) if inside is not None else None
             if inside is None:
                 rec["note"] = "container session captured only in part (no job pickup in the saved logs)"
+        elif reused:
+            rec["served_by_container_created_utc"] = reused
+            rec["note"] = "served by a container created before the request: no cold start"
         else:
             rec["note"] = "no container session in the saved logs for this worker"
         result.append(rec)

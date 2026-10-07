@@ -54,11 +54,13 @@ The dataset is `random`: lengths and arrival rate define a use case, not prompt 
 | [`lab/capture_host.sh`](./lab/capture_host.sh) | the Pod | GPU UUID, PCIe gen and width, `nvidia-smi topo -m`, CPU, driver, CUDA, kernel, `RUNPOD_*` env (credentials, public IP and port map dropped) |
 | [`lab/sample_gpu.sh`](./lab/sample_gpu.sh) | the Pod | Utilization, power, SM clock, temperature, throttle reasons — uses `clocks_event_reasons.*` when the driver has renamed `clocks_throttle_reasons.*` |
 | [`lab/build_profile.py`](./lab/build_profile.py) | your machine | `results/profile.json` and `results/PROFILE.md`, including cost at SLO |
-| [`lab/coldstart_probe.py`](./lab/coldstart_probe.py) | your machine | Serverless cold vs warm request pairs, with job id and submit time |
-| [`lab/serverless_endpoint.py`](./lab/serverless_endpoint.py) | your machine | Creates and deletes the probe's template and endpoint (workers 0–1, idle 5 s, FlashBoot on or off) |
+| [`lab/coldstart_probe.py`](./lab/coldstart_probe.py) | your machine | Serverless cold vs warm request pairs, with job id and submit time; `GAPS=15,30,60` sets a different idle gap before each probe |
+| [`lab/serverless_endpoint.py`](./lab/serverless_endpoint.py) | your machine | Creates and deletes the probe's template and endpoint (workers 0–1 or `--workers-max N`, idle 5 s, FlashBoot on or off) |
+| [`lab/concurrent_probe.py`](./lab/concurrent_probe.py) | your machine | Sends `BURST` requests at once, cold wave then warm wave, and records `delayTime` and `workerId` per job with the worker list after each wave |
 | [`lab/capture_worker_logs.sh`](./lab/capture_worker_logs.sh) | your machine | Every 20 s, merges each worker's system and container log lines; container lines vanish when the container is removed |
 | [`lab/coldstart_phases.py`](./lab/coldstart_phases.py) | your machine | Splits each cold start into phases from those logs |
 | [`lab/stock_snapshots.sh`](./lab/stock_snapshots.sh) | your machine | Read-only stock snapshots, with and without a CUDA 13 floor |
+| [`lab/stock_create_probe.py`](./lab/stock_create_probe.py) | your machine | Paid: after each stock reading, one create on a `Low` type and one on a no-stock type, Pod deleted at once |
 | [`lab/collect_evidence.py`](./lab/collect_evidence.py) | your machine | Saves the lines of each cited public page into [`evidence/excerpts.md`](./evidence/excerpts.md) |
 
 ### Run it
@@ -76,8 +78,17 @@ python3 build_profile.py results
 python3 serverless_endpoint.py create --flashboot on        # prints ENDPOINT_ID=...
 ./capture_worker_logs.sh <ENDPOINT_ID> results/coldstart_logs/flashboot_on &
 ENDPOINT_ID=<ENDPOINT_ID> N=3 GAP_S=300 python3 coldstart_probe.py
+# or one idle gap per probe: ENDPOINT_ID=<ENDPOINT_ID> GAPS=15,30,60,120,300 OUT=results/coldstart_gaps.json python3 coldstart_probe.py
 python3 serverless_endpoint.py delete
-python3 coldstart_phases.py results/coldstart.json results/coldstart_logs/flashboot_on
+python3 coldstart_phases.py results/coldstart.json results/coldstart_logs/flashboot_on results/coldstart_flashboot_on_phases.json
+
+# Several workers, concurrent requests
+python3 serverless_endpoint.py create --flashboot on --workers-max 3
+ENDPOINT_ID=<ENDPOINT_ID> BURST=5 python3 concurrent_probe.py
+python3 serverless_endpoint.py delete
+
+# Does a `Low` stock reading predict a successful create (one Pod created and deleted per attempt)
+ROUNDS=10 SLEEP_S=60 python3 stock_create_probe.py
 ```
 
 Community Cloud runs once, at the smallest scale that proves F1 and F2 — one use case at one rate. It needs `supportPublicIp` for SSH:
@@ -150,11 +161,13 @@ Raw results: [`lab/results/`](./lab/results). Profile table: [`lab/results/PROFI
 | [`lab/capture_host.sh`](./lab/capture_host.sh) | Pod | GPU UUID, PCIe 세대와 폭, `nvidia-smi topo -m`, CPU, 드라이버, CUDA, 커널, `RUNPOD_*` 환경변수(자격 증명, 공인 IP, 포트 매핑 제외) |
 | [`lab/sample_gpu.sh`](./lab/sample_gpu.sh) | Pod | 활용률, 전력, SM 클럭, 온도, 스로틀 사유. 드라이버가 `clocks_throttle_reasons.*`를 `clocks_event_reasons.*`로 바꿨으면 새 이름을 쓴다 |
 | [`lab/build_profile.py`](./lab/build_profile.py) | 로컬 | `results/profile.json`과 `results/PROFILE.md`, SLO 기준 비용 포함 |
-| [`lab/coldstart_probe.py`](./lab/coldstart_probe.py) | 로컬 | Serverless 콜드와 웜 요청 쌍, 작업 id와 제출 시각 포함 |
-| [`lab/serverless_endpoint.py`](./lab/serverless_endpoint.py) | 로컬 | 프로브용 템플릿과 엔드포인트 생성과 삭제(워커 0–1, 유휴 5초, FlashBoot 켬 또는 끔) |
+| [`lab/coldstart_probe.py`](./lab/coldstart_probe.py) | 로컬 | Serverless 콜드와 웜 요청 쌍, 작업 id와 제출 시각 포함. `GAPS=15,30,60`으로 프로브마다 다른 유휴 간격을 준다 |
+| [`lab/serverless_endpoint.py`](./lab/serverless_endpoint.py) | 로컬 | 프로브용 템플릿과 엔드포인트 생성과 삭제(워커 0–1 또는 `--workers-max N`, 유휴 5초, FlashBoot 켬 또는 끔) |
+| [`lab/concurrent_probe.py`](./lab/concurrent_probe.py) | 로컬 | `BURST`건을 동시에 보내 콜드 물결과 웜 물결을 만들고, 작업별 `delayTime`과 `workerId`, 물결마다의 워커 목록을 기록 |
 | [`lab/capture_worker_logs.sh`](./lab/capture_worker_logs.sh) | 로컬 | 20초마다 워커별 시스템과 컨테이너 로그를 합쳐 저장. 컨테이너 로그는 컨테이너가 지워지면 사라진다 |
 | [`lab/coldstart_phases.py`](./lab/coldstart_phases.py) | 로컬 | 그 로그로 콜드스타트를 단계별로 나눈다 |
 | [`lab/stock_snapshots.sh`](./lab/stock_snapshots.sh) | 로컬 | 읽기 전용 재고 스냅샷, CUDA 13 조건 유무 각각 |
+| [`lab/stock_create_probe.py`](./lab/stock_create_probe.py) | 로컬 | 과금: 재고를 읽을 때마다 `Low` 종류 하나와 재고 없음 종류 하나에 생성을 시도하고 Pod는 즉시 삭제 |
 | [`lab/collect_evidence.py`](./lab/collect_evidence.py) | 로컬 | 인용한 공개 페이지에서 해당 줄을 [`evidence/excerpts.md`](./evidence/excerpts.md)에 저장 |
 
 ### 실행
@@ -172,8 +185,17 @@ python3 build_profile.py results
 python3 serverless_endpoint.py create --flashboot on        # ENDPOINT_ID=... 출력
 ./capture_worker_logs.sh <ENDPOINT_ID> results/coldstart_logs/flashboot_on &
 ENDPOINT_ID=<ENDPOINT_ID> N=3 GAP_S=300 python3 coldstart_probe.py
+# 또는 프로브마다 유휴 간격을 달리: ENDPOINT_ID=<ENDPOINT_ID> GAPS=15,30,60,120,300 OUT=results/coldstart_gaps.json python3 coldstart_probe.py
 python3 serverless_endpoint.py delete
-python3 coldstart_phases.py results/coldstart.json results/coldstart_logs/flashboot_on
+python3 coldstart_phases.py results/coldstart.json results/coldstart_logs/flashboot_on results/coldstart_flashboot_on_phases.json
+
+# 워커 여러 개, 동시 요청
+python3 serverless_endpoint.py create --flashboot on --workers-max 3
+ENDPOINT_ID=<ENDPOINT_ID> BURST=5 python3 concurrent_probe.py
+python3 serverless_endpoint.py delete
+
+# `Low` 재고 표시가 생성 성공을 예측하는지(시도마다 Pod 하나 생성·삭제)
+ROUNDS=10 SLEEP_S=60 python3 stock_create_probe.py
 ```
 
 Community Cloud는 F1과 F2를 확인하는 최소 규모로 한 번만 돌린다. 유즈케이스 하나, 요청률 하나다. SSH를 쓰려면 `supportPublicIp`가 필요하다.

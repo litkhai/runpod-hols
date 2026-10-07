@@ -1,0 +1,12 @@
+{"source": "system", "line": "loading container image from cache", "ts": "2026-10-06T23:54:29Z"}
+{"source": "system", "line": "Loaded image: runpod/worker-v1-vllm:v2.28.0", "ts": "2026-10-06T23:55:20Z"}
+{"source": "system", "line": "v2.28.0 Pulling from runpod/worker-v1-vllm", "ts": "2026-10-06T23:55:22Z"}
+{"source": "system", "line": "Digest: sha256:6d8e4ff417e09aeffe6a55e547ed81203b02228533c5305e726caaa7dab34571", "ts": "2026-10-06T23:55:22Z"}
+{"source": "system", "line": "Status: Image is up to date for runpod/worker-v1-vllm:v2.28.0", "ts": "2026-10-06T23:55:22Z"}
+{"source": "system", "line": "worker is ready", "ts": "2026-10-06T23:55:22Z"}
+{"source": "system", "line": "create container runpod/worker-v1-vllm:v2.28.0", "ts": "2026-10-06T23:56:13Z"}
+{"source": "system", "line": "start container for runpod/worker-v1-vllm:v2.28.0: begin", "ts": "2026-10-06T23:56:13Z"}
+{"source": "container", "line": "2026-10-06 23:56:15,453 INFO httpx: HTTP Request: GET https://huggingface.co/api/agent-harnesses \"HTTP/1.1 200 OK\"", "ts": "2026-10-06T23:56:15.454234724Z"}
+{"source": "container", "line": "2026-10-06 23:56:15,608 INFO httpx: HTTP Request: GET https://huggingface.co/api/models/Qwen/Qwen2.5-7B-Instruct \"HTTP/1.1 200 OK\"", "ts": "2026-10-06T23:56:15.608875396Z"}
+{"source": "container", "line": "2026-10-06 23:56:15,612 INFO root: Model pre-flight: Qwen/Qwen2.5-7B-Instruct is fetchable", "ts": "2026-10-06T23:56:15.612968561Z"}
+{"source": "container", "line": "2026-10-06 23:56:15,613 INFO root: Starting vLLM: vllm serve --host 127.0.0.1 --port 8000 --max-model-len 8192 --model Qwen/Qwen2.5-7B-Instruct", "ts": "2026-10-06T23:56:15.613735736Z"}
