@@ -6,7 +6,7 @@
 
 ## English
 
-Run on 2026-10-06 and 2026-10-07 (KST) against a real Runpod account; C22–C26 come from the morning of 2026-10-07. Every claim has an ID, an evidence grade and a way to re-check it from the files in [`lab/results/`](./lab/results). Grades: **measured** (run in this lab), **vendor doc** (link and date read), **observed once** (seen in one run, cause not established).
+Run on 2026-10-06 and 2026-10-07 (KST) against a real Runpod account; C22–C27 come from 2026-10-07. Every claim has an ID, an evidence grade and a way to re-check it from the files in [`lab/results/`](./lab/results). Grades: **measured** (run in this lab), **vendor doc** (link and date read), **observed once** (seen in one run, cause not established).
 
 ### Scope and spend
 
@@ -48,6 +48,7 @@ Run on 2026-10-06 and 2026-10-07 (KST) against a real Runpod account; C22–C26 
 | C24 | Five requests sent at once to an endpoint with `workersMax` 3 were all served by the one container that came up, with the same `delayTime` to within 0.1 s (152.2–152.3 s); five more sent at once afterwards took 96–190 ms on the same worker. Meanwhile the worker list held five workers, and one of them created a container 5 s after the first engine was ready and served nothing | observed once | [`concurrent.json`](./lab/results/concurrent.json), `coldstart_logs/concurrent_w3/`, [`concurrent_probe.py`](./lab/concurrent_probe.py) |
 | C25 | In 20 create attempts over ten minutes, a type whose `stockStatus` read `Low` was created 9 times in 10 (2.1–2.6 s each; the failure was B200), and a type with no stock reading failed 10 times in 10 with "There are no instances currently available". Each Pod was deleted within 3 s | measured | [`stock_create_probe.jsonl`](./lab/results/stock_create_probe.jsonl), [`stock_create_probe.py`](./lab/stock_create_probe.py) |
 | C26 | `delayTime` and `executionTime` are milliseconds: on all 18 requests of C9, wall time minus their sum is +0.45 to +2.07 s, the client's submit and 0.5 s status polling | measured | the three C9 files, `wall_s` against `delayTime_ms` + `executionTime_ms` |
+| C27 | Over one day (77 readings, 08:15–20:56 KST on 2026-10-07, every 10 min), 10 of the 13 tracked types changed status at least once. H100 PCIe showed no one-GPU Secure stock in 43 of 77 readings (56%) and changed 22 times; L40 changed 22 times, A100 80GB PCIe 19, B200 17. A100 SXM 40GB and H200 NVL never showed stock; H200 read `Low` all day; RTX 4090 read `High` in 47 readings after reading `Low` the night before. With and without the CUDA 13 floor the status differed in 78 of 1,001 type-readings (8%) | measured | [`stock_snapshots_run2.jsonl`](./lab/results/stock_snapshots_run2.jsonl), [`stock_snapshots.sh`](./lab/stock_snapshots.sh) |
 
 ### Host facts
 
@@ -125,7 +126,7 @@ Not used as pass/fail criteria. Full table: [`PROFILE.md`](./lab/results/PROFILE
 
 ## 한국어
 
-2026-10-06~07(KST)에 실제 Runpod 계정에서 실행했다. C22–C26은 2026-10-07 아침에 추가로 실행한 것이다. 모든 주장에는 ID, 근거 등급, [`lab/results/`](./lab/results)의 파일로 다시 확인하는 방법이 붙어 있다. 등급: **실측**(이 lab에서 실행), **공급사 문서**(링크와 확인일), **1회 관측**(한 번 보았고 원인은 확인하지 않음).
+2026-10-06~07(KST)에 실제 Runpod 계정에서 실행했다. C22–C27은 2026-10-07에 추가로 실행한 것이다. 모든 주장에는 ID, 근거 등급, [`lab/results/`](./lab/results)의 파일로 다시 확인하는 방법이 붙어 있다. 등급: **실측**(이 lab에서 실행), **공급사 문서**(링크와 확인일), **1회 관측**(한 번 보았고 원인은 확인하지 않음).
 
 ### 범위와 비용
 
@@ -167,6 +168,7 @@ Not used as pass/fail criteria. Full table: [`PROFILE.md`](./lab/results/PROFILE
 | C24 | `workersMax` 3인 엔드포인트에 동시에 보낸 요청 5건을 먼저 뜬 컨테이너 하나가 모두 처리했고 `delayTime`은 0.1초 안에서 같았다(152.2–152.3초). 이어서 동시에 보낸 5건은 같은 워커에서 96–190 ms였다. 그동안 워커 목록에는 워커 5개가 있었고, 그중 하나는 첫 엔진이 준비된 5초 뒤 컨테이너를 만들었지만 아무 작업도 처리하지 않았다 | 1회 관측 | [`concurrent.json`](./lab/results/concurrent.json), `coldstart_logs/concurrent_w3/`, [`concurrent_probe.py`](./lab/concurrent_probe.py) |
 | C25 | 10분 동안 생성 20회를 시도해, `stockStatus`가 `Low`인 종류는 10번 중 9번 생성됐고(각 2.1–2.6초, 실패 1건은 B200), 재고 표시가 없는 종류는 10번 모두 "There are no instances currently available"로 실패했다. 생성된 Pod는 모두 3초 안에 삭제했다 | 실측 | [`stock_create_probe.jsonl`](./lab/results/stock_create_probe.jsonl), [`stock_create_probe.py`](./lab/stock_create_probe.py) |
 | C26 | `delayTime`과 `executionTime`은 밀리초다. C9의 요청 18건 모두에서 벽시계 시간에서 둘의 합을 뺀 값이 +0.45~+2.07초로, 클라이언트의 제출과 0.5초 상태 폴링에 해당한다 | 실측 | C9의 세 파일, `wall_s`와 `delayTime_ms` + `executionTime_ms` |
+| C27 | 하루 동안(2026-10-07 08:15–20:56 KST, 10분마다 77회) 추적한 13종 가운데 10종이 한 번 이상 상태가 바뀌었다. H100 PCIe는 77회 중 43회(56%)에서 1장짜리 Secure 재고가 없었고 22번 바뀌었다. L40 22번, A100 80GB PCIe 19번, B200 17번. A100 SXM 40GB와 H200 NVL은 한 번도 재고가 없었고, H200은 종일 `Low`, RTX 4090은 전날 밤 `Low`였다가 47회 `High`였다. CUDA 13 조건 유무에 따라 상태가 다른 경우는 1,001건 중 78건(8%) | 실측 | [`stock_snapshots_run2.jsonl`](./lab/results/stock_snapshots_run2.jsonl), [`stock_snapshots.sh`](./lab/stock_snapshots.sh) |
 
 ### 호스트 정보
 
