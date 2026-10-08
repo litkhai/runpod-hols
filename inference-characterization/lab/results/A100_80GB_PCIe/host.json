@@ -1,0 +1,31 @@
+{
+  "runpod_env": {
+    "RUNPOD_CPU_COUNT": "31",
+    "RUNPOD_DC_ID": "CA-MTL-3",
+    "RUNPOD_GPU_COUNT": "1",
+    "RUNPOD_GPU_NAME": "NVIDIA+A100+80GB+PCIe",
+    "RUNPOD_MEM_GB": "117",
+    "RUNPOD_POD_HOSTNAME": "jlbd02kaeuhkbt-64410cb0",
+    "RUNPOD_POD_ID": "jlbd02kaeuhkbt"
+  },
+  "gpus": [
+    {
+      "index": "0",
+      "name": "NVIDIA A100 80GB PCIe",
+      "uuid": "GPU-94f7e879-459d-e0f4-cb59-4ca143f4d7a3",
+      "driver": "580.159.04",
+      "mem_mib": "81920",
+      "pcie_gen": "4",
+      "pcie_gen_max": "4",
+      "pcie_width": "16",
+      "pcie_width_max": "16",
+      "sm_clock_max_mhz": "1410",
+      "power_limit_w": "300.00"
+    }
+  ],
+  "nvlink_topology": "\tGPU0\tCPU Affinity\tNUMA Affinity\tGPU NUMA ID\nGPU0\t X \t0-251\t0\t\tN/A\n\nLegend:\n\n  X    = Self\n  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)\n  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node\n  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)\n  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)\n  PIX  = Connection traversing at most a single PCIe bridge\n  NV#  = Connection traversing a bonded set of # NVLinks",
+  "cpu": "CPU(s): 252\nModel name: AMD EPYC 7763 64-Core Processor\nThread(s) per core: 1\nSocket(s): 2\nNUMA node(s): 1",
+  "cuda": "CUDA Version: 13.0",
+  "vllm_version": "0.31.0",
+  "kernel": "6.8.0-124-generic"
+}

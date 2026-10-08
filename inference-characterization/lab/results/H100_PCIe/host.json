@@ -1,0 +1,31 @@
+{
+  "runpod_env": {
+    "RUNPOD_CPU_COUNT": "18",
+    "RUNPOD_DC_ID": "US-KS-2",
+    "RUNPOD_GPU_COUNT": "1",
+    "RUNPOD_GPU_NAME": "NVIDIA+H100+PCIe",
+    "RUNPOD_MEM_GB": "287",
+    "RUNPOD_POD_HOSTNAME": "1fp377vqqwx3ze-64410ebe",
+    "RUNPOD_POD_ID": "1fp377vqqwx3ze"
+  },
+  "gpus": [
+    {
+      "index": "0",
+      "name": "NVIDIA H100 PCIe",
+      "uuid": "GPU-c8be8e54-eb32-a049-2678-97f1db164ae4",
+      "driver": "580.142",
+      "mem_mib": "81559",
+      "pcie_gen": "4",
+      "pcie_gen_max": "4",
+      "pcie_width": "16",
+      "pcie_width_max": "16",
+      "sm_clock_max_mhz": "1755",
+      "power_limit_w": "310.00"
+    }
+  ],
+  "nvlink_topology": "\tGPU0\tCPU Affinity\tNUMA Affinity\tGPU NUMA ID\nGPU0\t X \t0-31,64-95\t0\t\tN/A\n\nLegend:\n\n  X    = Self\n  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)\n  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node\n  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)\n  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)\n  PIX  = Connection traversing at most a single PCIe bridge\n  NV#  = Connection traversing a bonded set of # NVLinks",
+  "cpu": "CPU(s): 128\nModel name: Intel(R) Xeon(R) Platinum 8352Y CPU @ 2.20GHz\nThread(s) per core: 2\nSocket(s): 2\nCPU(s) scaling MHz: 33%\nNUMA node(s): 2",
+  "cuda": "CUDA Version: 13.0",
+  "vllm_version": "0.31.0",
+  "kernel": "6.8.0-60-generic"
+}

@@ -1,0 +1,107 @@
+{
+  "cold_starts": [
+    {
+      "probe": 0,
+      "workerId": "g17xiqon7kw30a",
+      "delay_s": 439.6,
+      "execution_s": 1.99,
+      "container_create_utc": "2026-10-06T23:26:51Z",
+      "container_to_vllm_start_s": 3.6,
+      "vllm_start_to_engine_ready_s": 379.1,
+      "weights_download_s": 13.8367,
+      "weights_load_s": 151.81,
+      "compile_s": 15.7,
+      "graph_capture_s": 135.0,
+      "engine_init_s": 161.72,
+      "engine_ready_to_fitness_done_s": 13.0,
+      "fitness_checks_s": 10.49692,
+      "fitness_done_to_job_pickup_s": 0.6,
+      "container_create_to_job_pickup_s": 396.4,
+      "has_container_log": true,
+      "before_container_s": 43.2
+    },
+    {
+      "probe": 1,
+      "workerId": "g17xiqon7kw30a",
+      "delay_s": 1.9,
+      "execution_s": 1.65,
+      "served_by_container_created_utc": "2026-10-06T23:26:51Z",
+      "note": "served by a container created before the request: no cold start"
+    },
+    {
+      "probe": 2,
+      "workerId": "g17xiqon7kw30a",
+      "delay_s": 1.3,
+      "execution_s": 1.62,
+      "served_by_container_created_utc": "2026-10-06T23:26:51Z",
+      "note": "served by a container created before the request: no cold start"
+    },
+    {
+      "probe": 3,
+      "workerId": "g17xiqon7kw30a",
+      "delay_s": 102.4,
+      "execution_s": 0.64,
+      "container_create_utc": "2026-10-06T23:35:33Z",
+      "container_to_vllm_start_s": 2.3,
+      "vllm_start_to_engine_ready_s": 90.2,
+      "weights_download_s": 15.058274,
+      "weights_load_s": 1.91,
+      "compile_s": 13.69,
+      "graph_capture_s": 7.0,
+      "engine_init_s": 29.01,
+      "engine_ready_to_fitness_done_s": 5.0,
+      "fitness_checks_s": 1.58939,
+      "fitness_done_to_job_pickup_s": 0.6,
+      "container_create_to_job_pickup_s": 98.1,
+      "has_container_log": true,
+      "before_container_s": 4.3
+    },
+    {
+      "probe": 4,
+      "workerId": "7cmcu542m6t0jg",
+      "delay_s": 96.8,
+      "execution_s": 0.47,
+      "container_create_utc": "2026-10-06T23:39:15Z",
+      "container_to_vllm_start_s": 1.7,
+      "vllm_start_to_engine_ready_s": 89.6,
+      "weights_download_s": 9.638646,
+      "weights_load_s": 1.76,
+      "compile_s": 14.83,
+      "graph_capture_s": 9.0,
+      "engine_init_s": 32.65,
+      "engine_ready_to_fitness_done_s": 4.1,
+      "fitness_checks_s": 2.02347,
+      "fitness_done_to_job_pickup_s": 0.3,
+      "container_create_to_job_pickup_s": 95.7,
+      "has_container_log": true,
+      "before_container_s": 1.1
+    },
+    {
+      "probe": 5,
+      "workerId": "1g7trs280zdvzh",
+      "delay_s": 104.3,
+      "execution_s": 0.65,
+      "container_create_utc": "2026-10-06T23:45:57Z",
+      "container_to_vllm_start_s": 2.7,
+      "vllm_start_to_engine_ready_s": 93.7,
+      "weights_download_s": 15.180498,
+      "weights_load_s": 2.06,
+      "compile_s": 14.08,
+      "graph_capture_s": 9.0,
+      "engine_init_s": 30.88,
+      "engine_ready_to_fitness_done_s": 3.8,
+      "fitness_checks_s": 1.77853,
+      "fitness_done_to_job_pickup_s": 0.4,
+      "container_create_to_job_pickup_s": 100.6,
+      "has_container_log": true,
+      "before_container_s": 3.7
+    }
+  ],
+  "image_loads_from_cache": [
+    {
+      "workerId": "7cmcu542m6t0jg",
+      "start_utc": "2026-10-06T23:27:30Z",
+      "seconds": 37.0
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+timestamp, index, utilization.gpu [%], utilization.memory [%], power.draw [W], clocks.current.sm [MHz], temperature.gpu, clocks_event_reasons.hw_slowdown, clocks_event_reasons.hw_thermal_slowdown, clocks_event_reasons.sw_thermal_slowdown, clocks_event_reasons.sw_power_cap
+2026/10/06 14:16:54.365, 0, 100, 100, 289.09, 2700, 58, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:16:55.369, 0, 0, 0, 105.66, 2715, 55, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:16:56.369, 0, 0, 0, 63.27, 2595, 54, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:16:57.369, 0, 0, 0, 58.78, 2595, 53, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:16:58.371, 0, 0, 0, 54.59, 2595, 53, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:16:59.371, 0, 0, 0, 54.65, 2595, 52, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:00.371, 0, 0, 0, 54.34, 2595, 52, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:01.372, 0, 0, 0, 53.92, 2595, 51, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:02.372, 0, 0, 0, 53.61, 2595, 51, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:03.372, 0, 0, 0, 53.58, 2595, 51, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:04.372, 0, 0, 0, 53.48, 2595, 50, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:05.374, 0, 0, 0, 53.17, 2595, 50, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:06.374, 0, 0, 0, 52.96, 2595, 50, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:07.374, 0, 0, 0, 53.10, 2595, 50, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:08.374, 0, 0, 0, 53.15, 2595, 49, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:09.375, 0, 97, 56, 212.05, 2715, 63, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:10.375, 0, 100, 97, 346.48, 2700, 61, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:11.375, 0, 100, 100, 374.13, 2700, 64, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:12.375, 0, 100, 100, 349.64, 2535, 65, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:13.376, 0, 100, 97, 397.18, 2700, 61, Not Active, Not Active, Not Active, Active
+2026/10/06 14:17:14.376, 0, 100, 67, 386.57, 2700, 61, Not Active, Not Active, Not Active, Active
+2026/10/06 14:17:15.376, 0, 100, 58, 416.74, 2565, 67, Not Active, Not Active, Not Active, Active
+2026/10/06 14:17:16.376, 0, 100, 100, 408.76, 2595, 68, Not Active, Not Active, Not Active, Active
+2026/10/06 14:17:17.377, 0, 100, 74, 406.82, 2700, 61, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:18.377, 0, 100, 100, 379.98, 2610, 67, Not Active, Not Active, Not Active, Active
+2026/10/06 14:17:19.377, 0, 100, 40, 448.64, 2625, 67, Not Active, Not Active, Not Active, Active
+2026/10/06 14:17:20.378, 0, 100, 52, 446.51, 2700, 67, Not Active, Not Active, Not Active, Active
+2026/10/06 14:17:21.378, 0, 100, 74, 434.44, 2700, 66, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:22.378, 0, 100, 100, 433.60, 2625, 68, Not Active, Not Active, Not Active, Active
+2026/10/06 14:17:23.379, 0, 100, 100, 433.87, 2625, 69, Not Active, Not Active, Not Active, Active
+2026/10/06 14:17:24.379, 0, 100, 87, 439.91, 2670, 67, Not Active, Not Active, Not Active, Active
+2026/10/06 14:17:25.379, 0, 100, 63, 442.40, 2700, 66, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:26.379, 0, 100, 100, 436.83, 2700, 67, Not Active, Not Active, Not Active, Active
+2026/10/06 14:17:27.380, 0, 100, 100, 433.88, 2700, 66, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:28.380, 0, 100, 58, 443.15, 2610, 69, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:29.380, 0, 100, 65, 406.63, 2700, 64, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:30.380, 0, 100, 97, 394.33, 2565, 70, Not Active, Not Active, Not Active, Active
+2026/10/06 14:17:31.381, 0, 100, 81, 433.55, 2685, 68, Not Active, Not Active, Not Active, Active
+2026/10/06 14:17:32.381, 0, 100, 63, 447.25, 2565, 70, Not Active, Not Active, Not Active, Active
+2026/10/06 14:17:33.381, 0, 100, 64, 447.83, 2550, 71, Not Active, Not Active, Not Active, Active
+2026/10/06 14:17:34.381, 0, 100, 100, 434.35, 2700, 67, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:35.382, 0, 100, 58, 442.97, 2670, 70, Not Active, Not Active, Not Active, Active
+2026/10/06 14:17:36.382, 0, 100, 86, 438.57, 2700, 68, Not Active, Not Active, Not Active, Active
+2026/10/06 14:17:37.382, 0, 100, 68, 448.50, 2580, 71, Not Active, Not Active, Not Active, Active
+2026/10/06 14:17:38.382, 0, 100, 51, 446.36, 2640, 69, Not Active, Not Active, Not Active, Active
+2026/10/06 14:17:39.383, 0, 100, 84, 433.71, 2625, 71, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:40.383, 0, 100, 100, 442.18, 2700, 68, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:41.383, 0, 100, 51, 432.86, 2700, 68, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:42.383, 0, 100, 66, 431.19, 2700, 69, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:43.384, 0, 100, 100, 433.96, 2700, 68, Not Active, Not Active, Not Active, Active
+2026/10/06 14:17:44.384, 0, 100, 86, 436.40, 2700, 69, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:45.384, 0, 100, 56, 445.39, 2685, 69, Not Active, Not Active, Not Active, Active
+2026/10/06 14:17:46.384, 0, 100, 95, 416.78, 2700, 66, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:47.385, 0, 100, 100, 338.57, 2700, 64, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:48.385, 0, 100, 100, 325.60, 2700, 64, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:49.385, 0, 100, 100, 319.79, 2700, 63, Not Active, Not Active, Not Active, Not Active
+2026/10/06 14:17:50.385, 0, 100, 100, 304.36, 2700, 62, Not Active, Not Active, Not Active, Not Active

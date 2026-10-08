@@ -1,0 +1,6 @@
+{"source": "system", "line": "loading container image from cache", "ts": "2026-10-06T23:54:19Z"}
+{"source": "system", "line": "Loaded image: runpod/worker-v1-vllm:v2.28.0", "ts": "2026-10-06T23:55:10Z"}
+{"source": "system", "line": "v2.28.0 Pulling from runpod/worker-v1-vllm", "ts": "2026-10-06T23:55:12Z"}
+{"source": "system", "line": "Digest: sha256:6d8e4ff417e09aeffe6a55e547ed81203b02228533c5305e726caaa7dab34571", "ts": "2026-10-06T23:55:12Z"}
+{"source": "system", "line": "Status: Image is up to date for runpod/worker-v1-vllm:v2.28.0", "ts": "2026-10-06T23:55:12Z"}
+{"source": "system", "line": "worker is ready", "ts": "2026-10-06T23:55:12Z"}

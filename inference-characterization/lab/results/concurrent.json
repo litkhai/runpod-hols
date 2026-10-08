@@ -1,0 +1,200 @@
+{
+  "endpoint": "wae22dm21t2hyz",
+  "burst": 5,
+  "waves": [
+    {
+      "wave": "cold",
+      "jobs": [
+        {
+          "wave": "cold",
+          "i": 0,
+          "job_id": "8cf48bcf-c357-4817-9591-669578b77975-e1",
+          "submitted_utc": "2026-10-06T23:53:45Z",
+          "wall_s": 153.55,
+          "delayTime_ms": 152334,
+          "executionTime_ms": 606,
+          "workerId": "el6y494km6xkcy",
+          "status": "COMPLETED"
+        },
+        {
+          "wave": "cold",
+          "i": 1,
+          "job_id": "3765d087-b9f8-46c8-9af4-0182c76e272f-e2",
+          "submitted_utc": "2026-10-06T23:53:45Z",
+          "wall_s": 154.18,
+          "delayTime_ms": 152335,
+          "executionTime_ms": 605,
+          "workerId": "el6y494km6xkcy",
+          "status": "COMPLETED"
+        },
+        {
+          "wave": "cold",
+          "i": 2,
+          "job_id": "cbf2170b-00a4-40ce-9d3e-2b9f46863fa3-e1",
+          "submitted_utc": "2026-10-06T23:53:45Z",
+          "wall_s": 154.16,
+          "delayTime_ms": 152336,
+          "executionTime_ms": 610,
+          "workerId": "el6y494km6xkcy",
+          "status": "COMPLETED"
+        },
+        {
+          "wave": "cold",
+          "i": 3,
+          "job_id": "46d15c15-fc5c-42e7-868f-7b7eeb100551-e1",
+          "submitted_utc": "2026-10-06T23:53:45Z",
+          "wall_s": 153.47,
+          "delayTime_ms": 152335,
+          "executionTime_ms": 592,
+          "workerId": "el6y494km6xkcy",
+          "status": "COMPLETED"
+        },
+        {
+          "wave": "cold",
+          "i": 4,
+          "job_id": "4fc79365-5512-40fd-9e2b-9632a15d03cc-e1",
+          "submitted_utc": "2026-10-06T23:53:45Z",
+          "wall_s": 153.56,
+          "delayTime_ms": 152240,
+          "executionTime_ms": 674,
+          "workerId": "el6y494km6xkcy",
+          "status": "COMPLETED"
+        }
+      ],
+      "workers_after": [
+        {
+          "id": "ijfk4ns9m5vz2y",
+          "status": "RUNNING",
+          "gpuTypeId": "NVIDIA GeForce RTX 4090",
+          "dataCenterId": "EUR-IS-2",
+          "startedAt": "2026-10-06T23:56:11.95Z"
+        },
+        {
+          "id": "el6y494km6xkcy",
+          "status": "RUNNING",
+          "gpuTypeId": "NVIDIA GeForce RTX 4090",
+          "dataCenterId": "EUR-IS-2",
+          "startedAt": "2026-10-06T23:54:26.803Z"
+        },
+        {
+          "id": "cobbapteerg159",
+          "status": "IDLE",
+          "gpuTypeId": "NVIDIA GeForce RTX 4090",
+          "dataCenterId": "EUR-IS-1",
+          "startedAt": "2026-10-06T23:53:47.124Z"
+        },
+        {
+          "id": "xkmmrmjbbriink",
+          "status": "INITIALIZING",
+          "gpuTypeId": "NVIDIA GeForce RTX 4090",
+          "dataCenterId": "EUR-IS-2",
+          "startedAt": "2026-10-06T23:54:06.811Z"
+        },
+        {
+          "id": "p6ungnbzckw35d",
+          "status": "IDLE",
+          "gpuTypeId": "NVIDIA GeForce RTX 4090",
+          "dataCenterId": "EUR-IS-2",
+          "startedAt": "2026-10-06T23:54:18.116Z"
+        }
+      ]
+    },
+    {
+      "wave": "warm",
+      "jobs": [
+        {
+          "wave": "warm",
+          "i": 0,
+          "job_id": "627d4b2c-5847-4110-9822-efddaa7fc677-e2",
+          "submitted_utc": "2026-10-06T23:56:20Z",
+          "wall_s": 1.26,
+          "delayTime_ms": 184,
+          "executionTime_ms": 378,
+          "workerId": "el6y494km6xkcy",
+          "status": "COMPLETED"
+        },
+        {
+          "wave": "warm",
+          "i": 1,
+          "job_id": "ae434318-22b8-40ef-99a1-8b8a65adb5b5-e1",
+          "submitted_utc": "2026-10-06T23:56:20Z",
+          "wall_s": 1.25,
+          "delayTime_ms": 183,
+          "executionTime_ms": 380,
+          "workerId": "el6y494km6xkcy",
+          "status": "COMPLETED"
+        },
+        {
+          "wave": "warm",
+          "i": 2,
+          "job_id": "30c67221-e9fc-45f4-9df3-ff75eb684d04-e2",
+          "submitted_utc": "2026-10-06T23:56:20Z",
+          "wall_s": 1.25,
+          "delayTime_ms": 96,
+          "executionTime_ms": 477,
+          "workerId": "el6y494km6xkcy",
+          "status": "COMPLETED"
+        },
+        {
+          "wave": "warm",
+          "i": 3,
+          "job_id": "46609dba-4ce2-4520-b7b5-69dc3614d3ae-e1",
+          "submitted_utc": "2026-10-06T23:56:20Z",
+          "wall_s": 1.25,
+          "delayTime_ms": 188,
+          "executionTime_ms": 362,
+          "workerId": "el6y494km6xkcy",
+          "status": "COMPLETED"
+        },
+        {
+          "wave": "warm",
+          "i": 4,
+          "job_id": "8a047ea9-0dde-4478-bc2c-8a1ce6c92739-e2",
+          "submitted_utc": "2026-10-06T23:56:20Z",
+          "wall_s": 1.24,
+          "delayTime_ms": 190,
+          "executionTime_ms": 379,
+          "workerId": "el6y494km6xkcy",
+          "status": "COMPLETED"
+        }
+      ],
+      "workers_after": [
+        {
+          "id": "ijfk4ns9m5vz2y",
+          "status": "RUNNING",
+          "gpuTypeId": "NVIDIA GeForce RTX 4090",
+          "dataCenterId": "EUR-IS-2",
+          "startedAt": "2026-10-06T23:56:11.95Z"
+        },
+        {
+          "id": "el6y494km6xkcy",
+          "status": "RUNNING",
+          "gpuTypeId": "NVIDIA GeForce RTX 4090",
+          "dataCenterId": "EUR-IS-2",
+          "startedAt": "2026-10-06T23:54:26.803Z"
+        },
+        {
+          "id": "cobbapteerg159",
+          "status": "IDLE",
+          "gpuTypeId": "NVIDIA GeForce RTX 4090",
+          "dataCenterId": "EUR-IS-1",
+          "startedAt": "2026-10-06T23:53:47.124Z"
+        },
+        {
+          "id": "xkmmrmjbbriink",
+          "status": "INITIALIZING",
+          "gpuTypeId": "NVIDIA GeForce RTX 4090",
+          "dataCenterId": "EUR-IS-2",
+          "startedAt": "2026-10-06T23:54:06.811Z"
+        },
+        {
+          "id": "p6ungnbzckw35d",
+          "status": "IDLE",
+          "gpuTypeId": "NVIDIA GeForce RTX 4090",
+          "dataCenterId": "EUR-IS-2",
+          "startedAt": "2026-10-06T23:54:18.116Z"
+        }
+      ]
+    }
+  ]
+}

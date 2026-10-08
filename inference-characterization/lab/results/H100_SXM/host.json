@@ -1,0 +1,31 @@
+{
+  "runpod_env": {
+    "RUNPOD_CPU_COUNT": "28",
+    "RUNPOD_DC_ID": "AP-IN-1",
+    "RUNPOD_GPU_COUNT": "1",
+    "RUNPOD_GPU_NAME": "NVIDIA+H100+80GB+HBM3",
+    "RUNPOD_MEM_GB": "251",
+    "RUNPOD_POD_HOSTNAME": "8o16vcsgclg2e4-644121a0",
+    "RUNPOD_POD_ID": "8o16vcsgclg2e4"
+  },
+  "gpus": [
+    {
+      "index": "0",
+      "name": "NVIDIA H100 80GB HBM3",
+      "uuid": "GPU-18e68687-3079-5d30-c4d4-28617246fe4d",
+      "driver": "580.126.09",
+      "mem_mib": "81559",
+      "pcie_gen": "5",
+      "pcie_gen_max": "5",
+      "pcie_width": "16",
+      "pcie_width_max": "16",
+      "sm_clock_max_mhz": "1980",
+      "power_limit_w": "700.00"
+    }
+  ],
+  "nvlink_topology": "\tGPU0\tNIC0\tNIC1\tNIC2\tNIC3\tNIC4\tNIC5\tNIC6\tNIC7\tNIC8\tCPU Affinity\tNUMA Affinity\tGPU NUMA ID\nGPU0\t X \tSYS\tSYS\tSYS\tSYS\tNODE\tNODE\tNODE\tPIX\tNODE\t56-111,168-223\t1\t\tN/A\nNIC0\tSYS\t X \tNODE\tNODE\tNODE\tSYS\tSYS\tSYS\tSYS\tSYS\t\t\t\t\nNIC1\tSYS\tNODE\t X \tNODE\tNODE\tSYS\tSYS\tSYS\tSYS\tSYS\t\t\t\t\nNIC2\tSYS\tNODE\tNODE\t X \tNODE\tSYS\tSYS\tSYS\tSYS\tSYS\t\t\t\t\nNIC3\tSYS\tNODE\tNODE\tNODE\t X \tSYS\tSYS\tSYS\tSYS\tSYS\t\t\t\t\nNIC4\tNODE\tSYS\tSYS\tSYS\tSYS\t X \tNODE\tNODE\tNODE\tPIX\t\t\t\t\nNIC5\tNODE\tSYS\tSYS\tSYS\tSYS\tNODE\t X \tNODE\tNODE\tNODE\t\t\t\t\nNIC6\tNODE\tSYS\tSYS\tSYS\tSYS\tNODE\tNODE\t X \tNODE\tNODE\t\t\t\t\nNIC7\tPIX\tSYS\tSYS\tSYS\tSYS\tNODE\tNODE\tNODE\t X \tNODE\t\t\t\t\nNIC8\tNODE\tSYS\tSYS\tSYS\tSYS\tPIX\tNODE\tNODE\tNODE\t X \t\t\t\t\n\nLegend:\n\n  X    = Self\n  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)\n  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node\n  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)\n  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)\n  PIX  = Connection traversing at most a single PCIe bridge\n  NV#  = Connection traversing a bonded set of # NVLinks\n\nNIC Legend:\n\n  NIC0: mlx5_0\n  NIC1: mlx5_1\n  NIC2: mlx5_2\n  NIC3: mlx5_3\n  NIC4: mlx5_4\n  NIC5: mlx5_7\n  NIC6: mlx5_8\n  NIC7: mlx5_9\n  NIC8: mlx5_bond_0",
+  "cpu": "CPU(s): 224\nModel name: Intel(R) Xeon(R) Platinum 8480+\nThread(s) per core: 2\nSocket(s): 2\nCPU(s) scaling MHz: 23%\nNUMA node(s): 2",
+  "cuda": "CUDA Version: 13.0",
+  "vllm_version": "0.31.0",
+  "kernel": "6.8.0-106-generic"
+}
