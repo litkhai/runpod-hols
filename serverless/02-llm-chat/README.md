@@ -78,8 +78,10 @@ Which one an endpoint actually populates is undocumented, so `model_cache.py` pr
 The response reports which path was taken:
 
 ```json
-{ "loaded_from": "cache", "model_load_seconds": 4.1, "device": "cuda:0" }
+{ "loaded_from": "cache", "cache_path": "<the snapshot directory>", "model_load_seconds": <s>, "device": "cuda:0" }
 ```
+
+At import the worker also logs one `cache_probe` line: a JSON object with both candidate roots, what each contains (directory names only) and the path it resolved. One cold start's log answers which layout the platform populated.
 
 ### Step 1 — Deploy from GitHub
 
@@ -235,8 +237,10 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 응답이 어느 경로를 탔는지 알려줍니다.
 
 ```json
-{ "loaded_from": "cache", "model_load_seconds": 4.1, "device": "cuda:0" }
+{ "loaded_from": "cache", "cache_path": "<스냅샷 디렉토리>", "model_load_seconds": <초>, "device": "cuda:0" }
 ```
+
+워커는 import 시점에 `cache_probe` 로 시작하는 로그 한 줄도 남깁니다. 두 후보 루트, 각각에 무엇이 있는지(디렉토리 이름만), 실제로 고른 경로를 담은 JSON 객체입니다. 콜드 스타트 한 번의 로그로 플랫폼이 어느 구조를 채웠는지 알 수 있습니다.
 
 ### 1단계 — GitHub 연동 배포
 

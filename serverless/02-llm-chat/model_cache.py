@@ -109,3 +109,46 @@ def _sdk_style_path(model_id: str, cache_root: str = None):
     model, _, revision = model_id.partition(":")
     candidate = os.path.join(root, model, revision or "main")
     return candidate if os.path.isdir(candidate) else None
+
+
+def probe_report(model_id: str, limit: int = 20):
+    """Describe both candidate cache locations, for the worker log.
+
+    두 후보 캐시 위치의 상태를 설명한다. 워커 로그에 남기기 위한 것이다.
+
+    `snapshot_path()` answers "is there a cache"; this answers "which layout
+    did the platform actually populate", the question the docs and the SDK
+    disagree on. It only lists directory names, never file contents.
+
+    `snapshot_path()` 는 "캐시가 있는가"에 답하고, 이 함수는 문서와 SDK 가
+    엇갈리는 "플랫폼이 실제로 어느 구조를 채웠는가"에 답한다.
+    디렉토리 이름만 나열하고 파일 내용은 읽지 않는다.
+    """
+    org_name = model_id.partition(":")[0]
+    org, _, name = org_name.partition("/")
+    hf_root = DEFAULT_CACHE_ROOT
+    sdk_root = SDK_CACHE_ROOT
+
+    def listing(path):
+        try:
+            return sorted(os.listdir(path))[:limit]
+        except OSError:
+            return None  # missing or unreadable / 없거나 읽을 수 없음
+
+    hf_model = os.path.join(hf_root, f"models--{org}--{name}")
+    sdk_model = os.path.join(sdk_root, org, name)
+    return {
+        "docs_layout": {
+            "root": hf_root,
+            "root_entries": listing(hf_root),
+            "model_dir": hf_model,
+            "snapshots": listing(os.path.join(hf_model, "snapshots")),
+        },
+        "sdk_layout": {
+            "root": sdk_root,
+            "root_entries": listing(sdk_root),
+            "model_dir": sdk_model,
+            "revisions": listing(sdk_model),
+        },
+        "runpod_volume_entries": listing("/runpod-volume"),
+    }
