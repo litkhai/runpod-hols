@@ -1,0 +1,37 @@
+# gitleaks configuration for runpod-hols (layout follows clickhouse-hols)
+#
+# This repository is public and every lab talks to the Runpod API, so a Runpod
+# API key is the secret most likely to be committed by accident. The default
+# rules catch one only in `key = "..."` form; the rule below also catches a bare
+# key pasted into prose or a log excerpt.
+#
+# Local use:   gitleaks git . --config .gitleaks.toml --no-banner --redact
+# Staged only: gitleaks git --staged --config .gitleaks.toml --no-banner --redact
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "runpod-api-key"
+description = "Runpod API key"
+regex = '''\brpa_[A-Za-z0-9]{40,}\b'''
+keywords = ["rpa_"]
+tags = ["runpod", "credential"]
+
+[allowlist]
+description = "Placeholders and documented example values"
+regexTarget = "match"
+
+paths = [
+    '''\.example$''',
+    '''(^|/)\.gitleaks\.toml$''',
+]
+
+regexes = [
+    # placeholder shapes used throughout the docs
+    '''<[A-Za-z_ -]+>''',
+    '''(?i)(your|example|placeholder|changeme|dummy|xxx+|redacted)''',
+    '''\$\{?[A-Za-z_][A-Za-z0-9_]*\}?''',
+    # the SDK's own log.secret() example, quoted in sdk/worker.md
+    '''sk-abcdef123456''',
+]
