@@ -9,6 +9,8 @@ Run from anywhere:
 Every check here exists because something actually broke. See AGENTS.md.
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import re

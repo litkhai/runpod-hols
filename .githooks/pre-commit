@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# Pre-commit guard (adapted from litkhai/clickhouse-hols).
+#
+# Enable once per clone:
+#     git config core.hooksPath .githooks
+#
+# Checks only what is staged, so it stays fast. CI re-runs the full set.
+set -uo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+fail=0
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$staged" ] && exit 0
+
+# The lab venv may be the only Python new enough for everything; prefer it.
+PY=python3
+[ -x .venv/bin/python ] && PY=.venv/bin/python
+
+# 1. Secrets ---------------------------------------------------------------
+if command -v gitleaks >/dev/null 2>&1; then
+    if ! gitleaks git --staged --config .gitleaks.toml --no-banner --redact --log-level warn; then
+        echo "pre-commit: gitleaks flagged a staged change" >&2
+        fail=1
+    fi
+else
+    echo "pre-commit: gitleaks not installed, secret scan BLOCKED" >&2
+    echo "            https://github.com/gitleaks/gitleaks/releases" >&2
+    fail=1
+fi
+
+# 2. Machine-specific absolute paths ---------------------------------------
+while IFS= read -r f; do
+    case "$f" in *.md|.githooks/*|.github/*) continue;; esac
+    [ -f "$f" ] || continue
+    if grep -nIE -e '/Users/|/home/' "$f" >/dev/null 2>&1; then
+        echo "pre-commit: host absolute path in $f" >&2
+        grep -nIE -e '/Users/|/home/' "$f" | head -3 | sed 's/^/            /' >&2
+        fail=1
+    fi
+done <<< "$staged"
+
+# 3. Syntax of the staged files only ---------------------------------------
+while IFS= read -r f; do
+    [ -f "$f" ] || continue
+    case "$f" in
+        *.sh|.githooks/*) bash -n "$f" || { echo "pre-commit: shell syntax error in $f" >&2; fail=1; };;
+        *.py) "$PY" -m py_compile "$f" || { echo "pre-commit: python syntax error in $f" >&2; fail=1; };;
+    esac
+done <<< "$staged"
+find . -name __pycache__ -type d -not -path './.venv/*' -exec rm -rf {} + 2>/dev/null || true
+
+# 4. A staged file must not be shadowed by an ignore rule ------------------
+while IFS= read -r f; do
+    if git check-ignore --no-index -q "$f"; then
+        echo "pre-commit: $f matches an ignore rule but is being committed" >&2
+        echo "            add an explicit negation to .gitignore if deliberate" >&2
+        fail=1
+    fi
+done <<< "$staged"
+
+# 5. Documentation conventions, when docs are staged -----------------------
+if grep -qE '\.md$|^docs/' <<< "$staged"; then
+    if ! "$PY" scripts/check-docs.py; then
+        echo "pre-commit: scripts/check-docs.py failed" >&2
+        fail=1
+    fi
+fi
+
+if [ "$fail" -ne 0 ]; then
+    echo >&2
+    echo "Commit blocked. Use 'git commit --no-verify' only if you are certain." >&2
+fi
+exit "$fail"

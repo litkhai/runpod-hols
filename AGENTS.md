@@ -20,6 +20,9 @@ python3 scripts/check-docs.py -v
 
 Bilingual heading parity, code fences, table columns, `.lang` blocks,
 nav-to-permalink consistency, internal links, tracked secrets.
+`.githooks/pre-commit` runs it when Markdown is staged, together with gitleaks;
+it blocks the commit when gitleaks is not installed. The `checks` workflow
+repeats everything on the pull request.
 
 ## Not guessable
 
