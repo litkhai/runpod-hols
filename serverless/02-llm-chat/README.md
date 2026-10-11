@@ -71,6 +71,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 Which one an endpoint actually populates is undocumented, so `model_cache.py` probes both — two `stat()` calls at import, and no guess.
 
+**Measured on 2026-10-11: the docs path.** The worker's `cache_probe` line showed `/runpod-volume/huggingface-cache/hub/models--Qwen--Qwen2.5-1.5B-Instruct/snapshots/989aa79…`, and `/runpod/cache` did not exist. `/runpod-volume` held nothing but `huggingface-cache`.
+
 **3. It falls back to the Hub when there is no cache.**
 
 `snapshot_path()` returns `None` rather than raising, so the same file runs locally (downloads from the Hub) and on Runpod (loads from cache). Runpod's own example raises here, which makes its handler impossible to test off-platform.
@@ -90,9 +92,12 @@ Nothing to build locally. Runpod clones the repo, builds the image and stores it
 1. Console → [Settings](https://console.runpod.io/user/settings) → **Connections** → **GitHub** → **Connect**.
 2. [Serverless](https://console.runpod.io/serverless) → **New Endpoint** → **Import Git Repository** → `runpod-hols`.
 3. **Branch** `main`, **Dockerfile Path** `/serverless/02-llm-chat/Dockerfile`, **Advanced settings → Build context** `/serverless/02-llm-chat`. The build context is required and confirmed working — without it the build fails with `"/handler.py": not found`. Save it before triggering a build.
-4. In **Endpoint Configuration**, set **Model** to `Qwen/Qwen2.5-1.5B-Instruct`. The console shows the model size and the GPU it suggests.
+4. In **Endpoint Configuration**, set **Model** to `Qwen/Qwen2.5-1.5B-Instruct`. The console shows the model size and the GPU it suggests. It stores the value as the environment variable `MODEL_NAME`; `handler.py` reads `MODEL_ID` first, then `MODEL_NAME`.
 5. **Active Workers 0**, **Max Workers** 1–2, GPU per the console's suggestion (16GB is ample for 1.5B).
-6. **Deploy Endpoint**, then watch the **Builds** tab.
+6. Set the minimum CUDA version to **12.8**. The image's torch is a CUDA 12.8 build, and older drivers cannot run it.
+7. **Deploy Endpoint**, then watch the **Builds** tab.
+
+> **"runpod.serverless.start() handler not found in your repo"** may appear before you deploy. The console looks for the handler through GitHub's code search, and this repository is not in that index. The warning was harmless here: the build succeeded and the handler served requests.
 
 > The first build pulls a ~4GB base image, so expect several minutes. Later builds reuse cached layers.
 
@@ -130,6 +135,17 @@ Message form works too:
 
 Send one request, wait for the worker to idle out, then send another. The first pays container start plus `model_load_seconds`; the second pays neither. That gap is exactly what module-scope loading buys, and why `workers_min = 0` trades latency for cost.
 
+Measured on 2026-10-11 (RTX A5000, CA-MTL-1, idle timeout 5 s, FlashBoot off):
+
+| Request | `delayTime` | `executionTime` |
+|---|---|---|
+| First prompt | 12,142 ms | 1,259 ms |
+| Same prompt again | 126 ms | 846 ms |
+| `messages` form | 133 ms | 305 ms |
+| No prompt (fails by design) | 127 ms | 129 ms |
+
+The worker had pulled the image and the model before the first request — that happens right after a build, and the pull took about 3 minutes. The 12 s is container start, imports, `model_load_seconds` of 2.37 and the SDK's fitness checks (0.46 s). A host that has never seen the image adds the pull.
+
 ### Local testing
 
 Possible but slow: on CPU a 1.5B model generates at a few tokens per second, and the first run downloads roughly 3GB.
@@ -156,10 +172,14 @@ python3 -c "from model_cache import snapshot_path; print(snapshot_path('Qwen/Qwe
 | Very long first request | Model was downloaded, not cached — check the Model field |
 | CUDA OOM | GPU too small; raise it or pick a smaller model |
 | Changes not live | You pushed but did not create a **GitHub release** |
+| `no kernel image is available for execution on the device`, then `Worker is unhealthy, exiting.` | The worker's GPU is newer than the image's torch build. The 16/24 GB pools include RTX PRO 6000 Blackwell MIG slices (sm_120); a CUDA 12.6 torch stops at sm_90. Use the CUDA 12.8 image |
+| `runpod.serverless.start() handler not found in your repo` | Console warning from GitHub code search; harmless when the repository is not indexed |
 
-### Not yet verified
+### What was run
 
-The deploy itself has not been run. Unverified: that this lab's build succeeds, and actual cold-start numbers. The build context question is settled: a Lab 01 deploy proved the console's Build context field works when saved before the build is triggered. Verified locally: `model_cache.py` against five fixture cases, the base image tag and model ID both resolve, and the handler compiles.
+Verified on Runpod Serverless, 2026-10-11: SDK 1.12.0, image `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime` built by the console from this lab, RTX A5000. Build, deploy, all four requests above, and the cache path.
+
+Not run: the CUDA 12.8 image on a Blackwell worker (only A5000 workers were assigned), FlashBoot, and a cold start on a host without the image. The CUDA 12.6 image that preceded it built and served on an RTX A5000 but failed on Blackwell MIG workers, which is why the base changed.
 
 ---
 
@@ -230,6 +250,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 엔드포인트가 실제로 어느 쪽을 채우는지는 문서화돼 있지 않습니다. 그래서 `model_cache.py` 가 양쪽을 모두 확인합니다. import 시점의 `stat()` 두 번이면 되므로 추측할 이유가 없습니다.
 
+**2026-10-11 측정 결과: 문서 쪽 경로입니다.** 워커의 `cache_probe` 줄에 `/runpod-volume/huggingface-cache/hub/models--Qwen--Qwen2.5-1.5B-Instruct/snapshots/989aa79…` 가 찍혔고, `/runpod/cache` 는 존재하지 않았습니다. `/runpod-volume` 에는 `huggingface-cache` 하나만 있었습니다.
+
 **3. 캐시가 없으면 Hub 로 폴백합니다.**
 
 `snapshot_path()` 는 예외를 던지지 않고 `None` 을 반환합니다. 덕분에 같은 파일이 로컬(Hub 다운로드)과 Runpod(캐시 로드) 양쪽에서 동작합니다. Runpod 공식 예제는 여기서 예외를 던지기 때문에 플랫폼 밖에서는 테스트할 수 없습니다.
@@ -249,9 +271,12 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 1. 콘솔 → [Settings](https://console.runpod.io/user/settings) → **Connections** → **GitHub** → **Connect**.
 2. [Serverless](https://console.runpod.io/serverless) → **New Endpoint** → **Import Git Repository** → `runpod-hols`.
 3. **Branch** `main`, **Dockerfile Path** `/serverless/02-llm-chat/Dockerfile`, **Advanced settings → Build context** `/serverless/02-llm-chat`. Build context 는 필수이며 동작이 확인됐습니다. 지정하지 않으면 `"/handler.py": not found` 로 실패합니다. 빌드 트리거 전에 저장하세요.
-4. **Endpoint Configuration** 에서 **Model** 에 `Qwen/Qwen2.5-1.5B-Instruct` 입력. 콘솔이 모델 크기와 권장 GPU 를 표시합니다.
+4. **Endpoint Configuration** 에서 **Model** 에 `Qwen/Qwen2.5-1.5B-Instruct` 입력. 콘솔이 모델 크기와 권장 GPU 를 표시합니다. 이 값은 환경변수 `MODEL_NAME` 으로 저장됩니다. `handler.py` 는 `MODEL_ID` 를 먼저 읽고, 없으면 `MODEL_NAME` 을 읽습니다.
 5. **Active Workers 0**, **Max Workers** 1~2, GPU 는 콘솔 권장값 (1.5B 에는 16GB 로 충분).
-6. **Deploy Endpoint** 후 **Builds** 탭에서 진행 확인.
+6. 최소 CUDA 버전을 **12.8** 로 지정. 이미지의 torch 가 CUDA 12.8 빌드라 더 오래된 드라이버에서는 실행되지 않습니다.
+7. **Deploy Endpoint** 후 **Builds** 탭에서 진행 확인.
+
+> 배포 전에 **"runpod.serverless.start() handler not found in your repo"** 경고가 뜰 수 있습니다. 콘솔은 GitHub 코드 검색으로 핸들러를 찾는데, 이 저장소는 그 색인에 없습니다. 이 실습에서는 무해했습니다. 빌드는 성공했고 핸들러는 요청을 처리했습니다.
 
 > 첫 빌드는 약 4GB 베이스 이미지를 받으므로 수 분 걸립니다. 이후 빌드는 레이어 캐시를 재사용합니다.
 
@@ -289,6 +314,17 @@ curl -X POST "https://api.runpod.ai/v2/$RUNPOD_ENDPOINT_ID/runsync" \
 
 요청을 한 번 보내고, 워커가 유휴 종료될 때까지 기다렸다가 다시 보내보세요. 첫 요청은 컨테이너 기동과 `model_load_seconds` 를 모두 부담하고, 두 번째는 둘 다 부담하지 않습니다. 이 차이가 모듈 스코프 로딩이 만들어내는 이득이며, `workers_min = 0` 이 지연시간과 비용을 맞바꾸는 지점입니다.
 
+2026-10-11 측정값 (RTX A5000, CA-MTL-1, 유휴 타임아웃 5초, FlashBoot 꺼짐):
+
+| 요청 | `delayTime` | `executionTime` |
+|---|---|---|
+| 첫 프롬프트 | 12,142 ms | 1,259 ms |
+| 같은 프롬프트 다시 | 126 ms | 846 ms |
+| `messages` 형식 | 133 ms | 305 ms |
+| 프롬프트 없음 (의도된 실패) | 127 ms | 129 ms |
+
+첫 요청 전에 워커가 이미지와 모델을 미리 받아 두었습니다. 빌드 직후에 일어나며, 이미지 받는 데 약 3분이 걸렸습니다. 12초는 컨테이너 시작, import, `model_load_seconds` 2.37초, SDK 시작 점검 0.46초를 합친 값입니다. 이미지를 처음 받는 호스트라면 그 시간이 더해집니다.
+
 ### 로컬 테스트
 
 가능하지만 느립니다. CPU 에서 1.5B 모델은 초당 몇 토큰 수준이고, 첫 실행에서 약 3GB 를 받습니다.
@@ -315,7 +351,11 @@ python3 -c "from model_cache import snapshot_path; print(snapshot_path('Qwen/Qwe
 | 첫 요청이 지나치게 오래 걸림 | 캐시가 아니라 다운로드한 것. Model 필드 확인 |
 | CUDA OOM | GPU 가 작음. 사양을 올리거나 더 작은 모델 사용 |
 | 변경사항이 반영되지 않음 | 푸시만 하고 **GitHub 릴리스**를 만들지 않음 |
+| `no kernel image is available for execution on the device` 후 `Worker is unhealthy, exiting.` | 워커의 GPU 가 이미지의 torch 빌드보다 새것. 16/24 GB 풀에는 RTX PRO 6000 Blackwell MIG 조각(sm_120)이 섞여 있고, CUDA 12.6 torch 는 sm_90 까지만 지원한다. CUDA 12.8 이미지를 쓸 것 |
+| `runpod.serverless.start() handler not found in your repo` | GitHub 코드 검색에 기댄 콘솔 경고. 저장소가 색인에 없으면 무해하다 |
 
-### 아직 검증하지 않은 것
+### 실행한 것
 
-실제 배포는 아직 실행하지 않았습니다. 미검증: 이 랩의 빌드 성공 여부와 실제 콜드 스타트 수치. 빌드 컨텍스트 문제는 Lab 01 배포로 해결됐습니다. 콘솔의 Build context 필드는 빌드 트리거 전에 저장하면 정상 동작합니다. 로컬에서 검증한 것: `model_cache.py` 픽스처 5개 케이스, 베이스 이미지 태그와 모델 ID 실재 확인, 핸들러 컴파일.
+2026-10-11 Runpod Serverless 에서 검증: SDK 1.12.0, 이 실습으로 콘솔이 빌드한 `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime` 기반 이미지, RTX A5000. 빌드, 배포, 위 요청 네 건, 캐시 경로.
+
+실행하지 않은 것: Blackwell 워커에서의 CUDA 12.8 이미지 (A5000 워커만 배정됨), FlashBoot, 이미지가 없는 호스트의 콜드 스타트. 그 전의 CUDA 12.6 이미지는 RTX A5000 에서 빌드되고 요청을 처리했지만 Blackwell MIG 워커에서 실패했고, 그래서 베이스를 바꿨습니다.
