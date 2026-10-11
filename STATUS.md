@@ -31,7 +31,7 @@ on staged files in `.githooks/pre-commit` — enable it once per clone with
 |---|---|---|
 | `01-hello-world` | `ku3jultxavac2v` | Lab 01 |
 | `vLLM v2.22.5` | `56snfp0y0lh5qc` | No — earlier exploration with Runpod's prebuilt vLLM worker |
-| `02-llm-chat` | `3xiuyqtrh6r0zl` | Lab 02 — built from branch `issue-10-llm-chat-deploy`, minimum CUDA 12.8 |
+| `02-llm-chat` | `3xiuyqtrh6r0zl` | Lab 02 — built from `main` by the console, minimum CUDA 12.8 |
 
 All three scale to zero; `currentSpendPerHr` was `0` on 2026-10-11. `vLLM v2.22.5`
 has `workersMax` 0 on that date, so it serves nothing until raised.
