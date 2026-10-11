@@ -15,13 +15,24 @@ a cached model configured, it is loaded from disk instead — see README.
 import os
 import time
 
-from model_cache import snapshot_path
+import json
+
+from model_cache import probe_report, snapshot_path
 
 # Must match the Model field on the endpoint. Overridable via an endpoint
 # environment variable so one image can serve several models.
 # 엔드포인트의 Model 필드와 일치해야 한다. 이미지 하나로 여러 모델을 서빙할 수
 # 있도록 엔드포인트 환경변수로 덮어쓸 수 있게 했다.
-MODEL_ID = os.environ.get("MODEL_ID", "Qwen/Qwen2.5-1.5B-Instruct")
+#
+# The console's Model field is written to the template as MODEL_NAME, not
+# MODEL_ID (#10, 2026-10-11), so read both.
+# 콘솔의 Model 필드는 템플릿에 MODEL_ID 가 아니라 MODEL_NAME 으로 저장된다
+# (#10, 2026-10-11). 그래서 둘 다 읽는다.
+MODEL_ID = (
+    os.environ.get("MODEL_ID")
+    or os.environ.get("MODEL_NAME")
+    or "Qwen/Qwen2.5-1.5B-Instruct"
+)
 
 # Resolve the cache BEFORE importing transformers. HF_HUB_OFFLINE and
 # TRANSFORMERS_OFFLINE are read at import time, so setting them afterwards
@@ -30,6 +41,15 @@ MODEL_ID = os.environ.get("MODEL_ID", "Qwen/Qwen2.5-1.5B-Instruct")
 # transformers 를 import 하기 전에 캐시를 확인한다. HF_HUB_OFFLINE 와
 # TRANSFORMERS_OFFLINE 는 import 시점에 읽히므로, 나중에 설정하면 효과가 없다.
 _CACHED_PATH = snapshot_path(MODEL_ID)
+
+# Which layout did the platform populate? One JSON line in the worker log
+# settles the docs-vs-SDK question from a single cold start.
+# 플랫폼이 어느 구조를 채웠는가. 워커 로그의 JSON 한 줄로 콜드 스타트 한 번에
+# 문서와 SDK 의 불일치를 판정한다.
+print("cache_probe " + json.dumps(
+    {"model": MODEL_ID, "resolved": _CACHED_PATH, **probe_report(MODEL_ID)}
+), flush=True)
+
 if _CACHED_PATH:
     # Cached: refuse to reach the network at all, so a cache miss fails loudly
     # instead of silently downloading on the clock.
@@ -161,6 +181,7 @@ def handler(job):
         # Diagnostics that make the lab's point visible.
         # 이 랩이 보여주려는 지점을 드러내는 진단 값들.
         "loaded_from": "cache" if _CACHED_PATH else "hub",
+        "cache_path": _CACHED_PATH,
         "model_load_seconds": LOAD_SECONDS,
         "device": DEVICE,
         "worker_id": os.environ.get("RUNPOD_POD_ID", "local"),
