@@ -1,6 +1,6 @@
 # Runpod Hands-On Labs (HOLs)
 
-**📖 [litkhai.github.io/runpod-hols](https://litkhai.github.io/runpod-hols)**
+**📖 [runpod.litkhai.dev](https://runpod.litkhai.dev)**
 
 [English](#english) | [한국어](#한국어)
 
@@ -106,7 +106,7 @@ Several corrections came out of that discipline. Runpod's own `worker-template` 
 
 ### The Documentation Site
 
-[`docs/`](./docs) builds to [litkhai.github.io/runpod-hols](https://litkhai.github.io/runpod-hols) through [`.github/workflows/pages.yml`](./.github/workflows/pages.yml) on every push that touches it.
+[`docs/`](./docs) is deployed to [runpod.litkhai.dev](https://runpod.litkhai.dev) by Vercel on every push to `main` (project root directory `docs/`, settings in [`docs/vercel.json`](./docs/vercel.json)); pull requests get a preview deployment. The old address `litkhai.github.io/runpod-hols` still works: [`.github/workflows/pages.yml`](./.github/workflows/pages.yml) publishes a redirect stub for every page, each sending to the same path on the new host.
 
 | Choice | Why |
 |---|---|
@@ -259,7 +259,7 @@ runpod-hols/
 
 ### 문서 사이트
 
-[`docs/`](./docs) 는 [`.github/workflows/pages.yml`](./.github/workflows/pages.yml) 을 통해 [litkhai.github.io/runpod-hols](https://litkhai.github.io/runpod-hols) 로 빌드되며, 해당 디렉토리를 건드리는 푸시마다 배포됩니다.
+[`docs/`](./docs) 는 `main` 에 푸시될 때마다 Vercel 이 [runpod.litkhai.dev](https://runpod.litkhai.dev) 로 배포합니다(프로젝트 루트 디렉토리 `docs/`, 설정은 [`docs/vercel.json`](./docs/vercel.json)). PR 마다 미리보기 배포가 붙습니다. 옛 주소 `litkhai.github.io/runpod-hols` 도 계속 동작합니다. [`.github/workflows/pages.yml`](./.github/workflows/pages.yml) 이 페이지마다 새 주소의 같은 경로로 넘겨주는 안내 페이지를 게시합니다.
 
 | 선택 | 이유 |
 |---|---|

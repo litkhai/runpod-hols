@@ -1,5 +1,9 @@
-# Build and deploy the docs/ site to GitHub Pages.
-# docs/ 사이트를 GitHub Pages 로 빌드해 배포한다.
+# The docs/ site is served by Vercel at https://runpod.litkhai.dev. This keeps
+# litkhai.github.io/runpod-hols alive: it builds the same pages and publishes
+# one redirect stub per page, each sending to the same path on the new host.
+# docs/ 사이트는 Vercel(https://runpod.litkhai.dev)에서 서비스한다. 이 워크플로는
+# 같은 페이지를 빌드한 뒤 페이지마다 새 주소의 같은 경로로 넘겨주는 안내 페이지를
+# 게시해 litkhai.github.io/runpod-hols 주소를 유지한다.
 #
 # Pages source must be set to "GitHub Actions" in Settings → Pages.
 # Settings → Pages 에서 소스를 "GitHub Actions" 로 설정해야 한다.
@@ -10,6 +14,7 @@ on:
     branches: [main]
     paths:
       - "docs/**"
+      - "scripts/pages-redirect.py"
       - ".github/workflows/pages.yml"
   # Allow running by hand from the Actions tab.
   # Actions 탭에서 수동 실행 허용.
@@ -40,7 +45,12 @@ jobs:
           source: ./docs
           destination: ./_site
 
+      - name: Generate redirect stubs
+        run: python3 scripts/pages-redirect.py _site _redirect https://runpod.litkhai.dev /runpod-hols
+
       - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./_redirect
 
   deploy:
     needs: build

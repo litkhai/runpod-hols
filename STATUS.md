@@ -16,7 +16,7 @@ Updated 2026-10-11.
 | [`inference-characterization/`](./inference-characterization) | **Yes** — Pod sweeps on Secure Cloud GPU types, Serverless cold-start probes with worker logs, 2026-10-06/07; Community Cloud Pod never reachable over SSH; per-run seed not re-run ([#6](https://github.com/litkhai/runpod-hols/issues/6)); review follow-up tests T2/T3/T5/T7/T11 done 2026-10-07, T1/T4/T6/T8–T10 open ([#8](https://github.com/litkhai/runpod-hols/issues/8)) |
 | [`sdk/`](./sdk) | Source read at 1.11.0 and 1.12.0; client exercised live |
 | [`gpu-topology/`](./gpu-topology) | Catalogue and OpenAPI queried live; hardware claims unrun ([#14](https://github.com/litkhai/runpod-hols/issues/14)) |
-| [`docs/`](./docs) | <https://litkhai.github.io/runpod-hols> |
+| [`docs/`](./docs) | <https://runpod.litkhai.dev> |
 
 ## CI
 
