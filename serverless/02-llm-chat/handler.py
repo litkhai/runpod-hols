@@ -23,7 +23,16 @@ from model_cache import probe_report, snapshot_path
 # environment variable so one image can serve several models.
 # 엔드포인트의 Model 필드와 일치해야 한다. 이미지 하나로 여러 모델을 서빙할 수
 # 있도록 엔드포인트 환경변수로 덮어쓸 수 있게 했다.
-MODEL_ID = os.environ.get("MODEL_ID", "Qwen/Qwen2.5-1.5B-Instruct")
+#
+# The console's Model field is written to the template as MODEL_NAME, not
+# MODEL_ID (#10, 2026-10-11), so read both.
+# 콘솔의 Model 필드는 템플릿에 MODEL_ID 가 아니라 MODEL_NAME 으로 저장된다
+# (#10, 2026-10-11). 그래서 둘 다 읽는다.
+MODEL_ID = (
+    os.environ.get("MODEL_ID")
+    or os.environ.get("MODEL_NAME")
+    or "Qwen/Qwen2.5-1.5B-Instruct"
+)
 
 # Resolve the cache BEFORE importing transformers. HF_HUB_OFFLINE and
 # TRANSFORMERS_OFFLINE are read at import time, so setting them afterwards
