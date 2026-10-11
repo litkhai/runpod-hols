@@ -65,3 +65,7 @@ inference-characterization/lab/results/_backup/
 inference-characterization/ONE-PAGER-DRAFT.md
 inference-characterization/lab/results/serverless.json
 inference-characterization/ONE-PAGER-SEND.md
+
+# Vercel local link and build cache
+.vercel/
+docs/.jekyll-cache/

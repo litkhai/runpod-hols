@@ -1,0 +1,6 @@
+# For the Vercel build (project root directory: docs/). GitHub Pages builds
+# with its own pinned gem set and ignores this file.
+source "https://rubygems.org"
+
+gem "jekyll", "~> 4.3"
+gem "kramdown-parser-gfm", "~> 1.1"

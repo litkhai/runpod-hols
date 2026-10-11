@@ -2,9 +2,10 @@ title: Runpod Hands-On Labs
 description: Serverless, Pods, Terraform — 실습 중심 Runpod 랩 모음 (EN/KO)
 lang: en
 
-# Served at https://litkhai.github.io/runpod-hols
-baseurl: "/runpod-hols"
-url: "https://litkhai.github.io"
+# Served at https://runpod.litkhai.dev (Vercel). litkhai.github.io/runpod-hols
+# publishes redirect stubs built from the same pages (.github/workflows/pages.yml).
+baseurl: ""
+url: "https://runpod.litkhai.dev"
 
 repo_url: https://github.com/litkhai/runpod-hols
 
@@ -25,6 +26,7 @@ exclude:
   - Gemfile
   - Gemfile.lock
   - vendor
+  - vercel.json
 
 # Nav, grouped. A divider is drawn wherever `group` changes, which keeps the
 # three kinds of page from reading as one flat list. Labels are English only —
