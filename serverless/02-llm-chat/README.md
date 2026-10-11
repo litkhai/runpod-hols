@@ -129,7 +129,7 @@ Message form works too:
 | `system` | "You are a concise, helpful assistant." | Ignored when `messages` is given |
 | `max_tokens` | 256 | Clamped to 1024 |
 | `temperature` | 0.7 | `0` disables sampling |
-| `top_p` | 0.9 | |
+| `top_p` | 0.9 | Not passed when `temperature` is `0` |
 
 ### Step 3 — Watch the cold start
 
@@ -310,7 +310,7 @@ curl -X POST "https://api.runpod.ai/v2/$RUNPOD_ENDPOINT_ID/runsync" \
 | `system` | "You are a concise, helpful assistant." | `messages` 를 주면 무시됨 |
 | `max_tokens` | 256 | 1024 로 상한 |
 | `temperature` | 0.7 | `0` 이면 샘플링 비활성화 |
-| `top_p` | 0.9 | |
+| `top_p` | 0.9 | `temperature` 가 `0` 이면 넘기지 않음 |
 
 ### 3단계 — 콜드 스타트 관찰
 

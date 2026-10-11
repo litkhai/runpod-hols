@@ -155,15 +155,22 @@ def handler(job):
     inputs = tokenizer([text], return_tensors="pt").to(model.device)
     prompt_tokens = int(inputs["input_ids"].shape[-1])
 
+    # Sampling knobs only when sampling: transformers warns about a top_p the
+    # caller passes alongside do_sample=False, on every greedy request.
+    # 샘플링할 때만 샘플링 인자를 넘긴다. do_sample=False 와 함께 top_p 를
+    # 넘기면 transformers 가 greedy 요청마다 경고를 남긴다.
+    sampling = {}
+    if temperature > 0:
+        sampling = {"temperature": temperature, "top_p": float(job_input.get("top_p", 0.9))}
+
     started = time.perf_counter()
     with torch.no_grad():
         generated = model.generate(
             **inputs,
             max_new_tokens=max_new_tokens,
             do_sample=temperature > 0,
-            temperature=temperature if temperature > 0 else None,
-            top_p=float(job_input.get("top_p", 0.9)),
             pad_token_id=tokenizer.eos_token_id,
+            **sampling,
         )
     elapsed_ms = int((time.perf_counter() - started) * 1000)
 
