@@ -26,6 +26,21 @@ resource "runpod_template" "hello" {
   is_serverless = true
 
   container_disk_in_gb = var.container_disk_in_gb
+
+  # Provider 1.0.8 declares these Optional but not Computed, while the API
+  # fills them in on create. Left unset, apply fails with "Provider produced
+  # inconsistent result after apply" and leaves the template tainted.
+  # Set them to what the API returns. An empty ports list is not kept — the
+  # API fills in its defaults — and Serverless workers do not use them.
+  #
+  # 프로바이더 1.0.8 은 이 속성들을 Optional 로만 선언했는데(Computed 아님),
+  # API 는 생성 시 값을 채워 넣는다. 비워 두면 apply 가
+  # "Provider produced inconsistent result after apply" 로 실패하고
+  # 템플릿이 tainted 로 남는다. API 가 돌려주는 값으로 맞춘다. 빈 ports 목록은
+  # 유지되지 않고 API 기본값으로 채워지며, Serverless 워커는 포트를 쓰지 않는다.
+  readme                     = ""
+  container_registry_auth_id = ""
+  ports                      = ["8888/http", "22/tcp"]
 }
 
 resource "runpod_endpoint" "hello" {
@@ -56,4 +71,8 @@ resource "runpod_endpoint" "hello" {
   # 작업을 마친 워커가 다음 요청을 기다리며 살아있는 시간(초).
   # 값이 클수록 콜드 스타트는 줄고 비용은 늘어난다.
   idle_timeout = var.idle_timeout
+
+  # Same provider 1.0.8 gap as the template: the API returns "" here.
+  # 템플릿과 같은 프로바이더 1.0.8 문제. API 가 "" 를 돌려준다.
+  network_volume_id = ""
 }

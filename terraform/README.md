@@ -73,7 +73,18 @@ Everything below was checked with a real API key using **read-only calls and `te
 
 `terraform plan` reaching "2 to add" is the meaningful one: it proves the provider authenticates, the schema matches, and nothing in the config is rejected. Only `apply` would create anything.
 
-**Not yet verified:** `apply`, and therefore everything downstream of it — whether the endpoint actually serves traffic, and the whole of `02-pod`. Those create billable resources.
+**`apply` and `destroy` on `01-endpoint`, 2026-10-11** (Terraform 1.16.4, provider 1.0.8): the template and endpoint were created, a `plan` straight after showed no changes, and `destroy` removed both, leaving no template, no endpoint and `currentSpendPerHr` 0. It took two fixes found on the way:
+
+| What happened | Fix in `main.tf` |
+|---|---|
+| `Provider produced inconsistent result after apply` on `runpod_template`: `.readme`, `.container_registry_auth_id` and `.ports` came back as `""` / `["8888/http","22/tcp"]`, not null. The template was created and left tainted | Set `readme = ""`, `container_registry_auth_id = ""`, `ports = ["8888/http", "22/tcp"]`. `ports = []` is not kept; the API fills in its defaults |
+| Same error on `runpod_endpoint` for `.network_volume_id` | Set `network_volume_id = ""` |
+
+The provider declares these attributes Optional but not Computed, so it cannot accept a value the API fills in. A tainted resource is replaced on the next `apply` and removed by `destroy`.
+
+**The image has to be one Runpod can pull without the console.** The run used the Lab 01 image the console built from GitHub (`registry.runpod.net/…-01-hello-worker-dockerfile:<sha>`). Every worker stayed `INITIALIZING` with `Failed to get Hub registry auth. Is this a template you have access to?`, so the job was cancelled. The Runpod registry only serves templates the console's GitHub integration created. Build and push the image to a registry you control, as in [`serverless/01-hello-worker`](../serverless/01-hello-worker) Option B.
+
+**Not yet verified:** the endpoint serving a request (needs a pushed image), and the whole of `02-pod`.
 
 ### Discovering Valid IDs
 
@@ -231,7 +242,18 @@ AttributeName("workers"): must have Required, Optional, or Computed set..
 
 `terraform plan` 이 "2 to add" 까지 도달했다는 점이 핵심입니다. 프로바이더 인증이 되고, 스키마가 맞고, 설정 중 거부되는 항목이 없다는 뜻입니다. 실제로 무언가를 생성하는 것은 `apply` 뿐입니다.
 
-**아직 검증하지 않은 것:** `apply`, 그리고 그 이후의 모든 것 — 엔드포인트가 실제로 트래픽을 처리하는지, 그리고 `02-pod` 전체. 과금되는 리소스를 만들기 때문입니다.
+**`01-endpoint` 의 `apply` 와 `destroy`, 2026-10-11** (Terraform 1.16.4, 프로바이더 1.0.8): 템플릿과 엔드포인트가 생성됐고, 직후의 `plan` 은 변경 없음이었으며, `destroy` 가 둘 다 지워 템플릿·엔드포인트가 남지 않고 `currentSpendPerHr` 는 0 이었습니다. 도중에 찾은 두 가지 수정이 필요했습니다:
+
+| 일어난 일 | `main.tf` 의 수정 |
+|---|---|
+| `runpod_template` 에서 `Provider produced inconsistent result after apply`: `.readme`, `.container_registry_auth_id`, `.ports` 가 null 이 아니라 `""` / `["8888/http","22/tcp"]` 로 돌아옴. 템플릿은 생성된 채 tainted 로 남음 | `readme = ""`, `container_registry_auth_id = ""`, `ports = ["8888/http", "22/tcp"]` 로 설정. `ports = []` 는 유지되지 않고 API 기본값으로 채워진다 |
+| `runpod_endpoint` 에서 `.network_volume_id` 로 같은 오류 | `network_volume_id = ""` 로 설정 |
+
+프로바이더가 이 속성들을 Optional 로만(Computed 아님) 선언해서 API 가 채운 값을 받아들이지 못합니다. tainted 리소스는 다음 `apply` 에서 교체되고 `destroy` 로 지워집니다.
+
+**이미지는 콘솔 없이도 Runpod 이 pull 할 수 있는 것이어야 합니다.** 이번 실행은 콘솔이 GitHub 에서 빌드한 Lab 01 이미지(`registry.runpod.net/…-01-hello-worker-dockerfile:<sha>`)를 썼습니다. 모든 워커가 `Failed to get Hub registry auth. Is this a template you have access to?` 를 남기고 `INITIALIZING` 에 머물러 작업을 취소했습니다. Runpod 레지스트리는 콘솔의 GitHub 연동이 만든 템플릿에만 이미지를 내줍니다. [`serverless/01-hello-worker`](../serverless/01-hello-worker) 의 방법 B 처럼 직접 관리하는 레지스트리에 빌드·푸시하세요.
+
+**아직 검증하지 않은 것:** 엔드포인트의 요청 처리(푸시한 이미지 필요), 그리고 `02-pod` 전체.
 
 ### 유효한 ID 조회하기
 
