@@ -8,7 +8,7 @@ Updated 2026-10-11.
 |---|---|
 | [`setup/`](./setup) | Yes |
 | [`serverless/01-hello-worker`](./serverless/01-hello-worker) | **Yes** — deployed, called, measured; re-run on SDK 1.12.0 |
-| [`serverless/02-llm-chat`](./serverless/02-llm-chat) | **Yes** — built by the console, deployed, called and measured 2026-10-11 on RTX A5000 with the CUDA 12.8 image; cache path settled (docs layout). Blackwell worker not run ([#21](https://github.com/litkhai/runpod-hols/issues/21)) |
+| [`serverless/02-llm-chat`](./serverless/02-llm-chat) | **Yes** — built by the console, deployed, called and measured 2026-10-11 on RTX A5000 and RTX PRO 6000 Blackwell MIG 1g.24gb with the CUDA 12.8 image; cache path settled (docs layout) |
 | [`pod/01-launch-connect`](./pod/01-launch-connect) | No — `--dry-run` only, no Pod ever launched ([#13](https://github.com/litkhai/runpod-hols/issues/13)) |
 | [`terraform/01-endpoint`](./terraform/01-endpoint) | No — `plan` only ([#11](https://github.com/litkhai/runpod-hols/issues/11)) |
 | [`terraform/02-pod`](./terraform/02-pod) | No — `plan` only ([#12](https://github.com/litkhai/runpod-hols/issues/12)) |
@@ -45,7 +45,7 @@ Tracked as issues — [all open](https://github.com/litkhai/runpod-hols/issues) 
 [needs a re-run](https://github.com/litkhai/runpod-hols/issues?q=is%3Aopen+label%3Are-verify) ·
 [new labs](https://github.com/litkhai/runpod-hols/issues?q=is%3Aopen+label%3Aenhancement).
 
-- Re-verify: [#21](https://github.com/litkhai/runpod-hols/issues/21) Lab 02 on a Blackwell worker · [#11](https://github.com/litkhai/runpod-hols/issues/11) [#12](https://github.com/litkhai/runpod-hols/issues/12) Terraform
+- Re-verify: [#11](https://github.com/litkhai/runpod-hols/issues/11) [#12](https://github.com/litkhai/runpod-hols/issues/12) Terraform
   `apply` · [#13](https://github.com/litkhai/runpod-hols/issues/13) Pod launch · [#14](https://github.com/litkhai/runpod-hols/issues/14) GPU topology on hardware ·
   [#6](https://github.com/litkhai/runpod-hols/issues/6) [#8](https://github.com/litkhai/runpod-hols/issues/8) inference-characterization follow-ups.
 - New labs: [#15](https://github.com/litkhai/runpod-hols/issues/15) `serverless/03-vllm-endpoint` · [#16](https://github.com/litkhai/runpod-hols/issues/16) `pod/02-storage` ·
