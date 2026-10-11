@@ -181,6 +181,8 @@ Verified on Runpod Serverless, 2026-10-11: SDK 1.12.0, image `pytorch/pytorch:2.
 
 Also verified 2026-10-11 on `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` (sm_120), same image, with the endpoint's GPU list narrowed to that type for one request: the container logged `cache_probe` with the docs layout populated, loaded the model from cache in 1.49 s on `cuda:0`, and the SDK fitness checks started (`GPU binary test passed: 1 GPU(s) healthy (CUDA 13.0)`, memory check passed; the rest of the log was not captured). The request completed with `loaded_from: cache`. The REST API does not accept that MIG type in `gpuTypeIds`; the GraphQL `saveEndpoint` mutation with `gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` selected it.
 
+The current handler (sampling arguments passed only when `temperature` > 0) was rebuilt by the console from `main` and run 2026-10-11 on `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` with the endpoint's original GPU list: one `temperature: 0` request completed with `loaded_from: cache`, all seven SDK fitness checks passed, and the worker log between `Started.` and `Finished.` carried no `generation flags are not valid` warning. The previous handler logged that warning for `top_p` on every greedy request.
+
 Not run: FlashBoot, and a cold start on a host without the image. The CUDA 12.6 image that preceded it built and served on an RTX A5000 but failed on Blackwell MIG workers, which is why the base changed.
 
 ---
@@ -361,5 +363,7 @@ python3 -c "from model_cache import snapshot_path; print(snapshot_path('Qwen/Qwe
 2026-10-11 Runpod Serverless 에서 검증: SDK 1.12.0, 이 실습으로 콘솔이 빌드한 `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime` 기반 이미지, RTX A5000. 빌드, 배포, 위 요청 네 건, 캐시 경로.
 
 2026-10-11 `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` (sm_120) 에서도 같은 이미지로 검증: 요청 한 건 동안 엔드포인트 GPU 목록을 이 타입으로 좁혔다. 컨테이너가 docs 레이아웃이 채워진 `cache_probe` 를 남기고, 캐시에서 1.49 초 만에 `cuda:0` 에 모델을 올렸고, SDK fitness check 가 시작됐다 (`GPU binary test passed: 1 GPU(s) healthy (CUDA 13.0)`, 메모리 체크 통과; 그 뒤 로그는 수집하지 못함). 요청은 `loaded_from: cache` 로 완료됐다. REST API 는 이 MIG 타입을 `gpuTypeIds` 로 받지 않으며, GraphQL `saveEndpoint` 뮤테이션에 `gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` 를 주어 선택했다.
+
+현재 핸들러(`temperature` > 0 일 때만 샘플링 인자를 넘김)는 콘솔이 `main` 에서 다시 빌드했고, 2026-10-11 엔드포인트의 원래 GPU 목록으로 `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` 에서 실행했다: `temperature: 0` 요청 한 건이 `loaded_from: cache` 로 완료됐고, SDK fitness check 일곱 개가 모두 통과했으며, 워커 로그의 `Started.` 와 `Finished.` 사이에 `generation flags are not valid` 경고가 없었다. 이전 핸들러는 greedy 요청마다 `top_p` 에 대해 이 경고를 남겼다.
 
 실행하지 않은 것: FlashBoot, 이미지가 없는 호스트의 콜드 스타트. 그 전의 CUDA 12.6 이미지는 RTX A5000 에서 빌드되고 요청을 처리했지만 Blackwell MIG 워커에서 실패했고, 그래서 베이스를 바꿨습니다.
