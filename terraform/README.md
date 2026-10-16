@@ -167,9 +167,22 @@ This is not a hypothetical concern: the official Runpod provider repo has `examp
 
 **Data sources include:** `gpu_types`, `data_centers`, `billing_pod`, `billing_endpoint`, `billing_network_volume`, `endpoint_jobs`, `endpoint_workers`, `user`
 
+### Lessons from the First Apply
+
+From running `apply` → request → `destroy` on `01-endpoint`, 2026-10-11:
+
+| Lesson | What showed it |
+|---|---|
+| **`plan` passing does not mean `apply` will.** `plan` validates the config against the schema; only `apply` sees what the API sends back | `plan` said `2 to add`; `apply` then failed twice on values the API filled in |
+| **A failed `apply` can still create a real resource.** After the error, check `terraform state list` and the account, not just the exit code | The template existed in the account and sat in state as `tainted`; the next `apply` replaced it and `destroy` removed it |
+| **Find Optional-but-not-Computed attributes before applying.** `terraform providers schema -json` lists them; if the API fills one in, set it explicitly to the value the API returns | `readme`, `container_registry_auth_id`, `ports`, `network_volume_id` — see the fixes above |
+| **Check for drift right after `apply`.** `terraform plan -detailed-exitcode` returns 0 when config and live state agree | Returned 0 after the fixes |
+| **Confirm the account is empty after `destroy`.** List templates and endpoints, and read `myself { currentSpendPerHr }` | No `hol-*` template, no extra endpoint, spend 0 |
+| **Use an image the template can pull on its own.** Console GitHub builds land in `registry.runpod.net`, which only serves the templates the console created | `Failed to get Hub registry auth` on every worker |
+
 ### Honest Assessment
 
-The provider works for the core cases, but it is young — 9 releases, ~2,000 downloads, no generated registry documentation, examples that do not match the pinned version, and a latest release that does not load. Pin exactly, read `terraform plan` carefully, and expect to consult the Go source when an attribute behaves oddly. For production use today, the console or SDK is the safer path; this track is about understanding the IaC model.
+The provider works for the core cases, but it is young — 9 releases, ~2,000 downloads, no generated registry documentation, examples that do not match the pinned version, a latest release that does not load, and resource schemas that reject values the API fills in, so a clean `plan` can still fail on `apply`. Pin exactly, read `terraform plan` carefully, check the schema for Optional-but-not-Computed attributes, and expect to consult the Go source when an attribute behaves oddly. For production use today, the console or SDK is the safer path; this track is about understanding the IaC model.
 
 ---
 
@@ -336,6 +349,19 @@ terraform destroy    # 끝나면
 
 **주요 데이터소스:** `gpu_types`, `data_centers`, `billing_pod`, `billing_endpoint`, `billing_network_volume`, `endpoint_jobs`, `endpoint_workers`, `user`
 
+### 첫 Apply 에서 얻은 교훈
+
+2026-10-11 `01-endpoint` 에서 `apply` → 요청 → `destroy` 를 실행하며 얻은 것:
+
+| 교훈 | 근거 |
+|---|---|
+| **`plan` 이 통과해도 `apply` 가 통과한다는 보장은 없습니다.** `plan` 은 설정을 스키마와 대조할 뿐이고, API 가 돌려주는 값은 `apply` 에서야 보입니다 | `plan` 은 `2 to add` 였지만 `apply` 는 API 가 채운 값 때문에 두 번 실패했다 |
+| **실패한 `apply` 도 실제 리소스를 만들 수 있습니다.** 오류 뒤에는 종료 코드만 보지 말고 `terraform state list` 와 계정을 확인하세요 | 템플릿이 계정에 생성됐고 state 에 `tainted` 로 남았다. 다음 `apply` 가 교체했고 `destroy` 가 지웠다 |
+| **Optional 이면서 Computed 가 아닌 속성을 apply 전에 찾으세요.** `terraform providers schema -json` 으로 볼 수 있고, API 가 채우는 속성이면 API 가 돌려주는 값으로 명시합니다 | `readme`, `container_registry_auth_id`, `ports`, `network_volume_id` — 위의 수정 참조 |
+| **`apply` 직후 drift 를 확인하세요.** `terraform plan -detailed-exitcode` 가 0 이면 설정과 실제 상태가 일치합니다 | 수정 후 0 을 반환했다 |
+| **`destroy` 후 계정이 비었는지 확인하세요.** 템플릿·엔드포인트 목록과 `myself { currentSpendPerHr }` 를 봅니다 | `hol-*` 템플릿 없음, 추가 엔드포인트 없음, 비용 0 |
+| **템플릿이 스스로 pull 할 수 있는 이미지를 쓰세요.** 콘솔 GitHub 빌드는 `registry.runpod.net` 에 올라가며, 이 레지스트리는 콘솔이 만든 템플릿에만 이미지를 내줍니다 | 모든 워커에서 `Failed to get Hub registry auth` |
+
 ### 솔직한 평가
 
-핵심 기능은 동작하지만 아직 초기 단계입니다. 릴리스 9개, 다운로드 약 2,000회, 레지스트리 생성 문서 없음, 고정 버전과 맞지 않는 예제, 그리고 로드조차 되지 않는 최신 릴리스. 버전을 정확히 고정하고, `terraform plan` 을 꼼꼼히 읽고, 속성이 이상하게 동작하면 Go 소스를 직접 확인할 각오가 필요합니다. 현시점에서 프로덕션 용도로는 콘솔이나 SDK 가 더 안전하며, 이 트랙의 목적은 IaC 모델을 이해하는 데 있습니다.
+핵심 기능은 동작하지만 아직 초기 단계입니다. 릴리스 9개, 다운로드 약 2,000회, 레지스트리 생성 문서 없음, 고정 버전과 맞지 않는 예제, 로드조차 되지 않는 최신 릴리스, 그리고 API 가 채우는 값을 거부하는 리소스 스키마 — 그래서 깨끗한 `plan` 도 `apply` 에서 실패할 수 있습니다. 버전을 정확히 고정하고, `terraform plan` 을 꼼꼼히 읽고, 스키마에서 Optional 이면서 Computed 가 아닌 속성을 확인하고, 속성이 이상하게 동작하면 Go 소스를 직접 확인할 각오가 필요합니다. 현시점에서 프로덕션 용도로는 콘솔이나 SDK 가 더 안전하며, 이 트랙의 목적은 IaC 모델을 이해하는 데 있습니다.

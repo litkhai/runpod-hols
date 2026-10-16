@@ -58,7 +58,7 @@ Also, the upstream `examples/network_volume/main.tf` sets `type = ...` on `runpo
 
 ### Verified against the live API
 
-Read-only calls and `terraform plan` against a real key. Nothing created, nothing billed.
+Read-only calls and `terraform plan` against a real key — nothing created, nothing billed:
 
 | Check | Result |
 |---|---|
@@ -70,11 +70,33 @@ Read-only calls and `terraform plan` against a real key. Nothing created, nothin
 
 Reaching "2 to add" is the meaningful part: the provider authenticates, the schema matches, and nothing is rejected. Only `apply` creates resources.
 
-**Not verified:** `apply`, and therefore whether the endpoint serves traffic, plus all of `02-pod` — those bill.
+**`apply` and `destroy` on `01-endpoint`, 2026-10-11** (Terraform 1.16.4, provider 1.0.8): both resources created, `plan` straight after showed no changes, `destroy` left the account empty. It needed two workarounds:
+
+| What happened | Fix in `main.tf` |
+|---|---|
+| `Provider produced inconsistent result after apply` on `runpod_template` — `.readme`, `.container_registry_auth_id`, `.ports` came back filled in; the template was left tainted | `readme = ""`, `container_registry_auth_id = ""`, `ports = ["8888/http", "22/tcp"]` (`[]` is not kept) |
+| Same on `runpod_endpoint` for `.network_volume_id` | `network_volume_id = ""` |
+
+The image must be one the template can pull on its own: a console-built `registry.runpod.net` image fails with `Failed to get Hub registry auth`.
+
+**Not verified:** the endpoint serving a request (needs a pushed image), and all of `02-pod`.
 
 <div class="note" markdown="1">
 Don't guess GPU or data-center IDs. Read them from `data "runpod_data_centers"` and `data "runpod_gpu_types"` — a data-source-only config creates nothing on `apply`.
 </div>
+
+### Lessons from the first apply
+
+From running `apply` → request → `destroy` on `01-endpoint`, 2026-10-11:
+
+| Lesson | What showed it |
+|---|---|
+| **`plan` passing does not mean `apply` will.** `plan` validates the config against the schema; only `apply` sees what the API sends back | `plan` said `2 to add`; `apply` then failed twice on values the API filled in |
+| **A failed `apply` can still create a real resource.** After the error, check `terraform state list` and the account, not just the exit code | The template existed in the account and sat in state as `tainted`; the next `apply` replaced it and `destroy` removed it |
+| **Find Optional-but-not-Computed attributes before applying.** `terraform providers schema -json` lists them; if the API fills one in, set it explicitly to the value the API returns | `readme`, `container_registry_auth_id`, `ports`, `network_volume_id` |
+| **Check for drift right after `apply`.** `terraform plan -detailed-exitcode` returns 0 when config and live state agree | Returned 0 after the fixes |
+| **Confirm the account is empty after `destroy`.** List templates and endpoints, and read `myself { currentSpendPerHr }` | No `hol-*` template, no extra endpoint, spend 0 |
+| **Use an image the template can pull on its own.** Console GitHub builds land in `registry.runpod.net`, which only serves the templates the console created | `Failed to get Hub registry auth` on every worker |
 
 ### Authentication
 
@@ -163,7 +185,7 @@ AttributeName("workers"): must have Required, Optional, or Computed set..
 
 ### 실제 API 로 검증한 항목
 
-실제 키로 읽기 전용 호출과 `terraform plan` 만 실행했습니다. 생성한 것 없음, 과금 없음.
+실제 키로 읽기 전용 호출과 `terraform plan` 만 실행한 항목 — 생성한 것 없음, 과금 없음:
 
 | 확인 항목 | 결과 |
 |---|---|
@@ -175,11 +197,33 @@ AttributeName("workers"): must have Required, Optional, or Computed set..
 
 "2 to add" 까지 도달했다는 것이 핵심입니다. 프로바이더 인증이 되고, 스키마가 맞고, 거부되는 항목이 없다는 뜻입니다. 리소스를 만드는 것은 `apply` 뿐입니다.
 
-**미검증:** `apply`, 따라서 엔드포인트가 실제로 트래픽을 처리하는지, 그리고 `02-pod` 전체 — 과금되기 때문입니다.
+**`01-endpoint` 의 `apply` 와 `destroy`, 2026-10-11** (Terraform 1.16.4, 프로바이더 1.0.8): 두 리소스가 생성됐고, 직후의 `plan` 은 변경 없음, `destroy` 후 계정에 남은 것이 없었습니다. 우회 두 가지가 필요했습니다:
+
+| 일어난 일 | `main.tf` 의 수정 |
+|---|---|
+| `runpod_template` 에서 `Provider produced inconsistent result after apply` — `.readme`, `.container_registry_auth_id`, `.ports` 가 채워져 돌아옴. 템플릿은 tainted 로 남음 | `readme = ""`, `container_registry_auth_id = ""`, `ports = ["8888/http", "22/tcp"]` (`[]` 는 유지되지 않음) |
+| `runpod_endpoint` 에서 `.network_volume_id` 로 같은 오류 | `network_volume_id = ""` |
+
+이미지는 템플릿이 스스로 pull 할 수 있어야 합니다. 콘솔이 빌드한 `registry.runpod.net` 이미지는 `Failed to get Hub registry auth` 로 실패합니다.
+
+**미검증:** 엔드포인트의 요청 처리(푸시한 이미지 필요), 그리고 `02-pod` 전체.
 
 <div class="note" markdown="1">
 GPU 나 데이터센터 ID 를 추측하지 마세요. `data "runpod_data_centers"` 와 `data "runpod_gpu_types"` 로 읽으면 됩니다. 데이터소스만 있는 설정은 `apply` 해도 생성되는 것이 없습니다.
 </div>
+
+### 첫 apply 에서 얻은 교훈
+
+2026-10-11 `01-endpoint` 에서 `apply` → 요청 → `destroy` 를 실행하며 얻은 것:
+
+| 교훈 | 근거 |
+|---|---|
+| **`plan` 이 통과해도 `apply` 가 통과한다는 보장은 없습니다.** `plan` 은 설정을 스키마와 대조할 뿐이고, API 가 돌려주는 값은 `apply` 에서야 보입니다 | `plan` 은 `2 to add` 였지만 `apply` 는 API 가 채운 값 때문에 두 번 실패했다 |
+| **실패한 `apply` 도 실제 리소스를 만들 수 있습니다.** 오류 뒤에는 종료 코드만 보지 말고 `terraform state list` 와 계정을 확인하세요 | 템플릿이 계정에 생성됐고 state 에 `tainted` 로 남았다. 다음 `apply` 가 교체했고 `destroy` 가 지웠다 |
+| **Optional 이면서 Computed 가 아닌 속성을 apply 전에 찾으세요.** `terraform providers schema -json` 으로 볼 수 있고, API 가 채우는 속성이면 API 가 돌려주는 값으로 명시합니다 | `readme`, `container_registry_auth_id`, `ports`, `network_volume_id` |
+| **`apply` 직후 drift 를 확인하세요.** `terraform plan -detailed-exitcode` 가 0 이면 설정과 실제 상태가 일치합니다 | 수정 후 0 을 반환했다 |
+| **`destroy` 후 계정이 비었는지 확인하세요.** 템플릿·엔드포인트 목록과 `myself { currentSpendPerHr }` 를 봅니다 | `hol-*` 템플릿 없음, 추가 엔드포인트 없음, 비용 0 |
+| **템플릿이 스스로 pull 할 수 있는 이미지를 쓰세요.** 콘솔 GitHub 빌드는 `registry.runpod.net` 에 올라가며, 이 레지스트리는 콘솔이 만든 템플릿에만 이미지를 내줍니다 | 모든 워커에서 `Failed to get Hub registry auth` |
 
 ### 인증
 
