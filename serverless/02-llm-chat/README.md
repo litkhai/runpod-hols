@@ -174,6 +174,7 @@ python3 -c "from model_cache import snapshot_path; print(snapshot_path('Qwen/Qwe
 | Changes not live | You pushed but did not create a **GitHub release** |
 | `no kernel image is available for execution on the device`, then `Worker is unhealthy, exiting.` | The worker's GPU is newer than the image's torch build. The 16/24 GB pools include RTX PRO 6000 Blackwell MIG slices (sm_120); a CUDA 12.6 torch stops at sm_90. Use the CUDA 12.8 image |
 | `runpod.serverless.start() handler not found in your repo` | Console warning from GitHub code search; harmless when the repository is not indexed |
+| `curl` on the worker logs URL never returns | `/v2/serverless/{endpoint}/workers/{worker}/logs` is a stream that does not close. Use `curl -m 20` and read what arrived |
 
 ### What was run
 
@@ -357,6 +358,7 @@ python3 -c "from model_cache import snapshot_path; print(snapshot_path('Qwen/Qwe
 | 변경사항이 반영되지 않음 | 푸시만 하고 **GitHub 릴리스**를 만들지 않음 |
 | `no kernel image is available for execution on the device` 후 `Worker is unhealthy, exiting.` | 워커의 GPU 가 이미지의 torch 빌드보다 새것. 16/24 GB 풀에는 RTX PRO 6000 Blackwell MIG 조각(sm_120)이 섞여 있고, CUDA 12.6 torch 는 sm_90 까지만 지원한다. CUDA 12.8 이미지를 쓸 것 |
 | `runpod.serverless.start() handler not found in your repo` | GitHub 코드 검색에 기댄 콘솔 경고. 저장소가 색인에 없으면 무해하다 |
+| 워커 로그 URL 에 대한 `curl` 이 끝나지 않음 | `/v2/serverless/{endpoint}/workers/{worker}/logs` 는 닫히지 않는 스트림이다. `curl -m 20` 으로 받고 그때까지 온 내용을 읽을 것 |
 
 ### 실행한 것
 
