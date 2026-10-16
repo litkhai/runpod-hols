@@ -66,7 +66,7 @@ Read-only calls and `terraform plan` against a real key — nothing created, not
 | `terraform validate`, both labs | Success |
 | `terraform plan` on `01-endpoint` | `Plan: 2 to add, 0 to change, 0 to destroy` |
 | `gpu_type_ids` defaults | Both appear in the live catalogue of 48 GPU types |
-| `data_center_id` default | `US-KS-2` exists among 49, `global_network = true` |
+| `data_center_id` default (then `US-KS-2`) | `US-KS-2` exists among 49, `global_network = true`; now `EU-RO-1`, see below |
 
 Reaching "2 to add" is the meaningful part: the provider authenticates, the schema matches, and nothing is rejected. Only `apply` creates resources.
 
@@ -79,7 +79,24 @@ Reaching "2 to add" is the meaningful part: the provider authenticates, the sche
 
 The image must be one the template can pull on its own: a console-built `registry.runpod.net` image fails with `Failed to get Hub registry auth`.
 
-**Not verified:** the endpoint serving a request (needs a pushed image), and all of `02-pod`.
+**`apply` and `destroy` on `02-pod`, 2026-10-16** (Terraform 1.16.4, provider 1.0.8, image `runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404`): three runs, all destroyed, account left with no Pod, no network volume and `currentSpendPerHr` 0.
+
+| Run | Result |
+|---|---|
+| Without a network volume | `Apply complete` in 2 s; SSH port public after about 3 min; `ssh root@<ip> -p <port>` worked, `nvidia-smi` and `torch.cuda.is_available()` True; `destroy` clean |
+| With a 20 GB network volume in `EU-RO-1` | Volume and Pod created; the Pod landed in `EU-RO-1` with the volume mounted at `/workspace` (network filesystem), a file written and read back; `destroy` removed both |
+| With `lifecycle { ignore_changes = [machine_id] }` | `plan` right after `apply` showed no resource change, only output values |
+
+What it showed:
+
+| Finding | Consequence |
+|---|---|
+| **`gpu_type_id` is not sent.** The provider's create request carries no GPU field, so Runpod picks by availability (`gpuTypePriority` defaults to `availability`) | Asked for RTX A4500 ($0.25/hr); every Pod came up as RTX 4090 at $0.89/hr, while state still said A4500. Read `cost_per_hr` after `apply` |
+| **`machine_id` drifts.** Read stores the machine the Pod landed on; the attribute is Optional, not Computed | Without the `ignore_changes` above, every `plan` after `apply` proposes an in-place update |
+| **`start_ssh` / `start_jupyter` are not sent either** | SSH worked anyway — the image exposes port 22 by default. Jupyter was not checked |
+| **The volume's data center must support storage.** `US-KS-2`, the previous default, reported `storageSupport = false` | Default changed to `EU-RO-1`. Check `dataCenters { id storageSupport }` before applying |
+
+**Not verified:** the `01-endpoint` endpoint serving a request (needs a pushed image), and Jupyter on the `02-pod` Pod.
 
 <div class="note" markdown="1">
 Don't guess GPU or data-center IDs. Read them from `data "runpod_data_centers"` and `data "runpod_gpu_types"` — a data-source-only config creates nothing on `apply`.
@@ -193,7 +210,7 @@ AttributeName("workers"): must have Required, Optional, or Computed set..
 | `terraform validate`, 두 실습 모두 | Success |
 | `01-endpoint` 의 `terraform plan` | `Plan: 2 to add, 0 to change, 0 to destroy` |
 | `gpu_type_ids` 기본값 | 둘 다 실제 카탈로그(48종)에 존재 |
-| `data_center_id` 기본값 | `US-KS-2` 는 49개 중 실재, `global_network = true` |
+| `data_center_id` 기본값 (당시 `US-KS-2`) | `US-KS-2` 는 49개 중 실재, `global_network = true`; 현재 `EU-RO-1`, 아래 참조 |
 
 "2 to add" 까지 도달했다는 것이 핵심입니다. 프로바이더 인증이 되고, 스키마가 맞고, 거부되는 항목이 없다는 뜻입니다. 리소스를 만드는 것은 `apply` 뿐입니다.
 
@@ -206,7 +223,24 @@ AttributeName("workers"): must have Required, Optional, or Computed set..
 
 이미지는 템플릿이 스스로 pull 할 수 있어야 합니다. 콘솔이 빌드한 `registry.runpod.net` 이미지는 `Failed to get Hub registry auth` 로 실패합니다.
 
-**미검증:** 엔드포인트의 요청 처리(푸시한 이미지 필요), 그리고 `02-pod` 전체.
+**`02-pod` 의 `apply` 와 `destroy`, 2026-10-16** (Terraform 1.16.4, 프로바이더 1.0.8, 이미지 `runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404`): 세 번 실행했고 모두 삭제했으며, 계정에는 Pod·네트워크 볼륨이 남지 않았고 `currentSpendPerHr` 는 0 이었습니다.
+
+| 실행 | 결과 |
+|---|---|
+| 네트워크 볼륨 없이 | 2 초 만에 `Apply complete`; 약 3 분 뒤 SSH 포트 공개; `ssh root@<ip> -p <port>` 접속, `nvidia-smi` 와 `torch.cuda.is_available()` True; `destroy` 정상 |
+| `EU-RO-1` 에 20 GB 네트워크 볼륨과 함께 | 볼륨과 Pod 생성; Pod 이 `EU-RO-1` 에 배치되고 볼륨이 `/workspace` 에 마운트됨(네트워크 파일시스템), 파일 쓰기·읽기 확인; `destroy` 가 둘 다 삭제 |
+| `lifecycle { ignore_changes = [machine_id] }` 추가 | `apply` 직후 `plan` 에 리소스 변경 없음, 출력값만 변경 |
+
+드러난 것:
+
+| 발견 | 영향 |
+|---|---|
+| **`gpu_type_id` 가 전송되지 않습니다.** 프로바이더의 생성 요청에 GPU 필드가 없어 Runpod 이 가용성 기준으로 고릅니다(`gpuTypePriority` 기본값 `availability`) | RTX A4500(시간당 $0.25)을 지정했지만 모든 Pod 이 시간당 $0.89 인 RTX 4090 으로 떴고, state 에는 A4500 으로 남았습니다. `apply` 후 `cost_per_hr` 를 확인하세요 |
+| **`machine_id` 가 drift 합니다.** Read 가 Pod 이 배치된 머신을 저장하는데, 이 속성은 Optional 이고 Computed 가 아닙니다 | 위의 `ignore_changes` 가 없으면 `apply` 이후 모든 `plan` 이 in-place update 를 제안합니다 |
+| **`start_ssh` / `start_jupyter` 도 전송되지 않습니다** | 이미지가 기본으로 22 번 포트를 열어 SSH 는 동작했습니다. Jupyter 는 확인하지 않았습니다 |
+| **볼륨의 데이터센터가 스토리지를 지원해야 합니다.** 이전 기본값 `US-KS-2` 는 `storageSupport = false` 였습니다 | 기본값을 `EU-RO-1` 로 바꿨습니다. apply 전에 `dataCenters { id storageSupport }` 를 확인하세요 |
+
+**미검증:** `01-endpoint` 엔드포인트의 요청 처리(푸시한 이미지 필요), 그리고 `02-pod` Pod 의 Jupyter.
 
 <div class="note" markdown="1">
 GPU 나 데이터센터 ID 를 추측하지 마세요. `data "runpod_data_centers"` 와 `data "runpod_gpu_types"` 로 읽으면 됩니다. 데이터소스만 있는 설정은 `apply` 해도 생성되는 것이 없습니다.

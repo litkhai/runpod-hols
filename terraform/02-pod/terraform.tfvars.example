@@ -8,6 +8,8 @@
 
 pod_name    = "hol-lab-pod"
 image_name  = "runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404"
+# Not sent to the API by provider 1.0.8 — the GPU is picked by availability.
+# 프로바이더 1.0.8 은 이 값을 API 로 보내지 않는다. GPU 는 가용성 기준으로 정해진다.
 gpu_type_id = "NVIDIA GeForce RTX 4090"
 gpu_count   = 1
 
@@ -29,4 +31,4 @@ start_jupyter = true
 # create_network_volume = true
 # volume_name           = "hol-shared-workspace"
 # volume_size_gb        = 20
-# data_center_id        = "US-KS-2"
+# data_center_id        = "EU-RO-1"
