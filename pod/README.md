@@ -42,7 +42,7 @@ Queried from the live API (`runpod_data_centers`, read-only, costs nothing):
 | Reporting `global_network = true` | 20 |
 | Supporting the S3-compatible API | 5 — `EUR-IS-1`, `EU-RO-1`, `EU-CZ-1`, `US-KS-2`, `US-CA-2` |
 
-`US-KS-2` is the default in [`terraform/02-pod`](../terraform/02-pod) because it is in both sets.
+`EU-RO-1` is the default in [`terraform/02-pod`](../terraform/02-pod): it is in both sets and reported `storageSupport = true` on 2026-10-16, when a network volume was created there. `US-KS-2`, the previous default, is in both sets too but reported `storageSupport = false` that day, so a volume could not be created there.
 
 **Access** — SSH, JupyterLab, VS Code / Cursor via Remote-SSH, or a web proxy for services you expose.
 
@@ -107,7 +107,7 @@ Pod 는 **직접 빌려서 제어하는 GPU 또는 CPU 컨테이너**입니다. 
 | `global_network = true` | 20 |
 | S3 호환 API 지원 | 5 — `EUR-IS-1`, `EU-RO-1`, `EU-CZ-1`, `US-KS-2`, `US-CA-2` |
 
-[`terraform/02-pod`](../terraform/02-pod) 의 기본값이 `US-KS-2` 인 것은 두 집합에 모두 속하기 때문입니다.
+[`terraform/02-pod`](../terraform/02-pod) 의 기본값은 `EU-RO-1` 입니다. 두 집합에 모두 속하고, 2026-10-16 네트워크 볼륨을 만들 때 `storageSupport = true` 였습니다. 이전 기본값 `US-KS-2` 도 두 집합에 속하지만 그날 `storageSupport = false` 여서 볼륨을 만들 수 없었습니다.
 
 **접속** — SSH, JupyterLab, Remote-SSH 를 통한 VS Code / Cursor, 그리고 노출한 서비스용 웹 프록시.
 

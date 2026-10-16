@@ -19,7 +19,17 @@ variable "gpu_type_id" {
     GPU type for the Pod. Check availability and pricing before applying —
     this one bills per minute.
 
+    Provider 1.0.8 does not send this to the API: its create request has no
+    GPU field, so Runpod picks a type by availability and this value only
+    lands in state. Asked for RTX A4500 on 2026-10-16, both Pods came up as
+    RTX 4090 at $0.89/hr. Read cost_per_hr after apply.
+
     Pod 에 할당할 GPU 타입. 분 단위로 과금되므로 apply 전에 가용성과 단가를 확인할 것.
+
+    프로바이더 1.0.8 은 이 값을 API 로 보내지 않는다. 생성 요청에 GPU 필드가 없어서
+    Runpod 이 가용성 기준으로 타입을 고르고, 이 값은 state 에만 남는다.
+    2026-10-16 RTX A4500 을 지정했지만 두 Pod 모두 시간당 $0.89 인 RTX 4090 으로 떴다.
+    apply 후 cost_per_hr 를 확인할 것.
   EOT
   default     = "NVIDIA GeForce RTX 4090"
 }
@@ -87,9 +97,10 @@ variable "data_center_id" {
     used with" — so picking a small data center can quietly limit your GPU
     choices later.
 
-    US-KS-2 is the default because it is one of the 20 (of 49) data centers
-    reporting global_network = true, and one of only five where the
-    S3-compatible API is available.
+    EU-RO-1 is the default because a Pod with a network volume there was
+    created, mounted at /workspace and destroyed on 2026-10-16. US-KS-2, the
+    previous default, reported storageSupport = false that day. Check before
+    applying: query dataCenters { id storageSupport } in the GraphQL API.
 
     List the current set with the data_centers data source:
       data "runpod_data_centers" "all" {}
@@ -99,10 +110,12 @@ variable "data_center_id" {
     "볼륨을 어떤 GPU 타입과 함께 쓸 수 있는지를 결정"한다. 작은 데이터센터를 고르면
     나중에 GPU 선택지가 조용히 좁아질 수 있다.
 
-    US-KS-2 를 기본값으로 둔 이유는, 49곳 중 global_network = true 인 20곳에 속하고
-    S3 호환 API 를 지원하는 5곳 중 하나이기 때문이다.
+    EU-RO-1 을 기본값으로 둔 이유는, 2026-10-16 이곳에서 네트워크 볼륨을 붙인 Pod 을
+    생성해 /workspace 에 마운트하고 삭제까지 확인했기 때문이다. 이전 기본값 US-KS-2 는
+    그날 storageSupport = false 였다. apply 전에 GraphQL API 의
+    dataCenters { id storageSupport } 로 확인할 것.
 
     현재 목록은 data_centers 데이터소스로 확인한다.
   EOT
-  default     = "US-KS-2"
+  default     = "EU-RO-1"
 }

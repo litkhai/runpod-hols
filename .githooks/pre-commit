@@ -50,8 +50,11 @@ done <<< "$staged"
 find . -name __pycache__ -type d -not -path './.venv/*' -exec rm -rf {} + 2>/dev/null || true
 
 # 4. A staged file must not be shadowed by an ignore rule ------------------
+# -v prints the deciding pattern; a "!" pattern means the file is re-included.
+# git 2.25 exits 0 on a negated match too, so the exit code alone is not enough.
 while IFS= read -r f; do
-    if git check-ignore --no-index -q "$f"; then
+    rule=$(git check-ignore --no-index -v "$f" 2>/dev/null | cut -f1 | cut -d: -f3-)
+    if [ -n "$rule" ] && [ "${rule#!}" = "$rule" ]; then
         echo "pre-commit: $f matches an ignore rule but is being committed" >&2
         echo "            add an explicit negation to .gitignore if deliberate" >&2
         fail=1

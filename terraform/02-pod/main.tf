@@ -50,4 +50,16 @@ resource "runpod_pod" "lab" {
   # Attach the network volume only when one was created.
   # 네트워크 볼륨을 생성한 경우에만 연결한다.
   network_volume_id = var.create_network_volume ? runpod_network_volume.workspace[0].id : null
+
+  # Provider 1.0.8 reads back the machine the Pod landed on into machine_id,
+  # an Optional attribute nobody sets, so every plan after apply wants to
+  # "update" it to null. Nothing can be set in advance — the machine is
+  # assigned at create time — so ignore it.
+  #
+  # 프로바이더 1.0.8 은 Pod 이 배정된 머신을 machine_id 로 다시 읽어 오는데,
+  # 아무도 설정하지 않는 Optional 속성이라 apply 이후 모든 plan 이 이 값을 null 로
+  # "update" 하려 한다. 머신은 생성 시점에 배정되므로 미리 적을 수 없어 무시한다.
+  lifecycle {
+    ignore_changes = [machine_id]
+  }
 }
