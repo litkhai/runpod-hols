@@ -123,6 +123,32 @@ Lab 01 deployed from GitHub, CPU workers, `workers_min = 0`:
 **`/runsync` can return `IN_PROGRESS`.** It is not guaranteed to return `COMPLETED` with an `output`; be ready to poll `/status/{id}`.
 </div>
 
+### Lab 02 — what the runs found
+
+Lab 02 deploys `Qwen/Qwen2.5-1.5B-Instruct` from GitHub, with the weights in the endpoint's **Model** field. Everything below was run on 2026-10-11; [the lab README](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat#what-was-run) has the full record.
+
+**The cache is at the docs path.** The docs and the SDK name different locations, so the handler probes both and logs a `cache_probe` line. The docs path was populated: `/runpod-volume/huggingface-cache/hub/models--Qwen--Qwen2.5-1.5B-Instruct/snapshots/989aa79…`. `/runpod/cache` did not exist.
+
+| Request (RTX A5000, idle timeout 5 s, FlashBoot off) | `delayTime` | `executionTime` |
+|---|---|---|
+| First prompt | 12,142 ms | 1,259 ms |
+| Same prompt again | 126 ms | 846 ms |
+| `messages` form | 133 ms | 305 ms |
+
+The 12 s is container start, imports, a 2.37 s model load and the SDK's fitness checks. The image was already on the host — that pull happens right after a build.
+
+<div class="warn" markdown="1">
+**A 16 GB or 24 GB pool can hand you a Blackwell GPU.** The pools include `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` slices (sm_120). A CUDA 12.6 torch stops at sm_90, so the worker logged `no kernel image is available for execution on the device`, then `Worker is unhealthy, exiting.` The same image had served fine on an RTX A5000. The fix is a CUDA 12.8 base, `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime`, plus a minimum CUDA version of 12.8 on the endpoint so older drivers are not picked. With that base the model loaded from cache in 1.49 s on the MIG slice.
+</div>
+
+<div class="note" markdown="1">
+**Pinning a MIG type needs GraphQL.** The REST API rejects the MIG type in `gpuTypeIds`. The GraphQL `saveEndpoint` mutation takes a pool plus exclusions instead — `gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` left only the MIG slice.
+
+**Worker logs do not end.** `https://api.runpod.io/v2/serverless/{endpoint}/workers/{worker}/logs` answered as a stream that never closed, so a plain `curl` hangs. Give it a client timeout, such as `curl -m 20`, and read what arrived.
+</div>
+
+**Pass `top_p` only when sampling.** With `temperature: 0` the handler runs greedy decoding, where `top_p` has no effect. transformers 5 warns about a caller-set sampling flag that greedy decoding ignores, so the first handler logged `generation flags are not valid` on every greedy request. The handler now builds `temperature` and `top_p` only when `temperature` > 0. The rebuilt worker ran a `temperature: 0` request with no such warning between `Started.` and `Finished.`
+
 [Full lab in the repo →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
 </div>
@@ -243,6 +269,32 @@ GitHub 연동으로 배포한 Lab 01, CPU 워커, `workers_min = 0` 기준입니
 
 **`/runsync` 가 `IN_PROGRESS` 를 반환할 수 있습니다.** 항상 `output` 이 담긴 `COMPLETED` 가 오는 것은 아니므로 `/status/{id}` 폴링을 대비하세요.
 </div>
+
+### Lab 02 — 실행에서 확인한 것
+
+Lab 02 는 `Qwen/Qwen2.5-1.5B-Instruct` 를 GitHub 연동으로 배포하고, 가중치는 엔드포인트의 **Model** 필드로 공급합니다. 아래는 모두 2026-10-11 에 실행한 결과이며, 전체 기록은 [실습 README](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat#한국어) 에 있습니다.
+
+**캐시는 문서에 적힌 경로에 있습니다.** 문서와 SDK 가 서로 다른 위치를 말하므로 핸들러가 둘 다 확인하고 `cache_probe` 한 줄을 로그에 남깁니다. 채워진 쪽은 문서 경로 `/runpod-volume/huggingface-cache/hub/models--Qwen--Qwen2.5-1.5B-Instruct/snapshots/989aa79…` 였고, `/runpod/cache` 는 존재하지 않았습니다.
+
+| 요청 (RTX A5000, idle timeout 5초, FlashBoot 끔) | `delayTime` | `executionTime` |
+|---|---|---|
+| 첫 프롬프트 | 12,142 ms | 1,259 ms |
+| 같은 프롬프트 재요청 | 126 ms | 846 ms |
+| `messages` 형식 | 133 ms | 305 ms |
+
+12초는 컨테이너 기동, import, 모델 로드 2.37초, SDK fitness check 를 합친 시간입니다. 이미지는 이미 호스트에 있었습니다. 빌드 직후에 pull 이 일어나기 때문입니다.
+
+<div class="warn" markdown="1">
+**16 GB, 24 GB 풀에서 Blackwell GPU 가 배정될 수 있습니다.** 이 풀에는 `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` 조각(sm_120)이 섞여 있습니다. CUDA 12.6 torch 는 sm_90 까지만 지원하므로 워커가 `no kernel image is available for execution on the device` 를 남기고 `Worker is unhealthy, exiting.` 으로 종료했습니다. 같은 이미지가 RTX A5000 에서는 정상 동작했습니다. 해결책은 CUDA 12.8 베이스 `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime` 로 바꾸고, 엔드포인트의 최소 CUDA 버전을 12.8 로 지정해 오래된 드라이버가 선택되지 않게 하는 것입니다. 이 베이스로 MIG 조각에서 캐시로부터 1.49초 만에 모델을 올렸습니다.
+</div>
+
+<div class="note" markdown="1">
+**MIG 타입 고정은 GraphQL 로 해야 합니다.** REST API 는 `gpuTypeIds` 에 MIG 타입을 넣으면 거부합니다. GraphQL `saveEndpoint` 뮤테이션은 풀과 제외 목록을 받습니다. `gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` 로 MIG 조각만 남았습니다.
+
+**워커 로그는 끝나지 않습니다.** `https://api.runpod.io/v2/serverless/{endpoint}/workers/{worker}/logs` 는 닫히지 않는 스트림으로 응답해서 일반 `curl` 은 멈춥니다. `curl -m 20` 처럼 클라이언트 타임아웃을 주고 그때까지 받은 내용을 읽으세요.
+</div>
+
+**`top_p` 는 샘플링할 때만 넘깁니다.** `temperature: 0` 이면 핸들러는 greedy 디코딩을 하고, 이때 `top_p` 는 아무 효과가 없습니다. transformers 5 는 호출자가 지정했지만 greedy 디코딩이 무시하는 샘플링 플래그에 경고를 내므로, 처음 핸들러는 greedy 요청마다 `generation flags are not valid` 를 남겼습니다. 지금 핸들러는 `temperature` > 0 일 때만 `temperature` 와 `top_p` 를 넘깁니다. 다시 빌드한 워커로 `temperature: 0` 요청을 실행했고, `Started.` 와 `Finished.` 사이에 이 경고가 없었습니다.
 
 [저장소에서 전체 실습 보기 →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
