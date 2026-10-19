@@ -84,6 +84,8 @@ The provider declares these attributes Optional but not Computed, so it cannot a
 
 **The image has to be one Runpod can pull without the console.** The run used the Lab 01 image the console built from GitHub (`registry.runpod.net/…-01-hello-worker-dockerfile:<sha>`). Every worker stayed `INITIALIZING` with `Failed to get Hub registry auth. Is this a template you have access to?`, so the job was cancelled. The Runpod registry only serves templates the console's GitHub integration created. Build and push the image to a registry you control, as in [`serverless/01-hello-worker`](../serverless/01-hello-worker) Option B.
 
+**Serving a request on `01-endpoint`, 2026-10-20** (same Terraform and provider, image `docker.io/litkhai/hello-worker:v1.0.0` built from Lab 01 with `--platform linux/amd64` and pushed to Docker Hub): `apply` created both resources in 1 s each. One `/run` with `{"input": {"name": "Terraform"}}` came back `COMPLETED` with `{"greeting": "Hello, Terraform!"}`, `delayTime` 6,280 ms and `executionTime` 57 ms, on an RTX 4090 — the first entry in `gpu_type_ids`. The worker log showed the pull by digest, all seven SDK 1.12.0 fitness checks passing, then `Started.` and `Finished.` for the job. `destroy` removed both; no template or endpoint named `hol-hello-worker` remained and `currentSpendPerHr` was 0.
+
 **`apply` and `destroy` on `02-pod`, 2026-10-16** (Terraform 1.16.4, provider 1.0.8, image `runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404`): three runs, all destroyed, account left with no Pod, no network volume and `currentSpendPerHr` 0.
 
 | Run | Result |
@@ -101,7 +103,7 @@ What it showed:
 | **`start_ssh` / `start_jupyter` are not sent either** | SSH worked anyway — the image exposes port 22 by default. Jupyter was not checked |
 | **The volume's data center must support storage.** `US-KS-2`, the previous default, reported `storageSupport = false` | Default changed to `EU-RO-1`. Check `dataCenters { id storageSupport }` before applying |
 
-**Not yet verified:** the `01-endpoint` endpoint serving a request (needs a pushed image), and Jupyter on the `02-pod` Pod.
+**Not yet verified:** Jupyter on the `02-pod` Pod.
 
 ### Discovering Valid IDs
 
@@ -283,6 +285,8 @@ AttributeName("workers"): must have Required, Optional, or Computed set..
 
 **이미지는 콘솔 없이도 Runpod 이 pull 할 수 있는 것이어야 합니다.** 이번 실행은 콘솔이 GitHub 에서 빌드한 Lab 01 이미지(`registry.runpod.net/…-01-hello-worker-dockerfile:<sha>`)를 썼습니다. 모든 워커가 `Failed to get Hub registry auth. Is this a template you have access to?` 를 남기고 `INITIALIZING` 에 머물러 작업을 취소했습니다. Runpod 레지스트리는 콘솔의 GitHub 연동이 만든 템플릿에만 이미지를 내줍니다. [`serverless/01-hello-worker`](../serverless/01-hello-worker) 의 방법 B 처럼 직접 관리하는 레지스트리에 빌드·푸시하세요.
 
+**`01-endpoint` 의 요청 처리, 2026-10-20** (같은 Terraform·프로바이더, Lab 01 을 `--platform linux/amd64` 로 빌드해 Docker Hub 에 푸시한 `docker.io/litkhai/hello-worker:v1.0.0`): `apply` 가 두 리소스를 각각 1초 만에 만들었습니다. `{"input": {"name": "Terraform"}}` 로 `/run` 한 건을 보내 `COMPLETED` 와 `{"greeting": "Hello, Terraform!"}` 를 받았고, `delayTime` 6,280 ms, `executionTime` 57 ms, GPU 는 `gpu_type_ids` 의 첫 항목인 RTX 4090 이었습니다. 워커 로그에는 digest 기준 pull, SDK 1.12.0 fitness check 일곱 개 통과, 그 작업의 `Started.` 와 `Finished.` 가 남았습니다. `destroy` 가 둘 다 지웠고, `hol-hello-worker` 템플릿·엔드포인트는 남지 않았으며 `currentSpendPerHr` 는 0 이었습니다.
+
 **`02-pod` 의 `apply` 와 `destroy`, 2026-10-16** (Terraform 1.16.4, 프로바이더 1.0.8, 이미지 `runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404`): 세 번 실행했고 모두 삭제했으며, 계정에는 Pod·네트워크 볼륨이 남지 않았고 `currentSpendPerHr` 는 0 이었습니다.
 
 | 실행 | 결과 |
@@ -300,7 +304,7 @@ AttributeName("workers"): must have Required, Optional, or Computed set..
 | **`start_ssh` / `start_jupyter` 도 전송되지 않습니다** | 이미지가 기본으로 22 번 포트를 열어 SSH 는 동작했습니다. Jupyter 는 확인하지 않았습니다 |
 | **볼륨의 데이터센터가 스토리지를 지원해야 합니다.** 이전 기본값 `US-KS-2` 는 `storageSupport = false` 였습니다 | 기본값을 `EU-RO-1` 로 바꿨습니다. apply 전에 `dataCenters { id storageSupport }` 를 확인하세요 |
 
-**아직 검증하지 않은 것:** `01-endpoint` 엔드포인트의 요청 처리(푸시한 이미지 필요), 그리고 `02-pod` Pod 의 Jupyter.
+**아직 검증하지 않은 것:** `02-pod` Pod 의 Jupyter.
 
 ### 유효한 ID 조회하기
 
