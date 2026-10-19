@@ -79,6 +79,8 @@ Reaching "2 to add" is the meaningful part: the provider authenticates, the sche
 
 The image must be one the template can pull on its own: a console-built `registry.runpod.net` image fails with `Failed to get Hub registry auth`.
 
+**Serving a request on `01-endpoint`, 2026-10-20** (same Terraform and provider, image `docker.io/litkhai/hello-worker:v1.0.0` built from Lab 01 with `--platform linux/amd64` and pushed to Docker Hub): `apply` created both resources in 1 s each. One `/run` with `{"input": {"name": "Terraform"}}` came back `COMPLETED` with `{"greeting": "Hello, Terraform!"}`, `delayTime` 6,280 ms and `executionTime` 57 ms, on an RTX 4090 — the first entry in `gpu_type_ids`. The worker log showed the pull by digest, all seven SDK 1.12.0 fitness checks passing, then `Started.` and `Finished.` for the job. `destroy` removed both; no template or endpoint named `hol-hello-worker` remained and `currentSpendPerHr` was 0.
+
 **`apply` and `destroy` on `02-pod`, 2026-10-16** (Terraform 1.16.4, provider 1.0.8, image `runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404`): three runs, all destroyed, account left with no Pod, no network volume and `currentSpendPerHr` 0.
 
 | Run | Result |
@@ -96,7 +98,7 @@ What it showed:
 | **`start_ssh` / `start_jupyter` are not sent either** | SSH worked anyway — the image exposes port 22 by default. Jupyter was not checked |
 | **The volume's data center must support storage.** `US-KS-2`, the previous default, reported `storageSupport = false` | Default changed to `EU-RO-1`. Check `dataCenters { id storageSupport }` before applying |
 
-**Not verified:** the `01-endpoint` endpoint serving a request (needs a pushed image), and Jupyter on the `02-pod` Pod.
+**Not verified:** Jupyter on the `02-pod` Pod.
 
 <div class="note" markdown="1">
 Don't guess GPU or data-center IDs. Read them from `data "runpod_data_centers"` and `data "runpod_gpu_types"` — a data-source-only config creates nothing on `apply`.
@@ -223,6 +225,8 @@ AttributeName("workers"): must have Required, Optional, or Computed set..
 
 이미지는 템플릿이 스스로 pull 할 수 있어야 합니다. 콘솔이 빌드한 `registry.runpod.net` 이미지는 `Failed to get Hub registry auth` 로 실패합니다.
 
+**`01-endpoint` 의 요청 처리, 2026-10-20** (같은 Terraform·프로바이더, Lab 01 을 `--platform linux/amd64` 로 빌드해 Docker Hub 에 푸시한 `docker.io/litkhai/hello-worker:v1.0.0`): `apply` 가 두 리소스를 각각 1초 만에 만들었습니다. `{"input": {"name": "Terraform"}}` 로 `/run` 한 건을 보내 `COMPLETED` 와 `{"greeting": "Hello, Terraform!"}` 를 받았고, `delayTime` 6,280 ms, `executionTime` 57 ms, GPU 는 `gpu_type_ids` 의 첫 항목인 RTX 4090 이었습니다. 워커 로그에는 digest 기준 pull, SDK 1.12.0 fitness check 일곱 개 통과, 그 작업의 `Started.` 와 `Finished.` 가 남았습니다. `destroy` 가 둘 다 지웠고, `hol-hello-worker` 템플릿·엔드포인트는 남지 않았으며 `currentSpendPerHr` 는 0 이었습니다.
+
 **`02-pod` 의 `apply` 와 `destroy`, 2026-10-16** (Terraform 1.16.4, 프로바이더 1.0.8, 이미지 `runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404`): 세 번 실행했고 모두 삭제했으며, 계정에는 Pod·네트워크 볼륨이 남지 않았고 `currentSpendPerHr` 는 0 이었습니다.
 
 | 실행 | 결과 |
@@ -240,7 +244,7 @@ AttributeName("workers"): must have Required, Optional, or Computed set..
 | **`start_ssh` / `start_jupyter` 도 전송되지 않습니다** | 이미지가 기본으로 22 번 포트를 열어 SSH 는 동작했습니다. Jupyter 는 확인하지 않았습니다 |
 | **볼륨의 데이터센터가 스토리지를 지원해야 합니다.** 이전 기본값 `US-KS-2` 는 `storageSupport = false` 였습니다 | 기본값을 `EU-RO-1` 로 바꿨습니다. apply 전에 `dataCenters { id storageSupport }` 를 확인하세요 |
 
-**미검증:** `01-endpoint` 엔드포인트의 요청 처리(푸시한 이미지 필요), 그리고 `02-pod` Pod 의 Jupyter.
+**미검증:** `02-pod` Pod 의 Jupyter.
 
 <div class="note" markdown="1">
 GPU 나 데이터센터 ID 를 추측하지 마세요. `data "runpod_data_centers"` 와 `data "runpod_gpu_types"` 로 읽으면 됩니다. 데이터소스만 있는 설정은 `apply` 해도 생성되는 것이 없습니다.
