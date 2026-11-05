@@ -35,12 +35,12 @@ Start with [Welcome to Runpod](https://docs.runpod.io/overview) and [Concepts](h
   <div class="card">
     <h3><a href="{{ '/serverless/' | relative_url }}">Serverless</a></h3>
     <p>Autoscaling inference endpoints. Billed per execution.</p>
-    <span class="badge ready">Lab 01 ready</span>
+    <span class="badge ready">Labs 01–03 run</span>
   </div>
   <div class="card">
     <h3><a href="{{ '/pod/' | relative_url }}">Pod</a></h3>
     <p>GPU containers with SSH and Jupyter. Billed per minute.</p>
-    <span class="badge planned">Planned</span>
+    <span class="badge ready">Lab 01 run</span>
   </div>
   <div class="card">
     <h3><a href="{{ '/cluster/' | relative_url }}">Cluster</a></h3>
@@ -118,12 +118,12 @@ AI/ML 워크로드를 위한 GPU 클라우드 [Runpod](https://runpod.io) 의 �
   <div class="card">
     <h3><a href="{{ '/serverless/' | relative_url }}">Serverless</a></h3>
     <p>오토스케일 추론 엔드포인트. 실행 시간만큼 과금.</p>
-    <span class="badge ready">Lab 01 준비됨</span>
+    <span class="badge ready">Lab 01–03 실행</span>
   </div>
   <div class="card">
     <h3><a href="{{ '/pod/' | relative_url }}">Pod</a></h3>
     <p>SSH·Jupyter 로 쓰는 GPU 컨테이너. 분 단위 과금.</p>
-    <span class="badge planned">계획됨</span>
+    <span class="badge ready">Lab 01 실행</span>
   </div>
   <div class="card">
     <h3><a href="{{ '/cluster/' | relative_url }}">Cluster</a></h3>
