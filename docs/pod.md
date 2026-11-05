@@ -49,7 +49,7 @@ Anything you want to keep goes in `/workspace` or a Network Volume. Never leave 
 | CPU Pod without an instance id | Sent; the API rejects it: `instanceId` is required | Rejected in the SDK |
 | CPU Pod with `volume_mount_path` and no network volume | Sent; the volume is dropped | Rejected in the SDK |
 
-Lab 01 pins `runpod~=1.12.0`. Instance ids look like `cpu3c-2-4` — flavor, vCPU, memory in GB.
+Lab 01 pins `runpod~=1.12.0`. On 2.x its scripts would also misread Pods: the REST objects say `status`, not `desiredStatus`, so the running-Pod check would find nothing. [What else changed in 2.x]({{ '/sdk/client/' | relative_url }}). Instance ids look like `cpu3c-2-4` — flavor, vCPU, memory in GB.
 
 ### Billing
 
@@ -119,7 +119,7 @@ Pod 는 직접 빌려서 제어하는 GPU 또는 CPU 컨테이너입니다. Serv
 | 인스턴스 ID 없는 CPU Pod | 전송됨. API 가 거부: `instanceId` 필수 | SDK 에서 거부 |
 | 네트워크 볼륨 없이 `volume_mount_path` 를 준 CPU Pod | 전송됨. 볼륨은 빠짐 | SDK 에서 거부 |
 
-Lab 01 은 `runpod~=1.12.0` 으로 고정합니다. 인스턴스 ID 는 `cpu3c-2-4` 처럼 flavor, vCPU, 메모리(GB) 순입니다.
+Lab 01 은 `runpod~=1.12.0` 으로 고정합니다. 2.x 에서는 스크립트가 Pod 도 잘못 읽습니다. REST 객체에는 `desiredStatus` 가 아니라 `status` 가 있어 실행 중 Pod 확인이 아무것도 찾지 못합니다. [2.x 의 다른 변경점]({{ '/sdk/client/' | relative_url }}). 인스턴스 ID 는 `cpu3c-2-4` 처럼 flavor, vCPU, 메모리(GB) 순입니다.
 
 ### 과금
 

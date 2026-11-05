@@ -14,6 +14,19 @@ The half of the SDK that runs **inside your worker container**. The other half i
 
 Read out of the installed source at 1.11.0 and 1.12.0, and confirmed by running each case. Where behaviour is surprising, the observed output is shown.
 
+### What changed in 2.x
+
+Read from the installed 2.1.0 source on 2026-11-05 and compared with 1.12.0. No worker was built or run on 2.x; the labs' workers stay on `runpod~=1.12.0`, the version they were deployed and measured with.
+
+| | 2.1.0 |
+|---|---|
+| The handler contract | Unchanged — `runpod.serverless.start({"handler": ...})`, the same `error` and `refresh_worker` handling, the same error payload fields |
+| `register_prestart_hook(fn)` | New. Hooks run once before handler execution in queue, local-test and hosted-API modes, with an optional `prestart_timeout` in the `start()` config. Production queue intake continues while they run. Realtime mode rejects them; hosted-API mode needs `rp_api_concurrency=1` |
+| Fitness checks at import | `import runpod` runs the startup fitness checks inside a Serverless worker process — not under `--test_input` or `--rp_serve_api`, and not in realtime mode |
+| Handler logs in errors | `RUNPOD_LOG_CAPTURE=all` adds the last 16 KiB of stdout and stderr as `logs` in the error payload. The default, `auto`, does not for handlers |
+
+Moving a worker to 2.x is a rebuild and a run, not a version bump: the image changes, so the measurements on these pages no longer describe it.
+
 ### Startup fitness checks
 
 Before your handler is ever called, the worker validates the machine it landed on. A failed check kills the process with `os._exit(1)` and the orchestrator routes the job elsewhere, rather than letting it fail slowly on bad hardware. At ~1,125 lines this is the largest part of the worker half, and it runs whether you ask for it or not.
@@ -242,6 +255,19 @@ Local `test_input.json` runs do **not** exercise streaming — the generator com
 ## 한국어
 
 1.11.0 과 1.12.0 의 설치된 SDK 소스를 직접 읽고 각 경우를 실행해 확인한 내용입니다. 동작이 직관과 다른 부분은 실제 출력을 함께 실었습니다.
+
+### 2.x 에서 바뀐 것
+
+2026-11-05 에 설치된 2.1.0 소스를 읽고 1.12.0 과 비교했습니다. 2.x 로 워커를 빌드하거나 실행하지는 않았습니다. 실습 워커는 배포하고 측정한 버전인 `runpod~=1.12.0` 에 그대로 둡니다.
+
+| | 2.1.0 |
+|---|---|
+| 핸들러 계약 | 그대로 — `runpod.serverless.start({"handler": ...})`, 같은 `error` · `refresh_worker` 처리, 같은 오류 페이로드 필드 |
+| `register_prestart_hook(fn)` | 신규. 큐, 로컬 테스트, 호스팅 API 모드에서 핸들러 실행 전에 한 번 실행되며, `start()` 설정에 `prestart_timeout` 을 줄 수 있습니다. 프로덕션에서는 훅이 도는 동안에도 큐에서 작업을 받습니다. realtime 모드는 거부하고, 호스팅 API 모드는 `rp_api_concurrency=1` 이 필요합니다 |
+| import 시 fitness check | Serverless 워커 프로세스 안에서는 `import runpod` 가 기동 fitness check 를 실행합니다. `--test_input`, `--rp_serve_api`, realtime 모드에서는 하지 않습니다 |
+| 오류에 담기는 핸들러 로그 | `RUNPOD_LOG_CAPTURE=all` 이면 stdout · stderr 의 마지막 16 KiB 가 오류 페이로드에 `logs` 로 들어갑니다. 기본값 `auto` 는 핸들러에 대해 하지 않습니다 |
+
+워커를 2.x 로 옮기는 것은 버전 숫자만 바꾸는 일이 아니라 재빌드와 재실행입니다. 이미지가 바뀌므로 이 페이지의 측정값은 더 이상 그 워커를 설명하지 않습니다.
 
 ### 기동 시 fitness check
 

@@ -4,11 +4,11 @@
 
 > The half of the SDK that runs **on your own machine**, calling and managing Runpod. The other half — the worker runtime, including the handler contract — is in [worker.md](./worker.md).
 >
-> Read out of the installed SDK source at 1.11.0 and 1.12.0, and exercised against a live endpoint. Outputs shown are real.
+> Read out of the installed SDK source at 1.11.0 and 1.12.0, and exercised against a live endpoint. Outputs shown are real. What 2.1.0 changes is in its own section, read from source.
 >
 > SDK 중 **내 컴퓨터에서 도는** 절반으로, Runpod 을 호출하고 관리합니다. 나머지 절반인 워커 런타임(핸들러 계약 포함)은 [worker.md](./worker.md) 에 있습니다.
 >
-> 1.11.0 과 1.12.0 의 설치된 SDK 소스를 읽고 실제 엔드포인트에 실행해 확인했습니다. 아래 출력은 실제 결과입니다.
+> 1.11.0 과 1.12.0 의 설치된 SDK 소스를 읽고 실제 엔드포인트에 실행해 확인했습니다. 아래 출력은 실제 결과입니다. 2.1.0 에서 바뀐 것은 소스를 읽어 별도 섹션에 정리했습니다.
 
 ---
 
@@ -140,6 +140,30 @@ runpod.terminate_pod(pod_id)
 
 These wrap Runpod's GraphQL API, so responses come back shaped by GraphQL rather than by REST.
 
+### What changed in 2.x
+
+`runpod` 2.0.0 reached PyPI on 2026-10-30 and 2.1.0 on 2026-11-03. Read from the installed 2.1.0 source on 2026-11-05 and compared with 1.12.0; `get_gpus`, `get_gpu`, `get_endpoints` and `get_pods` were called read-only against a real account. Nothing was created with 2.x.
+
+| | 1.12.0 | 2.1.0 |
+|---|---|---|
+| `Endpoint`, `Job`, `AsyncioEndpoint` | | Unchanged — the `runpod/endpoint/` package is identical |
+| Pod, template, endpoint and GPU calls | GraphQL | REST on `https://api.runpod.io/v2` — `/v2/pods`, `/v2/templates`, `/v2/serverless`, `/v2/catalog/gpus`. `get_user` and `update_container_registry_auth` stay on GraphQL |
+| A `get_gpus()` item | `id`, `displayName`, `memoryInGb` | `id`, `name`, `memory`, `price`, `maxCount`, `pool`, … |
+| A `get_endpoints()` item | GraphQL fields | `gpu.pools`, `workers.min` / `max` / `idleTimeout`, `flashboot` as `"OFF"` or `"FLASHBOOT"`, `requestUrls` |
+| A Pod | `desiredStatus`, `imageName`, `costPerHr`, `uptimeSeconds`, `runtime.ports[].publicPort` | `status`, `image`, `cost`, `runtime.uptime`, `runtime.ports[].public` — from the 2.1.0 CLI's own code; no Pod existed to fetch |
+| `create_pod` for a CPU Pod | Sent as given | Needs `instance_id` as `<flavor>-<vCPU>-<memory>`; rejects `volume_mount_path` without a network volume, `support_public_ip`, `country_code`, `min_download` and `min_upload` before sending anything |
+| `create_endpoint` | `gpu_ids` passed through to GraphQL | `-<type>` entries in `gpu_ids` become `gpu.excludedTypes` |
+| The `runpod` command | The click CLI below | A new CLI, `rp`, with `runpod` as an alias: `catalog`, `endpoint`, `flash`, `pod`, `volume`, `secret`, `registry`, `logs`, `ssh`, `login`, `update`. `runpod project` and `runpod exec` are gone |
+| User-Agent | `RunPod-Python-SDK/1.12.0 …` | Same format with `2.1.0`; agent detection unchanged |
+
+<div class="warn" markdown="1">
+**Code written for 1.x can fail silently on 2.x.** A Pod no longer has `desiredStatus`, so a filter such as `p.get("desiredStatus") == "RUNNING"` returns nothing — and a guard built on it stops guarding. The Pod lab is pinned to `runpod~=1.12.0` for that reason.
+</div>
+
+The base REST path is not the published OpenAPI spec's `https://rest.runpod.io/v1`. Both hosts answer; the SDK uses the `/v2` paths on `api.runpod.io`.
+
+The upstream `CHANGELOG.md` labels the 2.0.0 notes as a second `2.1.0` section dated 2026-10-28. The GitHub release `v2.0.0` carries those notes under `2.0.0`, and PyPI and the tags agree on 2.0.0 for 2026-10-30.
+
 ### Pointing the SDK somewhere else
 
 Both base URLs are environment variables, which is how you aim the client at a mock or a proxy without touching code:
@@ -206,6 +230,8 @@ handler_path, python_version, requirements_path
 `.runpodignore` controls what gets synced, on top of the built-in exclusions `__pycache__/`, `*.pyc`, `.*.swp`, `.git/`, `*.tmp`, `*.log`.
 
 The trade against the image-build cycle these labs teach: edits land on the Pod in seconds rather than minutes, but a Pod bills the whole time it is up, and what you end up deploying is not the artefact you were editing.
+
+In 2.x the `runpod` command is the new `rp` CLI instead — see the table above.
 
 ### Gotchas worth remembering
 
@@ -348,6 +374,30 @@ runpod.terminate_pod(pod_id)
 
 이들은 Runpod 의 GraphQL API 를 감싼 것이라, 응답이 REST 가 아니라 GraphQL 형태로 돌아옵니다.
 
+### 2.x 에서 바뀐 것
+
+`runpod` 2.0.0 은 2026-10-30, 2.1.0 은 2026-11-03 에 PyPI 에 올라왔습니다. 2026-11-05 에 설치된 2.1.0 소스를 읽고 1.12.0 과 비교했으며, `get_gpus`, `get_gpu`, `get_endpoints`, `get_pods` 는 실제 계정에 읽기 전용으로 호출했습니다. 2.x 로 생성한 것은 없습니다.
+
+| | 1.12.0 | 2.1.0 |
+|---|---|---|
+| `Endpoint`, `Job`, `AsyncioEndpoint` | | 그대로 — `runpod/endpoint/` 패키지가 동일 |
+| Pod, 템플릿, 엔드포인트, GPU 호출 | GraphQL | `https://api.runpod.io/v2` 의 REST — `/v2/pods`, `/v2/templates`, `/v2/serverless`, `/v2/catalog/gpus`. `get_user` 와 `update_container_registry_auth` 는 GraphQL 그대로 |
+| `get_gpus()` 항목 | `id`, `displayName`, `memoryInGb` | `id`, `name`, `memory`, `price`, `maxCount`, `pool`, … |
+| `get_endpoints()` 항목 | GraphQL 필드 | `gpu.pools`, `workers.min` / `max` / `idleTimeout`, `"OFF"` 또는 `"FLASHBOOT"` 인 `flashboot`, `requestUrls` |
+| Pod | `desiredStatus`, `imageName`, `costPerHr`, `uptimeSeconds`, `runtime.ports[].publicPort` | `status`, `image`, `cost`, `runtime.uptime`, `runtime.ports[].public` — 2.1.0 CLI 자체 코드 기준. 조회할 Pod 이 없었음 |
+| CPU Pod 의 `create_pod` | 주어진 대로 전송 | `<flavor>-<vCPU>-<메모리>` 형식의 `instance_id` 필수. 네트워크 볼륨 없는 `volume_mount_path`, `support_public_ip`, `country_code`, `min_download`, `min_upload` 는 전송 전에 거부 |
+| `create_endpoint` | `gpu_ids` 를 GraphQL 에 그대로 전달 | `gpu_ids` 의 `-<type>` 항목이 `gpu.excludedTypes` 가 됨 |
+| `runpod` 명령 | 아래의 click CLI | 새 CLI `rp`, `runpod` 은 별칭: `catalog`, `endpoint`, `flash`, `pod`, `volume`, `secret`, `registry`, `logs`, `ssh`, `login`, `update`. `runpod project` 와 `runpod exec` 는 사라짐 |
+| User-Agent | `RunPod-Python-SDK/1.12.0 …` | 같은 형식에 `2.1.0`. 에이전트 감지는 그대로 |
+
+<div class="warn" markdown="1">
+**1.x 용 코드가 2.x 에서 조용히 틀릴 수 있습니다.** Pod 에 더는 `desiredStatus` 가 없으므로 `p.get("desiredStatus") == "RUNNING"` 같은 필터는 아무것도 돌려주지 않고, 그 위에 세운 안전장치는 작동을 멈춥니다. 그래서 Pod 실습은 `runpod~=1.12.0` 으로 고정합니다.
+</div>
+
+REST 기본 경로는 발행된 OpenAPI 스펙의 `https://rest.runpod.io/v1` 가 아닙니다. 두 호스트 모두 응답하며, SDK 는 `api.runpod.io` 의 `/v2` 경로를 씁니다.
+
+상류 `CHANGELOG.md` 는 2.0.0 의 노트를 2026-10-28 날짜의 두 번째 `2.1.0` 섹션으로 표기합니다. GitHub 릴리스 `v2.0.0` 에는 같은 노트가 `2.0.0` 으로 올라 있고, PyPI 와 태그도 2026-10-30 의 2.0.0 으로 일치합니다.
+
 ### SDK 를 다른 곳으로 향하게 하기
 
 두 base URL 모두 환경변수라서, 코드를 건드리지 않고 모의 서버나 프록시를 가리키게 할 수 있습니다.
@@ -414,6 +464,8 @@ handler_path, python_version, requirements_path
 무엇을 동기화할지는 `.runpodignore` 로 제어하며, 기본 제외 항목 `__pycache__/`, `*.pyc`, `.*.swp`, `.git/`, `*.tmp`, `*.log` 위에 얹힙니다.
 
 이 실습들이 가르치는 이미지 빌드 주기와의 맞바꿈은 이렇습니다. 수정이 분 단위가 아니라 초 단위로 Pod 에 반영되지만, Pod 은 떠 있는 내내 과금되고, 최종적으로 배포되는 것은 방금까지 편집하던 그 산출물이 아닙니다.
+
+2.x 에서는 `runpod` 명령이 새 `rp` CLI 로 바뀝니다. 위의 표를 보세요.
 
 ### 기억해둘 함정
 
