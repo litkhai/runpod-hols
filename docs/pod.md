@@ -22,7 +22,7 @@ A Pod is a GPU or CPU container you rent and control. Unlike Serverless it stays
 |---|---|
 | [01-launch-connect](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect) | ✅ Run 2026-11-05 — launch from Python, connect over SSH, tear down. CPU by default |
 | [02-storage](https://github.com/litkhai/runpod-hols/tree/main/pod/02-storage) | ✅ Run 2026-11-05 — what survives a stop, a terminate, and a CPU Pod |
-| 03-custom-template | 📋 Planned — build a custom Pod template, environment variables, secrets |
+| [03-custom-template](https://github.com/litkhai/runpod-hols/tree/main/pod/03-custom-template) | ✅ Run 2026-11-05 — a template with plain and secret environment variables |
 | 04-pod-to-serverless | 📋 Planned — develop on a Pod, then package the result as a Serverless worker |
 
 ### Storage — the concept that matters most
@@ -56,6 +56,21 @@ Run on 2026-11-05 in EU-RO-1 with marker files on each tier ([the lab](https://g
 </div>
 
 While stopped, the account's `currentSpendPerHr` was `0.003` for a 10 GB Pod volume, but the Pod's `costPerHr` still showed the running rate, `0.89`. In EU-RO-1 both kinds of volume were a FUSE mount, `mfs#euro.runpod.net:9421`; `df` showed the whole 2.3 PB filesystem, and writes stopped at the 10 GB allocation with `Disk quota exceeded`.
+
+### Templates and secrets — what Lab 03 found
+
+A template's `env` can hold {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %}, replaced with the secret's value at boot. Run on 2026-11-05 with a random demo secret ([the lab](https://github.com/litkhai/runpod-hols/tree/main/pod/03-custom-template)):
+
+| Where | What it held |
+|---|---|
+| `GET /templates`, `GET /pods` | The reference, never the value |
+| PID 1's environment | The value (hash matched) |
+| `ssh host 'command'` | Neither variable — only interactive shells source `/etc/rp_environment` |
+| After rotating the secret | Old value until the Pod was stopped and started; `restart` returned 500 and did nothing |
+
+<div class="warn" markdown="1">
+**Inside the Pod a secret is a plain file.** `/etc/rp_environment`, mode 644, held the resolved secret and the Pod's `RUNPOD_API_KEY`. Secrets keep values out of templates and the API, not out of the container.
+</div>
 
 ### What changed in the SDK
 
@@ -108,7 +123,7 @@ Pod 는 직접 빌려서 제어하는 GPU 또는 CPU 컨테이너입니다. Serv
 |---|---|
 | [01-launch-connect](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect) | ✅ 2026-11-05 실행 — Python 으로 기동, SSH 접속, 정리. 기본값 CPU |
 | [02-storage](https://github.com/litkhai/runpod-hols/tree/main/pod/02-storage) | ✅ 2026-11-05 실행 — 중지, 삭제, CPU Pod 에서 무엇이 남는가 |
-| 03-custom-template | 📋 계획됨 — 커스텀 Pod 템플릿 제작, 환경변수, 시크릿 |
+| [03-custom-template](https://github.com/litkhai/runpod-hols/tree/main/pod/03-custom-template) | ✅ 2026-11-05 실행 — 일반 환경변수와 시크릿 환경변수를 쓰는 템플릿 |
 | 04-pod-to-serverless | 📋 계획됨 — Pod 에서 개발한 결과물을 Serverless 워커로 패키징 |
 
 ### 스토리지 — 가장 중요한 개념
@@ -142,6 +157,21 @@ Pod 는 직접 빌려서 제어하는 GPU 또는 CPU 컨테이너입니다. Serv
 </div>
 
 중지 중 계정의 `currentSpendPerHr` 는 10 GB Pod 볼륨에 대해 `0.003` 이었지만, Pod 의 `costPerHr` 는 실행 중 요금 `0.89` 를 그대로 보여줬습니다. EU-RO-1 에서는 두 종류의 볼륨 모두 FUSE 마운트 `mfs#euro.runpod.net:9421` 이었고, `df` 는 2.3 PB 파일시스템 전체를 보여줬으며, 쓰기는 10 GB 할당에서 `Disk quota exceeded` 로 멈췄습니다.
+
+### 템플릿과 시크릿 — Lab 03 이 확인한 것
+
+템플릿의 `env` 에 {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %} 를 넣으면 부팅 시 시크릿 값으로 바뀝니다. 2026-11-05 임의의 데모 시크릿으로 실행했습니다 ([실습](https://github.com/litkhai/runpod-hols/tree/main/pod/03-custom-template)).
+
+| 위치 | 담긴 것 |
+|---|---|
+| `GET /templates`, `GET /pods` | 참조. 값은 절대 아님 |
+| PID 1 의 환경 | 값 (해시 일치) |
+| `ssh host 'command'` | 두 변수 모두 없음 — 대화형 셸만 `/etc/rp_environment` 를 읽음 |
+| 시크릿 교체 후 | Pod 을 중지·시작할 때까지 이전 값. `restart` 는 500 을 돌려주고 아무것도 하지 않음 |
+
+<div class="warn" markdown="1">
+**Pod 안에서 시크릿은 평범한 파일입니다.** 권한 644 인 `/etc/rp_environment` 에 치환된 시크릿과 Pod 의 `RUNPOD_API_KEY` 가 들어 있었습니다. 시크릿은 값을 템플릿과 API 에서 감춰 주지만, 컨테이너 안에서까지 감추지는 않습니다.
+</div>
 
 ### SDK 에서 바뀐 것
 
