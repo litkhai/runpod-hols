@@ -23,7 +23,7 @@ A Pod is a GPU or CPU container you rent and control. Unlike Serverless it stays
 | [01-launch-connect](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect) | ✅ Run 2026-11-05 — launch from Python, connect over SSH, tear down. CPU by default |
 | [02-storage](https://github.com/litkhai/runpod-hols/tree/main/pod/02-storage) | ✅ Run 2026-11-05 — what survives a stop, a terminate, and a CPU Pod |
 | [03-custom-template](https://github.com/litkhai/runpod-hols/tree/main/pod/03-custom-template) | ✅ Run 2026-11-05 — a template with plain and secret environment variables |
-| 04-pod-to-serverless | 📋 Planned — develop on a Pod, then package the result as a Serverless worker |
+| [04-pod-to-serverless](https://github.com/litkhai/runpod-hols/tree/main/pod/04-pod-to-serverless) | ✅ Run 2026-11-05 — develop on a Pod, serve the same file from Serverless via a network volume |
 
 ### Storage — the concept that matters most
 
@@ -71,6 +71,19 @@ A template's `env` can hold {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %}, r
 <div class="warn" markdown="1">
 **Inside the Pod a secret is a plain file.** `/etc/rp_environment`, mode 644, held the resolved secret and the Pod's `RUNPOD_API_KEY`. Secrets keep values out of templates and the API, not out of the container.
 </div>
+
+### From a Pod to Serverless — what Lab 04 found
+
+One network volume, mounted at `/workspace` on a Pod and at `/runpod-volume` on Serverless workers, lets an endpoint run the file you just tested on the Pod — no image build. The template sets `dockerStartCmd: ["python3", "-u", "/runpod-volume/app/handler.py"]` and `PYTHONPATH` to packages installed on the volume. Run on 2026-11-05 on RTX 4090 in EU-RO-1 ([the lab](https://github.com/litkhai/runpod-hols/tree/main/pod/04-pod-to-serverless)):
+
+| Step | Result |
+|---|---|
+| `pip install --target` onto the volume | About 10 minutes for 9,237 files |
+| First job | Worker reported `loaded_from: /runpod-volume/app/handler.py`; `delayTime` 205 s |
+| `runsync` on that cold start | Returned `IN_QUEUE` after 90.9 s — poll `/status/{id}` |
+| Second job, worker already gone | `delayTime` 47 s |
+
+Good for iterating; for production, bake the code into an image as Serverless Lab 01 does — the volume pins the endpoint to one data center and makes every cold start import over the network.
 
 ### What changed in the SDK
 
@@ -124,7 +137,7 @@ Pod 는 직접 빌려서 제어하는 GPU 또는 CPU 컨테이너입니다. Serv
 | [01-launch-connect](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect) | ✅ 2026-11-05 실행 — Python 으로 기동, SSH 접속, 정리. 기본값 CPU |
 | [02-storage](https://github.com/litkhai/runpod-hols/tree/main/pod/02-storage) | ✅ 2026-11-05 실행 — 중지, 삭제, CPU Pod 에서 무엇이 남는가 |
 | [03-custom-template](https://github.com/litkhai/runpod-hols/tree/main/pod/03-custom-template) | ✅ 2026-11-05 실행 — 일반 환경변수와 시크릿 환경변수를 쓰는 템플릿 |
-| 04-pod-to-serverless | 📋 계획됨 — Pod 에서 개발한 결과물을 Serverless 워커로 패키징 |
+| [04-pod-to-serverless](https://github.com/litkhai/runpod-hols/tree/main/pod/04-pod-to-serverless) | ✅ 2026-11-05 실행 — Pod 에서 개발하고, 네트워크 볼륨으로 같은 파일을 Serverless 에서 서빙 |
 
 ### 스토리지 — 가장 중요한 개념
 
@@ -172,6 +185,19 @@ Pod 는 직접 빌려서 제어하는 GPU 또는 CPU 컨테이너입니다. Serv
 <div class="warn" markdown="1">
 **Pod 안에서 시크릿은 평범한 파일입니다.** 권한 644 인 `/etc/rp_environment` 에 치환된 시크릿과 Pod 의 `RUNPOD_API_KEY` 가 들어 있었습니다. 시크릿은 값을 템플릿과 API 에서 감춰 주지만, 컨테이너 안에서까지 감추지는 않습니다.
 </div>
+
+### Pod 에서 Serverless 로 — Lab 04 가 확인한 것
+
+네트워크 볼륨 하나를 Pod 에는 `/workspace`, Serverless 워커에는 `/runpod-volume` 으로 붙이면, 이미지 빌드 없이 Pod 에서 방금 테스트한 파일을 엔드포인트가 실행합니다. 템플릿에 `dockerStartCmd: ["python3", "-u", "/runpod-volume/app/handler.py"]` 와 볼륨에 설치한 패키지를 가리키는 `PYTHONPATH` 를 둡니다. 2026-11-05 EU-RO-1 의 RTX 4090 에서 실행했습니다 ([실습](https://github.com/litkhai/runpod-hols/tree/main/pod/04-pod-to-serverless)).
+
+| 단계 | 결과 |
+|---|---|
+| 볼륨에 `pip install --target` | 파일 9,237개에 약 10분 |
+| 첫 작업 | 워커가 `loaded_from: /runpod-volume/app/handler.py` 보고. `delayTime` 205초 |
+| 그 콜드 스타트에서 `runsync` | 90.9초 뒤 `IN_QUEUE` 반환 — `/status/{id}` 를 폴링 |
+| 두 번째 작업, 워커는 이미 종료 | `delayTime` 47초 |
+
+반복 개발에는 좋습니다. 프로덕션은 Serverless Lab 01 처럼 코드를 이미지에 구우세요. 볼륨은 엔드포인트를 한 데이터센터에 묶고, 콜드 스타트마다 네트워크 너머로 import 하게 만듭니다.
 
 ### SDK 에서 바뀐 것
 
