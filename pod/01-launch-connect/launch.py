@@ -19,6 +19,9 @@ import sys
 from common import POD_ID_FILE, client, confirm, describe, running_pods
 
 DEFAULT_IMAGE = "runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404"
+# Smallest Compute-Optimized size: 2 vCPU, 2 GB per vCPU (cpuFlavors, 2026-11-05).
+# 가장 작은 Compute-Optimized 사양: vCPU 2개, vCPU 당 2GB (cpuFlavors, 2026-11-05).
+DEFAULT_CPU = "cpu3c-2-4"
 
 
 def main() -> int:
@@ -32,6 +35,13 @@ def main() -> int:
              "/ GPU 타입 ID. 생략하면 CPU 전용 Pod.",
     )
     ap.add_argument("--gpu-count", type=int, default=1)
+    ap.add_argument(
+        "--cpu",
+        default=DEFAULT_CPU,
+        help="CPU instance id <flavor>-<vcpu>-<memory GB>, used when --gpu is omitted. "
+             "The API rejects a CPU Pod without one. "
+             "/ CPU 인스턴스 ID. --gpu 를 생략했을 때 쓰며, 없으면 API 가 거부한다.",
+    )
     ap.add_argument(
         "--volume-gb", type=int, default=10,
         help="Volume disk size. Survives stop, dies on terminate. "
@@ -70,12 +80,20 @@ def main() -> int:
                   "print([g['id'] for g in runpod.get_gpus()])\"")
             return 1
 
-    kind = f"{args.gpu} x{args.gpu_count}" if args.gpu else "CPU only / CPU 전용"
+    kind = f"{args.gpu} x{args.gpu_count}" if args.gpu else f"CPU only / CPU 전용 ({args.cpu})"
     print("About to create a Pod / 아래 Pod 를 생성합니다:")
     print(f"    name    {args.name}")
     print(f"    image   {args.image}")
     print(f"    compute {kind}")
-    print(f"    disks   container {args.disk_gb}GB, volume {args.volume_gb}GB at /workspace")
+    if args.gpu:
+        print(f"    disks   container {args.disk_gb}GB, volume {args.volume_gb}GB at /workspace")
+    else:
+        # SDK 1.12 sends no volumeInGb for a CPU Pod; the Pod came up with
+        # volumeInGb 0 and /workspace on the container disk (2026-11-05).
+        # SDK 1.12 는 CPU Pod 에 volumeInGb 를 보내지 않는다. Pod 는 volumeInGb 0,
+        # /workspace 는 컨테이너 디스크 위였다 (2026-11-05).
+        print(f"    disks   container {args.disk_gb}GB; no volume disk on a CPU Pod — "
+              "/workspace is on the container disk")
     print()
     print("Billing starts when it boots and continues until you terminate it,")
     print("whether or not you are using it.")
@@ -95,6 +113,7 @@ def main() -> int:
         image_name=args.image,
         gpu_type_id=args.gpu,          # None -> CPU-only Pod
         gpu_count=args.gpu_count if args.gpu else 1,
+        instance_id=None if args.gpu else args.cpu,
         container_disk_in_gb=args.disk_gb,
         volume_in_gb=args.volume_gb,
         # The SDK defaults this to /runpod-volume, while the console defaults to
