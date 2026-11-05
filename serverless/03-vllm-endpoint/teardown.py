@@ -38,8 +38,8 @@ def main() -> int:
             if "still held by deleted endpoint" not in e.text:
                 raise
             print(f"template {state['template_id']} is still held by the deleted endpoint.")
-            print("No cost. Rerun teardown.py in about 90 minutes.")
-            print("삭제된 엔드포인트가 템플릿을 아직 잡고 있습니다. 비용은 없습니다. 약 90분 뒤 다시 실행하세요.")
+            print("No cost. Rerun teardown.py later — it took 92 to 116 minutes on 2026-11-05.")
+            print("삭제된 엔드포인트가 템플릿을 아직 잡고 있습니다. 비용은 없습니다. 나중에 다시 실행하세요 (2026-11-05 에는 92–116분).")
             return 0
         print(f"deleted template  {state['template_id']}")
     STATE_FILE.unlink()

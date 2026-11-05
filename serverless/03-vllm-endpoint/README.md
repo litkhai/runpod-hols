@@ -80,7 +80,7 @@ stream  1 2 3 4 5 6 7 8 9 10
 .venv/bin/python teardown.py
 ```
 
-The endpoint goes at once. The template may not: the API refused with *"Template is still held by deleted endpoint …, which is pending cleanup. It can be deleted once that endpoint's last worker has been billed, within about 90 minutes of the endpoint delete."* `teardown.py` keeps the template id in `.endpoint.json` and says so; an unused template costs nothing. Rerun it later.
+The endpoint goes at once. The template may not: the API refused with *"Template is still held by deleted endpoint …, which is pending cleanup. It can be deleted once that endpoint's last worker has been billed, within about 90 minutes of the endpoint delete."* `teardown.py` keeps the template id in `.endpoint.json` and says so; an unused template costs nothing. Rerun it later: on 2026-11-05 the template was still refused 86 minutes after the endpoint delete and deleted at 116.
 
 ### The first cold start took 15 minutes
 
@@ -119,7 +119,7 @@ Also seen:
 | `chat.py`, first run | HTTP 520 after 7 min 12 s (cold) |
 | `chat.py`, second run | `models` after 480 s, then chat 1.6 s, stream first token 0.76 s |
 | Worker log | KV cache 657,200 tokens; graph capture 3 + 4 s; weights 9.6 s download, 0.39 s load |
-| `teardown.py` | Endpoint deleted; template refused for up to ~90 min (handled) |
+| `teardown.py` | Endpoint deleted; template refused until about two hours later — still refused at 86 min, deleted at 116 min (handled) |
 
 Not run: a second cold start, FlashBoot off, concurrency or throughput, the Responses and Anthropic Messages routes. The billing API returned no rows for the run's hour when queried right after it.
 
@@ -240,6 +240,6 @@ vLLM 자체는 77초였습니다. 나머지 14분은 플랫폼 쪽입니다. 이
 | `chat.py` 첫 실행 | 7분 12초 후 HTTP 520 (콜드) |
 | `chat.py` 두 번째 실행 | `models` 480초, 이어서 채팅 1.6초, 스트리밍 첫 토큰 0.76초 |
 | 워커 로그 | KV 캐시 657,200 토큰. 그래프 캡처 3 + 4초. 가중치 다운로드 9.6초, 로드 0.39초 |
-| `teardown.py` | 엔드포인트 삭제. 템플릿은 최대 약 90분 거부 (처리함) |
+| `teardown.py` | 엔드포인트 삭제. 템플릿은 약 2시간 뒤까지 거부 — 86분에 여전히 거부, 116분에 삭제 (처리함) |
 
 실행하지 않은 것: 두 번째 콜드 스타트, FlashBoot 끔, 동시성·처리량, Responses 와 Anthropic Messages 경로. 실행 직후 조회한 결제 API 는 해당 시간대에 아무 행도 돌려주지 않았습니다.
