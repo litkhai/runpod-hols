@@ -51,6 +51,7 @@ docs/Gemfile.lock
 # 동작하게 한다. 이 머신에만 해당하는 상태이며 소스가 아니다.
 **/.pod-id
 **/.endpoint.json
+**/.storage.json
 
 # Lab artifacts / 실습 중 생성되는 산출물
 *.log
