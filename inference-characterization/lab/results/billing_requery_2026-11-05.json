@@ -1,0 +1,119 @@
+{
+  "queried_at": "2026-11-05T18:37+0900",
+  "query": "GET rest.runpod.io/v1/billing/pods?startTime=2026-10-06T13:00:00Z&endTime=2026-10-06T18:00:00Z&bucketSize=day&grouping=podId (same window as billing.json)",
+  "pods": [
+    {
+      "amount": 1.2086009051417932,
+      "timeBilledMs": 2717587,
+      "diskSpaceBilledGB": 800,
+      "podId": "02r33bz9y3r7o9",
+      "time": "2026-10-06 00:00:00"
+    },
+    {
+      "amount": 2.267283372930251,
+      "timeBilledMs": 2813917,
+      "diskSpaceBilledGB": 800,
+      "podId": "1fp377vqqwx3ze",
+      "time": "2026-10-06 00:00:00"
+    },
+    {
+      "amount": 0.6590298207011074,
+      "timeBilledMs": 3161046,
+      "diskSpaceBilledGB": 880,
+      "podId": "3qcqba8ssaru8k",
+      "time": "2026-10-06 00:00:00"
+    },
+    {
+      "amount": 2.3531588865444064,
+      "timeBilledMs": 2647243,
+      "diskSpaceBilledGB": 720,
+      "podId": "66qz6zzbmx2oju",
+      "time": "2026-10-06 00:00:00"
+    },
+    {
+      "amount": 3.287647078745067,
+      "timeBilledMs": 2572737,
+      "diskSpaceBilledGB": 720,
+      "podId": "7osxw3auygj4yc",
+      "time": "2026-10-06 00:00:00"
+    },
+    {
+      "amount": 2.738114394596778,
+      "timeBilledMs": 2815820,
+      "diskSpaceBilledGB": 800,
+      "podId": "8o16vcsgclg2e4",
+      "time": "2026-10-06 00:00:00"
+    },
+    {
+      "amount": 0.08890006050933152,
+      "timeBilledMs": 911883,
+      "diskSpaceBilledGB": 320,
+      "podId": "8xofwnysmerstc",
+      "time": "2026-10-06 00:00:00"
+    },
+    {
+      "amount": 0.03782469034194946,
+      "timeBilledMs": 184012,
+      "diskSpaceBilledGB": 60,
+      "podId": "gen3hjitlrbrcg",
+      "time": "2026-10-06 00:00:00"
+    },
+    {
+      "amount": 1.2344287041341886,
+      "timeBilledMs": 2776065,
+      "diskSpaceBilledGB": 800,
+      "podId": "jlbd02kaeuhkbt",
+      "time": "2026-10-06 00:00:00"
+    },
+    {
+      "amount": 0.7437134401407093,
+      "timeBilledMs": 3224433,
+      "diskSpaceBilledGB": 880,
+      "podId": "ot3itakmny5al6",
+      "time": "2026-10-06 00:00:00"
+    },
+    {
+      "amount": 0.25517399748787284,
+      "timeBilledMs": 1223369,
+      "diskSpaceBilledGB": 400,
+      "podId": "pj5ugp1jrrh5is",
+      "time": "2026-10-06 00:00:00"
+    },
+    {
+      "amount": 0.023859243839979172,
+      "timeBilledMs": 116072,
+      "diskSpaceBilledGB": 60,
+      "podId": "qgqod27uoncskn",
+      "time": "2026-10-06 00:00:00"
+    },
+    {
+      "amount": 0.03784473182167858,
+      "timeBilledMs": 179605,
+      "diskSpaceBilledGB": 160,
+      "podId": "tbz2dt4vmj201u",
+      "time": "2026-10-06 00:00:00"
+    },
+    {
+      "amount": 0.15542631479911506,
+      "timeBilledMs": 747119,
+      "diskSpaceBilledGB": 240,
+      "podId": "whw5hogl1nl38d",
+      "time": "2026-10-06 00:00:00"
+    },
+    {
+      "amount": 0.03132522851228714,
+      "timeBilledMs": 152393,
+      "diskSpaceBilledGB": 60,
+      "podId": "woylujqk91186x",
+      "time": "2026-10-06 00:00:00"
+    },
+    {
+      "amount": 0.8618223693920299,
+      "timeBilledMs": 6188899,
+      "diskSpaceBilledGB": 1760,
+      "podId": "wst4bqcilbewx9",
+      "time": "2026-10-06 00:00:00"
+    }
+  ],
+  "pods_total_usd": 15.9842
+}
