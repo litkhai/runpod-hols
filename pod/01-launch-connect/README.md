@@ -32,6 +32,8 @@ uv pip install --python .venv/bin/python -r requirements.txt   # runpod~=1.12.0
 
 The scripts are written against the 1.x client. `runpod` 2.0.0 (2026-10-30) moved Pod calls to REST API v2 and rejects this lab's CPU launch before sending anything: `REST API v2 does not support: volume_mount_path on CPU pods without network_volume_id`. An unpinned `pip install runpod` gets 2.x.
 
+Porting is more than the launch call. In 2.x `get_pods()` returns REST objects — `status`, `image`, `cost`, `runtime.uptime` — where these scripts read `desiredStatus`, `imageName`, `costPerHr` and `uptimeSeconds`. On 2.x the running-Pod filter would match nothing, so `launch.py` would no longer refuse to stack Pods. The pin stays until the scripts are ported and run again ([SDK 2.x changes](../../sdk/client.md#what-changed-in-2x)).
+
 ### The one thing that costs money
 
 A Pod bills from boot until you terminate it, whether you are using it or not. Everything in this lab is arranged around that:
@@ -192,6 +194,8 @@ uv pip install --python .venv/bin/python -r requirements.txt   # runpod~=1.12.0
 ```
 
 스크립트는 1.x 클라이언트 기준입니다. `runpod` 2.0.0 (2026-10-30) 은 Pod 호출을 REST API v2 로 옮겼고, 이 실습의 CPU 기동을 요청을 보내기도 전에 거부합니다. `REST API v2 does not support: volume_mount_path on CPU pods without network_volume_id`. 버전을 고정하지 않은 `pip install runpod` 는 2.x 를 설치합니다.
+
+포팅은 기동 호출만의 문제가 아닙니다. 2.x 의 `get_pods()` 는 REST 객체 — `status`, `image`, `cost`, `runtime.uptime` — 를 돌려주는데, 이 스크립트는 `desiredStatus`, `imageName`, `costPerHr`, `uptimeSeconds` 를 읽습니다. 2.x 에서는 실행 중 Pod 필터가 아무것도 찾지 못해 `launch.py` 의 중복 기동 방지가 작동하지 않습니다. 스크립트를 포팅하고 다시 실행할 때까지 고정을 유지합니다 ([SDK 2.x 변경점](../../sdk/client.md#2x-에서-바뀐-것)).
 
 ### 돈이 나가는 지점은 하나입니다
 
