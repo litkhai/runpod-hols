@@ -93,13 +93,23 @@ def describe(pod: dict) -> str:
     """
     cost = pod.get("costPerHr") or 0
     up = pod.get("uptimeSeconds") or 0
-    gpu = (pod.get("machine") or {}).get("gpuDisplayName") or "CPU only"
-    spent = float(cost) * (up / 3600)
+    gpus = pod.get("gpuCount") or 0
+    # A CPU Pod reports gpuDisplayName "unknown" with gpuCount 0.
+    # CPU Pod 는 gpuDisplayName 을 "unknown", gpuCount 를 0 으로 돌려준다.
+    gpu = f"{(pod.get('machine') or {}).get('gpuDisplayName')} x{gpus}" if gpus else "CPU only"
+    if up:
+        spent = float(cost) * (up / 3600)
+        uptime = f"up {up // 60}m {up % 60}s   ≈ ${spent:.4f} so far / 현재까지"
+    else:
+        # SDK 1.12 reads the top-level uptimeSeconds, which stayed 0 on a Pod
+        # that had been running (and reachable over SSH) for minutes.
+        # SDK 1.12 는 최상위 uptimeSeconds 를 읽는데, 몇 분째 실행 중이고 SSH 로
+        # 접속되는 Pod 에서도 0 이었다.
+        uptime = "uptime not reported — check the console / 가동 시간 미보고, 콘솔 확인"
     return (
         f"{pod.get('name')}  ({pod.get('id')})\n"
-        f"    status   {pod.get('desiredStatus')}   {gpu} x{pod.get('gpuCount') or 0}\n"
-        f"    cost     ${cost}/hr   up {up // 60}m {up % 60}s   "
-        f"≈ ${spent:.4f} so far / 현재까지\n"
+        f"    status   {pod.get('desiredStatus')}   {gpu}\n"
+        f"    cost     ${cost}/hr   {uptime}\n"
         f"    volume   {pod.get('volumeInGb')}GB at {pod.get('volumeMountPath')}"
     )
 

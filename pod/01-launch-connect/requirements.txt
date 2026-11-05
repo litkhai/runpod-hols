@@ -1,0 +1,2 @@
+# Written against the 1.x GraphQL client; 2.x (REST v2) rejects launch.py arguments — see README.
+runpod~=1.12.0
