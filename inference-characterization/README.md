@@ -57,6 +57,7 @@ The dataset is `random`: lengths and arrival rate define a use case, not prompt 
 | [`lab/coldstart_probe.py`](./lab/coldstart_probe.py) | your machine | Serverless cold vs warm request pairs, with job id and submit time; `GAPS=15,30,60` sets a different idle gap before each probe |
 | [`lab/serverless_endpoint.py`](./lab/serverless_endpoint.py) | your machine | Creates and deletes the probe's template and endpoint (workers 0–1 or `--workers-max N`, idle 5 s, FlashBoot on or off) |
 | [`lab/concurrent_probe.py`](./lab/concurrent_probe.py) | your machine | Sends `BURST` requests at once, cold wave then warm wave, and records `delayTime` and `workerId` per job with the worker list after each wave |
+| [`lab/flashboot_alternate.py`](./lab/flashboot_alternate.py) | your machine | Switches FlashBoot on and off on one endpoint before each cold probe and records the jobs in `coldstart_probe.py`'s format, for comparing cold starts on the same host (C29) |
 | [`lab/capture_worker_logs.sh`](./lab/capture_worker_logs.sh) | your machine | Every 20 s, merges each worker's system and container log lines; container lines vanish when the container is removed |
 | [`lab/coldstart_phases.py`](./lab/coldstart_phases.py) | your machine | Splits each cold start into phases from those logs |
 | [`lab/stock_snapshots.sh`](./lab/stock_snapshots.sh) | your machine | Read-only stock snapshots, with and without a CUDA 13 floor |
@@ -164,6 +165,7 @@ Raw results: [`lab/results/`](./lab/results). Profile table: [`lab/results/PROFI
 | [`lab/coldstart_probe.py`](./lab/coldstart_probe.py) | 로컬 | Serverless 콜드와 웜 요청 쌍, 작업 id와 제출 시각 포함. `GAPS=15,30,60`으로 프로브마다 다른 유휴 간격을 준다 |
 | [`lab/serverless_endpoint.py`](./lab/serverless_endpoint.py) | 로컬 | 프로브용 템플릿과 엔드포인트 생성과 삭제(워커 0–1 또는 `--workers-max N`, 유휴 5초, FlashBoot 켬 또는 끔) |
 | [`lab/concurrent_probe.py`](./lab/concurrent_probe.py) | 로컬 | `BURST`건을 동시에 보내 콜드 물결과 웜 물결을 만들고, 작업별 `delayTime`과 `workerId`, 물결마다의 워커 목록을 기록 |
+| [`lab/flashboot_alternate.py`](./lab/flashboot_alternate.py) | 로컬 | 엔드포인트 하나에서 콜드 프로브마다 FlashBoot를 켜고 끄며, 같은 호스트의 콜드 스타트를 비교하도록 작업을 `coldstart_probe.py` 형식으로 기록한다(C29) |
 | [`lab/capture_worker_logs.sh`](./lab/capture_worker_logs.sh) | 로컬 | 20초마다 워커별 시스템과 컨테이너 로그를 합쳐 저장. 컨테이너 로그는 컨테이너가 지워지면 사라진다 |
 | [`lab/coldstart_phases.py`](./lab/coldstart_phases.py) | 로컬 | 그 로그로 콜드스타트를 단계별로 나눈다 |
 | [`lab/stock_snapshots.sh`](./lab/stock_snapshots.sh) | 로컬 | 읽기 전용 재고 스냅샷, CUDA 13 조건 유무 각각 |
