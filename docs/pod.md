@@ -21,7 +21,7 @@ A Pod is a GPU or CPU container you rent and control. Unlike Serverless it stays
 | Lab | Status |
 |---|---|
 | [01-launch-connect](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect) | ✅ Run 2026-11-05 — launch from Python, connect over SSH, tear down. CPU by default |
-| 02-storage | 📋 Planned — Container Disk vs Volume vs Network Volume, what survives a stop |
+| [02-storage](https://github.com/litkhai/runpod-hols/tree/main/pod/02-storage) | ✅ Run 2026-11-05 — what survives a stop, a terminate, and a CPU Pod |
 | 03-custom-template | 📋 Planned — build a custom Pod template, environment variables, secrets |
 | 04-pod-to-serverless | 📋 Planned — develop on a Pod, then package the result as a Serverless worker |
 
@@ -38,8 +38,24 @@ Three tiers, and confusing them is how people lose work:
 Anything you want to keep goes in `/workspace` or a Network Volume. Never leave work on the container disk.
 
 <div class="warn" markdown="1">
-**CPU Pods are the exception.** Launched from SDK 1.12 with `volume_in_gb=10`, a CPU Pod came up with `volumeInGb` 0 — the SDK does not send the field for CPU Pods — and `/workspace` sat on the same 10 GB overlay as `/`. There, `/workspace` is container disk.
+**CPU Pods are the exception.** Launched from SDK 1.12 with `volume_in_gb=10`, a CPU Pod came up with `volumeInGb` 0 — the SDK does not send the field for CPU Pods — and `/workspace` sat on the same 10 GB overlay as `/`. There, `/workspace` is container disk. The REST API did the same with `volumeInGb: 10` (Lab 02); a network volume does attach to a CPU Pod.
 </div>
+
+### What Lab 02 measured
+
+Run on 2026-11-05 in EU-RO-1 with marker files on each tier ([the lab](https://github.com/litkhai/runpod-hols/tree/main/pod/02-storage)):
+
+| Action | Container disk `/` | Pod volume `/workspace` | Network volume `/workspace` |
+|---|---|---|---|
+| Stop, then start | Wiped | Kept | — |
+| Terminate, new Pod on the same volume | — | — | Kept, on a different host |
+| CPU Pod | Present | Not created | Mounts and works |
+
+<div class="warn" markdown="1">
+**A stopped Pod may not start again right away.** The first `start` 40 seconds after a stop returned *"There are not enough free GPUs on the host machine to start this pod."* The Pod stays tied to its machine; the same call worked eight minutes later. Until then the Pod volume's data is out of reach — a network volume is not tied to a machine.
+</div>
+
+While stopped, the account's `currentSpendPerHr` was `0.003` for a 10 GB Pod volume, but the Pod's `costPerHr` still showed the running rate, `0.89`. In EU-RO-1 both kinds of volume were a FUSE mount, `mfs#euro.runpod.net:9421`; `df` showed the whole 2.3 PB filesystem, and writes stopped at the 10 GB allocation with `Disk quota exceeded`.
 
 ### What changed in the SDK
 
@@ -91,7 +107,7 @@ Pod 는 직접 빌려서 제어하는 GPU 또는 CPU 컨테이너입니다. Serv
 | 실습 | 상태 |
 |---|---|
 | [01-launch-connect](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect) | ✅ 2026-11-05 실행 — Python 으로 기동, SSH 접속, 정리. 기본값 CPU |
-| 02-storage | 📋 계획됨 — Container Disk vs Volume vs Network Volume, 중지 시 무엇이 남는가 |
+| [02-storage](https://github.com/litkhai/runpod-hols/tree/main/pod/02-storage) | ✅ 2026-11-05 실행 — 중지, 삭제, CPU Pod 에서 무엇이 남는가 |
 | 03-custom-template | 📋 계획됨 — 커스텀 Pod 템플릿 제작, 환경변수, 시크릿 |
 | 04-pod-to-serverless | 📋 계획됨 — Pod 에서 개발한 결과물을 Serverless 워커로 패키징 |
 
@@ -108,8 +124,24 @@ Pod 는 직접 빌려서 제어하는 GPU 또는 CPU 컨테이너입니다. Serv
 보존할 것은 반드시 `/workspace` 또는 Network Volume 에 둡니다. 컨테이너 디스크에 작업물을 남기지 마세요.
 
 <div class="warn" markdown="1">
-**CPU Pod 은 예외입니다.** SDK 1.12 에서 `volume_in_gb=10` 으로 띄운 CPU Pod 이 `volumeInGb` 0 으로 떴습니다. SDK 가 CPU Pod 에는 이 필드를 보내지 않기 때문입니다. `/workspace` 는 `/` 와 같은 10 GB overlay 위에 있었습니다. 즉 여기서 `/workspace` 는 컨테이너 디스크입니다.
+**CPU Pod 은 예외입니다.** SDK 1.12 에서 `volume_in_gb=10` 으로 띄운 CPU Pod 이 `volumeInGb` 0 으로 떴습니다. SDK 가 CPU Pod 에는 이 필드를 보내지 않기 때문입니다. `/workspace` 는 `/` 와 같은 10 GB overlay 위에 있었습니다. 즉 여기서 `/workspace` 는 컨테이너 디스크입니다. REST API 에 `volumeInGb: 10` 을 줘도 같았고 (Lab 02), 네트워크 볼륨은 CPU Pod 에도 붙습니다.
 </div>
+
+### Lab 02 가 측정한 것
+
+2026-11-05 EU-RO-1 에서 계층마다 표식 파일을 두고 실행했습니다 ([실습](https://github.com/litkhai/runpod-hols/tree/main/pod/02-storage)).
+
+| 동작 | 컨테이너 디스크 `/` | Pod 볼륨 `/workspace` | 네트워크 볼륨 `/workspace` |
+|---|---|---|---|
+| 중지 후 시작 | 초기화 | 유지 | — |
+| 삭제 후 같은 볼륨으로 새 Pod | — | — | 유지, 다른 호스트에서 |
+| CPU Pod | 있음 | 만들어지지 않음 | 마운트되고 동작 |
+
+<div class="warn" markdown="1">
+**중지한 Pod 이 바로 다시 시작되지 않을 수 있습니다.** 중지 40초 뒤 첫 `start` 가 *"There are not enough free GPUs on the host machine to start this pod."* 를 돌려줬습니다. Pod 은 원래 머신에 묶여 있고, 같은 호출이 8분 뒤에 성공했습니다. 그 전까지 Pod 볼륨의 데이터에는 손이 닿지 않습니다. 네트워크 볼륨은 머신에 묶이지 않습니다.
+</div>
+
+중지 중 계정의 `currentSpendPerHr` 는 10 GB Pod 볼륨에 대해 `0.003` 이었지만, Pod 의 `costPerHr` 는 실행 중 요금 `0.89` 를 그대로 보여줬습니다. EU-RO-1 에서는 두 종류의 볼륨 모두 FUSE 마운트 `mfs#euro.runpod.net:9421` 이었고, `df` 는 2.3 PB 파일시스템 전체를 보여줬으며, 쓰기는 10 GB 할당에서 `Disk quota exceeded` 로 멈췄습니다.
 
 ### SDK 에서 바뀐 것
 

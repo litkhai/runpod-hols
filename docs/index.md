@@ -40,7 +40,7 @@ Start with [Welcome to Runpod](https://docs.runpod.io/overview) and [Concepts](h
   <div class="card">
     <h3><a href="{{ '/pod/' | relative_url }}">Pod</a></h3>
     <p>GPU containers with SSH and Jupyter. Billed per minute.</p>
-    <span class="badge ready">Lab 01 run</span>
+    <span class="badge ready">Labs 01–02 run</span>
   </div>
   <div class="card">
     <h3><a href="{{ '/cluster/' | relative_url }}">Cluster</a></h3>
@@ -123,7 +123,7 @@ AI/ML 워크로드를 위한 GPU 클라우드 [Runpod](https://runpod.io) 의 �
   <div class="card">
     <h3><a href="{{ '/pod/' | relative_url }}">Pod</a></h3>
     <p>SSH·Jupyter 로 쓰는 GPU 컨테이너. 분 단위 과금.</p>
-    <span class="badge ready">Lab 01 실행</span>
+    <span class="badge ready">Lab 01–02 실행</span>
   </div>
   <div class="card">
     <h3><a href="{{ '/cluster/' | relative_url }}">Cluster</a></h3>
