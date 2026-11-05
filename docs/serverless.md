@@ -164,7 +164,7 @@ Lab 03 deploys Runpod's prebuilt `runpod/worker-v1-vllm:v2.30.2` with `Qwen/Qwen
 </div>
 
 <div class="note" markdown="1">
-**Deleting the template can wait up to ~90 minutes.** After the endpoint delete, `DELETE /templates/{id}` answered *"Template is still held by deleted endpoint …, which is pending cleanup"*. The lab's `teardown.py` keeps the id and asks you to rerun it.
+**Deleting the template can wait an hour and a half or more.** After the endpoint delete, `DELETE /templates/{id}` answered *"Template is still held by deleted endpoint …, which is pending cleanup"*. The message says *"within about 90 minutes"*; on 2026-11-05 one template was still refused at 86 minutes and deleted at 116, another deleted at 92. The lab's `teardown.py` keeps the id and asks you to rerun it.
 </div>
 
 [Full lab in the repo →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
@@ -329,7 +329,7 @@ Lab 03 은 Runpod 이 미리 빌드한 `runpod/worker-v1-vllm:v2.30.2` 에 `Qwen
 </div>
 
 <div class="note" markdown="1">
-**템플릿 삭제는 최대 약 90분 기다려야 할 수 있습니다.** 엔드포인트를 지운 뒤 `DELETE /templates/{id}` 가 *"Template is still held by deleted endpoint …, which is pending cleanup"* 으로 응답했습니다. 실습의 `teardown.py` 는 id 를 남기고 다시 실행하라고 안내합니다.
+**템플릿 삭제는 1시간 반 이상 기다려야 할 수 있습니다.** 엔드포인트를 지운 뒤 `DELETE /templates/{id}` 가 *"Template is still held by deleted endpoint …, which is pending cleanup"* 으로 응답했습니다. 메시지는 *"within about 90 minutes"* 라고 하지만, 2026-11-05 에는 한 템플릿이 86분에도 거부되다 116분에 지워졌고, 다른 하나는 92분에 지워졌습니다. 실습의 `teardown.py` 는 id 를 남기고 다시 실행하라고 안내합니다.
 </div>
 
 [저장소에서 전체 실습 보기 →](https://github.com/litkhai/runpod-hols/tree/main/serverless)

@@ -120,7 +120,7 @@ The volume ties the endpoint to its data center, every cold start imports over t
 | Endpoint with `dockerStartCmd` and `PYTHONPATH` on the same volume | Worker ran `/runpod-volume/app/handler.py` |
 | First job | `runsync` returned `IN_QUEUE` at 90.9 s; `delayTime` 205 s, `executionTime` 0.2 s |
 | Second job | `delayTime` 47 s, `executionTime` 0.2 s |
-| Clean up | Endpoint and volume deleted at once; template held for up to ~90 min |
+| Clean up | Endpoint and volume deleted at once; template deleted 92 min after the endpoint |
 
 Not run: editing the handler on the Pod while the endpoint is live, a volume shared by a Pod and a worker at the same time, FlashBoot, another data center.
 
@@ -242,6 +242,6 @@ python3 lab.py status
 | 같은 볼륨에 `dockerStartCmd` 와 `PYTHONPATH` 를 쓴 엔드포인트 | 워커가 `/runpod-volume/app/handler.py` 실행 |
 | 첫 작업 | `runsync` 가 90.9초에 `IN_QUEUE` 반환. `delayTime` 205초, `executionTime` 0.2초 |
 | 두 번째 작업 | `delayTime` 47초, `executionTime` 0.2초 |
-| 정리 | 엔드포인트와 볼륨은 바로 삭제. 템플릿은 최대 약 90분 묶임 |
+| 정리 | 엔드포인트와 볼륨은 바로 삭제. 템플릿은 엔드포인트 삭제 92분 뒤 삭제 |
 
 실행하지 않은 것: 엔드포인트가 살아 있는 동안 Pod 에서 핸들러 수정, Pod 과 워커가 동시에 쓰는 볼륨, FlashBoot, 다른 데이터센터.
