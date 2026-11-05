@@ -18,7 +18,7 @@ Runpod Serverless runs your code as an autoscaling HTTP endpoint. Workers start 
 |---|---|---|
 | [01-hello-worker](https://github.com/litkhai/runpod-hols/tree/main/serverless/01-hello-worker) | Ready | handler → local test → Docker image → deploy |
 | [02-llm-chat](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat) | Ready | Small instruct model from GitHub, weights from Runpod's cached-model store |
-| 03-vllm-endpoint | Planned | Higher-throughput serving with `worker-vllm` |
+| [03-vllm-endpoint](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) | Run 2026-11-05 | Prebuilt `worker-vllm` image deployed from a script, OpenAI SDK client |
 
 ### Where the model lives
 
@@ -149,6 +149,24 @@ The 12 s is container start, imports, a 2.37 s model load and the SDK's fitness 
 
 **Pass `top_p` only when sampling.** With `temperature: 0` the handler runs greedy decoding, where `top_p` has no effect. transformers 5 warns about a caller-set sampling flag that greedy decoding ignores, so the first handler logged `generation flags are not valid` on every greedy request. The handler now builds `temperature` and `top_p` only when `temperature` > 0. The rebuilt worker ran a `temperature: 0` request with no such warning between `Started.` and `Finished.`
 
+### Lab 03 — what the run found
+
+Lab 03 deploys Runpod's prebuilt `runpod/worker-v1-vllm:v2.30.2` with `Qwen/Qwen2.5-1.5B-Instruct` from a script, and calls it with the OpenAI SDK at `https://api.runpod.ai/v2/<endpoint>/openai/v1`. Run once on 2026-11-05 on an RTX 4090, FlashBoot on; [the lab README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) has the full record.
+
+| Once a worker was up | Result |
+|---|---|
+| `models.list()` | `['Qwen/Qwen2.5-1.5B-Instruct']` |
+| Chat completion, 40+20 tokens | 1.6 s |
+| Streamed completion | first token 0.76 s |
+
+<div class="warn" markdown="1">
+**The first cold start took 15 minutes, and vLLM was 77 seconds of it.** The worker log shows 3 min 52 s loading an image the host had cached, then `worker is ready` followed by 10 min 14 s with nothing logged before `create container`. The first request came back as **HTTP 520 after 7 min 12 s**; the job stayed queued and a retry was answered once the container was up. `/health` reported a ready worker during that gap, and three workers existed under `workersMax` 1. One run — the cause is not established.
+</div>
+
+<div class="note" markdown="1">
+**Deleting the template can wait up to ~90 minutes.** After the endpoint delete, `DELETE /templates/{id}` answered *"Template is still held by deleted endpoint …, which is pending cleanup"*. The lab's `teardown.py` keeps the id and asks you to rerun it.
+</div>
+
 [Full lab in the repo →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
 </div>
@@ -165,7 +183,7 @@ Runpod Serverless 는 코드를 오토스케일 HTTP 엔드포인트로 실행�
 |---|---|---|
 | [01-hello-worker](https://github.com/litkhai/runpod-hols/tree/main/serverless/01-hello-worker) | 준비됨 | handler → 로컬 테스트 → Docker 이미지 → 배포 |
 | [02-llm-chat](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat) | 준비됨 | GitHub 연동으로 소형 instruct 모델 배포, 가중치는 Runpod 모델 캐시 |
-| 03-vllm-endpoint | 계획됨 | `worker-vllm` 으로 고처리량 서빙 |
+| [03-vllm-endpoint](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) | 2026-11-05 실행 | 미리 빌드된 `worker-vllm` 이미지를 스크립트로 배포, OpenAI SDK 클라이언트 |
 
 ### 모델은 어디에 두는가
 
@@ -295,6 +313,24 @@ Lab 02 는 `Qwen/Qwen2.5-1.5B-Instruct` 를 GitHub 연동으로 배포하고, �
 </div>
 
 **`top_p` 는 샘플링할 때만 넘깁니다.** `temperature: 0` 이면 핸들러는 greedy 디코딩을 하고, 이때 `top_p` 는 아무 효과가 없습니다. transformers 5 는 호출자가 지정했지만 greedy 디코딩이 무시하는 샘플링 플래그에 경고를 내므로, 처음 핸들러는 greedy 요청마다 `generation flags are not valid` 를 남겼습니다. 지금 핸들러는 `temperature` > 0 일 때만 `temperature` 와 `top_p` 를 넘깁니다. 다시 빌드한 워커로 `temperature: 0` 요청을 실행했고, `Started.` 와 `Finished.` 사이에 이 경고가 없었습니다.
+
+### Lab 03 — 실행에서 확인한 것
+
+Lab 03 은 Runpod 이 미리 빌드한 `runpod/worker-v1-vllm:v2.30.2` 에 `Qwen/Qwen2.5-1.5B-Instruct` 를 스크립트로 배포하고, OpenAI SDK 로 `https://api.runpod.ai/v2/<endpoint>/openai/v1` 를 호출합니다. 2026-11-05 RTX 4090, FlashBoot 켬으로 한 번 실행했습니다. 전체 기록은 [실습 README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) 에 있습니다.
+
+| 워커가 뜬 뒤 | 결과 |
+|---|---|
+| `models.list()` | `['Qwen/Qwen2.5-1.5B-Instruct']` |
+| 채팅, 40+20 토큰 | 1.6초 |
+| 스트리밍 | 첫 토큰 0.76초 |
+
+<div class="warn" markdown="1">
+**첫 콜드 스타트는 15분이었고, 그중 vLLM 은 77초였습니다.** 워커 로그를 보면 호스트에 캐시돼 있던 이미지 로딩에 3분 52초, 이어서 `worker is ready` 뒤 `create container` 까지 아무 로그 없이 10분 14초가 지났습니다. 첫 요청은 **7분 12초 만에 HTTP 520** 으로 돌아왔고, 작업은 큐에 남아 컨테이너가 뜬 뒤 재시도에 응답됐습니다. 그 공백 동안 `/health` 는 준비된 워커를 보고했고, `workersMax` 1 인데 워커가 셋 있었습니다. 한 번의 실행이므로 원인은 확정하지 않았습니다.
+</div>
+
+<div class="note" markdown="1">
+**템플릿 삭제는 최대 약 90분 기다려야 할 수 있습니다.** 엔드포인트를 지운 뒤 `DELETE /templates/{id}` 가 *"Template is still held by deleted endpoint …, which is pending cleanup"* 으로 응답했습니다. 실습의 `teardown.py` 는 id 를 남기고 다시 실행하라고 안내합니다.
+</div>
 
 [저장소에서 전체 실습 보기 →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 

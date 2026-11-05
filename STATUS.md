@@ -9,6 +9,7 @@ Updated 2026-10-20.
 | [`setup/`](./setup) | Yes |
 | [`serverless/01-hello-worker`](./serverless/01-hello-worker) | **Yes** — deployed, called, measured; re-run on SDK 1.12.0 |
 | [`serverless/02-llm-chat`](./serverless/02-llm-chat) | **Yes** — built by the console, deployed, called and measured 2026-10-11 on RTX A5000 and RTX PRO 6000 Blackwell MIG 1g.24gb with the CUDA 12.8 image; cache path settled (docs layout) |
+| [`serverless/03-vllm-endpoint`](./serverless/03-vllm-endpoint) | **Yes** — deployed by script, called with the OpenAI SDK and torn down 2026-11-05 on RTX 4090 (`worker-v1-vllm:v2.30.2`); first cold start 15 min, of which vLLM 77 s; first request HTTP 520 |
 | [`pod/01-launch-connect`](./pod/01-launch-connect) | **Yes** — launch, SSH, teardown run 2026-11-05 on a `cpu3c-2-4` CPU Pod with `runpod` 1.12.0 (2.x breaks the lab, pinned — [#37](https://github.com/litkhai/runpod-hols/issues/37)); CPU Pods get no volume disk; JupyterLab and `--stop` not checked |
 | [`terraform/01-endpoint`](./terraform/01-endpoint) | **Yes** — `apply` and `destroy` run 2026-10-11 with two provider workarounds; one request served 2026-10-20 from a Docker Hub image on RTX 4090, then destroyed |
 | [`terraform/02-pod`](./terraform/02-pod) | **Yes** — `apply`, SSH, network volume and `destroy` run 2026-10-16; provider ignores `gpu_type_id` (Pods came up as RTX 4090); Jupyter not checked |
@@ -47,6 +48,6 @@ Tracked as issues — [all open](https://github.com/litkhai/runpod-hols/issues) 
 
 - Re-verify: [#37](https://github.com/litkhai/runpod-hols/issues/37) `runpod` SDK 2.x ·
   [#6](https://github.com/litkhai/runpod-hols/issues/6) [#8](https://github.com/litkhai/runpod-hols/issues/8) inference-characterization follow-ups.
-- New labs: [#15](https://github.com/litkhai/runpod-hols/issues/15) `serverless/03-vllm-endpoint` · [#16](https://github.com/litkhai/runpod-hols/issues/16) `pod/02-storage` ·
+- New labs: [#16](https://github.com/litkhai/runpod-hols/issues/16) `pod/02-storage` ·
   [#17](https://github.com/litkhai/runpod-hols/issues/17) `pod/03-custom-template` · [#18](https://github.com/litkhai/runpod-hols/issues/18) `pod/04-pod-to-serverless` ·
   [#19](https://github.com/litkhai/runpod-hols/issues/19) the cluster track.
