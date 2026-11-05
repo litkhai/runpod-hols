@@ -4,11 +4,11 @@
 
 > NVLink and MIG decide two things about a GPU: how fast it can talk to its neighbours, and whether it can be split. Both are worth understanding on their own, independently of any provider. What Runpod does with them comes second — and the two answers are opposite.
 >
-> Concepts are from vendor documentation. The Runpod half is from the live GPU catalogue and the published REST OpenAPI spec; no multi-GPU machine was rented, and anything that would need one is marked as unverified.
+> Concepts are from vendor documentation. The Runpod half is from the live GPU catalogue and the published REST OpenAPI spec; the hardware claims were run on one 2× A100 SXM Pod on 2026-11-05. Bare Metal was not rented and stays unverified.
 >
 > NVLink 와 MIG 는 GPU 에 대해 두 가지를 결정합니다. 옆의 GPU 와 얼마나 빠르게 대화하는가, 그리고 쪼갤 수 있는가. 둘 다 특정 제공사와 무관하게 그 자체로 알아둘 가치가 있는 개념이며, Runpod 이 이를 어떻게 제공하는지는 그 다음 이야기입니다. 두 답이 서로 반대입니다.
 >
-> 개념은 벤더 문서 기준입니다. Runpod 쪽은 살아있는 GPU 카탈로그와 발행된 REST OpenAPI 스펙에서 확인했으며, 멀티 GPU 머신은 빌리지 않았고 그것이 필요한 항목은 미검증으로 표시했습니다.
+> 개념은 벤더 문서 기준입니다. Runpod 쪽은 살아있는 GPU 카탈로그와 발행된 REST OpenAPI 스펙에서 확인했으며, 하드웨어 항목은 2026-11-05 A100 SXM 2장 Pod 하나에서 실행했습니다. Bare Metal 은 빌리지 않았으므로 미검증입니다.
 
 ---
 
@@ -42,7 +42,7 @@ This is what separates MIG from the other ways to share a card:
 |---|---|---|
 | MIG | Yes, hardware-enforced | Yes |
 | Time-slicing | No | No |
-| CUDA MPS | No | No |
+| CUDA MPS | No — an allocation cap at most | No |
 
 That hardware isolation is the whole point — and the reason it cannot be set up from inside a container.
 
@@ -111,7 +111,15 @@ The legend, [from NVIDIA](https://docs.nvidia.com/deploy/nvidia-smi/index.html):
 
 `NV#` between every GPU pair is what you want. Anything from `PIX` downwards means your all-reduce traffic is crossing PCIe, and `SYS` means it is also crossing sockets.
 
-> Not verified here. Confirming this output costs a multi-GPU pod — 8×H100 runs into tens of dollars per hour — and this repo does not spend on GPU time without a reason. The command and the legend are documented; the output on a given Runpod host is not.
+Run on a Runpod Secure Cloud Pod, 2× `NVIDIA A100-SXM4-80GB`, driver 595.91.07, 2026-11-05 ([#14](https://github.com/litkhai/runpod-hols/issues/14)):
+
+```
+	GPU0	GPU1	NIC0 … NIC9	CPU Affinity	NUMA Affinity
+GPU0	 X 	NV12	SYS … NODE	64-127	1
+GPU1	NV12	 X 	SYS … NODE	64-127	1
+```
+
+`NV12` — twelve bonded NVLinks, and `nvidia-smi nvlink -s` listed links 0–11 at 25 GB/s each. A 1 GiB `torch` copy from GPU 0 to GPU 1 ran at 276 GB/s; the same copy from pinned host memory ran at 24 GB/s. The host also exposed ten Mellanox NICs (`mlx5_0`–`mlx5_9`) to the container. One machine, one pair: another A100 SXM host, or an 8-GPU one, can show a different matrix — run the command on yours.
 
 ### If you land on PCIe instead
 
@@ -152,6 +160,15 @@ Not a licensing or silicon limit. MIG configuration is a host-privileged device 
 
 A Runpod tenant has none of these. Pods and Serverless workers are containers; Instant Clusters are too — Runpod describes them as [*"Containerized: Runs on Docker"*](https://www.runpod.io/blog/bare-metal-vs-instant-clusters-whats-best-for-your-ai-workload). You are not host root, you cannot stop another tenant's processes, and you cannot reset a shared device.
 
+Tried on the same Pod. The container runs as uid 0, but without `cap_sys_admin`:
+
+```
+$ nvidia-smi -i 0 -mig 1
+Unable to enable MIG Mode for GPU 00000000:90:00.0: Insufficient Permissions
+```
+
+`mig.mode.pending` stayed `Disabled`. Root inside the container is not root on the device.
+
 **Clusters do not change this.** Multi-node gets you more GPUs, not more privilege. The tier that does is **Bare Metal**, which Runpod positions for teams needing *"full system access or specialized configurations"*.
 
 The irony is worth stating plainly: every GPU offered in Instant Clusters — B200, H200, H100, A100 — is MIG-capable silicon. What stops you is the access tier, not the hardware.
@@ -159,7 +176,7 @@ The irony is worth stating plainly: every GPU offered in Instant Clusters — B2
 | Tier | Form | Can you run `nvidia-smi -mig 1`? |
 |---|---|---|
 | Serverless | Container | No |
-| Pod | Container | No |
+| Pod | Container | No — tried, `Insufficient Permissions` |
 | Instant Cluster | Container (Docker), 2–8 nodes | No |
 | Bare Metal | Physical server, no container layer | This is the tier where it becomes plausible |
 
@@ -174,10 +191,24 @@ MIG is one way to share a card, and the only one giving hardware-enforced isolat
 | Buy the MIG SKU | Hardware — separate memory and fault domains | Yes, RTX PRO 6000 only |
 | Several models in one worker process | None — one OOM takes down everything | Yes, plain Python |
 | Concurrent handler (`concurrency_modifier`) | None — same process, same memory | Yes, see [Worker SDK](../sdk/worker.md) |
-| CUDA MPS | Partial — shared context, no memory cap | Needs the MPS daemon inside your container; untested here |
+| CUDA MPS | Partial — shared context, optional per-client allocation cap | Yes — daemon runs inside a Pod, see below |
 | Just rent a smaller card | Total — it is a different machine | Yes, RTX 3070 8GB upward |
 
 The last row is the one people skip. The catalogue runs from 8GB at $0.13/hr, and a smaller whole card is often simpler and cheaper than partitioning a large one.
+
+### CUDA MPS inside a Pod
+
+CUDA MPS runs inside a Pod with no extra setup — the image ships `nvidia-cuda-mps-control`. Measured on GPU 0 of the same Pod:
+
+| Check | Result |
+|---|---|
+| `nvidia-cuda-mps-control -d` | Starts, exit 0 |
+| Two `torch` matmul processes | Both listed as type `M+C`, beside `nvidia-cuda-mps-server` |
+| `CUDA_MPS_PINNED_DEVICE_MEM_LIMIT="0=2G"`, allocate 4 GiB | `CUDA out of memory` |
+| Same limit, allocate 1 GiB | Allocated |
+| Same limit with the daemon stopped, allocate 4 GiB | Allocated — the cap comes from MPS |
+
+Set `CUDA_MPS_PIPE_DIRECTORY` and `CUDA_MPS_LOG_DIRECTORY` to writable paths before starting the daemon, and give clients the same values. The cap limits allocation; it is not memory protection, and one faulting client can still take the others down.
 
 ### Across nodes
 
@@ -204,9 +235,10 @@ Inter-node traffic runs over interfaces `ens1`–`ens8`; the primary node reache
 | MIG needs root, stopped processes, reset pre-Hopper | NVIDIA documentation |
 | `topo -m` legend | NVIDIA documentation |
 | Clusters are Docker containers | Runpod's own comparison page |
-| Actual `topo -m` output on a Runpod host | **Not run** — needs a paid multi-GPU pod |
+| Actual `topo -m` output on a Runpod host | Run 2026-11-05 — 2× A100 SXM, `NV12`, 276 GB/s GPU-to-GPU copy |
+| `nvidia-smi -mig 1` inside a Pod | Run 2026-11-05 — `Insufficient Permissions` |
 | Bare Metal permitting MIG | **Not run** — vendor positioning only |
-| MPS inside a Runpod container | **Not run** |
+| MPS inside a Runpod container | Run 2026-11-05 — `M+C` clients, per-client cap enforced |
 
 ---
 
@@ -240,7 +272,7 @@ Multi-Instance GPU 는 물리 카드 하나를 **GPU Instance** 로 잘라 각�
 |---|---|---|
 | MIG | 하드웨어로 보장 | 됨 |
 | 타임 슬라이싱 | 없음 | 안 됨 |
-| CUDA MPS | 없음 | 안 됨 |
+| CUDA MPS | 없음 — 할당 상한까지만 | 안 됨 |
 
 그 하드웨어 격리가 MIG 의 존재 이유이자, 컨테이너 안에서 설정할 수 없는 이유입니다.
 
@@ -309,7 +341,15 @@ nvidia-smi topo -m
 
 모든 GPU 쌍이 `NV#` 인 것이 목표입니다. `PIX` 이하라면 all-reduce 트래픽이 PCIe 를 건너고 있다는 뜻이고, `SYS` 라면 소켓까지 넘고 있다는 뜻입니다.
 
-> 여기서는 검증하지 않았습니다. 이 출력을 확인하려면 멀티 GPU Pod 을 띄워야 하고 8×H100 은 시간당 수십 달러입니다. 이 저장소는 이유 없이 GPU 시간에 돈을 쓰지 않습니다. 명령과 범례는 문서로 확인했지만, 특정 Runpod 호스트에서의 출력은 확인하지 않았습니다.
+Runpod Secure Cloud Pod, `NVIDIA A100-SXM4-80GB` 2장, 드라이버 595.91.07, 2026-11-05 에 실행했습니다 ([#14](https://github.com/litkhai/runpod-hols/issues/14)).
+
+```
+	GPU0	GPU1	NIC0 … NIC9	CPU Affinity	NUMA Affinity
+GPU0	 X 	NV12	SYS … NODE	64-127	1
+GPU1	NV12	 X 	SYS … NODE	64-127	1
+```
+
+`NV12` — NVLink 12개 묶음이고, `nvidia-smi nvlink -s` 는 링크 0–11 을 각각 25 GB/s 로 보여줬습니다. GPU 0 에서 GPU 1 로 1 GiB `torch` 복사가 276 GB/s, 같은 복사를 pinned 호스트 메모리에서 하면 24 GB/s 였습니다. 호스트의 Mellanox NIC 10개 (`mlx5_0`–`mlx5_9`) 도 컨테이너에 보였습니다. 머신 한 대, GPU 한 쌍의 결과입니다. 다른 A100 SXM 호스트나 8 GPU 머신은 다른 행렬을 보일 수 있으니 직접 실행해 보세요.
 
 ### PCIe 로 떨어졌다면
 
@@ -350,6 +390,15 @@ Runpod [발표](https://www.runpod.io/blog/multi-instance-gpu-on-runpod)는 이�
 
 Runpod 테넌트에게는 이 중 아무것도 없습니다. Pod 과 Serverless 워커는 컨테이너이고, Instant Cluster 도 마찬가지입니다 — Runpod 이 직접 [*"Containerized: Runs on Docker"*](https://www.runpod.io/blog/bare-metal-vs-instant-clusters-whats-best-for-your-ai-workload) 라고 표현합니다. 호스트 root 가 아니고, 다른 테넌트의 프로세스를 멈출 수 없으며, 공유 디바이스를 리셋할 수 없습니다.
 
+같은 Pod 에서 시도했습니다. 컨테이너는 uid 0 으로 돌지만 `cap_sys_admin` 이 없습니다.
+
+```
+$ nvidia-smi -i 0 -mig 1
+Unable to enable MIG Mode for GPU 00000000:90:00.0: Insufficient Permissions
+```
+
+`mig.mode.pending` 은 `Disabled` 그대로였습니다. 컨테이너 안의 root 는 디바이스의 root 가 아닙니다.
+
 **Cluster 라고 달라지지 않습니다.** 멀티 노드는 GPU 를 더 주는 것이지 권한을 더 주는 게 아닙니다. 권한이 달라지는 계층은 **Bare Metal** 이고, Runpod 은 이를 *"full system access or specialized configurations"* 가 필요한 팀용으로 소개합니다.
 
 역설은 분명히 적어둘 가치가 있습니다. Instant Cluster 에서 제공되는 GPU — B200, H200, H100, A100 — 는 **전부 MIG 가능한 실리콘**입니다. 막는 것은 하드웨어가 아니라 접근 계층입니다.
@@ -357,7 +406,7 @@ Runpod 테넌트에게는 이 중 아무것도 없습니다. Pod 과 Serverless 
 | 계층 | 형태 | `nvidia-smi -mig 1` 가능? |
 |---|---|---|
 | Serverless | 컨테이너 | 불가 |
-| Pod | 컨테이너 | 불가 |
+| Pod | 컨테이너 | 불가 — 시도 결과 `Insufficient Permissions` |
 | Instant Cluster | 컨테이너(Docker), 2–8 노드 | 불가 |
 | Bare Metal | 물리 서버, 컨테이너 계층 없음 | 가능해지는 계층 |
 
@@ -372,10 +421,24 @@ MIG 는 카드를 나눠 쓰는 여러 방법 중 하나이며, 하드웨어로 
 | MIG SKU 구매 | 하드웨어 — 메모리와 장애 도메인이 분리 | 가능. RTX PRO 6000 한정 |
 | 워커 프로세스 하나에 모델 여러 개 | 없음 — OOM 하나로 전부 죽음 | 가능. 평범한 Python |
 | 동시 핸들러 (`concurrency_modifier`) | 없음 — 같은 프로세스, 같은 메모리 | 가능. [Worker SDK](../sdk/worker.md) 참조 |
-| CUDA MPS | 부분적 — 컨텍스트 공유, 메모리 상한 없음 | 컨테이너 안에 MPS 데몬이 필요. 여기서는 미검증 |
+| CUDA MPS | 부분적 — 컨텍스트 공유, 클라이언트별 할당 상한 선택 가능 | 됨 — Pod 안에서 데몬 실행, 아래 참고 |
 | 그냥 더 작은 카드를 빌리기 | 완전 — 애초에 다른 머신 | 가능. RTX 3070 8GB 부터 |
 
 마지막 줄을 다들 건너뜁니다. 카탈로그는 8GB $0.13/hr 부터 시작하고, 큰 카드를 쪼개는 것보다 작은 카드를 통째로 쓰는 쪽이 더 간단하고 싼 경우가 많습니다.
+
+### Pod 안의 CUDA MPS
+
+CUDA MPS 는 Pod 안에서 별도 준비 없이 동작합니다. 이미지에 `nvidia-cuda-mps-control` 이 들어 있습니다. 같은 Pod 의 GPU 0 에서 측정했습니다.
+
+| 확인 항목 | 결과 |
+|---|---|
+| `nvidia-cuda-mps-control -d` | 기동, exit 0 |
+| `torch` matmul 프로세스 2개 | 둘 다 `nvidia-cuda-mps-server` 옆에 타입 `M+C` 로 표시 |
+| `CUDA_MPS_PINNED_DEVICE_MEM_LIMIT="0=2G"`, 4 GiB 할당 | `CUDA out of memory` |
+| 같은 제한, 1 GiB 할당 | 할당됨 |
+| 같은 제한, 데몬 중지 상태에서 4 GiB 할당 | 할당됨 — 상한은 MPS 가 건다 |
+
+데몬을 띄우기 전에 `CUDA_MPS_PIPE_DIRECTORY` 와 `CUDA_MPS_LOG_DIRECTORY` 를 쓰기 가능한 경로로 정하고, 클라이언트에도 같은 값을 주세요. 이 상한은 할당 제한일 뿐 메모리 보호가 아니며, 한 클라이언트의 장애가 나머지를 함께 쓰러뜨릴 수 있습니다.
 
 ### 노드를 넘어갈 때
 
@@ -402,6 +465,7 @@ MIG 는 카드를 나눠 쓰는 여러 방법 중 하나이며, 하드웨어로 
 | MIG 는 root·프로세스 정지·Hopper 이전 리셋 필요 | NVIDIA 문서 |
 | `topo -m` 범례 | NVIDIA 문서 |
 | Cluster 는 Docker 컨테이너 | Runpod 자체 비교 페이지 |
-| Runpod 호스트에서의 실제 `topo -m` 출력 | **미실행** — 유료 멀티 GPU Pod 필요 |
+| Runpod 호스트에서의 실제 `topo -m` 출력 | 2026-11-05 실행 — A100 SXM 2장, `NV12`, GPU 간 복사 276 GB/s |
+| Pod 안에서 `nvidia-smi -mig 1` | 2026-11-05 실행 — `Insufficient Permissions` |
 | Bare Metal 에서 MIG 가능 여부 | **미실행** — 벤더 소개 문구에만 근거 |
-| Runpod 컨테이너 안에서의 MPS | **미실행** |
+| Runpod 컨테이너 안에서의 MPS | 2026-11-05 실행 — `M+C` 클라이언트, 클라이언트별 상한 적용됨 |

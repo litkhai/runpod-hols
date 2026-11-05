@@ -15,7 +15,7 @@ Updated 2026-10-20.
 | [`cluster/`](./cluster) | No — README only, deferred on cost ([#19](https://github.com/litkhai/runpod-hols/issues/19)) |
 | [`inference-characterization/`](./inference-characterization) | **Yes** — Pod sweeps on Secure Cloud GPU types, Serverless cold-start probes with worker logs, 2026-10-06/07; Community Cloud Pod never reachable over SSH; per-run seed not re-run ([#6](https://github.com/litkhai/runpod-hols/issues/6)); review follow-up tests T2/T3/T5/T7/T11 done 2026-10-07, T1/T4/T6/T8–T10 open ([#8](https://github.com/litkhai/runpod-hols/issues/8)) |
 | [`sdk/`](./sdk) | Source read at 1.11.0 and 1.12.0; client exercised live |
-| [`gpu-topology/`](./gpu-topology) | Catalogue and OpenAPI queried live; hardware claims unrun ([#14](https://github.com/litkhai/runpod-hols/issues/14)) |
+| [`gpu-topology/`](./gpu-topology) | **Yes** — catalogue and OpenAPI queried live; `topo -m` (`NV12`), MIG refusal and CUDA MPS run 2026-11-05 on a 2× A100 SXM Secure Cloud Pod; Bare Metal MIG stays vendor-doc only |
 | [`docs/`](./docs) | <https://runpod.litkhai.dev> |
 
 ## CI
@@ -45,7 +45,7 @@ Tracked as issues — [all open](https://github.com/litkhai/runpod-hols/issues) 
 [needs a re-run](https://github.com/litkhai/runpod-hols/issues?q=is%3Aopen+label%3Are-verify) ·
 [new labs](https://github.com/litkhai/runpod-hols/issues?q=is%3Aopen+label%3Aenhancement).
 
-- Re-verify: [#37](https://github.com/litkhai/runpod-hols/issues/37) `runpod` SDK 2.x · [#14](https://github.com/litkhai/runpod-hols/issues/14) GPU topology on hardware ·
+- Re-verify: [#37](https://github.com/litkhai/runpod-hols/issues/37) `runpod` SDK 2.x ·
   [#6](https://github.com/litkhai/runpod-hols/issues/6) [#8](https://github.com/litkhai/runpod-hols/issues/8) inference-characterization follow-ups.
 - New labs: [#15](https://github.com/litkhai/runpod-hols/issues/15) `serverless/03-vllm-endpoint` · [#16](https://github.com/litkhai/runpod-hols/issues/16) `pod/02-storage` ·
   [#17](https://github.com/litkhai/runpod-hols/issues/17) `pod/03-custom-template` · [#18](https://github.com/litkhai/runpod-hols/issues/18) `pod/04-pod-to-serverless` ·
