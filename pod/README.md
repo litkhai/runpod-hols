@@ -17,7 +17,7 @@ A Pod is a **GPU or CPU container you rent and control**. Unlike Serverless, it 
 |---|---|
 | [01-launch-connect](./01-launch-connect) | ✅ Run 2026-11-05 — launch from Python, connect over SSH, tear down. CPU by default |
 | [02-storage](./02-storage) | ✅ Run 2026-11-05 — what survives a stop, a terminate, and a CPU Pod |
-| 03-custom-template | 📋 Planned — build a custom Pod template, environment variables, secrets |
+| [03-custom-template](./03-custom-template) | ✅ Run 2026-11-05 — a template with plain and secret environment variables |
 | 04-pod-to-serverless | 📋 Planned — develop on a Pod, then package the result as a Serverless worker |
 
 ### Core Concepts
@@ -82,7 +82,7 @@ Pod 는 **직접 빌려서 제어하는 GPU 또는 CPU 컨테이너**입니다. 
 |---|---|
 | [01-launch-connect](./01-launch-connect) | ✅ 2026-11-05 실행 — Python 으로 기동, SSH 접속, 정리. 기본값 CPU |
 | [02-storage](./02-storage) | ✅ 2026-11-05 실행 — 중지, 삭제, CPU Pod 에서 무엇이 남는가 |
-| 03-custom-template | 📋 계획됨 — 커스텀 Pod 템플릿 제작, 환경변수, 시크릿 |
+| [03-custom-template](./03-custom-template) | ✅ 2026-11-05 실행 — 일반 환경변수와 시크릿 환경변수를 쓰는 템플릿 |
 | 04-pod-to-serverless | 📋 계획됨 — Pod 에서 개발한 결과물을 Serverless 워커로 패키징 |
 
 ### 핵심 개념
