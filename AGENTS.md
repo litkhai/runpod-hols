@@ -99,6 +99,7 @@ A repository whose `AGENTS.md` has its own model-roles table uses that table ins
 <!-- from: clickhouse-hols AGENTS.md "Bilingual parity" -->
 In a repository that declares `bilingual yes`: one README per lab, English first, `## English` / `## 한국어`.
 When you edit substance in one language, edit the other. Details: `reference/bilingual.md`.
+Site pages (`docs/*.md`) also carry `## 简体中文` and `## 日本語` blocks (`data-lang="zh"`, `"ja"`), translated from English; a site edit updates all four (#48).
 
 ### Secrets
 <!-- from: clickhouse-hols AGENTS.md "Before you commit" (gitleaks, core.hooksPath, hygiene) + runpod-hols "Never" (.env) -->

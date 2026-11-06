@@ -106,7 +106,7 @@ def check_bilingual():
 # --------------------------------------------------------------------------
 # 2. Site pages
 #
-# Each page in docs/ wraps its languages (en, ko; zh, ja once translated) in `.lang` blocks that the toggle
+# Each page in docs/ wraps its four languages (en, ko, zh, ja) in `.lang` blocks that the toggle
 # shows and hides. A missing or unbalanced block leaves content stranded in a
 # hidden div.
 # --------------------------------------------------------------------------
@@ -126,10 +126,9 @@ def check_site_pages():
                 fail(rel(p), f"front matter missing `{key}`")
 
         langs = re.findall(r'<div class="lang" data-lang="(\w+)"', text)
-        # en, ko — or all four once a page is translated (#48). A page with only
-        # some of zh/ja would leave readers of the other falling back to English.
-        if langs not in (["en", "ko"], ["en", "ko", "zh", "ja"]):
-            fail(rel(p), f"expected .lang blocks en, ko[, zh, ja], found {langs}")
+        # All four (#48). A missing block would leave its readers on English.
+        if langs != ["en", "ko", "zh", "ja"]:
+            fail(rel(p), f"expected .lang blocks en, ko, zh, ja, found {langs}")
 
         depth = 0
         for m in re.finditer(r"<div\b[^>]*>|</div>", text):

@@ -297,3 +297,295 @@ terraform destroy    # 끝나면
 [저장소에서 전체 트랙 보기 →](https://github.com/litkhai/runpod-hols/tree/main/terraform)
 
 </div>
+
+<div class="lang" data-lang="zh" markdown="1">
+
+## 简体中文
+
+把 Serverless 和 Pod 路线在控制台中手动完成的所有操作，改为以声明式方式完成。
+
+| 实验 | 创建的资源 | 空闲时的费用 |
+|---|---|---|
+| [01-endpoint](https://github.com/litkhai/runpod-hols/tree/main/terraform/01-endpoint) | `runpod_template` + `runpod_endpoint` | **无**——`workers_min = 0` |
+| [02-pod](https://github.com/litkhai/runpod-hols/tree/main/terraform/02-pod) | `runpod_pod`（+ 可选的 `runpod_network_volume`） | **按分钟计费** |
+
+### 请先阅读——两个阻断性问题
+
+<div class="danger" markdown="1">
+**1. Terraform 1.5.x 无法安装这个 provider。**
+
+```
+error decoding signing key: openpgp: invalid data: armor invalid
+```
+
+需要 **Terraform 1.6+**；已在 1.15.8 上验证。BUSL 许可证变更之后，Homebrew 的 `terraform` formula 被冻结在 1.5.7，所以 `brew install terraform` 安装的版本无法使用。请使用 `brew install hashicorp/tap/terraform`。
+</div>
+
+<div class="danger" markdown="1">
+**2. Provider v1.0.9 已发布但无法使用。**
+
+它的 `endpoint_jobs` 和 `endpoint_workers` data source 声明了一个 `Required`、`Optional`、`Computed` 都没有设置的属性，因此 Terraform 根本无法加载 provider schema。所有命令都会失败——`validate`、`plan` 和 `apply` 无一例外：
+
+```
+Error converting data source schema: The schema for the data source
+"runpod_endpoint_workers" couldn't be converted into a usable type.
+AttributeName("workers"): must have Required, Optional, or Computed set..
+```
+
+这些实验**精确**固定为 `= 1.0.8`。像 `~> 1.0.8` 这样的范围会悄无声息地解析为 1.0.9 并导致失败。
+</div>
+
+### 1.0.8 与 1.0.9 的 schema 差异
+
+provider 自带的示例针对的是 1.0.9，在 1.0.8 上无法运行：
+
+| | v1.0.8（本文使用） | v1.0.9（已损坏） |
+|---|---|---|
+| `runpod_endpoint` 的镜像 | 通过 `template_id` → `runpod_template` | 直接使用 `image_name` |
+| GPU 选择 | `gpu_type_ids`（列表，按优先级排序） | `gpu_type_id`（单个字符串） |
+
+在 1.0.8 上，一个 endpoint 由两个资源组成——先注册一个包含镜像的 template，再让 endpoint 指向它。这更忠实地反映了控制台的结构，而且一个 template 可以支撑多个 endpoint。
+
+另外，上游的 `examples/network_volume/main.tf` 在 `runpod_network_volume` 上设置了 `type = ...`，但 1.0.8 中并不存在这个属性（它有的是 `storage_tier`）。请把上游示例当作草图，而不是可运行的代码。
+
+### 针对真实 API 的验证
+
+使用真实密钥进行只读调用和 `terraform plan`——没有创建任何资源，也没有产生任何费用：
+
+| 检查项 | 结果 |
+|---|---|
+| 在 1.15.8 上执行 `terraform init` | Provider `= 1.0.8` 顺利安装 |
+| 两个实验的 `terraform validate` | 成功 |
+| 在 `01-endpoint` 上执行 `terraform plan` | `Plan: 2 to add, 0 to change, 0 to destroy` |
+| `gpu_type_ids` 的默认值 | 两者都出现在包含 48 种 GPU 类型的实时目录中 |
+| `data_center_id` 默认值（当时为 `US-KS-2`） | `US-KS-2` 存在于 49 个之中，`global_network = true`；现在为 `EU-RO-1`，见下文 |
+
+走到 "2 to add" 才是有意义的部分：provider 完成认证、schema 匹配，并且没有任何内容被拒绝。只有 `apply` 才会创建资源。
+
+**2026-10-11 在 `01-endpoint` 上执行 `apply` 和 `destroy`**（Terraform 1.16.4，provider 1.0.8）：两个资源都已创建，紧接着的 `plan` 显示没有变更，`destroy` 之后账号被清空。这需要两个变通办法：
+
+| 发生了什么 | `main.tf` 中的修复 |
+|---|---|
+| `runpod_template` 上出现 `Provider produced inconsistent result after apply`——`.readme`、`.container_registry_auth_id`、`.ports` 返回时被填入了值；template 被标记为 tainted | `readme = ""`、`container_registry_auth_id = ""`、`ports = ["8888/http", "22/tcp"]`（`[]` 不会被保留） |
+| `runpod_endpoint` 的 `.network_volume_id` 出现同样的问题 | `network_volume_id = ""` |
+
+镜像必须是 template 能够自行拉取的：在控制台构建的 `registry.runpod.net` 镜像会以 `Failed to get Hub registry auth` 失败。
+
+**2026-10-20 在 `01-endpoint` 上处理请求**（相同的 Terraform 和 provider，镜像 `docker.io/litkhai/hello-worker:v1.0.0`，由 Lab 01 以 `--platform linux/amd64` 构建并推送到 Docker Hub）：`apply` 创建两个资源各用时 1 s。一次带 `{"input": {"name": "Terraform"}}` 的 `/run` 返回 `COMPLETED` 以及 `{"greeting": "Hello, Terraform!"}`，`delayTime` 6,280 ms，`executionTime` 57 ms，运行在 RTX 4090 上——即 `gpu_type_ids` 中的第一项。worker 日志显示按 digest 拉取、SDK 1.12.0 的全部七项 fitness 检查通过，随后是该 job 的 `Started.` 和 `Finished.`。`destroy` 删除了两者；不再有名为 `hol-hello-worker` 的 template 或 endpoint，`currentSpendPerHr` 为 0。
+
+**2026-10-16 在 `02-pod` 上执行 `apply` 和 `destroy`**（Terraform 1.16.4，provider 1.0.8，镜像 `runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404`）：共运行三次，全部已销毁，账号中没有留下 Pod，没有 network volume，`currentSpendPerHr` 为 0。
+
+| 运行 | 结果 |
+|---|---|
+| 不带 network volume | 2 s 内 `Apply complete`；约 3 分钟后 SSH 端口公开；`ssh root@<ip> -p <port>` 可用，`nvidia-smi` 正常，`torch.cuda.is_available()` 为 True；`destroy` 干净 |
+| 带 `EU-RO-1` 中 20 GB 的 network volume | volume 和 Pod 均已创建；Pod 落在 `EU-RO-1`，volume 挂载于 `/workspace`（网络文件系统），写入文件并成功读回；`destroy` 删除了两者 |
+| 带 `lifecycle { ignore_changes = [machine_id] }` | `apply` 之后紧接着的 `plan` 没有显示资源变更，只有 output 值 |
+
+它揭示了：
+
+| 发现 | 后果 |
+|---|---|
+| **`gpu_type_id` 不会被发送。** provider 的创建请求中不带任何 GPU 字段，所以 Runpod 按可用性挑选（`gpuTypePriority` 默认为 `availability`） | 请求的是 RTX A4500（$0.25/hr）；每个 Pod 实际都是 RTX 4090，$0.89/hr，而 state 中仍写着 A4500。`apply` 之后请读取 `cost_per_hr` |
+| **`machine_id` 会漂移。** Read 会记录 Pod 落在的机器；该属性是 Optional 而非 Computed | 如果没有上面的 `ignore_changes`，`apply` 之后的每次 `plan` 都会提议一次原地更新 |
+| **`start_ssh` / `start_jupyter` 也不会被发送** | SSH 照样能用——镜像默认暴露 22 端口。Jupyter 未检查 |
+| **volume 所在的数据中心必须支持存储。** 之前的默认值 `US-KS-2` 报告 `storageSupport = false` | 默认值已改为 `EU-RO-1`。apply 之前请检查 `dataCenters { id storageSupport }` |
+
+**未验证：** `02-pod` 的 Pod 上的 Jupyter。
+
+<div class="note" markdown="1">
+不要猜测 GPU 或数据中心的 ID。请从 `data "runpod_data_centers"` 和 `data "runpod_gpu_types"` 中读取——只包含 data source 的配置在 `apply` 时不会创建任何东西。
+</div>
+
+### 第一次 apply 的教训
+
+来自 2026-10-11 在 `01-endpoint` 上执行 `apply` → 请求 → `destroy` 的过程：
+
+| 教训 | 依据 |
+|---|---|
+| **`plan` 通过不代表 `apply` 会成功。** `plan` 只依据 schema 校验配置；只有 `apply` 才能看到 API 返回的内容 | `plan` 显示 `2 to add`；随后 `apply` 因 API 填入的值失败了两次 |
+| **失败的 `apply` 仍可能创建真实资源。** 出错后请检查 `terraform state list` 和账号，而不只是看退出码 | template 存在于账号中，并在 state 中处于 `tainted` 状态；下一次 `apply` 替换了它，`destroy` 删除了它 |
+| **在 apply 之前找出 Optional 但非 Computed 的属性。** `terraform providers schema -json` 会列出它们；如果 API 会填入其中某个属性，就显式设置为 API 返回的值 | `readme`、`container_registry_auth_id`、`ports`、`network_volume_id` |
+| **`apply` 之后立即检查漂移。** 当配置与实际状态一致时，`terraform plan -detailed-exitcode` 返回 0 | 修复之后返回 0 |
+| **`destroy` 之后确认账号已清空。** 列出 template 和 endpoint，并读取 `myself { currentSpendPerHr }` | 没有 `hol-*` template，没有多余的 endpoint，支出为 0 |
+| **使用 template 能自行拉取的镜像。** 控制台的 GitHub 构建产物位于 `registry.runpod.net`，它只为控制台创建的 template 提供服务 | 每个 worker 上都出现 `Failed to get Hub registry auth` |
+
+### 认证
+
+provider 从环境变量中读取 `RUNPOD_API_KEY`，所以任何 `.tf` 或 `.tfvars` 文件中都不放密钥。provider 块是刻意留空的：
+
+```hcl
+provider "runpod" {}
+```
+
+### 工作流程
+
+```bash
+cd terraform/01-endpoint
+cp terraform.tfvars.example terraform.tfvars   # set your image_name
+set -a; . ../../.env; set +a
+
+terraform init
+terraform plan       # always read this before applying
+terraform apply
+terraform output test_command
+
+terraform destroy    # when finished
+```
+
+### State 文件
+
+`terraform.tfstate` 以明文记录 provider 返回的一切。仓库的 `.gitignore` 覆盖了 `*.tfstate*`、`*.tfvars` 和 `.terraform/`，同时刻意保留 `.terraform.lock.hcl`——它固定了 provider 的哈希，应当纳入版本控制。
+
+<div class="warn" markdown="1">
+这并非假设性的担忧：Runpod 官方 provider 仓库中就提交了 `examples/pytorch/terraform.tfstate`。不要沿袭这种习惯。
+</div>
+
+[仓库中的完整路线 →](https://github.com/litkhai/runpod-hols/tree/main/terraform)
+
+</div>
+
+<div class="lang" data-lang="ja" markdown="1">
+
+## 日本語
+
+Serverless と Pod のトラックでコンソールから手作業で行うことを、すべて宣言的に行います。
+
+| ラボ | 作成するもの | アイドル時のコスト |
+|---|---|---|
+| [01-endpoint](https://github.com/litkhai/runpod-hols/tree/main/terraform/01-endpoint) | `runpod_template` + `runpod_endpoint` | **なし**（`workers_min = 0`） |
+| [02-pod](https://github.com/litkhai/runpod-hols/tree/main/terraform/02-pod) | `runpod_pod`（+ 任意で `runpod_network_volume`） | **分単位で課金** |
+
+### 最初に読んでください：2 つのブロッキング問題
+
+<div class="danger" markdown="1">
+**1. Terraform 1.5.x ではこの provider をインストールできません。**
+
+```
+error decoding signing key: openpgp: invalid data: armor invalid
+```
+
+**Terraform 1.6 以上**が必要です。1.15.8 で確認しました。BUSL ライセンス変更の後、Homebrew の `terraform` formula は 1.5.7 で凍結されているため、`brew install terraform` では動かないバージョンが入ります。`brew install hashicorp/tap/terraform` を使ってください。
+</div>
+
+<div class="danger" markdown="1">
+**2. Provider v1.0.9 は公開されていますが使えません。**
+
+`endpoint_jobs` と `endpoint_workers` の data source が、`Required`、`Optional`、`Computed` のいずれも設定されていない属性を宣言しているため、Terraform は provider の schema をまったく読み込めません。`validate`、`plan`、`apply` のいずれも、すべてのコマンドが失敗します。
+
+```
+Error converting data source schema: The schema for the data source
+"runpod_endpoint_workers" couldn't be converted into a usable type.
+AttributeName("workers"): must have Required, Optional, or Computed set..
+```
+
+これらのラボは**厳密に** `= 1.0.8` に固定しています。`~> 1.0.8` のような範囲指定は黙って 1.0.9 に解決され、壊れます。
+</div>
+
+### 1.0.8 と 1.0.9 の schema の違い
+
+provider 自体のサンプルは 1.0.9 向けで、1.0.8 では動きません。
+
+| | v1.0.8（ここで使用） | v1.0.9（壊れている） |
+|---|---|---|
+| `runpod_endpoint` のイメージ | `template_id` → `runpod_template` 経由 | `image_name` を直接指定 |
+| GPU の選択 | `gpu_type_ids`（リスト、優先順） | `gpu_type_id`（単一の文字列） |
+
+1.0.8 では endpoint は 2 つのリソースで構成されます。イメージを持つ template を登録し、endpoint がそれを指すようにします。このほうがコンソールの構造に忠実で、1 つの template で複数の endpoint を支えられます。
+
+また、上流の `examples/network_volume/main.tf` は `runpod_network_volume` に `type = ...` を設定していますが、1.0.8 にはそのような属性はありません（あるのは `storage_tier` です）。上流のサンプルは動くコードではなく、スケッチとして扱ってください。
+
+### 実際の API に対する検証
+
+本物のキーで読み取り専用の呼び出しと `terraform plan` を実行しました。何も作成しておらず、課金もありません。
+
+| チェック | 結果 |
+|---|---|
+| 1.15.8 での `terraform init` | Provider `= 1.0.8` が問題なくインストールされる |
+| 両ラボの `terraform validate` | 成功 |
+| `01-endpoint` での `terraform plan` | `Plan: 2 to add, 0 to change, 0 to destroy` |
+| `gpu_type_ids` のデフォルト | どちらも 48 種類の GPU タイプを含むライブカタログに存在 |
+| `data_center_id` のデフォルト（当時は `US-KS-2`） | `US-KS-2` は 49 件の中に存在し、`global_network = true`。現在は `EU-RO-1`、後述 |
+
+"2 to add" までたどり着けたことに意味があります。provider が認証され、schema が一致し、何も拒否されていません。リソースを作成するのは `apply` だけです。
+
+**2026-10-11、`01-endpoint` での `apply` と `destroy`**（Terraform 1.16.4、provider 1.0.8）：両方のリソースが作成され、直後の `plan` は変更なしを示し、`destroy` 後にアカウントは空になりました。2 つの回避策が必要でした。
+
+| 何が起きたか | `main.tf` での修正 |
+|---|---|
+| `runpod_template` で `Provider produced inconsistent result after apply`。`.readme`、`.container_registry_auth_id`、`.ports` に値が入って返ってきた。template は tainted のまま残った | `readme = ""`、`container_registry_auth_id = ""`、`ports = ["8888/http", "22/tcp"]`（`[]` は保持されない） |
+| `runpod_endpoint` の `.network_volume_id` でも同じ | `network_volume_id = ""` |
+
+イメージは template が単独で pull できるものでなければなりません。コンソールでビルドした `registry.runpod.net` のイメージは `Failed to get Hub registry auth` で失敗します。
+
+**2026-10-20、`01-endpoint` でのリクエスト処理**（同じ Terraform と provider、イメージは Lab 01 から `--platform linux/amd64` でビルドして Docker Hub に push した `docker.io/litkhai/hello-worker:v1.0.0`）：`apply` は両リソースをそれぞれ 1 s で作成しました。`{"input": {"name": "Terraform"}}` を付けた 1 回の `/run` は `COMPLETED` と `{"greeting": "Hello, Terraform!"}` を返し、`delayTime` 6,280 ms、`executionTime` 57 ms で、`gpu_type_ids` の最初の項目である RTX 4090 上で動きました。worker のログには digest による pull、SDK 1.12.0 の 7 つの fitness チェックすべての通過、そして job の `Started.` と `Finished.` が記録されていました。`destroy` で両方が削除され、`hol-hello-worker` という名前の template も endpoint も残らず、`currentSpendPerHr` は 0 でした。
+
+**2026-10-16、`02-pod` での `apply` と `destroy`**（Terraform 1.16.4、provider 1.0.8、イメージ `runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404`）：3 回実行し、すべて削除しました。アカウントには Pod も network volume も残らず、`currentSpendPerHr` は 0 でした。
+
+| 実行 | 結果 |
+|---|---|
+| network volume なし | 2 s で `Apply complete`。約 3 分後に SSH ポートが公開。`ssh root@<ip> -p <port>` が動作し、`nvidia-smi` と `torch.cuda.is_available()` は True。`destroy` もきれいに完了 |
+| `EU-RO-1` の 20 GB network volume あり | volume と Pod が作成された。Pod は `EU-RO-1` に配置され、volume は `/workspace` にマウント（ネットワークファイルシステム）。ファイルを書き込んで読み戻せた。`destroy` で両方が削除された |
+| `lifecycle { ignore_changes = [machine_id] }` あり | `apply` 直後の `plan` はリソースの変更を示さず、output の値だけを表示 |
+
+わかったこと：
+
+| 発見 | 影響 |
+|---|---|
+| **`gpu_type_id` は送信されません。** provider の作成リクエストには GPU のフィールドがないため、Runpod は空き状況で選びます（`gpuTypePriority` のデフォルトは `availability`） | RTX A4500（$0.25/hr）を指定したのに、どの Pod も $0.89/hr の RTX 4090 で立ち上がり、state には A4500 と書かれたままだった。`apply` の後は `cost_per_hr` を確認すること |
+| **`machine_id` がドリフトします。** Read は Pod が配置されたマシンを保存しますが、この属性は Optional であって Computed ではありません | 上記の `ignore_changes` がないと、`apply` 後の毎回の `plan` が in-place の更新を提案する |
+| **`start_ssh` / `start_jupyter` も送信されません** | それでも SSH は動いた。イメージがデフォルトで 22 番ポートを公開しているため。Jupyter は未確認 |
+| **volume のデータセンターはストレージに対応している必要があります。** 以前のデフォルトの `US-KS-2` は `storageSupport = false` を返した | デフォルトを `EU-RO-1` に変更。apply の前に `dataCenters { id storageSupport }` を確認すること |
+
+**未検証：** `02-pod` の Pod 上の Jupyter。
+
+<div class="note" markdown="1">
+GPU やデータセンターの ID を推測しないでください。`data "runpod_data_centers"` と `data "runpod_gpu_types"` から読み取ってください。data source だけの設定は `apply` しても何も作成しません。
+</div>
+
+### 最初の apply から得た教訓
+
+2026-10-11 に `01-endpoint` で `apply` → リクエスト → `destroy` を実行した結果から：
+
+| 教訓 | 根拠 |
+|---|---|
+| **`plan` が通っても `apply` が通るとは限りません。** `plan` は schema に対して設定を検証するだけで、API が返すものを見るのは `apply` だけです | `plan` は `2 to add` だったが、その後 `apply` は API が埋めた値のせいで 2 回失敗した |
+| **失敗した `apply` でも実際のリソースが作られることがあります。** エラーの後は終了コードだけでなく、`terraform state list` とアカウントを確認してください | template はアカウントに存在し、state では `tainted` になっていた。次の `apply` で置き換えられ、`destroy` で削除された |
+| **apply の前に Optional だが Computed ではない属性を洗い出してください。** `terraform providers schema -json` で一覧できます。API が値を埋めるものは、API が返す値を明示的に設定します | `readme`、`container_registry_auth_id`、`ports`、`network_volume_id` |
+| **`apply` の直後にドリフトを確認してください。** 設定と実際の状態が一致していれば `terraform plan -detailed-exitcode` は 0 を返します | 修正後は 0 を返した |
+| **`destroy` の後にアカウントが空であることを確認してください。** template と endpoint を一覧し、`myself { currentSpendPerHr }` を読みます | `hol-*` の template なし、余分な endpoint なし、支出 0 |
+| **template が単独で pull できるイメージを使ってください。** コンソールの GitHub ビルドは `registry.runpod.net` に置かれ、そこはコンソールが作成した template にしか提供しません | すべての worker で `Failed to get Hub registry auth` |
+
+### 認証
+
+provider は環境変数から `RUNPOD_API_KEY` を読み取るため、`.tf` や `.tfvars` ファイルにキーを書くことはありません。provider ブロックは意図的に空にしています。
+
+```hcl
+provider "runpod" {}
+```
+
+### ワークフロー
+
+```bash
+cd terraform/01-endpoint
+cp terraform.tfvars.example terraform.tfvars   # set your image_name
+set -a; . ../../.env; set +a
+
+terraform init
+terraform plan       # always read this before applying
+terraform apply
+terraform output test_command
+
+terraform destroy    # when finished
+```
+
+### State ファイル
+
+`terraform.tfstate` には provider が返したものすべてが平文で記録されます。リポジトリの `.gitignore` は `*.tfstate*`、`*.tfvars`、`.terraform/` を対象にしつつ、`.terraform.lock.hcl` は意図的に残しています。これは provider のハッシュを固定するもので、バージョン管理に含めるべきものです。
+
+<div class="warn" markdown="1">
+仮定の話ではありません。Runpod の公式 provider リポジトリには `examples/pytorch/terraform.tfstate` がコミットされています。この習慣を真似しないでください。
+</div>
+
+[リポジトリのトラック全体 →](https://github.com/litkhai/runpod-hols/tree/main/terraform)
+
+</div>

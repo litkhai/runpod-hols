@@ -75,3 +75,73 @@ Runpod 공식 문서와 배경 자료는 [Readings]({{ '/readings/' | relative_u
 독립적인 학습 자료입니다. 여기 있는 어떤 내용도 Runpod 의 검토나 승인을 거치지 않았습니다. 공식 문서와 어긋나는 부분은 근거와 함께 기록했지만, 공식 문서가 여전히 권위 있는 출처입니다.
 
 </div>
+
+<div class="lang" data-lang="zh" markdown="1">
+
+## 简体中文
+
+一套非官方的 [Runpod](https://runpod.io) 实践实验，在学习这个平台的过程中写成。源代码在 [litkhai/runpod-hols](https://github.com/litkhai/runpod-hols)。
+
+目标是通过实际运行，而不是阅读，来理解 Runpod SDK 及其周边的 AI 基础设施。
+
+### 这里的一切都实际运行过
+
+命令输出、镜像大小、延迟数据和错误信息都来自真实账号。凡是**没有**运行过的内容——`terraform apply`、Pod 路线——页面上都会注明。
+
+| 发现 | 记录位置 |
+|---|---|
+| 控制台的 **Build context** 字段没有文档说明，而子目录中的 Dockerfile 必须填写它 | [Serverless]({{ '/serverless/' | relative_url }}) |
+| `{"input": {}}` 永远不会返回——90 秒，零字节，`retries: 1` | [Serverless]({{ '/serverless/' | relative_url }}) |
+| `/runsync` 可能返回 `IN_PROGRESS`，而不只是 `COMPLETED` | [Client SDK]({{ '/sdk/client/' | relative_url }}) |
+| 返回 `{"error": ...}` 会使作业失败——它是控制键，不是数据 | [Worker SDK]({{ '/sdk/worker/' | relative_url }}) |
+| Terraform provider v1.0.9 已发布，但其 schema 无法加载 | [Terraform]({{ '/terraform/' | relative_url }}) |
+| Homebrew 的 `terraform` 停留在 1.5.7，无法安装该 provider | [Terraform]({{ '/terraform/' | relative_url }}) |
+
+Runpod 官方文档和背景文章汇总在 [Readings]({{ '/readings/' | relative_url }})。
+
+### 许可证
+
+[MIT](https://github.com/litkhai/runpod-hols/blob/main/LICENSE)。这里的任何内容都可以拿去使用。
+
+`serverless/01-hello-worker` 派生自采用 MIT 许可证的 `runpod-workers/worker-template`，其版权声明随仓库一起保存在 [NOTICE](https://github.com/litkhai/runpod-hols/blob/main/NOTICE) 中。
+
+### 与 Runpod 无关
+
+这是一个独立的学习项目。这里的任何内容都未经 Runpod 审阅或认可。与官方文档不一致之处都附有证据记录——但官方文档仍是权威来源。
+
+</div>
+
+<div class="lang" data-lang="ja" markdown="1">
+
+## 日本語
+
+[Runpod](https://runpod.io) の非公式ハンズオンラボ集です。プラットフォームを学びながら書きました。ソースは [litkhai/runpod-hols](https://github.com/litkhai/runpod-hols) にあります。
+
+目的は、Runpod SDK とその周辺の AI インフラを、読むのではなく実際に動かして理解することです。
+
+### ここにあるものはすべて実行済みです
+
+コマンド出力、イメージサイズ、レイテンシの数値、エラーメッセージは実際のアカウントで得たものです。実行して**いない**もの（`terraform apply`、Pod トラック）は、ページにそう明記しています。
+
+| 発見 | 記載場所 |
+|---|---|
+| コンソールの **Build context** フィールドはドキュメント化されておらず、サブディレクトリの Dockerfile には必須 | [Serverless]({{ '/serverless/' | relative_url }}) |
+| `{"input": {}}` は返ってこない（90 秒、0 バイト、`retries: 1`） | [Serverless]({{ '/serverless/' | relative_url }}) |
+| `/runsync` は `COMPLETED` だけでなく `IN_PROGRESS` も返しうる | [Client SDK]({{ '/sdk/client/' | relative_url }}) |
+| `{"error": ...}` を返すとジョブが失敗する（データではなく制御キー） | [Worker SDK]({{ '/sdk/worker/' | relative_url }}) |
+| Terraform プロバイダ v1.0.9 は公開されているが、スキーマが読み込めない | [Terraform]({{ '/terraform/' | relative_url }}) |
+| Homebrew の `terraform` は 1.5.7 で止まっており、プロバイダをインストールできない | [Terraform]({{ '/terraform/' | relative_url }}) |
+
+Runpod 公式ドキュメントと背景記事は [Readings]({{ '/readings/' | relative_url }}) にまとめています。
+
+### ライセンス
+
+[MIT](https://github.com/litkhai/runpod-hols/blob/main/LICENSE)。ここにあるものは何でも自由に使ってください。
+
+`serverless/01-hello-worker` は MIT ライセンスの `runpod-workers/worker-template` から派生しており、その著作権表示は [NOTICE](https://github.com/litkhai/runpod-hols/blob/main/NOTICE) としてリポジトリに同梱しています。
+
+### Runpod とは無関係です
+
+独立した学習プロジェクトです。ここにある内容は Runpod によるレビューや承認を受けていません。公式ドキュメントと食い違う点は根拠とともに記録していますが、権威ある情報源はあくまで公式ドキュメントです。
+
+</div>

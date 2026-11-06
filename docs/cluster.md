@@ -89,3 +89,87 @@ Instant Cluster 는 Pod 한 대보다 비용이 상당히 큽니다. 멀티 GPU 
 [pytorch-cluster 이미지](https://github.com/runpod/containers/tree/main/official-templates/pytorch-cluster)
 
 </div>
+
+<div class="lang" data-lang="zh" markdown="1">
+
+## 简体中文
+
+<div class="note" markdown="1">
+**状态：待定。** 占位页面。下面只勾勒了范围；尚未编写任何实验。
+</div>
+
+[Instant Clusters](https://docs.runpod.io/instant-clusters) 是 Runpod 的多节点产品：带高速互连的全托管集群，用于分布式训练和大规模推理。
+
+| 属性 | 值 |
+|---|---|
+| GPU | B200, H200, H100, A100 |
+| 集群规模 | 2–8 个节点（16–64 块 GPU）；通过销售最多可达 512 块 GPU |
+| 互连 | 节点间 1600–3200 Gbps，以 `ens1`–`ens8` 暴露 |
+| 框架 | PyTorch distributed, TensorFlow, Slurm, Axolotl |
+
+### 可能的实验
+
+| 实验 | 内容 |
+|---|---|
+| 01-pytorch-distributed | 多节点 `torchrun`，通过高速接口运行 NCCL |
+| 02-slurm-cluster | 部署托管 Slurm 集群并提交作业 |
+| 03-axolotl-finetune | 用 Axolotl 进行多节点 LLM 微调 |
+
+### 为什么暂缓
+
+Instant Clusters 比单个 Pod 贵得多——你一次租用多个多 GPU 节点，并按整个集群计费。应先把 Serverless 和 Pod 路线做扎实，因为集群工作大体上就是把 Pod 工作流成倍放大，再叠加分布式训练的问题。
+
+### 参考
+
+[Overview](https://docs.runpod.io/instant-clusters) ·
+[PyTorch](https://docs.runpod.io/instant-clusters/pytorch) ·
+[Slurm](https://docs.runpod.io/instant-clusters/slurm-clusters) ·
+[Axolotl](https://docs.runpod.io/instant-clusters/axolotl) ·
+[Configuration](https://docs.runpod.io/instant-clusters/configuration) ·
+[Scaling](https://docs.runpod.io/instant-clusters/scale-clusters) ·
+[Observability](https://docs.runpod.io/instant-clusters/cluster-observability) ·
+[pytorch-cluster 镜像](https://github.com/runpod/containers/tree/main/official-templates/pytorch-cluster)
+
+</div>
+
+<div class="lang" data-lang="ja" markdown="1">
+
+## 日本語
+
+<div class="note" markdown="1">
+**状態：未定。** プレースホルダーです。範囲を下に描いただけで、ラボはまだ書いていません。
+</div>
+
+[Instant Clusters](https://docs.runpod.io/instant-clusters) は Runpod のマルチノード製品です。分散学習と大規模推論のための、高速インターコネクトを備えたフルマネージドのクラスタです。
+
+| 項目 | 値 |
+|---|---|
+| GPU | B200, H200, H100, A100 |
+| クラスタ規模 | 2–8 ノード（GPU 16–64 基）。営業経由で最大 512 GPU |
+| インターコネクト | ノード間 1600–3200 Gbps、`ens1`–`ens8` として公開 |
+| フレームワーク | PyTorch distributed, TensorFlow, Slurm, Axolotl |
+
+### 候補のラボ
+
+| ラボ | 内容 |
+|---|---|
+| 01-pytorch-distributed | マルチノードの `torchrun`、高速インターフェース上の NCCL |
+| 02-slurm-cluster | マネージド Slurm クラスタをデプロイしてジョブを投入 |
+| 03-axolotl-finetune | Axolotl によるマルチノードの LLM ファインチューニング |
+
+### 後回しにしている理由
+
+Instant Clusters は単一の Pod よりかなり高価です。マルチ GPU ノードを複数台まとめて借り、クラスタ全体に対して課金されます。クラスタの作業はおおむね Pod のワークフローを何倍にもして、その上に分散学習の問題を重ねたものなので、まず Serverless と Pod のトラックを固めるべきです。
+
+### 参考資料
+
+[Overview](https://docs.runpod.io/instant-clusters) ·
+[PyTorch](https://docs.runpod.io/instant-clusters/pytorch) ·
+[Slurm](https://docs.runpod.io/instant-clusters/slurm-clusters) ·
+[Axolotl](https://docs.runpod.io/instant-clusters/axolotl) ·
+[Configuration](https://docs.runpod.io/instant-clusters/configuration) ·
+[Scaling](https://docs.runpod.io/instant-clusters/scale-clusters) ·
+[Observability](https://docs.runpod.io/instant-clusters/cluster-observability) ·
+[pytorch-cluster イメージ](https://github.com/runpod/containers/tree/main/official-templates/pytorch-cluster)
+
+</div>

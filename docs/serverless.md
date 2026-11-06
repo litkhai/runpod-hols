@@ -335,3 +335,333 @@ Lab 03 은 Runpod 이 미리 빌드한 `runpod/worker-v1-vllm:v2.30.2` 에 `Qwen
 [저장소에서 전체 실습 보기 →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
 </div>
+
+<div class="lang" data-lang="zh" markdown="1">
+
+## 简体中文
+
+Runpod Serverless 将你的代码作为自动扩缩的 HTTP 端点运行。请求到达时 worker 启动，处理作业，然后关闭。只按执行时间计费。
+
+### 实验
+
+| 实验 | 状态 | 内容 |
+|---|---|---|
+| [01-hello-worker](https://github.com/litkhai/runpod-hols/tree/main/serverless/01-hello-worker) | 就绪 | handler → 本地测试 → Docker 镜像 → 部署 |
+| [02-llm-chat](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat) | 就绪 | 从 GitHub 部署小型 instruct 模型，权重来自 Runpod 的缓存模型存储 |
+| [03-vllm-endpoint](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) | 2026-11-05 已运行 | 用脚本部署预构建的 `worker-vllm` 镜像，OpenAI SDK 客户端 |
+
+### 模型放在哪里
+
+有四种选择。通常答案是第三种；第四种是 SDK 1.12 新增的。
+
+| 位置 | 冷启动 | 镜像大小 | 下载是否计费？ |
+|---|---|---|---|
+| 运行时下载 | 慢，每个新 worker 都要下载 | 小 | **是** |
+| 打包进镜像 | 快 | 巨大 | 否，但构建和拉取都很慢 |
+| **Runpod 缓存模型** | 几秒 | 小 | **否** |
+| **`VolumeCache`**（SDK 1.12+） | 首次之后几秒 | 小 | 否——但要为 network volume 付费 |
+
+在端点的 **Model** 字段填入 Hugging Face ID，Runpod 就会把权重缓存到主机上的 `/runpod-volume/huggingface-cache/hub`，由该主机上的 worker 共享。代码放在 Git 里，权重放在 Git 之外——两者是组合关系，而不是竞争关系。
+
+<div class="warn" markdown="1">
+handler 必须为此专门编写。`HF_HUB_OFFLINE` 在 `huggingface_hub` 被导入时读取，所以在导入 `transformers` 之后再设置它会静默失效——你以为在从缓存提供服务，实际上却在计费期间下载。
+</div>
+
+### 核心概念
+
+**Handler**——一个接收 `job` 字典并返回任意可 JSON 序列化值的函数。`job["input"]` 中是调用方的 payload。`runpod.serverless.start({"handler": handler})` 把控制权交给 SDK，由它轮询作业队列，并为每个作业调用你的 handler。
+
+**冷启动**——在没有热 worker 时到达的请求，必须先拉取镜像并启动容器。这就是模型加载应放在模块作用域、而不是 handler 内部的原因：模块作用域每个 worker 运行一次，handler 每个请求运行一次。
+
+**端点 API**
+
+| 路由 | 行为 |
+|---|---|
+| `POST /run` | 异步——返回作业 `id`，轮询 `/status/{id}` |
+| `POST /runsync` | 同步——阻塞并返回输出。最适合短作业 |
+| `GET /status/{id}` | 作业状态和结果 |
+
+基础 URL 是 `https://api.runpod.ai/v2/{ENDPOINT_ID}`，使用 `Authorization: Bearer $RUNPOD_API_KEY` 认证。
+
+### 实验 01 概要
+
+```bash
+cd serverless/01-hello-worker
+uv venv --python 3.11 .venv
+uv pip install --python .venv/bin/python -r requirements.txt
+
+.venv/bin/python handler.py                 # runs test_input.json once
+.venv/bin/python handler.py --rp_serve_api  # local API on :8000
+```
+
+本地 API 服务器返回的形态与已部署端点完全相同：
+
+```json
+{"id":"test-1bec00ea-…","status":"COMPLETED",
+ "output":{"greeting":"Hello, Kee Hoon!","worker_id":"local"}}
+```
+
+然后构建——注意 platform 标志：
+
+```bash
+docker build --platform linux/amd64 -t <user>/hello-worker:v1.0.0 .
+```
+
+<div class="warn" markdown="1">
+在 Apple Silicon 上 `--platform linux/amd64` 是必需的。Runpod worker 是 amd64，arm64 镜像会启动失败，而且没有任何有用的日志输出。
+
+避免使用 `:latest`。Runpod 会缓存镜像，可变标签可能让 worker 继续提供上一次构建的版本，而没有任何明显迹象。
+</div>
+
+### 从 GitHub 部署
+
+Runpod 可以克隆仓库、自行构建镜像并托管在自己的镜像仓库中——不需要 Docker Hub 账号，也不需要模拟构建。对本仓库，由于每个实验都在各自的目录中，请将 **Dockerfile Path** 设为 `/serverless/01-hello-worker/Dockerfile`。
+
+<div class="warn" markdown="1">
+**设置 Build context，并在触发构建之前保存。** Runpod 默认把上下文设为仓库根目录，而主表单只询问 Dockerfile 路径，所以 `COPY handler.py .` 会以 `"/handler.py": not found` 失败。失败的构建日志中，上下文显示为最后一个位置参数：
+
+```
+docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile \
+                    /app/<id>/temp          <- context
+```
+
+**Advanced settings → Build context** = `/serverless/01-hello-worker` 即可解决——已通过一次成功的构建验证。陷阱在于顺序：在保存尚未生效时由 `git push` 触发的构建会使用旧配置，并以完全相同的方式失败，让人以为这个字段坏了。
+
+这样每个实验都保持自包含，与 Runpod 自己的仓库一致——`runpod-workers/*` 每个 worker 一个仓库，Dockerfile 位于根目录；`runpod/containers` monorepo 则为每个 bake target 设置 `context = "official-templates/<name>"`。该组织中没有任何地方使用相对于根目录的 `COPY` 路径。
+</div>
+
+<div class="note" markdown="1">
+**重新部署：文档与观察不一致。** 文档说变更 "won't automatically be pushed to your endpoint"，并且需要 **GitHub release**。测试中，两次普通 push 各自触发了一次构建——但只发生在一个还没有成功构建的端点上。请把 release 视为可靠的触发方式。之前的构建可以在 Builds 标签页中回滚。
+
+*"Could not find runpod.serverless.start() in your repo"* 在新仓库上可能是误报——该检查依赖 GitHub 的代码搜索索引，而索引有延迟。只有 Dockerfile 检查会阻止部署。
+</div>
+
+### 在线端点实测
+
+实验 01 从 GitHub 部署，CPU worker，`workers_min = 0`：
+
+| 请求 | `delayTime` | `executionTime` |
+|---|---|---|
+| 第一次（冷） | 3,704 ms | 222 ms |
+| 热 | 776–806 ms | 194–217 ms |
+
+`delayTime` 是排队加 worker 启动，`executionTime` 是 handler。handler 的耗时可以忽略不计——第一次请求几乎全是冷启动，这正是 `workers_min = 0` 在成本上换来的、并在延迟上付出的代价。
+
+<div class="warn" markdown="1">
+**`{"input": {}}` 永远不会返回。** 空的 input 对象挂起了 90 秒，响应为零字节并带有 `retries: 1`，可稳定复现。这不是 handler 的 bug——`{"input": {"other": 1}}` 走完全相同的默认路径，却立即返回。请始终至少发送一个键。
+
+**`/runsync` 可能返回 `IN_PROGRESS`。** 它并不保证返回带有 `output` 的 `COMPLETED`；请准备好轮询 `/status/{id}`。
+</div>
+
+### 实验 02——运行发现
+
+实验 02 从 GitHub 部署 `Qwen/Qwen2.5-1.5B-Instruct`，权重通过端点的 **Model** 字段提供。以下全部在 2026-10-11 运行；完整记录见[实验 README](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat#what-was-run)。
+
+**缓存位于文档所写的路径。** 文档和 SDK 给出的位置不同，所以 handler 会探测两者并记录一行 `cache_probe`。被填充的是文档路径：`/runpod-volume/huggingface-cache/hub/models--Qwen--Qwen2.5-1.5B-Instruct/snapshots/989aa79…`。`/runpod/cache` 不存在。
+
+| 请求（RTX A5000，idle timeout 5 s，FlashBoot 关闭） | `delayTime` | `executionTime` |
+|---|---|---|
+| 第一个 prompt | 12,142 ms | 1,259 ms |
+| 再次发送相同 prompt | 126 ms | 846 ms |
+| `messages` 形式 | 133 ms | 305 ms |
+
+这 12 s 包括容器启动、导入、2.37 s 的模型加载以及 SDK 的 fitness check。镜像已经在主机上——拉取发生在构建之后不久。
+
+<div class="warn" markdown="1">
+**16 GB 或 24 GB 的池可能分配给你一块 Blackwell GPU。** 这些池中包括 `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` 切片（sm_120）。CUDA 12.6 的 torch 只支持到 sm_90，因此 worker 记录了 `no kernel image is available for execution on the device`，随后 `Worker is unhealthy, exiting.`。同一镜像在 RTX A5000 上运行正常。解决方法是换成 CUDA 12.8 基础镜像 `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime`，并在端点上把最低 CUDA 版本设为 12.8，以免选中较旧的驱动。使用该基础镜像后，模型在 MIG 切片上从缓存加载仅用 1.49 s。
+</div>
+
+<div class="note" markdown="1">
+**固定 MIG 类型需要 GraphQL。** REST API 不接受 `gpuTypeIds` 中的 MIG 类型。GraphQL 的 `saveEndpoint` mutation 则接受一个池加排除项——`gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` 之后只剩下 MIG 切片。
+
+**worker 日志不会结束。** `https://api.runpod.io/v2/serverless/{endpoint}/workers/{worker}/logs` 以一个永不关闭的流响应，所以普通的 `curl` 会挂起。给它设置客户端超时，例如 `curl -m 20`，然后读取已收到的内容。
+</div>
+
+**只在采样时传入 `top_p`。** 当 `temperature: 0` 时，handler 执行贪心解码，此时 `top_p` 不起作用。transformers 5 会对调用方设置、但被贪心解码忽略的采样标志发出警告，所以最初的 handler 在每个贪心请求上都记录了 `generation flags are not valid`。现在 handler 只在 `temperature` > 0 时才构造 `temperature` 和 `top_p`。重新构建的 worker 运行了一个 `temperature: 0` 请求，在 `Started.` 和 `Finished.` 之间没有出现该警告。
+
+### 实验 03——运行发现
+
+实验 03 用脚本部署 Runpod 预构建的 `runpod/worker-v1-vllm:v2.30.2` 和 `Qwen/Qwen2.5-1.5B-Instruct`，并用 OpenAI SDK 通过 `https://api.runpod.ai/v2/<endpoint>/openai/v1` 调用。于 2026-11-05 在 RTX 4090 上运行一次，FlashBoot 开启；完整记录见[实验 README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint)。
+
+| worker 启动之后 | 结果 |
+|---|---|
+| `models.list()` | `['Qwen/Qwen2.5-1.5B-Instruct']` |
+| 聊天补全，40+20 tokens | 1.6 s |
+| 流式补全 | 首个 token 0.76 s |
+
+<div class="warn" markdown="1">
+**第一次冷启动用了 15 分钟，其中 vLLM 占 77 秒。** worker 日志显示，加载一个主机已缓存的镜像用了 3 min 52 s，然后在 `worker is ready` 之后、`create container` 之前有 10 min 14 s 没有任何日志。第一个请求**在 7 min 12 s 后返回 HTTP 520**；作业仍在队列中，容器启动后一次重试得到了响应。在这段空白期间，`/health` 报告有就绪的 worker，并且在 `workersMax` 为 1 的情况下存在三个 worker。仅运行一次——原因尚未确定。
+</div>
+
+<div class="note" markdown="1">
+**删除模板可能要等一个半小时甚至更久。** 删除端点后，`DELETE /templates/{id}` 返回 *"Template is still held by deleted endpoint …, which is pending cleanup"*。消息称 *"within about 90 minutes"*；2026-11-05 当天，一个模板在 86 分钟时仍被拒绝，到 116 分钟才删除，另一个在 92 分钟删除。实验的 `teardown.py` 会保留 id 并提示你重新运行。
+</div>
+
+[在仓库中查看完整实验 →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
+
+</div>
+
+<div class="lang" data-lang="ja" markdown="1">
+
+## 日本語
+
+Runpod Serverless は、コードをオートスケールする HTTP エンドポイントとして実行します。リクエストが届くと worker が起動し、ジョブを処理して終了します。課金は実行時間に対してのみです。
+
+### ラボ
+
+| ラボ | 状態 | 内容 |
+|---|---|---|
+| [01-hello-worker](https://github.com/litkhai/runpod-hols/tree/main/serverless/01-hello-worker) | 準備済み | handler → ローカルテスト → Docker イメージ → デプロイ |
+| [02-llm-chat](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat) | 準備済み | GitHub から小型の instruct モデル、重みは Runpod のキャッシュモデルストアから |
+| [03-vllm-endpoint](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) | 2026-11-05 実行 | ビルド済みの `worker-vllm` イメージをスクリプトでデプロイ、OpenAI SDK クライアント |
+
+### モデルをどこに置くか
+
+選択肢は 4 つです。普通は 3 つ目が答えで、4 つ目は SDK 1.12 で追加されました。
+
+| 場所 | コールドスタート | イメージサイズ | ダウンロードは課金されるか |
+|---|---|---|---|
+| 実行時にダウンロード | 遅い、新しい worker ごと | 小さい | **される** |
+| イメージに焼き込む | 速い | 巨大 | されないが、ビルドと pull が遅い |
+| **Runpod キャッシュモデル** | 数秒 | 小さい | **されない** |
+| **`VolumeCache`**（SDK 1.12+） | 初回以降は数秒 | 小さい | されない。代わりに network volume の料金がかかる |
+
+エンドポイントの **Model** フィールドに Hugging Face ID を入れると、Runpod がホストの `/runpod-volume/huggingface-cache/hub` に重みをキャッシュし、そのホスト上の worker で共有します。コードは Git に、重みは Git の外に。両者は競合ではなく組み合わせる関係です。
+
+<div class="warn" markdown="1">
+handler はこれに合わせて書く必要があります。`HF_HUB_OFFLINE` は `huggingface_hub` が import されたときに読まれるので、`transformers` を import した後に設定しても黙って無視されます。キャッシュから配信しているつもりで、実際には課金されながらダウンロードしていることになります。
+</div>
+
+### 中核となる概念
+
+**Handler**：`job` 辞書を受け取り、JSON シリアライズ可能な任意の値を返す関数です。`job["input"]` に呼び出し側の payload が入ります。`runpod.serverless.start({"handler": handler})` で制御を SDK に渡すと、SDK がジョブキューをポーリングし、ジョブごとに handler を呼び出します。
+
+**コールドスタート**：ウォームな worker がないときに届いたリクエストは、まずイメージを pull してコンテナを起動しなければなりません。モデルのロードを handler の中ではなくモジュールスコープに置くべき理由がこれです。モジュールスコープは worker ごとに 1 回、handler はリクエストごとに 1 回実行されます。
+
+**エンドポイント API**
+
+| ルート | 動作 |
+|---|---|
+| `POST /run` | 非同期。ジョブ `id` を返すので `/status/{id}` をポーリング |
+| `POST /runsync` | 同期。ブロックして出力を返す。短いジョブに最適 |
+| `GET /status/{id}` | ジョブの状態と結果 |
+
+ベース URL は `https://api.runpod.ai/v2/{ENDPOINT_ID}` で、`Authorization: Bearer $RUNPOD_API_KEY` で認証します。
+
+### Lab 01 の概要
+
+```bash
+cd serverless/01-hello-worker
+uv venv --python 3.11 .venv
+uv pip install --python .venv/bin/python -r requirements.txt
+
+.venv/bin/python handler.py                 # runs test_input.json once
+.venv/bin/python handler.py --rp_serve_api  # local API on :8000
+```
+
+ローカル API サーバーは、デプロイ済みエンドポイントとまったく同じ形を返します。
+
+```json
+{"id":"test-1bec00ea-…","status":"COMPLETED",
+ "output":{"greeting":"Hello, Kee Hoon!","worker_id":"local"}}
+```
+
+続いてビルドします。platform フラグに注意してください。
+
+```bash
+docker build --platform linux/amd64 -t <user>/hello-worker:v1.0.0 .
+```
+
+<div class="warn" markdown="1">
+Apple Silicon では `--platform linux/amd64` が必須です。Runpod の worker は amd64 で、arm64 イメージは役に立つログを何も出さずに起動に失敗します。
+
+`:latest` は避けてください。Runpod はイメージをキャッシュするので、可変タグだと worker が前のビルドを配信し続けても、目に見える兆候がないことがあります。
+</div>
+
+### GitHub からのデプロイ
+
+Runpod はリポジトリをクローンし、自分でイメージをビルドして自社のレジストリにホストできます。Docker Hub アカウントもエミュレーションビルドも不要です。このリポジトリではラボごとにディレクトリが分かれているので、**Dockerfile Path** を `/serverless/01-hello-worker/Dockerfile` に設定します。
+
+<div class="warn" markdown="1">
+**Build context を設定し、ビルドをトリガーする前に保存してください。** Runpod はコンテキストのデフォルトをリポジトリのルートにしており、メインのフォームは Dockerfile のパスしか尋ねないため、`COPY handler.py .` が `"/handler.py": not found` で失敗します。失敗したビルドログでは、コンテキストが最後の位置引数として現れます。
+
+```
+docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile \
+                    /app/<id>/temp          <- context
+```
+
+**Advanced settings → Build context** = `/serverless/01-hello-worker` で解決します。ビルドの成功で確認済みです。落とし穴は順序です。保存がまだ反映されていないうちに `git push` で始まったビルドは古い設定を使ってまったく同じように失敗するので、フィールドが壊れているように見えます。
+
+こうすると各ラボが自己完結し、Runpod 自身のリポジトリと同じ形になります。`runpod-workers/*` は worker ごとに 1 リポジトリで Dockerfile をルートに置き、`runpod/containers` モノレポは bake ターゲットごとに `context = "official-templates/<name>"` を設定しています。組織内にルート基準の `COPY` パスを使っているものはありません。
+</div>
+
+<div class="note" markdown="1">
+**再デプロイ：ドキュメントと観察が食い違います。** ドキュメントは変更が "won't automatically be pushed to your endpoint" であり、**GitHub release** が必要だとしています。テストでは、通常の push 2 回がそれぞれビルドをトリガーしました。ただし、まだ成功したビルドがないエンドポイントでのみです。release を確実なトリガーとして扱ってください。以前のビルドは Builds タブからロールバックできます。
+
+*"Could not find runpod.serverless.start() in your repo"* は、新しいリポジトリでは誤検知のことがあります。このチェックは GitHub のコード検索インデックスに依存しており、インデックスは遅れるためです。デプロイを止めるのは Dockerfile のチェックだけです。
+</div>
+
+### 稼働中のエンドポイントでの実測
+
+GitHub からデプロイした Lab 01、CPU worker、`workers_min = 0`：
+
+| リクエスト | `delayTime` | `executionTime` |
+|---|---|---|
+| 初回（コールド） | 3,704 ms | 222 ms |
+| ウォーム | 776–806 ms | 194–217 ms |
+
+`delayTime` はキュー待ちと worker の起動、`executionTime` は handler です。handler は誤差程度で、初回リクエストのほぼすべてがコールドスタートです。これこそ `workers_min = 0` がコスト面で得て、レイテンシ面で支払うものです。
+
+<div class="warn" markdown="1">
+**`{"input": {}}` は返ってきません。** 空の input オブジェクトは、0 バイトのレスポンスと `retries: 1` のまま 90 秒間止まり、再現性があります。handler のバグではありません。`{"input": {"other": 1}}` はまったく同じデフォルトの経路を通り、すぐに返ります。必ず少なくとも 1 つのキーを送ってください。
+
+**`/runsync` は `IN_PROGRESS` を返すことがあります。** `output` 付きの `COMPLETED` が返る保証はないので、`/status/{id}` をポーリングできるようにしておいてください。
+</div>
+
+### Lab 02：実行でわかったこと
+
+Lab 02 は `Qwen/Qwen2.5-1.5B-Instruct` を GitHub からデプロイし、重みはエンドポイントの **Model** フィールドで渡します。以下はすべて 2026-10-11 に実行したもので、完全な記録は[ラボの README](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat#what-was-run) にあります。
+
+**キャッシュはドキュメントに書かれたパスにあります。** ドキュメントと SDK が別の場所を挙げているため、handler は両方を調べて `cache_probe` の行をログに出します。中身があったのはドキュメントのパス `/runpod-volume/huggingface-cache/hub/models--Qwen--Qwen2.5-1.5B-Instruct/snapshots/989aa79…` でした。`/runpod/cache` は存在しませんでした。
+
+| リクエスト（RTX A5000、idle timeout 5 s、FlashBoot オフ） | `delayTime` | `executionTime` |
+|---|---|---|
+| 最初のプロンプト | 12,142 ms | 1,259 ms |
+| 同じプロンプトをもう一度 | 126 ms | 846 ms |
+| `messages` 形式 | 133 ms | 305 ms |
+
+12 s はコンテナの起動、import、2.37 s のモデルロード、SDK の fitness check を合わせたものです。イメージはすでにホスト上にありました。pull はビルドの直後に行われます。
+
+<div class="warn" markdown="1">
+**16 GB や 24 GB のプールで Blackwell GPU が割り当てられることがあります。** これらのプールには `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` のスライス（sm_120）が含まれます。CUDA 12.6 の torch は sm_90 までなので、worker は `no kernel image is available for execution on the device` を出し、続いて `Worker is unhealthy, exiting.` となりました。同じイメージは RTX A5000 では問題なく動いていました。対処は CUDA 12.8 ベースの `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime` にし、さらにエンドポイントの最小 CUDA バージョンを 12.8 にして古いドライバが選ばれないようにすることです。このベースで、MIG スライス上でモデルがキャッシュから 1.49 s でロードされました。
+</div>
+
+<div class="note" markdown="1">
+**MIG タイプの固定には GraphQL が必要です。** REST API は `gpuTypeIds` に MIG タイプを入れると拒否します。GraphQL の `saveEndpoint` ミューテーションは、代わりにプールと除外リストを受け取ります。`gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` で MIG スライスだけが残りました。
+
+**worker のログは終わりません。** `https://api.runpod.io/v2/serverless/{endpoint}/workers/{worker}/logs` は閉じないストリームとして応答するため、素の `curl` は止まったままになります。`curl -m 20` のようにクライアント側のタイムアウトを付け、届いた分を読んでください。
+</div>
+
+**`top_p` はサンプリングするときだけ渡します。** `temperature: 0` では handler は greedy デコーディングを行い、このとき `top_p` は効果がありません。transformers 5 は、呼び出し側が設定したが greedy デコーディングでは無視されるサンプリングフラグに警告を出すため、最初の handler は greedy リクエストのたびに `generation flags are not valid` をログに出していました。現在の handler は `temperature` > 0 のときだけ `temperature` と `top_p` を組み立てます。再ビルドした worker で `temperature: 0` のリクエストを実行したところ、`Started.` と `Finished.` の間にこの警告は出ませんでした。
+
+### Lab 03：実行でわかったこと
+
+Lab 03 は Runpod のビルド済み `runpod/worker-v1-vllm:v2.30.2` と `Qwen/Qwen2.5-1.5B-Instruct` をスクリプトでデプロイし、OpenAI SDK で `https://api.runpod.ai/v2/<endpoint>/openai/v1` を呼び出します。2026-11-05 に RTX 4090、FlashBoot オンで 1 回実行しました。完全な記録は[ラボの README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) にあります。
+
+| worker が起動した後 | 結果 |
+|---|---|
+| `models.list()` | `['Qwen/Qwen2.5-1.5B-Instruct']` |
+| チャット補完、40+20 トークン | 1.6 s |
+| ストリーミング補完 | 最初のトークンまで 0.76 s |
+
+<div class="warn" markdown="1">
+**最初のコールドスタートは 15 分かかり、そのうち vLLM は 77 秒でした。** worker のログには、ホストにキャッシュ済みだったイメージのロードに 3 min 52 s、続いて `worker is ready` の後 `create container` まで何もログが出ない 10 min 14 s が記録されています。最初のリクエストは **7 min 12 s 後に HTTP 520** で返り、ジョブはキューに残ったまま、コンテナが起動した後のリトライに応答が返りました。この空白の間、`/health` は ready な worker を報告しており、`workersMax` 1 なのに worker が 3 つ存在していました。1 回の実行なので、原因は特定できていません。
+</div>
+
+<div class="note" markdown="1">
+**テンプレートの削除は 1 時間半以上待つことがあります。** エンドポイントを削除した後、`DELETE /templates/{id}` は *"Template is still held by deleted endpoint …, which is pending cleanup"* と応答しました。メッセージには *"within about 90 minutes"* とありますが、2026-11-05 には、あるテンプレートは 86 分の時点でまだ拒否され 116 分で削除でき、別のものは 92 分で削除できました。ラボの `teardown.py` は id を保持し、再実行するよう案内します。
+</div>
+
+[リポジトリでラボ全体を見る →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
+
+</div>

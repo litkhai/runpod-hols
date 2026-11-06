@@ -229,3 +229,227 @@ Links, all published by Runpod. Competitor comparisons and marketing pieces are 
 | [Instant Clusters](https://docs.runpod.io/instant-clusters) | Cluster 트랙이 작성되기 전에 관심이 생겼다면 |
 
 </div>
+
+<div class="lang" data-lang="zh" markdown="1">
+
+## 简体中文
+
+## 本站撰写的笔记
+{: #notes-zh }
+
+仅靠一个链接说不清的概念——在这里写成文字，并把 Runpod 特有的部分与通用部分分开。
+
+| 页面 | 内容 |
+|---|---|
+| [GPU Topology]({{ '/readings/gpu-topology/' | relative_url }}) | NVLink 和 MIG 是什么 · 带宽与隔离 · Runpod 允许你控制其中哪些 |
+
+## 背景——GPU、训练、推理、部署
+{: #background-zh }
+
+<div class="note" markdown="1">
+以下链接全部由 Runpod 发布。已排除竞品对比和营销类文章。其余内容大多与云厂商无关——VRAM 计算、批处理、精度权衡。
+</div>
+
+### GPU 与显存
+
+| 文章 | 主题 |
+|---|---|
+| [GPU cloud servers for AI workloads](https://www.runpod.io/articles/guides/gpu-cloud-servers-for-ai-workloads) | 最好的单一起点：对工作负载分类，用实际公式计算 VRAM，再据此匹配硬件 |
+| [Choosing a GPU for training vs inference](https://www.runpod.io/articles/comparison/choosing-a-gpu-for-training-vs-inference) | 为什么合适的显卡取决于你做的是哪一种 |
+| [GPU memory sizing for LLM inference](https://www.runpod.io/articles/guides/gpu-memory-sizing-guide-for-llm-inference) | 在租机器之前算清模型是否放得下 |
+| [Avoiding OOM crashes for large models](https://www.runpod.io/articles/guides/avoid-oom-crashes-for-large-models) | 什么会耗尽，以及如何应对 |
+
+### 训练
+
+| 文章 | 主题 |
+|---|---|
+| [Inference vs training GPU guide](https://www.runpod.io/articles/guides/ai-inference-vs-training-gpu-guide) | 两种工作负载对硬件的需求不同 |
+| [FP16, BF16, FP8 and mixed precision](https://www.runpod.io/articles/guides/fp16-bf16-fp8-mixed-precision-speed-up-my-model-training) | 数值格式，以及为速度付出的代价 |
+| [Multi-GPU training](https://www.runpod.io/articles/guides/the-complete-guide-to-multi-gpu-training-scaling-ai-models-beyond-single-card-limitations) | 扩展到一张卡之外 |
+| [Multi-node cluster architecture](https://www.runpod.io/articles/guides/gpu-clusters-for-ai-multi-node-architecture) | Cluster 路线的背景知识 |
+| [InfiniBand for distributed training](https://www.runpod.io/articles/guides/infiniband-for-distributed-ai-training) | 为什么互连带宽决定多节点性能 |
+
+### 推理
+
+| 文章 | 主题 |
+|---|---|
+| [LLM inference from first principles](https://www.runpod.io/articles/guides/llm-inference-first-principles) | 每个 token 实际发生了什么，时间花在了哪里 |
+| [PagedAttention and continuous batching](https://www.runpod.io/articles/guides/vllm-pagedattention-continuous-batching) | 让 vLLM 比朴素循环更快的两个思路 |
+| [Inference optimisation playbook](https://www.runpod.io/articles/guides/llm-inference-optimization-playbook) | 针对延迟和吞吐量的手段，按顺序排列 |
+| [Model quantization](https://www.runpod.io/articles/guides/ai-model-quantization-reducing-memory-usage-without-sacrificing-performance) | 用精度换显存，以及代价是什么 |
+| [vLLM vs TensorRT-LLM](https://www.runpod.io/articles/comparison/vllm-vs-tensorrt-llm) | 选择推理服务引擎 |
+
+### 部署与成本
+
+| 文章 | 主题 |
+|---|---|
+| [Serverless vs Pods](https://www.runpod.io/articles/comparison/serverless-gpu-deployment-vs-pods) | 这些实验据以划分路线的那个决定 |
+| [Scaling up vs scaling out](https://www.runpod.io/articles/comparison/scaling-up-vs-scaling-out) | 更大的 GPU，还是更多的 GPU |
+| [Docker essentials for AI developers](https://www.runpod.io/articles/guides/docker-essentials-for-ai-developers) | 如果对 Serverless 路线的容器部分感到陌生，会有帮助 |
+| [Cloud GPU pricing](https://www.runpod.io/articles/guides/cloud-gpu-pricing) | GPU 时间实际上如何计费 |
+| [Cutting your GPU bill](https://www.runpod.io/articles/guides/how-to-cut-your-gpu-bill) | 实用的降本方法，大多在任何地方都适用 |
+
+## Runpod 文档
+{: #runpod-docs-zh }
+
+**开始之前**
+
+| 页面 | 原因 |
+|---|---|
+| [Welcome to Runpod](https://docs.runpod.io/overview) | 全局地图。十分钟，其余内容就更容易理解 |
+| [Concepts](https://docs.runpod.io/get-started/concepts) | 术语——worker、endpoint、template、volume。到处使用却不加定义 |
+| [Product overview](https://docs.runpod.io/get-started/products) | “探索 Runpod 的主要产品，为你的工作负载找到合适的方案”——不确定该用 Serverless 还是 Pod 时阅读 |
+
+**Serverless**
+
+| 页面 | 原因 |
+|---|---|
+| [Overview](https://docs.runpod.io/serverless/overview) | “面向 AI 模型和计算密集型工作负载的按需付费计算” |
+| [Quickstart](https://docs.runpod.io/serverless/quickstart) | 实验 01 的官方版本 |
+| [Handler functions](https://docs.runpod.io/serverless/workers/handler-functions) | 你的代码必须遵守的契约。与 [Worker SDK]({{ '/sdk/worker/' | relative_url }}) 一起阅读 |
+| [Deploy from GitHub](https://docs.runpod.io/serverless/workers/github-integration) | 这些实验所用的部署路径——注意它没有提到 Build context 字段 |
+| [Endpoint settings](https://docs.runpod.io/serverless/endpoints/endpoint-configurations) | 创建表单上每个设置的参考 |
+| [Job states and metrics](https://docs.runpod.io/serverless/endpoints/job-states) | 在疑惑 `/runsync` 为什么返回 `IN_PROGRESS` 之前先读这个 |
+| [Cached models](https://docs.runpod.io/serverless/endpoints/model-caching) | 为什么模型不该放进镜像。实验 02 的依据 |
+| [Fitness checks](https://docs.runpod.io/serverless/development/fitness-checks) | 启动时校验。需要 `runpod>=1.9.0` |
+| [Local testing](https://docs.runpod.io/serverless/development/local-testing) | 避免每次改动都要走一遍构建的循环 |
+| [Concurrent handlers](https://docs.runpod.io/serverless/workers/concurrent-handler) | 一个 worker 处理多个请求——`concurrency_modifier` 发挥作用的地方 |
+| [Optimize your endpoints](https://docs.runpod.io/serverless/development/optimization) | “降低延迟和成本的策略” |
+| [Troubleshooting](https://docs.runpod.io/serverless/troubleshooting) | 值得浏览一遍，这样故障发生时你能认出来 |
+
+**Pods**
+
+| 页面 | 原因 |
+|---|---|
+| [Overview](https://docs.runpod.io/pods/overview) | 租用之后实际得到的是什么 |
+| [Choose a Pod](https://docs.runpod.io/pods/choose-a-pod) | 按工作负载匹配 GPU，而不是靠猜 |
+| [Storage options](https://docs.runpod.io/pods/storage/types) | 容器磁盘、volume 与 network volume。混淆它们就会丢失工作成果 |
+
+**成本**
+
+| 页面 | 原因 |
+|---|---|
+| [Serverless pricing](https://docs.runpod.io/serverless/pricing) | 为什么 `workers_min = 0` 很重要 |
+| [Pods pricing](https://docs.runpod.io/pods/pricing) | 运行期间按分钟计费，外加已停止 Pod 的存储费用 |
+| [Billing information](https://docs.runpod.io/references/billing-information) | 支出上限。在第一个会创建资源的实验之前设置好 |
+
+**参考**
+
+| 页面 | 原因 |
+|---|---|
+| [GPU types](https://docs.runpod.io/references/gpu-types) | 有哪些可用，以及大致价格 |
+| [Instant Clusters](https://docs.runpod.io/instant-clusters) | 如果在 Cluster 路线写好之前就对它感兴趣 |
+
+</div>
+
+<div class="lang" data-lang="ja" markdown="1">
+
+## 日本語
+
+## ここで書いたノート
+{: #notes-ja }
+
+リンク 1 本では足りない概念を文章にまとめ、Runpod 固有の部分と一般的な部分を分けています。
+
+| ページ | 扱う内容 |
+|---|---|
+| [GPU Topology]({{ '/readings/gpu-topology/' | relative_url }}) | NVLink と MIG とは何か · 帯域幅と分離 · そのうち Runpod で制御できるもの |
+
+## 背景知識：GPU、学習、推論、デプロイ
+{: #background-ja }
+
+<div class="note" markdown="1">
+リンク集で、すべて Runpod が公開したものです。競合比較やマーケティング色の強い記事は除いています。残りは大部分がプロバイダーに依存しない内容です。VRAM の計算、バッチ処理、精度のトレードオフなど。
+</div>
+
+### GPU とメモリ
+
+| 記事 | トピック |
+|---|---|
+| [GPU cloud servers for AI workloads](https://www.runpod.io/articles/guides/gpu-cloud-servers-for-ai-workloads) | 出発点として最適の 1 本。ワークロードを分類し、実際の式で VRAM を計算し、それにハードウェアを合わせる |
+| [Choosing a GPU for training vs inference](https://www.runpod.io/articles/comparison/choosing-a-gpu-for-training-vs-inference) | どちらを行うかで適したカードが変わる理由 |
+| [GPU memory sizing for LLM inference](https://www.runpod.io/articles/guides/gpu-memory-sizing-guide-for-llm-inference) | マシンを借りる前にモデルが載るかを見積もる |
+| [Avoiding OOM crashes for large models](https://www.runpod.io/articles/guides/avoid-oom-crashes-for-large-models) | 何が足りなくなり、どう対処するか |
+
+### 学習
+
+| 記事 | トピック |
+|---|---|
+| [Inference vs training GPU guide](https://www.runpod.io/articles/guides/ai-inference-vs-training-gpu-guide) | 2 つのワークロードはハードウェアに求めるものが違う |
+| [FP16, BF16, FP8 and mixed precision](https://www.runpod.io/articles/guides/fp16-bf16-fp8-mixed-precision-speed-up-my-model-training) | 数値形式と、速度と引き換えに手放すもの |
+| [Multi-GPU training](https://www.runpod.io/articles/guides/the-complete-guide-to-multi-gpu-training-scaling-ai-models-beyond-single-card-limitations) | 1 枚のカードを超えてスケールする |
+| [Multi-node cluster architecture](https://www.runpod.io/articles/guides/gpu-clusters-for-ai-multi-node-architecture) | Cluster トラックの背景知識 |
+| [InfiniBand for distributed training](https://www.runpod.io/articles/guides/infiniband-for-distributed-ai-training) | インターコネクトの帯域幅がマルチノード性能を決める理由 |
+
+### 推論
+
+| 記事 | トピック |
+|---|---|
+| [LLM inference from first principles](https://www.runpod.io/articles/guides/llm-inference-first-principles) | トークンごとに実際に何が起き、時間がどこに使われるか |
+| [PagedAttention and continuous batching](https://www.runpod.io/articles/guides/vllm-pagedattention-continuous-batching) | vLLM を素朴なループより速くしている 2 つのアイデア |
+| [Inference optimisation playbook](https://www.runpod.io/articles/guides/llm-inference-optimization-playbook) | レイテンシとスループットのための手段を順番に |
+| [Model quantization](https://www.runpod.io/articles/guides/ai-model-quantization-reducing-memory-usage-without-sacrificing-performance) | 精度をメモリと引き換えにすることと、その代償 |
+| [vLLM vs TensorRT-LLM](https://www.runpod.io/articles/comparison/vllm-vs-tensorrt-llm) | サービングエンジンの選び方 |
+
+### デプロイとコスト
+
+| 記事 | トピック |
+|---|---|
+| [Serverless vs Pods](https://www.runpod.io/articles/comparison/serverless-gpu-deployment-vs-pods) | これらのラボがトラックを分ける基準にした判断そのもの |
+| [Scaling up vs scaling out](https://www.runpod.io/articles/comparison/scaling-up-vs-scaling-out) | より大きな GPU か、より多くの GPU か |
+| [Docker essentials for AI developers](https://www.runpod.io/articles/guides/docker-essentials-for-ai-developers) | Serverless トラックのコンテナ周りに馴染みがなければ役立ちます |
+| [Cloud GPU pricing](https://www.runpod.io/articles/guides/cloud-gpu-pricing) | GPU 時間が実際にどう課金されるか |
+| [Cutting your GPU bill](https://www.runpod.io/articles/guides/how-to-cut-your-gpu-bill) | 実践的な削減策。ほとんどはどこでも通用します |
+
+## Runpod ドキュメント
+{: #runpod-docs-ja }
+
+**始める前に**
+
+| ページ | 理由 |
+|---|---|
+| [Welcome to Runpod](https://docs.runpod.io/overview) | 全体の地図。10 分で、残りがずっと理解しやすくなります |
+| [Concepts](https://docs.runpod.io/get-started/concepts) | 用語集。worker、endpoint、template、volume など、定義なしにあちこちで使われます |
+| [Product overview](https://docs.runpod.io/get-started/products) | 「Runpod の主要な製品を見て、ワークロードに合ったソリューションを見つける」。Serverless と Pod のどちらが必要か迷ったら読んでください |
+
+**Serverless**
+
+| ページ | 理由 |
+|---|---|
+| [Overview](https://docs.runpod.io/serverless/overview) | 「AI モデルと計算負荷の高いワークロードのための従量課金コンピュート」 |
+| [Quickstart](https://docs.runpod.io/serverless/quickstart) | Lab 01 の公式版 |
+| [Handler functions](https://docs.runpod.io/serverless/workers/handler-functions) | コードが満たすべき契約。[Worker SDK]({{ '/sdk/worker/' | relative_url }}) と合わせて読んでください |
+| [Deploy from GitHub](https://docs.runpod.io/serverless/workers/github-integration) | これらのラボが使うデプロイ経路。Build context フィールドが書かれていない点に注意 |
+| [Endpoint settings](https://docs.runpod.io/serverless/endpoints/endpoint-configurations) | 作成フォームの全設定のリファレンス |
+| [Job states and metrics](https://docs.runpod.io/serverless/endpoints/job-states) | `/runsync` がなぜ `IN_PROGRESS` を返したのか悩む前に読んでください |
+| [Cached models](https://docs.runpod.io/serverless/endpoints/model-caching) | モデルをイメージに入れるべきでない理由。Lab 02 の土台 |
+| [Fitness checks](https://docs.runpod.io/serverless/development/fitness-checks) | 起動時の検証。`runpod>=1.9.0` が必要 |
+| [Local testing](https://docs.runpod.io/serverless/development/local-testing) | 変更のたびにビルドしなくて済むループ |
+| [Concurrent handlers](https://docs.runpod.io/serverless/workers/concurrent-handler) | 1 つの worker で複数のリクエスト。`concurrency_modifier` が真価を発揮するところ |
+| [Optimize your endpoints](https://docs.runpod.io/serverless/development/optimization) | 「レイテンシとコストを下げるための戦略」 |
+| [Troubleshooting](https://docs.runpod.io/serverless/troubleshooting) | 一度ざっと目を通しておけば、障害が起きたときに見分けられます |
+
+**Pods**
+
+| ページ | 理由 |
+|---|---|
+| [Overview](https://docs.runpod.io/pods/overview) | 借りたときに実際に何が手に入るか |
+| [Choose a Pod](https://docs.runpod.io/pods/choose-a-pod) | 当て推量ではなくワークロードに GPU を合わせる |
+| [Storage options](https://docs.runpod.io/pods/storage/types) | コンテナディスク、volume、network volume の違い。これを混同すると作業が失われます |
+
+**コスト**
+
+| ページ | 理由 |
+|---|---|
+| [Serverless pricing](https://docs.runpod.io/serverless/pricing) | `workers_min = 0` が重要な理由 |
+| [Pods pricing](https://docs.runpod.io/pods/pricing) | 稼働中は分単位、加えて停止中の Pod のストレージ |
+| [Billing information](https://docs.runpod.io/references/billing-information) | 支出上限。何かを作成する最初のラボの前に設定してください |
+
+**リファレンス**
+
+| ページ | 理由 |
+|---|---|
+| [GPU types](https://docs.runpod.io/references/gpu-types) | 何が利用でき、おおよそいくらか |
+| [Instant Clusters](https://docs.runpod.io/instant-clusters) | Cluster トラックが書かれる前に興味が湧いたら |
+
+</div>

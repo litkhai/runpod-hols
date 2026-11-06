@@ -187,3 +187,185 @@ claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/
 [저장소에서 전체 내용 보기 →](https://github.com/litkhai/runpod-hols/tree/main/setup)
 
 </div>
+
+<div class="lang" data-lang="zh" markdown="1">
+
+## 简体中文
+
+其他路线默认你已经完成的所有事情。
+
+### 快速开始
+
+```bash
+./setup/check-setup.sh          # 1. are the tools present?
+./setup/init-env.sh             # 2. enter your secrets, writes .env (0600)
+python setup/verify-auth.py     # 3. does the key actually work?
+```
+
+### API 密钥
+
+在 [Console → Settings → API Keys](https://console.runpod.io/user/settings) 创建一个，然后运行 `./setup/init-env.sh`。它在关闭终端回显的情况下读取密钥，以 `0600` 权限写入 `.env`，并只打印经过遮盖的确认信息——因此密钥不会出现在屏幕或 shell 历史中。可以安全地重复运行：已有的值会成为默认值，旧文件会被备份。
+
+<div class="warn" markdown="1">
+**Runpod 只显示一次密钥，并且不保存它。** 创建时就把它复制到密码管理器中。一旦丢失就无法找回——只能新建一个。
+</div>
+
+密钥带有在创建时设定的权限级别：
+
+| 级别 | 含义 |
+|---|---|
+| **All** | 完全访问 |
+| **Restricted** | 由你按 API 配置访问——`None`、`Restricted`、`Read/Write`、`Read Only` |
+| **Read Only** | 只读，不可写入 |
+
+| 任务 | 级别 |
+|---|---|
+| `verify-auth.py`，浏览 GPU 类型和资源 | **Read Only** |
+| 通过控制台部署实验 01 | 无需密钥 |
+| 调用已部署的端点 | 对该端点的访问权限 |
+| `terraform/01-endpoint` | 写入权限 |
+| `terraform/02-pod` | **All** |
+
+文档中的 `Restricted` 模式是*按 Serverless 端点*定制访问，并未明确涵盖 Pod 或 Network Volume 的范围，因此对 Pod 实验来说，`All` 是可靠的选择。
+
+权限可以之后在 Settings 页面**修改**——无需再签发第二个密钥。先从 Read Only 开始，到了 Terraform 实验再提升。
+
+<div class="warn" markdown="1">
+密钥一旦出现在任何公开场所——一次提交、一张截图、一次聊天粘贴——就立即轮换。删除提交是不够的；必须在控制台中吊销该密钥。
+
+**2024 年 11 月 11 日**之前创建的密钥属于旧版：在 GraphQL 上是 Read/Write 或 Read Only，但无论如何对 AI API 都拥有完全访问权限。请替换它们。
+</div>
+
+### `verify-auth.py` 做了什么
+
+三个只读调用：`get_user`、`get_gpus`、`get_pods`。不创建任何东西，所以不产生任何费用。最后一个最重要——它列出你已经在运行的 Pod，你就是靠它找到上一次会话遗留下来、仍在计费的 Pod。
+
+### 各路线所需工具
+
+| 工具 | 用于 | 安装 |
+|---|---|---|
+| Python 3.10+ | 全部 | `uv venv --python 3.11` |
+| Docker | Serverless | [docs.docker.com](https://docs.docker.com/get-docker/) |
+| Terraform 1.6+ | Terraform | `brew install hashicorp/tap/terraform` |
+| `runpodctl` | Pod（可选） | `brew install runpod/runpodctl/runpodctl` |
+| Node 18+ | MCP（可选） | `brew install node` |
+
+<div class="note" markdown="1">
+**macOS 上的两个陷阱。** 系统自带的 `python3` 是 3.9，而 Runpod SDK 需要 3.10+，所以请使用 `uv venv --python 3.11`。另外，Homebrew 的 `terraform` formula 停留在 1.5.7，无法安装 Runpod provider——请改用 HashiCorp tap。
+</div>
+
+### 从代码访问 Runpod 的途径
+
+| 途径 | 最适合 |
+|---|---|
+| [Python SDK](https://github.com/runpod/runpod-python) | 脚本，以及 worker 运行时本身 |
+| [`runpodctl`](https://github.com/runpod/runpodctl) | 快速的 CLI 操作、文件传输 |
+| [Terraform provider](https://registry.terraform.io/providers/runpod/runpod) | 可复现的基础设施 |
+| [MCP server](https://github.com/runpod/runpod-mcp) | 从 Claude Code 或 Cursor 操控 Runpod |
+
+### MCP——从 AI 智能体使用 Runpod
+
+官方 [MCP server](https://github.com/runpod/runpod-mcp) 是 Runpod 组织中维护最活跃的集成。托管模式无需安装，也不会在磁盘上保存 API 密钥：
+
+```bash
+claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/
+```
+
+<div class="warn" markdown="1">
+拥有读写 MCP 连接的智能体可以创建 Pod，而 Pod 从启动那一刻起就开始计费。除非任务确实需要创建资源，否则请使用只读密钥。
+</div>
+
+[在仓库中查看完整内容 →](https://github.com/litkhai/runpod-hols/tree/main/setup)
+
+</div>
+
+<div class="lang" data-lang="ja" markdown="1">
+
+## 日本語
+
+他のトラックが「もう済んでいる」と前提にしていることのすべてです。
+
+### クイックスタート
+
+```bash
+./setup/check-setup.sh          # 1. are the tools present?
+./setup/init-env.sh             # 2. enter your secrets, writes .env (0600)
+python setup/verify-auth.py     # 3. does the key actually work?
+```
+
+### API キー
+
+[Console → Settings → API Keys](https://console.runpod.io/user/settings) で作成し、`./setup/init-env.sh` を実行します。ターミナルのエコーを無効にした状態でキーを読み取り、`.env` を `0600` のパーミッションで書き込み、マスクされた確認表示だけを出力します。そのためキーが画面にもシェル履歴にも残りません。何度実行しても安全です。既存の値がデフォルトになり、古いファイルはバックアップされます。
+
+<div class="warn" markdown="1">
+**Runpod はキーを一度しか表示せず、保存もしません。** 作成時にパスワードマネージャーにコピーしてください。紛失すると復元できず、新しく作るしかありません。
+</div>
+
+キーには作成時に設定する権限レベルがあります。
+
+| レベル | 意味 |
+|---|---|
+| **All** | フルアクセス |
+| **Restricted** | API ごとに自分で設定するアクセス：`None`、`Restricted`、`Read/Write`、`Read Only` |
+| **Read Only** | 読み取りのみ、書き込み不可 |
+
+| 作業 | レベル |
+|---|---|
+| `verify-auth.py`、GPU タイプとリソースの参照 | **Read Only** |
+| コンソールからのラボ 01 のデプロイ | キー不要 |
+| デプロイ済みエンドポイントの呼び出し | そのエンドポイントへのアクセス |
+| `terraform/01-endpoint` | 書き込みアクセス |
+| `terraform/02-pod` | **All** |
+
+ドキュメントにある `Restricted` モードは *Serverless エンドポイント単位*でアクセスをカスタマイズするもので、Pod や Network Volume の範囲を明確にはカバーしていません。そのため Pod ラボでは `All` が確実な選択です。
+
+権限は Settings ページから**後で編集できます。** 2 つ目のキーを発行する必要はありません。Read Only で始め、Terraform ラボに進んだら引き上げてください。
+
+<div class="warn" markdown="1">
+キーが公開の場所に出たら、その瞬間にローテーションしてください。コミット、スクリーンショット、チャットへの貼り付けも含みます。コミットを削除するだけでは不十分で、コンソールでキーを失効させる必要があります。
+
+**2024 年 11 月 11 日**より前に作成されたキーはレガシーです。GraphQL では Read/Write または Read Only ですが、AI API には関係なくフルアクセスを持ちます。置き換えてください。
+</div>
+
+### `verify-auth.py` がすること
+
+読み取り専用の呼び出し 3 つ：`get_user`、`get_gpus`、`get_pods`。何も作成しないので、何も課金されません。最も重要なのは最後のもので、すでに稼働中の Pod を一覧表示します。前のセッションから残っていて、今も課金されている Pod はこれで見つけます。
+
+### トラック別のツール
+
+| ツール | 必要なトラック | インストール |
+|---|---|---|
+| Python 3.10+ | すべて | `uv venv --python 3.11` |
+| Docker | Serverless | [docs.docker.com](https://docs.docker.com/get-docker/) |
+| Terraform 1.6+ | Terraform | `brew install hashicorp/tap/terraform` |
+| `runpodctl` | Pod（任意） | `brew install runpod/runpodctl/runpodctl` |
+| Node 18+ | MCP（任意） | `brew install node` |
+
+<div class="note" markdown="1">
+**macOS の 2 つの落とし穴。** システムの `python3` は 3.9 で、Runpod SDK は 3.10+ を必要とするため、`uv venv --python 3.11` を使ってください。また、Homebrew の `terraform` formula は 1.5.7 で止まっていて Runpod provider をインストールできません。代わりに HashiCorp tap を使ってください。
+</div>
+
+### コードから Runpod にアクセスする方法
+
+| 方法 | 最適な用途 |
+|---|---|
+| [Python SDK](https://github.com/runpod/runpod-python) | スクリプト、そして worker ランタイムそのもの |
+| [`runpodctl`](https://github.com/runpod/runpodctl) | 手早い CLI 操作、ファイル転送 |
+| [Terraform provider](https://registry.terraform.io/providers/runpod/runpod) | 再現可能なインフラ |
+| [MCP server](https://github.com/runpod/runpod-mcp) | Claude Code や Cursor から Runpod を操作 |
+
+### MCP：AI エージェントから Runpod を使う
+
+公式の [MCP server](https://github.com/runpod/runpod-mcp) は、Runpod org の中で最も活発にメンテナンスされている連携です。ホスト型モードはインストール不要で、API キーをディスクに保存しません。
+
+```bash
+claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/
+```
+
+<div class="warn" markdown="1">
+読み書き可能な MCP 接続を持つエージェントは Pod を作成でき、Pod は起動した瞬間から課金されます。タスクが本当に何かをプロビジョニングする必要がない限り、読み取り専用のキーを使ってください。
+</div>
+
+[リポジトリで詳細を見る →](https://github.com/litkhai/runpod-hols/tree/main/setup)
+
+</div>
