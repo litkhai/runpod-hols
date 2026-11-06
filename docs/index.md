@@ -171,3 +171,169 @@ cd runpod-hols
 ```
 
 </div>
+
+<div class="lang" data-lang="zh" markdown="1">
+
+## 简体中文
+
+面向 [Runpod](https://runpod.io) 的实践实验。Runpod 是用于 AI/ML 工作负载的 GPU 云。Runpod 的每一种计算产品各有一条实验路线，另有一条 Terraform 路线，用代码完成同样的事情。
+
+这里的所有内容都经过实际运行验证——文档中的输出、镜像大小和错误信息都是真实的，而不是从厂商文档中照抄的。
+
+### Runpod 是什么
+
+一个按秒或按分钟出租加速器的 GPU 云，无需预约，也无需申请配额。有三种使用方式，选对其中一种就是大部分的决定：
+
+- **Serverless**——你提供一个带 `handler` 函数的容器；Runpod 将其作为 HTTP 端点运行，按需启动 worker，只在执行期间计费。用于推理。
+- **Pods**——你租用一个 GPU 容器并一直保留，可通过 SSH、JupyterLab 访问，并有持久化的 `/workspace`。运行期间全程计费。用于开发和微调。
+- **Instant Clusters**——2–8 个多 GPU 节点互连，用于分布式训练。
+
+围绕这三者，还有预构建 worker 的 Hub、用于共享存储的 Network Volume，以及一个既在 worker 内部运行、又能从外部操控平台的 Python SDK。
+
+建议先读 [Welcome to Runpod](https://docs.runpod.io/overview) 和 [Concepts](https://docs.runpod.io/get-started/concepts)；三者之间如何选择见 [Product overview](https://docs.runpod.io/get-started/products)。GPU、训练、推理和部署的背景知识见 [Readings]({{ '/readings/' | relative_url }})。
+
+<div class="cards" markdown="0">
+  <div class="card">
+    <h3><a href="{{ '/setup/' | relative_url }}">Setup</a></h3>
+    <p>API 密钥、工具检查、认证验证、MCP。</p>
+    <span class="badge ready">从这里开始</span>
+  </div>
+  <div class="card">
+    <h3><a href="{{ '/serverless/' | relative_url }}">Serverless</a></h3>
+    <p>自动扩缩的推理端点。按执行计费。</p>
+    <span class="badge ready">实验 01–03 已运行</span>
+  </div>
+  <div class="card">
+    <h3><a href="{{ '/pod/' | relative_url }}">Pod</a></h3>
+    <p>带 SSH 和 Jupyter 的 GPU 容器。按分钟计费。</p>
+    <span class="badge ready">实验 01–04 已运行</span>
+  </div>
+  <div class="card">
+    <h3><a href="{{ '/cluster/' | relative_url }}">Cluster</a></h3>
+    <p>多节点分布式训练。</p>
+    <span class="badge tbd">待定</span>
+  </div>
+  <div class="card">
+    <h3><a href="{{ '/terraform/' | relative_url }}">Terraform</a></h3>
+    <p>以基础设施即代码方式管理同样的资源。</p>
+    <span class="badge ready">2 个实验就绪</span>
+  </div>
+</div>
+
+### 产品对比
+
+| | Serverless | Pod | Instant Cluster |
+|---|---|---|---|
+| 形态 | 自动扩缩的 worker 端点 | 单个 GPU 容器 | 2–8 个节点（16–64 块 GPU） |
+| 需要 | `handler.py` + 镜像 | 无——从控制台启动 | 分布式训练脚本 |
+| 访问 | HTTP API | SSH / Jupyter / VS Code | 每个节点 SSH |
+| 计费 | 仅在执行期间 | 运行期间持续计费 | 集群租用时间 |
+| 状态 | 无——每个请求重置 | 持久化（`/workspace`） | 持久化 |
+
+关键区别在于**状态是否持久**。Pod 在停止和启动之间保留 `/workspace`，模型和数据集可以重复使用。Serverless 每个请求都是一个新容器，所以较重的内容必须打包进镜像，或通过 Network Volume 挂载。
+
+### 前提条件
+
+| 项目 | 要求 |
+|---|---|
+| Python | 3.10+——macOS 自带的 Python 是 3.9，无法使用 |
+| Docker | Serverless 路线需要 |
+| Terraform | Terraform 路线需要 1.6+——见该页面的注意事项 |
+| Runpod 账号 | [console.runpod.io](https://console.runpod.io) |
+
+<div class="warn" markdown="1">
+**费用警告。** Pod 在运行期间全程计费，即使空闲也一样——用完务必 Stop 或 Terminate。只要 Active Workers 保持为 0，没有请求时 Serverless 不产生费用。在第一个会创建资源的实验之前，先在控制台设置支出上限。
+</div>
+
+### 开始
+
+```bash
+git clone https://github.com/litkhai/runpod-hols
+cd runpod-hols
+./setup/check-setup.sh
+```
+
+</div>
+
+<div class="lang" data-lang="ja" markdown="1">
+
+## 日本語
+
+AI/ML ワークロード向けの GPU クラウド [Runpod](https://runpod.io) のハンズオンラボです。Runpod のコンピュート製品ごとにトラックがあり、同じことをコードで行う Terraform トラックもあります。
+
+ここにあるものはすべて実際に動かして確認しています。ドキュメント中の出力、イメージサイズ、エラーメッセージは本物で、ベンダーのドキュメントから書き写したものではありません。
+
+### Runpod とは
+
+予約もクォータ申請もなしに、アクセラレータを秒単位・分単位で借りられる GPU クラウドです。使い方は 3 通りあり、どれを選ぶかが判断の大部分を占めます。
+
+- **Serverless**：`handler` 関数を持つコンテナを用意すると、Runpod がそれを HTTP エンドポイントとして動かし、必要に応じて worker を起動し、実行中だけ課金します。推論向け。
+- **Pods**：GPU コンテナを借りてそのまま保持します。SSH、JupyterLab、永続的な `/workspace` が使えます。稼働中はずっと課金されます。開発とファインチューニング向け。
+- **Instant Clusters**：2–8 台のマルチ GPU ノードを相互接続したもの。分散学習向け。
+
+その周りに、ビルド済み worker の Hub、共有ストレージ用の Network Volume、そして worker の中で動きつつ外からプラットフォームを操作もできる Python SDK があります。
+
+まず [Welcome to Runpod](https://docs.runpod.io/overview) と [Concepts](https://docs.runpod.io/get-started/concepts) を読んでください。3 つの選び方は [Product overview](https://docs.runpod.io/get-started/products) にあります。GPU、学習、推論、デプロイの背景知識は [Readings]({{ '/readings/' | relative_url }}) にまとめています。
+
+<div class="cards" markdown="0">
+  <div class="card">
+    <h3><a href="{{ '/setup/' | relative_url }}">Setup</a></h3>
+    <p>API キー、ツールの確認、認証の検証、MCP。</p>
+    <span class="badge ready">ここから開始</span>
+  </div>
+  <div class="card">
+    <h3><a href="{{ '/serverless/' | relative_url }}">Serverless</a></h3>
+    <p>オートスケールする推論エンドポイント。実行単位で課金。</p>
+    <span class="badge ready">ラボ 01–03 実行済み</span>
+  </div>
+  <div class="card">
+    <h3><a href="{{ '/pod/' | relative_url }}">Pod</a></h3>
+    <p>SSH と Jupyter 付きの GPU コンテナ。分単位で課金。</p>
+    <span class="badge ready">ラボ 01–04 実行済み</span>
+  </div>
+  <div class="card">
+    <h3><a href="{{ '/cluster/' | relative_url }}">Cluster</a></h3>
+    <p>マルチノードの分散学習。</p>
+    <span class="badge tbd">未定</span>
+  </div>
+  <div class="card">
+    <h3><a href="{{ '/terraform/' | relative_url }}">Terraform</a></h3>
+    <p>同じリソースを Infrastructure as Code で。</p>
+    <span class="badge ready">ラボ 2 本準備済み</span>
+  </div>
+</div>
+
+### 製品の比較
+
+| | Serverless | Pod | Instant Cluster |
+|---|---|---|---|
+| 形態 | オートスケールする worker エンドポイント | 単一の GPU コンテナ | 2–8 ノード（GPU 16–64 基） |
+| 必要なもの | `handler.py` + イメージ | なし（コンソールから起動） | 分散学習スクリプト |
+| アクセス | HTTP API | SSH / Jupyter / VS Code | ノードごとに SSH |
+| 課金 | 実行中のみ | 稼働中は継続して課金 | クラスタのリース時間 |
+| 状態 | なし（リクエストごとにリセット） | 永続（`/workspace`） | 永続 |
+
+最大の違いは**状態が残るかどうか**です。Pod は停止と起動をまたいで `/workspace` を保持するので、モデルやデータセットを使い回せます。Serverless はリクエストごとに新しいコンテナなので、重いものはイメージに焼き込むか、Network Volume でアタッチする必要があります。
+
+### 前提条件
+
+| 項目 | 要件 |
+|---|---|
+| Python | 3.10 以上。macOS 標準の Python は 3.9 なので動きません |
+| Docker | Serverless トラックで必要 |
+| Terraform | Terraform トラックでは 1.6 以上。そのページの注意事項を参照 |
+| Runpod アカウント | [console.runpod.io](https://console.runpod.io) |
+
+<div class="warn" markdown="1">
+**コストに関する警告。** Pod は稼働中ずっと課金されます。アイドル状態でも同じです。終わったら必ず Stop か Terminate してください。Serverless は Active Workers を 0 にしておけば、リクエストがないときは費用がかかりません。何かを作成する最初のラボの前に、コンソールで支出上限を設定してください。
+</div>
+
+### はじめに
+
+```bash
+git clone https://github.com/litkhai/runpod-hols
+cd runpod-hols
+./setup/check-setup.sh
+```
+
+</div>
