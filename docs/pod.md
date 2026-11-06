@@ -233,3 +233,231 @@ Pod 는 코드 저장소가 필요 없습니다. 콘솔, CLI, SDK 로 기동하�
 `runpod/containers` 는 Serverless 트랙과 겹치는 지점입니다. `runpod/base` 는 Pod 템플릿의 베이스이면서 동시에 Serverless `worker-template` 이 사용하는 이미지이기도 합니다.
 
 </div>
+
+<div class="lang" data-lang="zh" markdown="1">
+
+## 简体中文
+
+<div class="note" markdown="1">
+**Lab 01 已端到端跑通**——从 Python 启动、通过 SSH 连接、销毁，默认使用 CPU。2026-11-05 使用 `runpod` 1.12.0 运行：一个 `cpu3c-2-4` CPU Pod，$0.06/hr，启动后约 4 分钟可通过 SSH 连接，总费用不到一美分。[查看实验](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect)。
+</div>
+
+Pod 是你租用并自行控制的 GPU 或 CPU 容器。与 Serverless 不同，它会一直运行直到你停止它，保留其文件系统，并提供 shell 访问。开发、实验和微调都在这里进行。
+
+### 实验
+
+| 实验 | 状态 |
+|---|---|
+| [01-launch-connect](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect) | ✅ 2026-11-05 已运行——从 Python 启动、通过 SSH 连接、销毁。默认使用 CPU |
+| [02-storage](https://github.com/litkhai/runpod-hols/tree/main/pod/02-storage) | ✅ 2026-11-05 已运行——stop、terminate 以及 CPU Pod 之后各保留了什么 |
+| [03-custom-template](https://github.com/litkhai/runpod-hols/tree/main/pod/03-custom-template) | ✅ 2026-11-05 已运行——带普通环境变量和 secret 环境变量的 template |
+| [04-pod-to-serverless](https://github.com/litkhai/runpod-hols/tree/main/pod/04-pod-to-serverless) | ✅ 2026-11-05 已运行——在 Pod 上开发，通过 network volume 从 Serverless 提供同一个文件 |
+
+### 存储——最重要的概念
+
+共有三层，把它们搞混正是人们丢失工作成果的原因：
+
+| 类型 | 生命周期 | 挂载点 | 用途 |
+|---|---|---|---|
+| Container Disk | stop 或 terminate 时销毁 | `/` | 操作系统、临时文件 |
+| Volume Disk | stop 后保留，terminate 时销毁 | `/workspace` | 工作代码、数据集 |
+| Network Volume | 独立于任何 Pod，可共享 | 可配置 | 在多个 Pod 间复用的权重 |
+
+任何想保留的东西都放在 `/workspace` 或 Network Volume 中。绝不要把工作成果留在 container disk 上。
+
+<div class="warn" markdown="1">
+**CPU Pod 是例外。** 用 SDK 1.12 以 `volume_in_gb=10` 启动的 CPU Pod，启动后 `volumeInGb` 为 0——SDK 不会为 CPU Pod 发送该字段——而 `/workspace` 与 `/` 位于同一个 10 GB overlay 上。在这种情况下，`/workspace` 就是 container disk。REST API 使用 `volumeInGb: 10` 时结果相同（Lab 02）；network volume 则可以挂载到 CPU Pod 上。
+</div>
+
+### Lab 02 的测量结果
+
+2026-11-05 在 EU-RO-1 运行，在每一层都放置了标记文件（[实验](https://github.com/litkhai/runpod-hols/tree/main/pod/02-storage)）：
+
+| 操作 | Container disk `/` | Pod volume `/workspace` | Network volume `/workspace` |
+|---|---|---|---|
+| stop 后再 start | 被清空 | 保留 | — |
+| terminate，在同一 volume 上新建 Pod | — | — | 保留，且在不同的主机上 |
+| CPU Pod | 存在 | 未创建 | 可挂载并正常工作 |
+
+<div class="warn" markdown="1">
+**已停止的 Pod 不一定能立即再次启动。** stop 后 40 秒执行的第一次 `start` 返回了 *"There are not enough free GPUs on the host machine to start this pod."* Pod 始终绑定在它的机器上；同样的调用在八分钟后成功了。在此之前，Pod volume 中的数据无法访问——而 network volume 不绑定于某台机器。
+</div>
+
+停止期间，对于一个 10 GB 的 Pod volume，账号的 `currentSpendPerHr` 为 `0.003`，但 Pod 的 `costPerHr` 仍显示运行时的费率 `0.89`。在 EU-RO-1，两种 volume 都是 FUSE 挂载 `mfs#euro.runpod.net:9421`；`df` 显示的是整个 2.3 PB 的文件系统，而写入在达到 10 GB 分配量时以 `Disk quota exceeded` 停止。
+
+### Template 与 secret——Lab 03 的发现
+
+template 的 `env` 中可以写 {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %}，启动时会被替换为 secret 的值。2026-11-05 使用一个随机的演示 secret 运行（[实验](https://github.com/litkhai/runpod-hols/tree/main/pod/03-custom-template)）：
+
+| 位置 | 其中的内容 |
+|---|---|
+| `GET /templates`、`GET /pods` | 引用，从不包含值 |
+| PID 1 的环境 | 值（哈希一致） |
+| `ssh host 'command'` | 两个变量都没有——只有交互式 shell 会 source `/etc/rp_environment` |
+| 轮换 secret 之后 | 在 Pod 被 stop 再 start 之前一直是旧值；`restart` 返回 500 且没有任何效果 |
+
+<div class="warn" markdown="1">
+**在 Pod 内部，secret 只是一个普通文件。** `/etc/rp_environment`（权限 644）中存有解析后的 secret 以及 Pod 的 `RUNPOD_API_KEY`。secret 让值不出现在 template 和 API 中，但不会让值不出现在容器里。
+</div>
+
+### 从 Pod 到 Serverless——Lab 04 的发现
+
+一个 network volume 在 Pod 上挂载到 `/workspace`，在 Serverless worker 上挂载到 `/runpod-volume`，就能让 endpoint 运行你刚在 Pod 上测试过的文件——无需构建镜像。template 设置 `dockerStartCmd: ["python3", "-u", "/runpod-volume/app/handler.py"]`，并将 `PYTHONPATH` 指向安装在 volume 上的包。2026-11-05 在 EU-RO-1 的 RTX 4090 上运行（[实验](https://github.com/litkhai/runpod-hols/tree/main/pod/04-pod-to-serverless)）：
+
+| 步骤 | 结果 |
+|---|---|
+| 用 `pip install --target` 安装到 volume | 9,237 个文件约需 10 分钟 |
+| 第一个 job | worker 报告 `loaded_from: /runpod-volume/app/handler.py`；`delayTime` 205 s |
+| 在这次冷启动上执行 `runsync` | 90.9 s 后返回 `IN_QUEUE`——请轮询 `/status/{id}` |
+| 第二个 job，worker 已经消失 | `delayTime` 47 s |
+
+适合迭代开发；用于生产时，应像 Serverless Lab 01 那样把代码打包进镜像——volume 会把 endpoint 固定在一个数据中心，并使每次冷启动都通过网络 import。
+
+### SDK 中的变化
+
+| | `runpod` 1.12.0 | `runpod` 2.0.0+（2026-10-30） |
+|---|---|---|
+| Pod 调用 | GraphQL | REST API v2 |
+| 不带 instance id 的 CPU Pod | 会发送；API 拒绝：`instanceId` 为必填 | 在 SDK 中被拒绝 |
+| 带 `volume_mount_path` 但没有 network volume 的 CPU Pod | 会发送；volume 被丢弃 | 在 SDK 中被拒绝 |
+
+Lab 01 固定使用 `runpod~=1.12.0`。在 2.x 上，它的脚本还会误读 Pod：REST 对象中的字段是 `status` 而不是 `desiredStatus`，所以检查运行中 Pod 的逻辑将什么也找不到。[2.x 中的其他变化]({{ '/sdk/client/' | relative_url }})。instance id 形如 `cpu3c-2-4`——规格类型、vCPU、以 GB 计的内存。
+
+### 计费
+
+按分钟计费，只要 Pod 在运行就计费，无论是否空闲。stop 会释放 GPU，但 volume 存储仍会计费。terminate 会删除一切。
+
+<div class="danger" markdown="1">
+这是与 Serverless 最大的区别，也是最容易意外产生高额账单的地方。请设置支出上限，并养成实验一结束就立即 terminate 的习惯。
+</div>
+
+### 参考资料
+
+Pod 不需要代码仓库——你可以从控制台、CLI 或 SDK 启动——所以与 Serverless 路线不同，这里没有需要 fork 的 template 仓库。
+
+[Pods overview](https://docs.runpod.io/pods/overview) ·
+[Choose a Pod](https://docs.runpod.io/pods/choose-a-pod) ·
+[Connect](https://docs.runpod.io/pods/connect-to-a-pod) ·
+[Storage types](https://docs.runpod.io/pods/storage/types) ·
+[Network volumes](https://docs.runpod.io/pods/storage/create-network-volumes) ·
+[Templates](https://docs.runpod.io/pods/templates/overview) ·
+[Pricing](https://docs.runpod.io/pods/pricing) ·
+[runpod/containers](https://github.com/runpod/containers/tree/main/official-templates)
+
+注意 `runpod/containers` 是与 Serverless 路线共用的基础——`runpod/base` 既是 Pod template 的基础，也是 Serverless `worker-template` 构建所基于的镜像。
+
+</div>
+
+<div class="lang" data-lang="ja" markdown="1">
+
+## 日本語
+
+<div class="note" markdown="1">
+**Lab 01 はエンドツーエンドで動作します**。Python から起動し、SSH で接続し、削除します。デフォルトは CPU です。2026-11-05 に `runpod` 1.12.0 で実行：`cpu3c-2-4` の CPU Pod で $0.06/hr、起動から約 4 分で SSH 接続可能になり、合計 1 セント未満でした。[ラボを見る](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect)。
+</div>
+
+Pod は借りて自分で制御する GPU または CPU コンテナです。Serverless と違い、停止するまで動き続け、ファイルシステムを保持し、シェルアクセスができます。開発、実験、ファインチューニングはここで行います。
+
+### ラボ
+
+| ラボ | 状態 |
+|---|---|
+| [01-launch-connect](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect) | ✅ 2026-11-05 実行。Python から起動、SSH で接続、削除。デフォルトは CPU |
+| [02-storage](https://github.com/litkhai/runpod-hols/tree/main/pod/02-storage) | ✅ 2026-11-05 実行。stop、terminate、CPU Pod の後に何が残るか |
+| [03-custom-template](https://github.com/litkhai/runpod-hols/tree/main/pod/03-custom-template) | ✅ 2026-11-05 実行。通常の環境変数と secret の環境変数を持つ template |
+| [04-pod-to-serverless](https://github.com/litkhai/runpod-hols/tree/main/pod/04-pod-to-serverless) | ✅ 2026-11-05 実行。Pod で開発し、network volume 経由で同じファイルを Serverless から提供 |
+
+### ストレージ：最も重要な概念
+
+3 つの階層があり、これを混同すると作業が失われます。
+
+| 種類 | 寿命 | マウント | 用途 |
+|---|---|---|---|
+| Container Disk | stop または terminate で破棄 | `/` | OS、一時ファイル |
+| Volume Disk | stop では残り、terminate で消える | `/workspace` | 作業中のコード、データセット |
+| Network Volume | どの Pod からも独立、共有可能 | 設定可能 | 複数の Pod で使い回す重み |
+
+残しておきたいものは `/workspace` か Network Volume に置いてください。作業を container disk に残してはいけません。
+
+<div class="warn" markdown="1">
+**CPU Pod は例外です。** SDK 1.12 から `volume_in_gb=10` で起動した CPU Pod は `volumeInGb` 0 で立ち上がりました。SDK は CPU Pod に対してこのフィールドを送信しません。そして `/workspace` は `/` と同じ 10 GB の overlay 上にありました。この場合、`/workspace` は container disk です。REST API で `volumeInGb: 10` を指定しても同じでした（Lab 02）。network volume は CPU Pod にもアタッチされます。
+</div>
+
+### Lab 02 で測定したこと
+
+2026-11-05 に EU-RO-1 で、各階層にマーカーファイルを置いて実行しました（[ラボ](https://github.com/litkhai/runpod-hols/tree/main/pod/02-storage)）。
+
+| 操作 | Container disk `/` | Pod volume `/workspace` | Network volume `/workspace` |
+|---|---|---|---|
+| stop してから start | 消去 | 保持 | — |
+| terminate し、同じ volume で新しい Pod | — | — | 保持、別のホスト上で |
+| CPU Pod | 存在 | 作成されない | マウントされて動作 |
+
+<div class="warn" markdown="1">
+**停止した Pod はすぐには再起動できないことがあります。** stop の 40 秒後に実行した最初の `start` は *"There are not enough free GPUs on the host machine to start this pod."* を返しました。Pod は自分のマシンに紐づいたままです。同じ呼び出しは 8 分後に成功しました。それまで Pod volume のデータには手が届きません。network volume はマシンに紐づいていません。
+</div>
+
+停止中、10 GB の Pod volume に対してアカウントの `currentSpendPerHr` は `0.003` でしたが、Pod の `costPerHr` は稼働時の料金 `0.89` のままでした。EU-RO-1 ではどちらの volume も FUSE マウント `mfs#euro.runpod.net:9421` でした。`df` は 2.3 PB のファイルシステム全体を表示し、書き込みは 10 GB の割り当てで `Disk quota exceeded` となって止まりました。
+
+### Template と secret：Lab 03 でわかったこと
+
+template の `env` には {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %} を書くことができ、起動時に secret の値に置き換えられます。2026-11-05 にランダムなデモ用 secret で実行しました（[ラボ](https://github.com/litkhai/runpod-hols/tree/main/pod/03-custom-template)）。
+
+| 場所 | 中身 |
+|---|---|
+| `GET /templates`、`GET /pods` | 参照のみで、値は決して含まれない |
+| PID 1 の環境 | 値（ハッシュが一致） |
+| `ssh host 'command'` | どちらの変数もなし。`/etc/rp_environment` を source するのは対話シェルだけ |
+| secret をローテーションした後 | Pod を stop して start するまで古い値のまま。`restart` は 500 を返し何もしなかった |
+
+<div class="warn" markdown="1">
+**Pod の中では secret はただのファイルです。** `/etc/rp_environment`（モード 644）に、解決済みの secret と Pod の `RUNPOD_API_KEY` が入っていました。secret は値を template や API から隠しますが、コンテナからは隠しません。
+</div>
+
+### Pod から Serverless へ：Lab 04 でわかったこと
+
+1 つの network volume を Pod では `/workspace` に、Serverless の worker では `/runpod-volume` にマウントすると、Pod でテストしたばかりのファイルを endpoint で実行できます。イメージのビルドは不要です。template で `dockerStartCmd: ["python3", "-u", "/runpod-volume/app/handler.py"]` を設定し、`PYTHONPATH` を volume にインストールしたパッケージに向けます。2026-11-05 に EU-RO-1 の RTX 4090 で実行しました（[ラボ](https://github.com/litkhai/runpod-hols/tree/main/pod/04-pod-to-serverless)）。
+
+| ステップ | 結果 |
+|---|---|
+| `pip install --target` で volume にインストール | 9,237 ファイルで約 10 分 |
+| 最初の job | worker が `loaded_from: /runpod-volume/app/handler.py` を報告。`delayTime` 205 s |
+| そのコールドスタートでの `runsync` | 90.9 s 後に `IN_QUEUE` を返した。`/status/{id}` をポーリングすること |
+| 2 つ目の job、worker はすでに消えている | `delayTime` 47 s |
+
+反復開発には向いています。本番では Serverless Lab 01 のようにコードをイメージに焼き込んでください。volume は endpoint を 1 つのデータセンターに固定し、コールドスタートのたびにネットワーク越しの import を発生させます。
+
+### SDK で変わったこと
+
+| | `runpod` 1.12.0 | `runpod` 2.0.0+（2026-10-30） |
+|---|---|---|
+| Pod の呼び出し | GraphQL | REST API v2 |
+| instance id なしの CPU Pod | 送信される。API が拒否：`instanceId` は必須 | SDK で拒否 |
+| `volume_mount_path` ありで network volume なしの CPU Pod | 送信される。volume は落とされる | SDK で拒否 |
+
+Lab 01 は `runpod~=1.12.0` に固定しています。2.x ではスクリプトが Pod を読み違えることもあります。REST のオブジェクトは `desiredStatus` ではなく `status` なので、稼働中の Pod のチェックが何も見つけられません。[2.x でのその他の変更]({{ '/sdk/client/' | relative_url }})。instance id は `cpu3c-2-4` のような形式で、フレーバー、vCPU、GB 単位のメモリを表します。
+
+### 課金
+
+Pod が稼働している間は、アイドルかどうかに関係なく分単位で課金されます。stop すると GPU は解放されますが、volume のストレージは引き続き課金されます。terminate するとすべて削除されます。
+
+<div class="danger" markdown="1">
+これが Serverless との最大の違いであり、うっかり請求額を膨らませる最も簡単な原因です。支出上限を設定し、ラボが終わったらすぐに terminate する習慣をつけてください。
+</div>
+
+### 参考資料
+
+Pod にはコードリポジトリが不要です。コンソール、CLI、SDK から起動できます。そのため Serverless トラックと違い、fork する template リポジトリはありません。
+
+[Pods overview](https://docs.runpod.io/pods/overview) ·
+[Choose a Pod](https://docs.runpod.io/pods/choose-a-pod) ·
+[Connect](https://docs.runpod.io/pods/connect-to-a-pod) ·
+[Storage types](https://docs.runpod.io/pods/storage/types) ·
+[Network volumes](https://docs.runpod.io/pods/storage/create-network-volumes) ·
+[Templates](https://docs.runpod.io/pods/templates/overview) ·
+[Pricing](https://docs.runpod.io/pods/pricing) ·
+[runpod/containers](https://github.com/runpod/containers/tree/main/official-templates)
+
+なお `runpod/containers` は Serverless トラックと共通の土台です。`runpod/base` は Pod template のベースであると同時に、Serverless の `worker-template` がビルドの基にしているイメージでもあります。
+
+</div>

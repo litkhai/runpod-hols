@@ -490,6 +490,11 @@ pre {
 }
 
 pre code { background: none; padding: 0; font-size: inherit; }
+/* A long inline path or id has no break opportunity and would widen a phone
+   page past the screen; let it break anywhere. Code blocks scroll instead.
+   긴 인라인 경로나 id 는 끊을 곳이 없어 휴대폰에서 페이지를 화면보다 넓힌다.
+   아무 데서나 끊게 한다. 코드 블록은 대신 스크롤된다. */
+:not(pre) > code { overflow-wrap: anywhere; }
 
 blockquote {
   margin: 1.2em 0;
