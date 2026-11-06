@@ -3,6 +3,7 @@
 
 Usage:
     python3 pod_sweep.py --label RTX_4090 --gpu "NVIDIA GeForce RTX 4090" [--cloud SECURE] [--dry-run]
+    python3 pod_sweep.py --label RTX_4090_is1 --gpu "NVIDIA GeForce RTX 4090" --dc EUR-IS-1
     python3 pod_sweep.py --ledger        # what has been spent so far
 
 The Pod is terminated in a finally block: on success, failure, timeout or Ctrl-C.
@@ -91,6 +92,7 @@ def main():
     ap.add_argument("--label")
     ap.add_argument("--gpu", help="Runpod GPU type id, e.g. 'NVIDIA GeForce RTX 4090'")
     ap.add_argument("--cloud", default="SECURE", choices=["SECURE", "COMMUNITY"])
+    ap.add_argument("--dc", default="", help="pin to one datacenter id, e.g. EU-RO-1 (T10: same GPU on different hosts)")
     ap.add_argument("--model", default="Qwen/Qwen2.5-7B-Instruct")
     ap.add_argument("--vllm", default="0.31.0")
     ap.add_argument("--max-model-len", default="8192")
@@ -119,6 +121,8 @@ def main():
             "env": {"PUBLIC_KEY": open(key + ".pub").read().strip()}}
     if a.cloud == "COMMUNITY":
         body["supportPublicIp"] = True
+    if a.dc:
+        body["dataCenterIds"] = [a.dc]
     print(json.dumps({k: v for k, v in body.items() if k != "env"}, indent=2))
     if a.dry_run:
         print("--dry-run: nothing created. spent so far %.2f of %.2f USD" % (spent(), budget))
@@ -136,10 +140,13 @@ def main():
                 break
             except RuntimeError as e:
                 # A failed create bills nothing; stock flips between Low and none from minute to minute.
-                if "no instances currently available" not in str(e) or time.time() > deadline:
+                # "unexpected end of JSON input" is a transient 500 from the create call; retry it too.
+                transient = "no instances currently available" in str(e) or "unexpected end of JSON" in str(e)
+                if not transient or time.time() > deadline:
                     status = "no-capacity" if "no instances" in str(e) else "create-failed"
                     raise
-                log("no capacity for %s (%s), retrying in 60s" % (a.gpu, a.cloud))
+                log("no capacity for %s (%s), retrying in 60s" % (a.gpu, a.cloud) if "no instances" in str(e)
+                    else "create returned %s, retrying in 60s" % str(e)[-80:])
                 time.sleep(60)
         pod_id, started = pod["id"], time.time()
         rate = pod.get("adjustedCostPerHr") or pod.get("costPerHr")
