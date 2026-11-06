@@ -59,7 +59,11 @@ def rel(p):
 def check_bilingual():
     # Anchored to line start: prose that merely mentions `## English` in
     # backticks — AGENTS.md describing this very convention — is not a section.
-    marker = re.compile(r"^## (?:English|한국어)\s*$", re.M)
+    # Site pages also carry Simplified Chinese and Japanese; each section is
+    # checked against the English one.
+    names = "English|한국어|简体中文|日本語"
+    marker = re.compile(r"^## (?:%s)\s*$" % names, re.M)
+    short = {"English": "EN", "한국어": "KO", "简体中文": "ZH", "日本語": "JA"}
 
     checked = 0
     for p in md_files():
@@ -67,20 +71,25 @@ def check_bilingual():
         if not marker.search(raw):
             continue
         text = LIQUID.sub("X", raw)
-        parts = re.split(r"^## (English|한국어)\s*$", text, flags=re.M)
-        if len(parts) < 5:
+        parts = re.split(r"^## (%s)\s*$" % names, text, flags=re.M)
+        sections = dict(zip(parts[1::2], parts[2::2]))
+        if "English" not in sections or "한국어" not in sections:
             fail(rel(p), "has one language section but not the other")
             continue
-        en, ko = parts[2], parts[4]
         checked += 1
 
+        en = sections["English"]
         for level in (2, 3):
-            pat = re.compile(r"^#{%d} (?!English|한국어)(.+)$" % level, re.M)
-            a, b = pat.findall(en), pat.findall(ko)
-            if len(a) != len(b):
-                fail(rel(p), f"h{level} count differs: {len(a)} EN vs {len(b)} KO")
+            pat = re.compile(r"^#{%d} (?!%s)(.+)$" % (level, names), re.M)
+            for name, half in sections.items():
+                if name == "English":
+                    continue
+                a, b = pat.findall(en), pat.findall(half)
+                if len(a) != len(b):
+                    fail(rel(p), f"h{level} count differs: {len(a)} EN vs {len(b)} {short[name]}")
 
-        for name, half in (("EN", en), ("KO", ko)):
+        for full, half in sections.items():
+            name = short[full]
             if half.count("```") % 2:
                 fail(rel(p), f"[{name}] unbalanced code fence")
             run = []
@@ -97,7 +106,7 @@ def check_bilingual():
 # --------------------------------------------------------------------------
 # 2. Site pages
 #
-# Each page in docs/ wraps its two languages in `.lang` blocks that the toggle
+# Each page in docs/ wraps its languages (en, ko; zh, ja once translated) in `.lang` blocks that the toggle
 # shows and hides. A missing or unbalanced block leaves content stranded in a
 # hidden div.
 # --------------------------------------------------------------------------
@@ -117,8 +126,10 @@ def check_site_pages():
                 fail(rel(p), f"front matter missing `{key}`")
 
         langs = re.findall(r'<div class="lang" data-lang="(\w+)"', text)
-        if langs != ["en", "ko"]:
-            fail(rel(p), f"expected one en and one ko .lang block, found {langs}")
+        # en, ko — or all four once a page is translated (#48). A page with only
+        # some of zh/ja would leave readers of the other falling back to English.
+        if langs not in (["en", "ko"], ["en", "ko", "zh", "ja"]):
+            fail(rel(p), f"expected .lang blocks en, ko[, zh, ja], found {langs}")
 
         depth = 0
         for m in re.finditer(r"<div\b[^>]*>|</div>", text):

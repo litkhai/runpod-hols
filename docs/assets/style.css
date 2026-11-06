@@ -96,6 +96,24 @@ body {
   word-break: keep-all; /* keeps Korean line breaks sane / 한글 줄바꿈 개선 */
 }
 
+/* Chinese and Japanese have no spaces between words, so `keep-all` would leave
+   a paragraph unbreakable. They break between characters; `strict` keeps
+   closing punctuation off the start of a line. The font stacks put each
+   script's own fonts first, so shared Han characters take that script's forms.
+   중국어·일본어는 단어 사이에 공백이 없어 `keep-all` 이면 문단이 줄바꿈되지
+   않는다. 글자 단위로 끊고, `strict` 로 닫는 문장부호가 줄 머리에 오지 않게 한다.
+   언어마다 해당 문자권 폰트를 앞에 두어 공통 한자가 그 언어의 자형으로 나온다. */
+.lang[data-lang="zh"], .lang[data-lang="ja"] { word-break: normal; line-break: strict; }
+html:lang(zh-Hans) body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+               "Microsoft YaHei", "Noto Sans SC", "Noto Sans CJK SC", Roboto, sans-serif;
+}
+html:lang(ja) body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans",
+               "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", "Noto Sans JP",
+               "Noto Sans CJK JP", Roboto, sans-serif;
+}
+
 .wrap { max-width: 900px; margin: 0 auto; padding: 0 20px; }
 
 /* --- Two-column layout ----------------------------------------------
@@ -305,6 +323,69 @@ h2[id], h3[id] { scroll-margin-top: calc(var(--topbar-h, 100px) + 16px); }
 .switch button:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
+}
+
+/* Language menu: a globe that opens a short list under it.
+   언어 메뉴: 지구본을 누르면 아래에 짧은 목록이 열린다. */
+.lang-menu { position: relative; }
+
+.lang-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  padding: 5px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+.lang-trigger:hover,
+.lang-trigger[aria-expanded="true"] { background: var(--bg-inset); color: var(--fg); }
+.lang-trigger:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.lang-code { min-width: 1.4em; text-align: left; }
+
+.lang-list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 128px;
+  padding: 4px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
+}
+.lang-list[hidden] { display: none; }
+/* On a phone the header wraps and the globe sits at the left edge, so the
+   menu opens rightwards instead of off-screen.
+   휴대폰에서는 헤더가 줄바꿈되어 지구본이 왼쪽 끝에 오므로, 메뉴를 화면 밖이
+   아니라 오른쪽으로 연다. */
+@media (max-width: 600px) { .lang-list { left: 0; right: auto; } }
+.lang-list button {
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: calc(var(--radius) - 2px);
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+.lang-list button:hover { background: var(--bg-inset); color: var(--fg); }
+.lang-list button.active { color: var(--accent); font-weight: 600; }
+.lang-list button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 
 .gh { font-size: 13px; color: var(--fg-muted); text-decoration: none; }
