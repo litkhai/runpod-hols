@@ -20,6 +20,7 @@ Runpod Serverless runs your code as an **autoscaling HTTP endpoint**. Workers sp
 | [06-autoscaling](./06-autoscaling) | ✅ Run 2026-11-07 | Queue delay vs request count scalers, per-worker concurrency |
 | [07-streaming](./07-streaming) | ✅ Run 2026-11-07 | `/stream` chunk latency, the cost of each `yield`, `/runsync` with a generator |
 | [08-job-lifecycle](./08-job-lifecycle) | ✅ Run 2026-11-07 | Every way a job ends: failed, cancelled, timed out, expired, purged, retried |
+| [09-active-workers](./09-active-workers) | ✅ Run 2026-11-07 | One active worker for an hour: cold starts and billing |
 | [10-flash](./10-flash) | ✅ Run 2026-11-07 | Flash (`runpod` 2.x, `rp flash`): a decorated function deployed without a Dockerfile |
 | [11-hub](./11-hub) | ✅ Run 2026-11-07 | One-click Faster Whisper from the Hub: what the console creates, cold and warm calls |
 
@@ -137,6 +138,7 @@ Runpod Serverless 는 코드를 **오토스케일 HTTP 엔드포인트**로 실�
 | [06-autoscaling](./06-autoscaling) | ✅ 2026-11-07 실행 | Queue delay 와 Request count 스케일러, 워커당 동시성 |
 | [07-streaming](./07-streaming) | ✅ 2026-11-07 실행 | `/stream` 청크 지연, `yield` 한 번의 비용, 제너레이터와 `/runsync` |
 | [08-job-lifecycle](./08-job-lifecycle) | ✅ 2026-11-07 실행 | 작업이 끝나는 모든 방식: 실패, 취소, 시간 초과, 만료, purge, 재시도 |
+| [09-active-workers](./09-active-workers) | ✅ 2026-11-07 실행 | 활성 워커 하나를 한 시간: 콜드 스타트와 청구 |
 | [10-flash](./10-flash) | ✅ 2026-11-07 실행 | Flash (`runpod` 2.x, `rp flash`): Dockerfile 없이 데코레이터 함수를 배포 |
 | [11-hub](./11-hub) | ✅ 2026-11-07 실행 | Hub 에서 Faster Whisper 원클릭 배포: 콘솔이 만드는 것, 콜드·웜 호출 |
 

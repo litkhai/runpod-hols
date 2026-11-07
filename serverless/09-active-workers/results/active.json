@@ -1,0 +1,93 @@
+{
+ "endpoint": "9p68gp6e9lfk30",
+ "start": "2026-11-07T17:00:00",
+ "minutes": 60,
+ "events": [
+  {
+   "at": "2026-11-07T17:00:00",
+   "patch": {
+    "workersMin": 1,
+    "workersMax": 5,
+    "idleTimeout": 5
+   }
+  },
+  {
+   "at": "2026-11-07T17:02:06",
+   "label": "active_0",
+   "wall_s": 6.22,
+   "status": "COMPLETED",
+   "delayTime_ms": 4435,
+   "executionTime_ms": 1202,
+   "workerId": "agh3ew1fbn2zhq",
+   "worker_uptime_s": 1.85
+  },
+  {
+   "at": "2026-11-07T17:12:01",
+   "label": "active_1",
+   "wall_s": 1.66,
+   "status": "COMPLETED",
+   "delayTime_ms": 94,
+   "executionTime_ms": 1182,
+   "workerId": "agh3ew1fbn2zhq",
+   "worker_uptime_s": 597.29
+  },
+  {
+   "at": "2026-11-07T17:22:01",
+   "label": "active_2",
+   "wall_s": 1.71,
+   "status": "COMPLETED",
+   "delayTime_ms": 88,
+   "executionTime_ms": 1221,
+   "workerId": "agh3ew1fbn2zhq",
+   "worker_uptime_s": 1197.35
+  },
+  {
+   "at": "2026-11-07T17:32:02",
+   "label": "active_3",
+   "wall_s": 2.25,
+   "status": "COMPLETED",
+   "delayTime_ms": 712,
+   "executionTime_ms": 1162,
+   "workerId": "agh3ew1fbn2zhq",
+   "worker_uptime_s": 1797.79
+  },
+  {
+   "at": "2026-11-07T17:42:01",
+   "label": "active_4",
+   "wall_s": 1.71,
+   "status": "COMPLETED",
+   "delayTime_ms": 88,
+   "executionTime_ms": 1217,
+   "workerId": "agh3ew1fbn2zhq",
+   "worker_uptime_s": 2397.34
+  },
+  {
+   "at": "2026-11-07T17:52:01",
+   "label": "active_5",
+   "wall_s": 1.7,
+   "status": "COMPLETED",
+   "delayTime_ms": 94,
+   "executionTime_ms": 1185,
+   "workerId": "agh3ew1fbn2zhq",
+   "worker_uptime_s": 2997.3
+  },
+  {
+   "at": "2026-11-07T18:02:00",
+   "patch": {
+    "workersMin": 0,
+    "workersMax": 5,
+    "idleTimeout": 5
+   }
+  },
+  {
+   "at": "2026-11-07T18:04:07",
+   "label": "after_flex",
+   "wall_s": 6.33,
+   "status": "COMPLETED",
+   "delayTime_ms": 3596,
+   "executionTime_ms": 1203,
+   "workerId": "7c6ci2hwp9opwa",
+   "worker_uptime_s": 1.75
+  }
+ ]
+}
