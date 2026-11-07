@@ -36,6 +36,8 @@ Keys carry a permission level, set at creation:
 | **Restricted** | Per-API access you configure — `None`, `Restricted`, `Read/Write`, `Read Only` |
 | **Read Only** | Read access, no writes |
 
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}" alt="Create API key dialog: the All, Restricted and Read only levels from the table above" loading="lazy" width="1400" height="998"></a><figcaption>Create API key, 2026-11-07. The console now keeps keys under <strong>Credentials → API Keys</strong> rather than Settings.</figcaption></figure>
+
 | Task | Level |
 |---|---|
 | `verify-auth.py`, browsing GPU types and resources | **Read Only** |
@@ -126,6 +128,8 @@ python setup/verify-auth.py     # 3. 키가 실제로 동작하는가
 | **All** | 전체 접근 |
 | **Restricted** | API 별로 직접 설정 — `None`, `Restricted`, `Read/Write`, `Read Only` |
 | **Read Only** | 읽기만, 쓰기 불가 |
+
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}" alt="Create API key 화면: 위 표의 All, Restricted, Read only 권한" loading="lazy" width="1400" height="998"></a><figcaption>Create API key, 2026-11-07. 콘솔은 이제 키를 Settings 가 아니라 <strong>Credentials → API Keys</strong> 에 둔다.</figcaption></figure>
 
 | 작업 | 등급 |
 |---|---|
@@ -218,6 +222,8 @@ python setup/verify-auth.py     # 3. does the key actually work?
 | **Restricted** | 由你按 API 配置访问——`None`、`Restricted`、`Read/Write`、`Read Only` |
 | **Read Only** | 只读，不可写入 |
 
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}" alt="Create API key 对话框：上表中的 All、Restricted、Read only 三种权限" loading="lazy" width="1400" height="998"></a><figcaption>Create API key，2026-11-07。控制台现在把密钥放在 <strong>Credentials → API Keys</strong>，而不是 Settings。</figcaption></figure>
+
 | 任务 | 级别 |
 |---|---|
 | `verify-auth.py`，浏览 GPU 类型和资源 | **Read Only** |
@@ -308,6 +314,8 @@ python setup/verify-auth.py     # 3. does the key actually work?
 | **All** | フルアクセス |
 | **Restricted** | API ごとに自分で設定するアクセス：`None`、`Restricted`、`Read/Write`、`Read Only` |
 | **Read Only** | 読み取りのみ、書き込み不可 |
+
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}" alt="Create API key ダイアログ：上の表の All、Restricted、Read only の 3 レベル" loading="lazy" width="1400" height="998"></a><figcaption>Create API key、2026-11-07。コンソールはキーを Settings ではなく <strong>Credentials → API Keys</strong> に置くようになりました。</figcaption></figure>
 
 | 作業 | レベル |
 |---|---|

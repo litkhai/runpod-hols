@@ -142,6 +142,8 @@ Two MIG profiles are live in the catalogue right now, as ordinary selectable GPU
 
 Both are Secure Cloud only. The parent card, RTX PRO 6000 (96GB), is also sold whole.
 
+<figure class="shot"><a href="{{ '/assets/img/gpu-topology/deploy-grid-mig.webp' | relative_url }}"><img src="{{ '/assets/img/gpu-topology/deploy-grid-mig.webp' | relative_url }}" alt="Pod deploy grid with the PRO 6000 MIG 24GB card next to whole GPUs" loading="lazy" width="1400" height="998"></a><figcaption>Deploy form, 2026-11-07: PRO 6000 MIG 24GB sits in the grid like any whole GPU, USD 0.69/hr. Its "7 max" is what could be deployed then, not the 32 in the table.</figcaption></figure>
+
 Runpod's [announcement](https://www.runpod.io/blog/multi-instance-gpu-on-runpod) is explicit that this is their decision, not yours: *"we will never time-slice or segment a GPU without being completely up front that we are doing it. If you pay for the whole card, you get the whole card, full stop."* Serverless endpoints can opt out with a checkbox under **Advanced**. Pods are stated as coming later.
 
 <div class="warn" markdown="1">
@@ -384,6 +386,8 @@ GPU1	NV12	 X 	SYS … NODE	64-127	1
 | `…RTX PRO 6000 Blackwell Server Edition MIG 2g.48gb` | PRO 6000 MIG 48GB | 48GB | 16 |
 
 둘 다 Secure Cloud 전용입니다. 원본 카드인 RTX PRO 6000(96GB)도 통째로 판매됩니다.
+
+<figure class="shot"><a href="{{ '/assets/img/gpu-topology/deploy-grid-mig.webp' | relative_url }}"><img src="{{ '/assets/img/gpu-topology/deploy-grid-mig.webp' | relative_url }}" alt="Pod 배포 화면에서 다른 GPU 옆에 놓인 PRO 6000 MIG 24GB 카드" loading="lazy" width="1400" height="998"></a><figcaption>배포 화면, 2026-11-07: PRO 6000 MIG 24GB 는 다른 GPU 와 똑같이 목록에 있고 시간당 USD 0.69 다. "7 max" 는 그 시점에 배포할 수 있던 수이지 표의 32 가 아니다.</figcaption></figure>
 
 Runpod [발표](https://www.runpod.io/blog/multi-instance-gpu-on-runpod)는 이것이 자기들 결정이지 사용자 결정이 아님을 분명히 합니다. *"we will never time-slice or segment a GPU without being completely up front that we are doing it. If you pay for the whole card, you get the whole card, full stop."* Serverless 엔드포인트는 설정의 **Advanced** 에서 체크박스로 해제할 수 있고, Pod 은 추후 적용 예정이라고 합니다.
 
@@ -628,6 +632,8 @@ GPU1	NV12	 X 	SYS … NODE	64-127	1
 
 两者都仅限 Secure Cloud。母卡 RTX PRO 6000（96GB）也整卡出售。
 
+<figure class="shot"><a href="{{ '/assets/img/gpu-topology/deploy-grid-mig.webp' | relative_url }}"><img src="{{ '/assets/img/gpu-topology/deploy-grid-mig.webp' | relative_url }}" alt="Pod 部署网格中，PRO 6000 MIG 24GB 与整卡 GPU 并列" loading="lazy" width="1400" height="998"></a><figcaption>部署表单，2026-11-07：PRO 6000 MIG 24GB 和整卡一样出现在网格中，每小时 USD 0.69。它的 "7 max" 是当时可部署的数量，而不是表中的 32。</figcaption></figure>
+
 Runpod 的[公告](https://www.runpod.io/blog/multi-instance-gpu-on-runpod)明确表示这是他们的决定，而不是你的：*"we will never time-slice or segment a GPU without being completely up front that we are doing it. If you pay for the whole card, you get the whole card, full stop."* Serverless 端点可以通过 **Advanced** 下的复选框选择退出。Pod 据称稍后支持。
 
 <div class="warn" markdown="1">
@@ -870,6 +876,8 @@ GPU1	NV12	 X 	SYS … NODE	64-127	1
 | `…RTX PRO 6000 Blackwell Server Edition MIG 2g.48gb` | PRO 6000 MIG 48GB | 48GB | 16 |
 
 どちらも Secure Cloud のみです。親カードの RTX PRO 6000（96GB）も丸ごと販売されています。
+
+<figure class="shot"><a href="{{ '/assets/img/gpu-topology/deploy-grid-mig.webp' | relative_url }}"><img src="{{ '/assets/img/gpu-topology/deploy-grid-mig.webp' | relative_url }}" alt="Pod デプロイのグリッドで、丸ごとの GPU と並ぶ PRO 6000 MIG 24GB" loading="lazy" width="1400" height="998"></a><figcaption>デプロイ画面、2026-11-07：PRO 6000 MIG 24GB は丸ごとの GPU と同じようにグリッドに並び、時間あたり USD 0.69。"7 max" はその時点でデプロイできた数で、表の 32 ではありません。</figcaption></figure>
 
 Runpod の[発表](https://www.runpod.io/blog/multi-instance-gpu-on-runpod)は、これがあなたではなく Runpod の判断であることを明言しています：*"we will never time-slice or segment a GPU without being completely up front that we are doing it. If you pay for the whole card, you get the whole card, full stop."* Serverless エンドポイントは **Advanced** の下のチェックボックスでオプトアウトできます。Pod は後日対応とされています。
 

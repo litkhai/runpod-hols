@@ -35,6 +35,8 @@ Before your handler is ever called, the worker validates the machine it landed o
 |---|---|
 | Memory, disk, network | CUDA version, CUDA init, compute benchmark, GPU health binary |
 
+<figure class="shot"><a href="{{ '/assets/img/sdk-worker/fitness-checks-log.webp' | relative_url }}"><img src="{{ '/assets/img/sdk-worker/fitness-checks-log.webp' | relative_url }}" alt="Endpoint Logs tab showing seven fitness checks passing" loading="lazy" width="1400" height="998"></a><figcaption>The checks in an endpoint's Logs tab (02-llm-chat, SDK 1.12.0): <code>Running 7 fitness check(s)</code>, all passed in 727 ms, then the first job.</figcaption></figure>
+
 Thresholds are environment variables, so you set them on the endpoint: `RUNPOD_MIN_MEMORY_GB` (4.0), `RUNPOD_MIN_DISK_PERCENT` (10.0), `RUNPOD_MIN_CUDA_VERSION` (11.8), and `RUNPOD_SKIP_GPU_CHECK` / `RUNPOD_SKIP_AUTO_SYSTEM_CHECKS` to turn groups off.
 
 Add your own with a decorator — sync or async, raise to fail:
@@ -276,6 +278,8 @@ Local `test_input.json` runs do **not** exercise streaming — the generator com
 | 항상 | GPU 가 있을 때만 |
 |---|---|
 | 메모리, 디스크, 네트워크 | CUDA 버전, CUDA 초기화, 연산 벤치마크, GPU 헬스 바이너리 |
+
+<figure class="shot"><a href="{{ '/assets/img/sdk-worker/fitness-checks-log.webp' | relative_url }}"><img src="{{ '/assets/img/sdk-worker/fitness-checks-log.webp' | relative_url }}" alt="엔드포인트 Logs 탭: 적합성 검사 7개 통과" loading="lazy" width="1400" height="998"></a><figcaption>엔드포인트 Logs 탭의 검사 기록 (02-llm-chat, SDK 1.12.0): <code>Running 7 fitness check(s)</code>, 727 ms 에 모두 통과한 뒤 첫 작업을 받았다.</figcaption></figure>
 
 임계값은 환경변수라 엔드포인트에서 설정합니다. `RUNPOD_MIN_MEMORY_GB` (4.0), `RUNPOD_MIN_DISK_PERCENT` (10.0), `RUNPOD_MIN_CUDA_VERSION` (11.8), 그리고 그룹을 끄려면 `RUNPOD_SKIP_GPU_CHECK` / `RUNPOD_SKIP_AUTO_SYSTEM_CHECKS`.
 
@@ -521,6 +525,8 @@ SDK 中**在你的 worker 容器内部运行**的那一半。另一半见 [Clien
 |---|---|
 | 内存、磁盘、网络 | CUDA 版本、CUDA 初始化、计算基准、GPU 健康检查二进制 |
 
+<figure class="shot"><a href="{{ '/assets/img/sdk-worker/fitness-checks-log.webp' | relative_url }}"><img src="{{ '/assets/img/sdk-worker/fitness-checks-log.webp' | relative_url }}" alt="端点 Logs 标签页：7 项适配性检查通过" loading="lazy" width="1400" height="998"></a><figcaption>端点 Logs 标签页中的检查（02-llm-chat，SDK 1.12.0）：<code>Running 7 fitness check(s)</code>，727 ms 内全部通过，然后接第一个作业。</figcaption></figure>
+
 阈值是环境变量，所以在端点上设置：`RUNPOD_MIN_MEMORY_GB`（4.0）、`RUNPOD_MIN_DISK_PERCENT`（10.0）、`RUNPOD_MIN_CUDA_VERSION`（11.8），以及用来关闭整组检查的 `RUNPOD_SKIP_GPU_CHECK` / `RUNPOD_SKIP_AUTO_SYSTEM_CHECKS`。
 
 用装饰器添加自己的检查——同步或异步均可，抛出异常即失败：
@@ -764,6 +770,8 @@ handler が呼ばれる前に、worker は自分が配置されたマシンを�
 | 常に | GPU がある場合のみ |
 |---|---|
 | メモリ、ディスク、ネットワーク | CUDA バージョン、CUDA 初期化、演算ベンチマーク、GPU ヘルスバイナリ |
+
+<figure class="shot"><a href="{{ '/assets/img/sdk-worker/fitness-checks-log.webp' | relative_url }}"><img src="{{ '/assets/img/sdk-worker/fitness-checks-log.webp' | relative_url }}" alt="エンドポイントの Logs タブ：7 つのフィットネスチェックが通過" loading="lazy" width="1400" height="998"></a><figcaption>エンドポイントの Logs タブに出るチェック（02-llm-chat、SDK 1.12.0）：<code>Running 7 fitness check(s)</code>、727 ms ですべて通過し、その後に最初のジョブ。</figcaption></figure>
 
 しきい値は環境変数なので、エンドポイントで設定します：`RUNPOD_MIN_MEMORY_GB`（4.0）、`RUNPOD_MIN_DISK_PERCENT`（10.0）、`RUNPOD_MIN_CUDA_VERSION`（11.8）、グループ単位で無効にするには `RUNPOD_SKIP_GPU_CHECK` / `RUNPOD_SKIP_AUTO_SYSTEM_CHECKS`。
 

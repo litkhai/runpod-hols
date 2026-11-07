@@ -53,6 +53,8 @@ The handler has to be written for it. `HF_HUB_OFFLINE` is read when `huggingface
 
 Base URL is `https://api.runpod.ai/v2/{ENDPOINT_ID}`, authenticated with `Authorization: Bearer $RUNPOD_API_KEY`.
 
+<figure class="shot"><a href="{{ '/assets/img/serverless/endpoint-quick-start.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/endpoint-quick-start.webp' | relative_url }}" alt="Endpoint Overview tab with the Quick start cURL for /runsync" loading="lazy" width="1400" height="998"></a><figcaption>Endpoint Overview (02-llm-chat): the Quick start builds the same <code>/runsync</code> call on <code>https://api.runpod.ai/v2/{ENDPOINT_ID}</code>, and the panel below shows the repo, branch and model the endpoint was built from.</figcaption></figure>
+
 ### Lab 01 in brief
 
 ```bash
@@ -70,6 +72,8 @@ The local API server returns exactly the shape the deployed endpoint does:
 {"id":"test-1bec00ea-…","status":"COMPLETED",
  "output":{"greeting":"Hello, Kee Hoon!","worker_id":"local"}}
 ```
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/hello-world-request.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/hello-world-request.webp' | relative_url }}" alt="Requests tab of 01-hello-world with a COMPLETED job" loading="lazy" width="1400" height="998"></a><figcaption>The same handler deployed as 01-hello-world and called from the endpoint's Requests tab, 2026-11-07: same shape, with <code>delayTime</code> 3385 ms while a CPU worker started and <code>executionTime</code> 140 ms.</figcaption></figure>
 
 Then build — note the platform flag:
 
@@ -101,10 +105,12 @@ This keeps each lab self-contained, matching Runpod's own repos — `runpod-work
 </div>
 
 <div class="note" markdown="1">
-**Redeploy: docs and observation disagree.** The docs say changes "won't automatically be pushed to your endpoint" and that a **GitHub release** is required. In testing, two plain pushes each triggered a build — but only on an endpoint that had no successful build yet. Treat the release as the reliable trigger. Earlier builds can be rolled back from the Builds tab.
+**Redeploy: docs and observation disagree.** The docs say changes "won't automatically be pushed to your endpoint" and that a **GitHub release** is required. In practice every push to the connected branch triggers a build: 02-llm-chat had 24 releases by 2026-11-07, one for each merge to `main`, including merges that changed no file of the worker (screenshot below). Expect a rebuild, and a new release on the endpoint, on every merge. Earlier builds can be rolled back from the Builds tab.
 
 *"Could not find runpod.serverless.start() in your repo"* can be a false negative on a new repository — the check relies on GitHub's code search index, which lags. Only the Dockerfile check gates deployment.
 </div>
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/github-releases.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/github-releases.webp' | relative_url }}" alt="Releases tab of 02-llm-chat: one release per merge to main" loading="lazy" width="1400" height="998"></a><figcaption>Releases (02-llm-chat), 2026-11-07: release #24 is the merge of PR #51, which changed only <code>inference-characterization/</code> files.</figcaption></figure>
 
 ### Measured on a live endpoint
 
@@ -218,6 +224,8 @@ Runpod Serverless 는 코드를 오토스케일 HTTP 엔드포인트로 실행�
 
 기본 URL 은 `https://api.runpod.ai/v2/{ENDPOINT_ID}` 이며 `Authorization: Bearer $RUNPOD_API_KEY` 로 인증합니다.
 
+<figure class="shot"><a href="{{ '/assets/img/serverless/endpoint-quick-start.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/endpoint-quick-start.webp' | relative_url }}" alt="엔드포인트 Overview 탭과 /runsync 용 Quick start cURL" loading="lazy" width="1400" height="998"></a><figcaption>엔드포인트 Overview (02-llm-chat): Quick start 는 <code>https://api.runpod.ai/v2/{ENDPOINT_ID}</code> 에 같은 <code>/runsync</code> 호출을 만들어 주고, 아래 패널은 엔드포인트를 빌드한 저장소, 브랜치, 모델을 보여준다.</figcaption></figure>
+
 ### Lab 01 요약
 
 ```bash
@@ -235,6 +243,8 @@ uv pip install --python .venv/bin/python -r requirements.txt
 {"id":"test-1bec00ea-…","status":"COMPLETED",
  "output":{"greeting":"Hello, Kee Hoon!","worker_id":"local"}}
 ```
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/hello-world-request.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/hello-world-request.webp' | relative_url }}" alt="01-hello-world 의 Requests 탭과 COMPLETED 작업" loading="lazy" width="1400" height="998"></a><figcaption>같은 핸들러를 01-hello-world 로 배포하고 엔드포인트의 Requests 탭에서 호출한 결과, 2026-11-07: 같은 모양이고, CPU 워커가 뜨는 동안 <code>delayTime</code> 3385 ms, <code>executionTime</code> 140 ms.</figcaption></figure>
 
 이후 빌드합니다. platform 플래그에 주의하세요.
 
@@ -266,10 +276,12 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 </div>
 
 <div class="note" markdown="1">
-**재배포 — 문서와 실제가 다릅니다.** 문서는 변경사항이 "won't automatically be pushed to your endpoint" 이며 **GitHub 릴리스**가 필요하다고 합니다. 그런데 실제로는 일반 푸시 두 번이 각각 빌드를 트리거했습니다. 다만 성공한 빌드가 없던 엔드포인트에서만 확인된 동작입니다. 릴리스를 확실한 트리거로 보세요. 이전 빌드는 Builds 탭에서 롤백할 수 있습니다.
+**재배포 — 문서와 실제가 다릅니다.** 문서는 변경사항이 "won't automatically be pushed to your endpoint" 이며 **GitHub 릴리스**가 필요하다고 합니다. 실제로는 연결된 브랜치에 푸시할 때마다 빌드가 돕니다. 02-llm-chat 은 2026-11-07 까지 `main` 머지마다 하나씩 릴리스 24개가 쌓였고, 워커 파일을 하나도 바꾸지 않은 머지도 포함됩니다 (아래 캡처). 머지할 때마다 재빌드와 새 릴리스가 생긴다고 보세요. 이전 빌드는 Builds 탭에서 롤백할 수 있습니다.
 
 *"Could not find runpod.serverless.start() in your repo"* 는 새 저장소에서 오탐일 수 있습니다. 색인이 늦는 GitHub 코드 검색에 의존하는 검사입니다. 배포를 막는 것은 Dockerfile 검사뿐입니다.
 </div>
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/github-releases.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/github-releases.webp' | relative_url }}" alt="02-llm-chat 의 Releases 탭: main 에 머지할 때마다 릴리스 하나" loading="lazy" width="1400" height="998"></a><figcaption>Releases (02-llm-chat), 2026-11-07: 릴리스 #24 는 <code>inference-characterization/</code> 파일만 바꾼 PR #51 의 머지다.</figcaption></figure>
 
 ### 실제 엔드포인트 실측
 
@@ -383,6 +395,8 @@ handler 必须为此专门编写。`HF_HUB_OFFLINE` 在 `huggingface_hub` 被导
 
 基础 URL 是 `https://api.runpod.ai/v2/{ENDPOINT_ID}`，使用 `Authorization: Bearer $RUNPOD_API_KEY` 认证。
 
+<figure class="shot"><a href="{{ '/assets/img/serverless/endpoint-quick-start.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/endpoint-quick-start.webp' | relative_url }}" alt="端点 Overview 标签页和 /runsync 的 Quick start cURL" loading="lazy" width="1400" height="998"></a><figcaption>端点 Overview（02-llm-chat）：Quick start 在 <code>https://api.runpod.ai/v2/{ENDPOINT_ID}</code> 上生成同样的 <code>/runsync</code> 调用，下方面板显示构建该端点的仓库、分支和模型。</figcaption></figure>
+
 ### 实验 01 概要
 
 ```bash
@@ -400,6 +414,8 @@ uv pip install --python .venv/bin/python -r requirements.txt
 {"id":"test-1bec00ea-…","status":"COMPLETED",
  "output":{"greeting":"Hello, Kee Hoon!","worker_id":"local"}}
 ```
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/hello-world-request.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/hello-world-request.webp' | relative_url }}" alt="01-hello-world 的 Requests 标签页和一个 COMPLETED 作业" loading="lazy" width="1400" height="998"></a><figcaption>同一个 handler 部署为 01-hello-world，并在端点的 Requests 标签页调用，2026-11-07：结构相同，CPU worker 启动期间 <code>delayTime</code> 为 3385 ms，<code>executionTime</code> 为 140 ms。</figcaption></figure>
 
 然后构建——注意 platform 标志：
 
@@ -431,10 +447,12 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 </div>
 
 <div class="note" markdown="1">
-**重新部署：文档与观察不一致。** 文档说变更 "won't automatically be pushed to your endpoint"，并且需要 **GitHub release**。测试中，两次普通 push 各自触发了一次构建——但只发生在一个还没有成功构建的端点上。请把 release 视为可靠的触发方式。之前的构建可以在 Builds 标签页中回滚。
+**重新部署：文档与观察不一致。** 文档说变更 "won't automatically be pushed to your endpoint"，并且需要 **GitHub release**。实际上，每次 push 到所连接的分支都会触发构建：到 2026-11-07，02-llm-chat 已有 24 个 release，每次合并到 `main` 一个，其中包括没有改动 worker 任何文件的合并（见下图）。请预期每次合并都会重新构建并在端点上产生新的 release。之前的构建可以在 Builds 标签页中回滚。
 
 *"Could not find runpod.serverless.start() in your repo"* 在新仓库上可能是误报——该检查依赖 GitHub 的代码搜索索引，而索引有延迟。只有 Dockerfile 检查会阻止部署。
 </div>
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/github-releases.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/github-releases.webp' | relative_url }}" alt="02-llm-chat 的 Releases 标签页：每次合并到 main 都有一个 release" loading="lazy" width="1400" height="998"></a><figcaption>Releases（02-llm-chat），2026-11-07：release #24 是 PR #51 的合并，而它只改了 <code>inference-characterization/</code> 下的文件。</figcaption></figure>
 
 ### 在线端点实测
 
@@ -548,6 +566,8 @@ handler はこれに合わせて書く必要があります。`HF_HUB_OFFLINE` �
 
 ベース URL は `https://api.runpod.ai/v2/{ENDPOINT_ID}` で、`Authorization: Bearer $RUNPOD_API_KEY` で認証します。
 
+<figure class="shot"><a href="{{ '/assets/img/serverless/endpoint-quick-start.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/endpoint-quick-start.webp' | relative_url }}" alt="エンドポイントの Overview タブと /runsync の Quick start cURL" loading="lazy" width="1400" height="998"></a><figcaption>エンドポイントの Overview（02-llm-chat）：Quick start は <code>https://api.runpod.ai/v2/{ENDPOINT_ID}</code> に同じ <code>/runsync</code> 呼び出しを組み立て、下のパネルはエンドポイントのビルド元のリポジトリ、ブランチ、モデルを示します。</figcaption></figure>
+
 ### Lab 01 の概要
 
 ```bash
@@ -565,6 +585,8 @@ uv pip install --python .venv/bin/python -r requirements.txt
 {"id":"test-1bec00ea-…","status":"COMPLETED",
  "output":{"greeting":"Hello, Kee Hoon!","worker_id":"local"}}
 ```
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/hello-world-request.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/hello-world-request.webp' | relative_url }}" alt="01-hello-world の Requests タブと COMPLETED のジョブ" loading="lazy" width="1400" height="998"></a><figcaption>同じハンドラーを 01-hello-world としてデプロイし、エンドポイントの Requests タブから呼んだ結果、2026-11-07：同じ形で、CPU ワーカーの起動中に <code>delayTime</code> 3385 ms、<code>executionTime</code> 140 ms。</figcaption></figure>
 
 続いてビルドします。platform フラグに注意してください。
 
@@ -596,10 +618,12 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 </div>
 
 <div class="note" markdown="1">
-**再デプロイ：ドキュメントと観察が食い違います。** ドキュメントは変更が "won't automatically be pushed to your endpoint" であり、**GitHub release** が必要だとしています。テストでは、通常の push 2 回がそれぞれビルドをトリガーしました。ただし、まだ成功したビルドがないエンドポイントでのみです。release を確実なトリガーとして扱ってください。以前のビルドは Builds タブからロールバックできます。
+**再デプロイ：ドキュメントと観察が食い違います。** ドキュメントは変更が "won't automatically be pushed to your endpoint" であり、**GitHub release** が必要だとしています。実際には、接続したブランチへの push のたびにビルドが走ります。02-llm-chat には 2026-11-07 までに `main` へのマージごとに 1 つずつ、計 24 のリリースがあり、ワーカーのファイルを 1 つも変えていないマージも含まれます（下のスクリーンショット）。マージのたびに再ビルドと新しいリリースが起きると考えてください。以前のビルドは Builds タブからロールバックできます。
 
 *"Could not find runpod.serverless.start() in your repo"* は、新しいリポジトリでは誤検知のことがあります。このチェックは GitHub のコード検索インデックスに依存しており、インデックスは遅れるためです。デプロイを止めるのは Dockerfile のチェックだけです。
 </div>
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/github-releases.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/github-releases.webp' | relative_url }}" alt="02-llm-chat の Releases タブ：main へのマージごとに 1 リリース" loading="lazy" width="1400" height="998"></a><figcaption>Releases（02-llm-chat）、2026-11-07：リリース #24 は <code>inference-characterization/</code> のファイルしか変えていない PR #51 のマージです。</figcaption></figure>
 
 ### 稼働中のエンドポイントでの実測
 
