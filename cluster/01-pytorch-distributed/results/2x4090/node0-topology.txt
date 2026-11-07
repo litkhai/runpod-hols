@@ -1,0 +1,30 @@
+## node 0 of 1, 2 GPUs
+index, name, memory.total [MiB], pcie.link.gen.current, pcie.link.width.current
+0, NVIDIA GeForce RTX 4090, 24564 MiB, 1, 16
+1, NVIDIA GeForce RTX 4090, 24564 MiB, 1, 16
+
+	[4mGPU0	GPU1	NIC0	NIC1	CPU Affinity	NUMA Affinity	GPU NUMA ID[0m
+GPU0	 X 	SYS	PHB	PHB	40-47,104-111	5		N/A
+GPU1	SYS	 X 	SYS	SYS	32-39,96-103	4		N/A
+NIC0	PHB	SYS	 X 	PIX				
+NIC1	PHB	SYS	PIX	 X 				
+
+Legend:
+
+  X    = Self
+  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)
+  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node
+  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)
+  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)
+  PIX  = Connection traversing at most a single PCIe bridge
+  NV#  = Connection traversing a bonded set of # NVLinks
+
+NIC Legend:
+
+  NIC0: rocep194s0f0
+  NIC1: rocep194s0f1
+
+
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+eth0@if10116     UP             172.23.0.2/16 
+

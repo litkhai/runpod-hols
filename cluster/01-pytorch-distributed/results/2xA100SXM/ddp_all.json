@@ -1,0 +1,8 @@
+{
+  "world_size": 2,
+  "params": 100687872,
+  "batch_per_gpu": 256,
+  "step_ms": 12.23,
+  "samples_per_s": 41871.4,
+  "gpu": "NVIDIA A100-SXM4-80GB"
+}
