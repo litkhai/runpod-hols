@@ -109,6 +109,25 @@ mfs#euro.runpod.net:9421  2.3P  1.9P  399T  83% /workspace
 
 The 10 GB limit is real all the same. Writing 12,000 MiB stopped at 9,999,220,736 bytes with `Disk quota exceeded`. A 1 GiB `dd … oflag=direct` wrote at 1.6 GB/s to the network volume and 5.4 GB/s to the container disk — one run each.
 
+### Global volume (beta) — what was measured
+
+A third kind of persistent storage, listed first in **Add volume** with a **Global** badge: no datacenter, no size, USD 0.09 per GB-month stored plus IOPS. It is created through `POST https://api.runpod.io/v2/global-volumes` (name only) or the console, but REST v1 cannot attach it: the console's deploy mutation passes `volumeMounts: [{volumeId, volumeType: "OBJECT_STORE_VOLUME", mountPath: "/workspace"}]`. Inside the Pod it is a FUSE mount of an object store.
+
+| 2026-11-07 | Pod A, CA-MTL-1 (RTX A5000) | Pod B, EU-RO-1 (RTX 4090) |
+|---|---|---|
+| `/workspace` | `fuse.geesefs`, 1.0P | same volume |
+| Write 512 MiB | **61 MiB/s** (container disk 273) | |
+| First read of that file | 344 MiB/s | **39 MiB/s** across regions |
+| Re-read | 275 MiB/s | 985 MiB/s (local cache) |
+| 200 small files | 338 ms | 59 ms |
+
+- **One volume, two continents.** A marker and a 512 MiB file written in Canada were readable in Romania with the same sha256; a new file written in Romania appeared in Canada **3 s** later.
+- **Concurrent writes diverge.** Both Pods wrote the same file at the same moment; each kept reading its own version — still so 45 s later. The docs say the last write wins and recommend network volumes for shared mutable data; here neither Pod saw the other's write.
+- **Billing is per object.** The Storage page showed 537 MB, 205 objects, USD 0.05/month for this test.
+- Pod B was deployed with the same GraphQL mutation and `dataCenterId: "EU-RO-1"` — the first choice, RTX A5000, had no capacity there.
+
+Use it for read-mostly data that several regions need — weights, configs, datasets — and keep checkpoints and anything two workers write on a network volume or the container disk.
+
 ### What was run
 
 2026-11-05, Secure Cloud, EU-RO-1, image `runpod/base:1.0.2-ubuntu2404`, REST API v1.
@@ -234,6 +253,25 @@ mfs#euro.runpod.net:9421  2.3P  1.9P  399T  83% /workspace
 ```
 
 그래도 10 GB 제한은 실재합니다. 12,000 MiB 를 쓰자 9,999,220,736 바이트에서 `Disk quota exceeded` 로 멈췄습니다. 1 GiB `dd … oflag=direct` 는 네트워크 볼륨에 1.6 GB/s, 컨테이너 디스크에 5.4 GB/s 였습니다. 각각 한 번 측정입니다.
+
+### Global volume (베타) — 측정한 것
+
+세 번째 영구 스토리지로, **Add volume** 목록 맨 앞에 **Global** 배지와 함께 나옵니다. 데이터센터도 크기도 없고, 저장 GB·월 USD 0.09 에 IOPS 요금이 붙습니다. `POST https://api.runpod.io/v2/global-volumes` (이름만) 나 콘솔로 만들지만, REST v1 로는 Pod 에 붙일 수 없습니다. 콘솔의 배포 mutation 은 `volumeMounts: [{volumeId, volumeType: "OBJECT_STORE_VOLUME", mountPath: "/workspace"}]` 를 보냅니다. Pod 안에서는 오브젝트 스토어의 FUSE 마운트입니다.
+
+| 2026-11-07 | Pod A, CA-MTL-1 (RTX A5000) | Pod B, EU-RO-1 (RTX 4090) |
+|---|---|---|
+| `/workspace` | `fuse.geesefs`, 1.0P | 같은 볼륨 |
+| 512 MiB 쓰기 | **61 MiB/s** (컨테이너 디스크 273) | |
+| 그 파일 첫 읽기 | 344 MiB/s | 지역 간 **39 MiB/s** |
+| 다시 읽기 | 275 MiB/s | 985 MiB/s (로컬 캐시) |
+| 작은 파일 200개 | 338 ms | 59 ms |
+
+- **볼륨 하나, 두 대륙.** 캐나다에서 쓴 마커와 512 MiB 파일을 루마니아에서 같은 sha256 으로 읽었고, 루마니아에서 쓴 새 파일은 **3초** 뒤 캐나다에 보였습니다.
+- **동시 쓰기는 갈라집니다.** 두 Pod 이 같은 순간에 같은 파일을 쓰자 각자 자기 버전을 계속 읽었고, 45초 뒤에도 그대로였습니다. 문서는 마지막 쓰기가 이긴다고 하고 공유 가변 데이터에는 네트워크 볼륨을 권하는데, 여기서는 어느 쪽도 상대의 쓰기를 보지 못했습니다.
+- **과금은 객체 단위입니다.** Storage 화면에 이 테스트는 537 MB, 객체 205개, 월 USD 0.05 로 나왔습니다.
+- Pod B 는 같은 GraphQL mutation 에 `dataCenterId: "EU-RO-1"` 을 넣어 띄웠습니다. 첫 선택인 RTX A5000 은 그곳에 자리가 없었습니다.
+
+여러 지역이 함께 읽는 데이터 — 가중치, 설정, 데이터셋 — 에 쓰고, 체크포인트처럼 둘 이상이 쓰는 데이터는 네트워크 볼륨이나 컨테이너 디스크에 두세요.
 
 ### 실행 내역
 
