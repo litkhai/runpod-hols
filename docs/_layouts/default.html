@@ -367,6 +367,10 @@
   }
 })();
 </script>
+{%- comment -%} Per-page scripts, e.g. the sizing calculators (#58). / 페이지별 스크립트 (#58). {%- endcomment -%}
+{%- for js in page.scripts %}
+<script src="{{ js | relative_url }}" defer></script>
+{%- endfor %}
 
 </body>
 </html>

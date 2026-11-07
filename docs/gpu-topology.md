@@ -49,6 +49,88 @@ This is what separates MIG from the other ways to share a card:
 
 That hardware isolation is the whole point — and the reason it cannot be set up from inside a container.
 
+### What the link costs, in numbers
+{: #in-numbers }
+
+The wiring between GPUs decides the parallelism strategy, not the other way round. An **NVLink domain** is the set of GPUs joined in full mesh by NVSwitch, able to see each other at full rate — eight on an HGX A100/H100/B200 board, 72 in a GB200/GB300 NVL72 rack, two on a bridged PCIe pair.
+
+**Why tensor parallelism stays inside the domain.** TP does two AllReduces per layer, after attention and after the FFN. For a 7B model, sequence 2,048, batch 1, one forward pass:
+
+```
+volume = batch × seq × d_model × 2 bytes × 2 per layer × layers
+       = 1 × 2,048 × 4,096 × 2 × 2 × 32 ≈ 2.1 GB
+```
+
+| Path | Bandwidth | Time for 2.1 GB |
+|---|---|---|
+| NVLink 4 (H100 SXM) | 900 GB/s | 2.3 ms |
+| PCIe 5.0 x16 | 64 GB/s | 33 ms |
+| InfiniBand NDR, one port | 50 GB/s | 42 ms |
+
+A 14–18× penalty, compounding at every layer. Hence the rule: **TP degree ≤ NVLink domain size**; scale across nodes with pipeline parallelism or FSDP.
+
+**Data parallelism** does one gradient AllReduce per step. A ring AllReduce moves 2(n−1)/n of the data per GPU — about twice the gradient size:
+
+```
+7B FP16 gradients = 14 GB → about 28 GB moved per GPU
+  NVLink 900 GB/s     →   31 ms
+  IB NDR, 1× 400 Gb/s →  560 ms   ← dominates the step
+```
+
+That is why training nodes carry one NIC per GPU — eight 400G NICs on an 8-GPU node, wired *rail-optimized* so same-rank GPUs on different nodes reach each other in the fewest hops. The GPUDirect family removes the remaining copies: P2P (GPU to GPU without host memory), RDMA (GPU memory straight to the NIC), Storage (NVMe straight to GPU); SHARP performs the reduction inside the InfiniBand switch.
+
+**Measuring it.** `NCCL_DEBUG=INFO` prints the transport NCCL picked for each pair, and nccl-tests (`all_reduce_perf -b 8 -e 8G -f 2 -g 8`) gives a baseline. Read **busbw**, not algbw: busbw = algbw × 2(n−1)/n is comparable to link speed. On an 8×H100 node, AllReduce busbw of 200–250 GB/s is healthy; half that means something is wrong — often PCIe ACS forcing peer traffic through the root complex, a NIC on the wrong NUMA node, or a slot wired x8.
+
+<div class="note" markdown="1">
+**Measured here.** The [cluster lab]({{ '/cluster/' | relative_url }})'s `nccl_bench.py` reports busbw the same way. One Pod each, 2026-11-07: 2× A100 SXM (`NV12`, NCCL `P2P`) reached **201 GB/s** at 1 GiB; 2× RTX 4090 (`SYS`, NCCL `SHM` through host memory) reached **15.6 GB/s**. A 101M-parameter DDP job scaled at 0.91 and 0.21 respectively.
+</div>
+
+### Choosing between MIG, MPS and time-slicing
+{: #sharing }
+
+| | MIG | MPS | Time-slicing |
+|---|---|---|---|
+| Memory isolation | Hardware partition | None — an allocation cap at most | None |
+| Compute isolation | Fixed SM allocation | Loose percentage cap | None — time sliced |
+| Fault isolation | Per instance | None — faults propagate | None |
+| Performance predictability | High | Medium | Low — neighbours interfere |
+| Concurrent kernels | Independent per instance | Yes | No — context switching |
+| Supported on | A100 / H100 / H200 / B200, RTX PRO 6000 Blackwell | Most parts | Most parts |
+| NVLink / P2P between parts | Not available | Available | Available |
+| Reconfiguration | GPU reset — work must drain | Daemon restart | Plugin config |
+| Fits | Multi-tenant inference with SLAs | One trusted team, many small kernels | Dev, test, notebooks |
+
+An H100 80GB divides into seven compute slices and eight memory slices:
+
+| Profile | Max count | Memory | SM share | What fits |
+|---|---|---|---|---|
+| 1g.10gb | 7 | 10 GB | 1/7 | 7B INT4, embedding and rerank models |
+| 1g.20gb | 4 | 20 GB | 1/7 | 7B FP8 with a reasonable KV budget |
+| 2g.20gb | 3 | 20 GB | 2/7 | 7B FP8 when compute headroom matters |
+| 3g.40gb | 2 | 40 GB | 3/7 | 13B FP16, or 7B FP16 with long context |
+| 4g.40gb | 1 | 40 GB | 4/7 | Same |
+| 7g.80gb | 1 | 80 GB | 7/7 | Equivalent to not using MIG |
+
+Four constraints decide the design: no NVLink or P2P between instances, so anything needing model parallelism cannot run under MIG; reconfiguration needs a GPU reset, so changing a profile means draining the card; only seven compute slices, so seven 1g instances is the ceiling; and partitioning removes the headroom that absorbs bursts, so average utilisation can look fine while tail latency degrades.
+
+```
+Does the model fit on one GPU?
+  └ No → partitioning is off the table. Tensor parallelism over NVLink
+Are several tenants sharing it?
+  ├ Yes, with regulatory or SLA requirements → dedicated GPU or node
+  ├ Yes, otherwise                           → MIG
+  └ No (one trusted team) ↓
+Is the workload many small kernels?
+  ├ Yes → MPS
+  └ No  → a dedicated GPU with application-level batching is usually better
+Is this a dev or experimentation environment?
+  └ Yes → time-slicing is fine
+```
+
+<div class="warn" markdown="1">
+**For LLM inference, slicing usually loses.** One vLLM instance on the whole card with continuous batching makes many requests share one weight read; partitioning divides the GPU instead. MIG earns its place when you must host different models, or when tenant isolation is contractual — and even then, do not promise complete isolation: there is side-channel research on shared resources, and GPU memory is not guaranteed to be zeroed between tenants. Where isolation is an audit item, recommend a dedicated node.
+</div>
+
 ## How Runpod exposes them
 {: #on-runpod }
 
@@ -119,6 +201,8 @@ GPU1	NV12	 X 	SYS … NODE	64-127	1
 ```
 
 `NV12` — twelve bonded NVLinks, and `nvidia-smi nvlink -s` listed links 0–11 at 25 GB/s each. A 1 GiB `torch` copy from GPU 0 to GPU 1 ran at 276 GB/s; the same copy from pinned host memory ran at 24 GB/s. The host also exposed ten Mellanox NICs (`mlx5_0`–`mlx5_9`) to the container. One machine, one pair: another A100 SXM host, or an 8-GPU one, can show a different matrix — run the command on yours.
+
+The opposite case, from the [cluster lab]({{ '/cluster/' | relative_url }}) on 2026-11-07: a 2× RTX 4090 Secure Cloud Pod showed `SYS` between its two GPUs — PCIe across two NUMA nodes — and NCCL chose `SHM` through host memory. On your own hardware `SYS` on a slow job means fixing GPU placement or NUMA binding first; on Runpod it means picking a different SKU or host.
 
 ### If you land on PCIe instead
 
@@ -294,6 +378,88 @@ Multi-Instance GPU 는 물리 카드 하나를 **GPU Instance** 로 잘라 각�
 
 그 하드웨어 격리가 MIG 의 존재 이유이자, 컨테이너 안에서 설정할 수 없는 이유입니다.
 
+### 링크의 비용, 숫자로
+{: #in-numbers-ko }
+
+GPU 사이의 배선이 병렬화 전략을 정하지, 그 반대가 아닙니다. **NVLink 도메인**은 NVSwitch 로 풀메시 연결되어 서로를 전속력으로 볼 수 있는 GPU 집합입니다 — HGX A100/H100/B200 보드는 8장, GB200/GB300 NVL72 랙은 72장, 브리지로 묶은 PCIe 쌍은 2장입니다.
+
+**텐서 병렬이 도메인 안에 머무는 이유.** TP 는 레이어마다 AllReduce 를 두 번(어텐션 후, FFN 후) 합니다. 7B 모델, 시퀀스 2,048, 배치 1 의 순전파 한 번:
+
+```
+통신량 = 배치 × 시퀀스 × d_model × 2바이트 × 레이어당 2회 × 레이어 수
+       = 1 × 2,048 × 4,096 × 2 × 2 × 32 ≈ 2.1 GB
+```
+
+| 경로 | 대역폭 | 2.1 GB 전송 시간 |
+|---|---|---|
+| NVLink 4 (H100 SXM) | 900 GB/s | 2.3 ms |
+| PCIe 5.0 x16 | 64 GB/s | 33 ms |
+| InfiniBand NDR 1포트 | 50 GB/s | 42 ms |
+
+14–18배 차이가 매 레이어마다 누적됩니다. 그래서 규칙은 **TP degree ≤ NVLink 도메인 크기** 이고, 노드 간 확장은 파이프라인 병렬이나 FSDP 로 합니다.
+
+**데이터 병렬**은 스텝당 그래디언트 AllReduce 한 번입니다. Ring AllReduce 는 GPU 당 데이터의 2(n−1)/n 을 전송합니다 — 그래디언트 크기의 약 2배입니다.
+
+```
+7B FP16 그래디언트 = 14 GB → GPU 당 약 28 GB 전송
+  NVLink 900 GB/s     →   31 ms
+  IB NDR, 1× 400 Gb/s →  560 ms   ← 스텝 시간을 압도
+```
+
+그래서 학습 노드는 GPU 당 NIC 한 장을 답니다 — 8-GPU 노드에 400G NIC 8장이고, 다른 노드의 같은 rank GPU 끼리 최소 홉으로 닿도록 *rail-optimized* 로 배선합니다. 남은 복사는 GPUDirect 계열이 없앱니다. P2P(호스트 메모리를 거치지 않는 GPU ↔ GPU), RDMA(GPU 메모리에서 NIC 로 직접), Storage(NVMe 에서 GPU 로 직접). SHARP 는 리덕션을 InfiniBand 스위치 안에서 수행합니다.
+
+**측정하기.** `NCCL_DEBUG=INFO` 는 NCCL 이 각 쌍에 고른 전송 경로를 출력하고, nccl-tests(`all_reduce_perf -b 8 -e 8G -f 2 -g 8`)로 기준선을 잡습니다. algbw 가 아니라 **busbw** 를 보세요. busbw = algbw × 2(n−1)/n 이 링크 속도와 비교 가능한 값입니다. 8×H100 노드에서 AllReduce busbw 200–250 GB/s 면 정상이고, 그 절반이면 어딘가 잘못된 것입니다 — 흔히 PCIe ACS 가 peer 트래픽을 루트 컴플렉스로 우회시키거나, NIC 가 엉뚱한 NUMA 노드에 붙어 있거나, 슬롯이 x8 로 배선된 경우입니다.
+
+<div class="note" markdown="1">
+**여기서 측정한 것.** [클러스터 실습]({{ '/cluster/' | relative_url }})의 `nccl_bench.py` 도 busbw 를 같은 방식으로 보고합니다. 각각 Pod 하나, 2026-11-07: A100 SXM 두 장(`NV12`, NCCL `P2P`)은 1 GiB 에서 **201 GB/s**, RTX 4090 두 장(`SYS`, 호스트 메모리를 거치는 NCCL `SHM`)은 **15.6 GB/s** 였습니다. 1억 1백만 파라미터 DDP 잡의 확장 효율은 각각 0.91 과 0.21 이었습니다.
+</div>
+
+### MIG, MPS, 타임 슬라이싱 중에서 고르기
+{: #sharing-ko }
+
+| | MIG | MPS | 타임 슬라이싱 |
+|---|---|---|---|
+| 메모리 격리 | 하드웨어 분할 | 없음 — 할당 상한까지만 | 없음 |
+| 연산 격리 | 고정 SM 할당 | 느슨한 비율 상한 | 없음 — 시간 분할 |
+| 장애 격리 | 인스턴스 단위 | 없음 — 장애 전파 | 없음 |
+| 성능 예측성 | 높음 | 중간 | 낮음 — 이웃이 영향 |
+| 커널 동시 실행 | 인스턴스별 독립 | 가능 | 불가 — 컨텍스트 스위칭 |
+| 지원 GPU | A100 / H100 / H200 / B200, RTX PRO 6000 Blackwell | 대부분 | 대부분 |
+| 조각 간 NVLink / P2P | 불가 | 가능 | 가능 |
+| 설정 변경 | GPU 리셋 — 작업을 모두 내려야 함 | 데몬 재시작 | 플러그인 설정 |
+| 적합 용도 | SLA 가 있는 멀티테넌트 추론 | 신뢰 가능한 단일 팀의 소형 커널 다수 | 개발, 테스트, 노트북 |
+
+H100 80GB 는 연산 슬라이스 7개와 메모리 슬라이스 8개로 나뉩니다.
+
+| 프로파일 | 최대 개수 | 메모리 | SM 비중 | 담을 수 있는 것 |
+|---|---|---|---|---|
+| 1g.10gb | 7 | 10 GB | 1/7 | 7B INT4, 임베딩·리랭크 모델 |
+| 1g.20gb | 4 | 20 GB | 1/7 | 7B FP8 + 적당한 KV 예산 |
+| 2g.20gb | 3 | 20 GB | 2/7 | 7B FP8, 연산 여유가 필요할 때 |
+| 3g.40gb | 2 | 40 GB | 3/7 | 13B FP16, 또는 7B FP16 + 긴 컨텍스트 |
+| 4g.40gb | 1 | 40 GB | 4/7 | 동상 |
+| 7g.80gb | 1 | 80 GB | 7/7 | MIG 미사용과 동일 |
+
+설계를 가르는 제약은 네 가지입니다. 인스턴스 간 NVLink·P2P 가 없으므로 모델 병렬이 필요한 것은 MIG 위에서 돌 수 없습니다. 설정 변경에 GPU 리셋이 필요하므로 프로파일을 바꾸려면 카드를 비워야 합니다. 연산 슬라이스가 7개뿐이라 1g 인스턴스 7개가 상한입니다. 그리고 분할하면 버스트를 흡수할 여유가 사라져, 평균 사용률은 멀쩡해 보여도 꼬리 지연이 나빠질 수 있습니다.
+
+```
+모델이 GPU 한 장에 들어가나?
+  └ 아니오 → 분할은 후보에서 제외. NVLink 위의 텐서 병렬
+여러 테넌트가 공유하나?
+  ├ 예, 규제·SLA 요구가 있음 → 전용 GPU 또는 전용 노드
+  ├ 예, 그 외                → MIG
+  └ 아니오 (신뢰 가능한 단일 팀) ↓
+워크로드가 작은 커널 다수인가?
+  ├ 예     → MPS
+  └ 아니오 → 전용 GPU + 애플리케이션 레벨 배칭이 대개 더 낫다
+개발·실험 환경인가?
+  └ 예 → 타임 슬라이싱으로 충분
+```
+
+<div class="warn" markdown="1">
+**LLM 추론에서는 쪼개는 쪽이 대개 집니다.** 카드 전체에 vLLM 하나를 띄우고 continuous batching 을 쓰면 여러 요청이 같은 가중치 읽기를 공유하지만, 분할은 GPU 를 나눌 뿐입니다. MIG 가 제자리를 찾는 것은 서로 다른 모델을 올려야 하거나 테넌트 격리가 계약 요건일 때입니다 — 그때도 완전한 격리를 약속하지는 마세요. 공유 자원을 통한 사이드채널 연구가 있고, GPU 메모리가 테넌트 사이에 0으로 지워진다는 보장도 없습니다. 격리가 감사 항목이라면 전용 노드를 권하세요.
+</div>
+
 ## Runpod 은 이를 어떻게 제공하는가
 {: #on-runpod-ko }
 
@@ -364,6 +530,8 @@ GPU1	NV12	 X 	SYS … NODE	64-127	1
 ```
 
 `NV12` — NVLink 12개 묶음이고, `nvidia-smi nvlink -s` 는 링크 0–11 을 각각 25 GB/s 로 보여줬습니다. GPU 0 에서 GPU 1 로 1 GiB `torch` 복사가 276 GB/s, 같은 복사를 pinned 호스트 메모리에서 하면 24 GB/s 였습니다. 호스트의 Mellanox NIC 10개 (`mlx5_0`–`mlx5_9`) 도 컨테이너에 보였습니다. 머신 한 대, GPU 한 쌍의 결과입니다. 다른 A100 SXM 호스트나 8 GPU 머신은 다른 행렬을 보일 수 있으니 직접 실행해 보세요.
+
+반대 사례도 있습니다. 2026-11-07 [클러스터 실습]({{ '/cluster/' | relative_url }})에서 RTX 4090 두 장짜리 Secure Cloud Pod 는 두 GPU 사이가 `SYS` — NUMA 노드 두 개에 걸친 PCIe — 로 나왔고, NCCL 은 호스트 메모리를 거치는 `SHM` 을 골랐습니다. 내 하드웨어라면 느린 잡에서 `SYS` 가 보일 때 GPU 배치나 NUMA 바인딩부터 고칩니다. Runpod 에서는 다른 SKU 나 호스트를 고르라는 뜻입니다.
 
 ### PCIe 로 떨어졌다면
 
@@ -539,6 +707,88 @@ Multi-Instance GPU 把一块物理卡切成若干 **GPU Instance**，它们的�
 
 硬件隔离正是关键所在——也正因如此，它无法在容器内部设置。
 
+### 互连的代价，用数字说话
+{: #in-numbers-zh }
+
+GPU 之间的连线决定并行策略，而不是反过来。**NVLink 域**是由 NVSwitch 全互连、彼此能以全速访问的一组 GPU——HGX A100/H100/B200 主板上是 8 块，GB200/GB300 NVL72 机架中是 72 块，桥接的 PCIe 双卡是 2 块。
+
+**为什么张量并行要留在域内。** TP 每层做两次 AllReduce，分别在注意力之后和 FFN 之后。对于 7B 模型、序列长度 2,048、batch 1，一次前向：
+
+```
+volume = batch × seq × d_model × 2 bytes × 2 per layer × layers
+       = 1 × 2,048 × 4,096 × 2 × 2 × 32 ≈ 2.1 GB
+```
+
+| 路径 | 带宽 | 传输 2.1 GB 的时间 |
+|---|---|---|
+| NVLink 4 (H100 SXM) | 900 GB/s | 2.3 ms |
+| PCIe 5.0 x16 | 64 GB/s | 33 ms |
+| InfiniBand NDR，单端口 | 50 GB/s | 42 ms |
+
+14–18 倍的代价，而且每一层都要叠加一次。因此规则是：**TP 度 ≤ NVLink 域大小**；跨节点扩展用流水线并行或 FSDP。
+
+**数据并行**每步做一次梯度 AllReduce。环形 AllReduce 每块 GPU 要搬运 2(n−1)/n 的数据——约为梯度大小的两倍：
+
+```
+7B FP16 梯度 = 14 GB → 每块 GPU 约搬运 28 GB
+  NVLink 900 GB/s     →   31 ms
+  IB NDR, 1× 400 Gb/s →  560 ms   ← 占据整个 step 的主导
+```
+
+这就是训练节点每块 GPU 配一块网卡的原因——8-GPU 节点配八块 400G 网卡，并采用 *rail-optimized* 布线，使不同节点上同一 rank 的 GPU 以最少的跳数互通。GPUDirect 系列消除了剩余的拷贝：P2P（GPU 到 GPU，不经主机内存）、RDMA（GPU 显存直达网卡）、Storage（NVMe 直达 GPU）；SHARP 则在 InfiniBand 交换机内部完成归约。
+
+**如何测量。** `NCCL_DEBUG=INFO` 会打印 NCCL 为每对 GPU 选择的传输方式，nccl-tests（`all_reduce_perf -b 8 -e 8G -f 2 -g 8`）给出基线。看 **busbw**，不要看 algbw：busbw = algbw × 2(n−1)/n，可以直接与链路速度比较。在 8×H100 节点上，AllReduce busbw 达到 200–250 GB/s 是健康的；只有一半说明有问题——常见原因是 PCIe ACS 迫使点对点流量绕经 root complex、网卡挂在错误的 NUMA 节点上，或者插槽只接了 x8。
+
+<div class="note" markdown="1">
+**此处实测。** [集群实验]({{ '/cluster/' | relative_url }})的 `nccl_bench.py` 以同样方式报告 busbw。各一台 Pod，2026-11-07：2× A100 SXM（`NV12`，NCCL `P2P`）在 1 GiB 时达到 **201 GB/s**；2× RTX 4090（`SYS`，NCCL `SHM` 经主机内存）达到 **15.6 GB/s**。一个 1.01 亿参数的 DDP 作业扩展效率分别为 0.91 和 0.21。
+</div>
+
+### 在 MIG、MPS 和时间切片之间选择
+{: #sharing-zh }
+
+| | MIG | MPS | 时间切片 |
+|---|---|---|---|
+| 显存隔离 | 硬件分区 | 无——最多只有分配上限 | 无 |
+| 算力隔离 | 固定的 SM 分配 | 宽松的百分比上限 | 无——按时间切分 |
+| 故障隔离 | 按实例 | 无——故障会传播 | 无 |
+| 性能可预测性 | 高 | 中 | 低——相邻负载互相干扰 |
+| 并发 kernel | 各实例独立 | 支持 | 不支持——上下文切换 |
+| 支持的型号 | A100 / H100 / H200 / B200, RTX PRO 6000 Blackwell | 大多数型号 | 大多数型号 |
+| 分区之间的 NVLink / P2P | 不可用 | 可用 | 可用 |
+| 重新配置 | GPU 重置——必须先排空任务 | 重启守护进程 | 插件配置 |
+| 适合 | 有 SLA 的多租户推理 | 一个可信团队、大量小 kernel | 开发、测试、notebook |
+
+一块 H100 80GB 可分为七个计算切片和八个显存切片：
+
+| 配置文件 | 最大数量 | 显存 | SM 份额 | 适合放什么 |
+|---|---|---|---|---|
+| 1g.10gb | 7 | 10 GB | 1/7 | 7B INT4、embedding 和 rerank 模型 |
+| 1g.20gb | 4 | 20 GB | 1/7 | 7B FP8，KV 预算合理 |
+| 2g.20gb | 3 | 20 GB | 2/7 | 7B FP8，需要算力余量时 |
+| 3g.40gb | 2 | 40 GB | 3/7 | 13B FP16，或长上下文的 7B FP16 |
+| 4g.40gb | 1 | 40 GB | 4/7 | 同上 |
+| 7g.80gb | 1 | 80 GB | 7/7 | 等同于不使用 MIG |
+
+四条约束决定了设计：实例之间没有 NVLink 或 P2P，所以任何需要模型并行的负载都无法在 MIG 下运行；重新配置需要 GPU 重置，所以更换配置文件意味着要排空整张卡；只有七个计算切片，所以七个 1g 实例就是上限；而分区去掉了吸收突发流量的余量，所以平均利用率看起来没问题，尾延迟却会恶化。
+
+```
+模型能放进一块 GPU 吗？
+  └ 否 → 不考虑分区。经 NVLink 做张量并行
+是否有多个租户共享？
+  ├ 是，且有合规或 SLA 要求 → 专用 GPU 或节点
+  ├ 是，其他情况             → MIG
+  └ 否（一个可信团队） ↓
+工作负载是否是大量小 kernel？
+  ├ 是 → MPS
+  └ 否 → 通常专用 GPU 加应用层批处理更好
+这是开发或实验环境吗？
+  └ 是 → 时间切片即可
+```
+
+<div class="warn" markdown="1">
+**对于 LLM 推理，切分通常得不偿失。** 一个 vLLM 实例独占整张卡并使用 continuous batching，能让许多请求共享一次权重读取；而分区是在切分 GPU。MIG 的用武之地在于你必须承载不同的模型，或者租户隔离是合同要求——即便如此，也不要承诺完全隔离：已有针对共享资源的侧信道研究，而且 GPU 显存在租户之间不保证被清零。如果隔离是审计项，请推荐专用节点。
+</div>
+
 ## Runpod 如何提供它们
 {: #on-runpod-zh }
 
@@ -609,6 +859,8 @@ GPU1	NV12	 X 	SYS … NODE	64-127	1
 ```
 
 `NV12`——十二条绑定的 NVLink，`nvidia-smi nvlink -s` 列出了链路 0–11，每条 25 GB/s。从 GPU 0 到 GPU 1 的 1 GiB `torch` 复制达到 276 GB/s；同样的复制从锁页主机内存发起则为 24 GB/s。主机还向容器暴露了十块 Mellanox 网卡（`mlx5_0`–`mlx5_9`）。只是一台机器、一对 GPU：另一台 A100 SXM 主机，或者 8-GPU 的主机，可能显示不同的矩阵——请在你自己的机器上运行这条命令。
+
+相反的情况，来自 2026-11-07 的[集群实验]({{ '/cluster/' | relative_url }})：一台 2× RTX 4090 Secure Cloud Pod 的两块 GPU 之间显示为 `SYS`——跨两个 NUMA 节点的 PCIe——NCCL 选择了经主机内存的 `SHM`。在你自己的硬件上，慢作业遇到 `SYS` 意味着首先要修正 GPU 布局或 NUMA 绑定；在 Runpod 上，则意味着换一个 SKU 或主机。
 
 ### 如果你分到的是 PCIe
 
@@ -784,6 +1036,88 @@ Multi-Instance GPU は、1 枚の物理カードを複数の **GPU Instance** �
 
 このハードウェア分離こそが要点であり、コンテナの中から設定できない理由でもあります。
 
+### リンクのコストを数値で見る
+{: #in-numbers-ja }
+
+並列化の戦略を決めるのは GPU 間の配線であって、その逆ではありません。**NVLink ドメイン**とは、NVSwitch によってフルメッシュで結ばれ、互いにフルレートで通信できる GPU の集合です。HGX A100/H100/B200 ボードでは 8 基、GB200/GB300 NVL72 ラックでは 72 基、ブリッジでつないだ PCIe のペアでは 2 基です。
+
+**テンソル並列がドメインの中にとどまる理由。** TP はレイヤーごとに 2 回、アテンションの後と FFN の後に AllReduce を行います。7B モデル、シーケンス長 2,048、バッチ 1 で、順伝播 1 回の場合：
+
+```
+volume = batch × seq × d_model × 2 bytes × 2 per layer × layers
+       = 1 × 2,048 × 4,096 × 2 × 2 × 32 ≈ 2.1 GB
+```
+
+| 経路 | 帯域幅 | 2.1 GB にかかる時間 |
+|---|---|---|
+| NVLink 4（H100 SXM） | 900 GB/s | 2.3 ms |
+| PCIe 5.0 x16 | 64 GB/s | 33 ms |
+| InfiniBand NDR、1 ポート | 50 GB/s | 42 ms |
+
+14–18 倍のペナルティが、レイヤーごとに積み重なります。だからルールは **TP の次数 ≤ NVLink ドメインのサイズ** です。ノードをまたいだスケーリングはパイプライン並列か FSDP で行います。
+
+**データ並列**はステップごとに 1 回、勾配の AllReduce を行います。リング AllReduce は GPU あたりデータの 2(n−1)/n を転送し、勾配サイズのおよそ 2 倍になります。
+
+```
+7B FP16 の勾配 = 14 GB → GPU あたり約 28 GB を転送
+  NVLink 900 GB/s     →   31 ms
+  IB NDR, 1× 400 Gb/s →  560 ms   ← ステップを支配する
+```
+
+学習ノードが GPU ごとに NIC を 1 枚ずつ載せているのはこのためです。8 GPU のノードには 400G の NIC が 8 枚あり、異なるノードの同じランクの GPU が最小のホップ数で届くよう *rail-optimized* に配線されます。GPUDirect ファミリーは残りのコピーを取り除きます。P2P（ホストメモリを経由しない GPU 間通信）、RDMA（GPU メモリから NIC へ直接）、Storage（NVMe から GPU へ直接）です。SHARP はリダクションを InfiniBand スイッチの中で行います。
+
+**測定方法。** `NCCL_DEBUG=INFO` は NCCL が各ペアに選んだ転送方式を出力し、nccl-tests（`all_reduce_perf -b 8 -e 8G -f 2 -g 8`）はベースラインを与えます。algbw ではなく **busbw** を見てください。busbw = algbw × 2(n−1)/n はリンク速度と比較できます。8×H100 のノードなら、AllReduce の busbw が 200–250 GB/s で健全です。その半分なら何かがおかしく、多くの場合は PCIe ACS がピア間のトラフィックをルートコンプレックス経由にしている、NIC が別の NUMA ノードにある、スロットが x8 で配線されている、のいずれかです。
+
+<div class="note" markdown="1">
+**ここで測定したもの。** [クラスタラボ]({{ '/cluster/' | relative_url }})の `nccl_bench.py` も同じ方法で busbw を報告します。それぞれ Pod 1 台、2026-11-07：2× A100 SXM（`NV12`、NCCL `P2P`）は 1 GiB で **201 GB/s**、2× RTX 4090（`SYS`、ホストメモリを経由する NCCL `SHM`）は **15.6 GB/s** でした。1 億 100 万パラメータの DDP ジョブのスケーリングは、それぞれ 0.91 と 0.21 でした。
+</div>
+
+### MIG、MPS、タイムスライシングの選び方
+{: #sharing-ja }
+
+| | MIG | MPS | タイムスライシング |
+|---|---|---|---|
+| メモリ分離 | ハードウェアによる分割 | なし — せいぜい割り当て上限 | なし |
+| 演算の分離 | 固定の SM 割り当て | 緩いパーセンテージ上限 | なし — 時分割 |
+| 障害分離 | インスタンスごと | なし — 障害が波及する | なし |
+| 性能の予測可能性 | 高い | 中程度 | 低い — 隣が干渉する |
+| カーネルの同時実行 | インスタンスごとに独立 | あり | なし — コンテキスト切り替え |
+| 対応製品 | A100 / H100 / H200 / B200、RTX PRO 6000 Blackwell | ほとんどの製品 | ほとんどの製品 |
+| 分割間の NVLink / P2P | 使えない | 使える | 使える |
+| 再構成 | GPU のリセット — 処理を退避させる必要がある | デーモンの再起動 | プラグインの設定 |
+| 向いている用途 | SLA のあるマルチテナント推論 | 信頼できる 1 チーム、多数の小さなカーネル | 開発、テスト、ノートブック |
+
+H100 80GB は 7 つのコンピュートスライスと 8 つのメモリスライスに分かれます。
+
+| プロファイル | 最大数 | メモリ | SM の割合 | 収まるもの |
+|---|---|---|---|---|
+| 1g.10gb | 7 | 10 GB | 1/7 | 7B INT4、埋め込みモデルとリランクモデル |
+| 1g.20gb | 4 | 20 GB | 1/7 | 十分な KV の予算を持つ 7B FP8 |
+| 2g.20gb | 3 | 20 GB | 2/7 | 演算の余裕が重要な場合の 7B FP8 |
+| 3g.40gb | 2 | 40 GB | 3/7 | 13B FP16、または長コンテキストの 7B FP16 |
+| 4g.40gb | 1 | 40 GB | 4/7 | 同上 |
+| 7g.80gb | 1 | 80 GB | 7/7 | MIG を使わないのと同等 |
+
+設計を決める制約は 4 つあります。インスタンス間に NVLink も P2P もないので、モデル並列を必要とするものは MIG では動きません。再構成には GPU のリセットが必要なので、プロファイルを変えるにはカードの処理を退避させる必要があります。コンピュートスライスは 7 つしかないので、1g のインスタンス 7 つが上限です。そして分割するとバーストを吸収する余裕がなくなるので、平均使用率は問題なく見えてもテールレイテンシが悪化することがあります。
+
+```
+モデルは GPU 1 基に収まるか?
+  └ いいえ → 分割は選択肢にならない。NVLink 上のテンソル並列
+複数のテナントで共有するか?
+  ├ はい、規制や SLA の要件がある → 専用 GPU または専用ノード
+  ├ はい、それ以外               → MIG
+  └ いいえ (信頼できる 1 チーム) ↓
+ワークロードは多数の小さなカーネルか?
+  ├ はい   → MPS
+  └ いいえ → アプリケーションレベルのバッチ処理を備えた専用 GPU のほうが通常は良い
+開発や実験の環境か?
+  └ はい → タイムスライシングで十分
+```
+
+<div class="warn" markdown="1">
+**LLM の推論では、分割はたいてい損です。** カード全体で continuous batching を行う vLLM インスタンス 1 つなら、多数のリクエストが 1 回の重みの読み出しを共有します。分割は代わりに GPU を分けてしまいます。MIG が役に立つのは、異なるモデルをホストしなければならない場合や、テナントの分離が契約上の要件である場合です。その場合でも、完全な分離を約束してはいけません。共有リソースに対するサイドチャネルの研究があり、GPU メモリがテナント間でゼロクリアされる保証もありません。分離が監査項目になる場合は、専用ノードを推奨してください。
+</div>
+
 ## Runpod での提供のされ方
 {: #on-runpod-ja }
 
@@ -854,6 +1188,8 @@ GPU1	NV12	 X 	SYS … NODE	64-127	1
 ```
 
 `NV12` は 12 本の束ねられた NVLink で、`nvidia-smi nvlink -s` はリンク 0–11 をそれぞれ 25 GB/s と表示しました。GPU 0 から GPU 1 への 1 GiB の `torch` コピーは 276 GB/s、同じコピーをピン留めしたホストメモリから行うと 24 GB/s でした。ホストはさらに 10 枚の Mellanox NIC（`mlx5_0`–`mlx5_9`）をコンテナに公開していました。これは 1 台のマシン、1 つのペアでの結果です。別の A100 SXM ホストや 8 GPU のホストでは異なる行列になることがあるので、自分の環境でコマンドを実行してください。
+
+逆のケースは [クラスタラボ]({{ '/cluster/' | relative_url }})の 2026-11-07 の結果です。2× RTX 4090 の Secure Cloud Pod では 2 つの GPU 間が `SYS`（2 つの NUMA ノードにまたがる PCIe）と表示され、NCCL はホストメモリを経由する `SHM` を選びました。自前のハードウェアで遅いジョブに `SYS` が出たら、まず GPU の配置か NUMA バインディングを直すことを意味します。Runpod では、別の SKU かホストを選ぶことを意味します。
 
 ### PCIe に当たってしまったら
 

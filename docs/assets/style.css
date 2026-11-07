@@ -621,3 +621,31 @@ th { background: var(--bg-soft); font-weight: 600; }
 .shot { margin: 1.25rem 0 1.5rem; }
 .shot img { display: block; max-width: 100%; height: auto; border: 1px solid var(--border-strong); border-radius: 8px; }
 .shot figcaption { margin-top: .45rem; font-size: .85rem; color: var(--fg-muted); }
+
+/* Sizing calculators on /readings/gpu-llm-basics/ (#58). */
+.calc { border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-soft); margin: 1.25rem 0 1.75rem; }
+.calc-hd { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: .7rem 1rem; border-bottom: 1px solid var(--border); }
+.calc-hd span { font: .75rem var(--mono); color: var(--fg-muted); letter-spacing: .05em; }
+.calc-bd { padding: 1rem; }
+.calc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .75rem 1rem; }
+.calc-grid label { display: block; font-size: .8rem; color: var(--fg-muted); margin-bottom: .25rem; }
+.calc-grid input, .calc-grid select { width: 100%; box-sizing: border-box; padding: .4rem .5rem; font: inherit; font-size: .9rem;
+  color: var(--fg); background: var(--bg); border: 1px solid var(--border-strong); border-radius: 6px; }
+.calc-grid select:disabled { opacity: .5; }
+.calc-out { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: .5rem; margin-top: 1rem; }
+.calc-out div { background: var(--bg-inset); border-radius: 6px; padding: .5rem .65rem; }
+.calc-out span { display: block; font-size: .75rem; color: var(--fg-muted); }
+.calc-out b { font: 600 1.15rem var(--mono); }
+.calc-out .hi { outline: 1px solid var(--accent); }
+.calc-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-top: .9rem; background: var(--bg-inset); }
+.calc-bar i:nth-child(1) { background: var(--accent); }
+.calc-bar i:nth-child(2) { background: var(--warn-border); }
+.calc-bar i:nth-child(3) { background: var(--danger-border); }
+.calc-bar i:nth-child(4) { background: var(--fg-muted); }
+.calc-key { display: flex; flex-wrap: wrap; gap: .3rem 1rem; font-size: .75rem; color: var(--fg-muted); margin-top: .4rem; }
+.calc-key s { display: inline-block; width: .7rem; height: .7rem; border-radius: 2px; margin-right: .3rem; vertical-align: -1px; text-decoration: none; }
+.calc-key s.k1 { background: var(--accent); } .calc-key s.k2 { background: var(--warn-border); }
+.calc-key s.k3 { background: var(--danger-border); } .calc-key s.k4 { background: var(--fg-muted); }
+.calc-verdict { margin-top: .9rem; font-size: .9rem; line-height: 1.55; }
+.calc-bad { color: var(--danger-border); }
+@media (max-width: 600px) { .calc-grid, .calc-out { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; } .calc-bd { padding: .75rem; } }
