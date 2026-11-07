@@ -52,6 +52,7 @@ Run on 2026-10-06 and 2026-10-07 (KST) against a real Runpod account; C22–C27 
 | C28 | Re-read on 2026-11-05 for the same window, the billing API gives Pods USD 15.98, up from 14.47 in the snapshot of 2026-10-07 02:19 KST. Only the last three Pods changed, and their billed time now equals wall time: H100 PCIe 46.9 min (USD 2.27), A100 80GB PCIe 46.3 min (USD 1.23), L4 103.1 min (USD 0.86). Pods USD 15.98 plus Serverless USD 0.37 is USD 16.35 against a balance drop of USD 16.34. Charges posted after the Pods stopped; a reading taken right after the last stop under-states them | measured | [`billing_requery_2026-11-05.json`](./lab/results/billing_requery_2026-11-05.json) against [`billing.json`](./lab/results/billing.json), `timeBilledMs` and `amount` per `podId` |
 | C29 | One endpoint (RTX 4090, the C9 image and model, idle timeout 5 s) had FlashBoot switched before each of six cold probes, 180 s apart, on 2026-11-05. Worker `j4drrr2mmk2g9t` (US-NC-1) served probes 1 (off), 2 (on) and 3 (off): both off probes got a new container (`delayTime` 195.8 and 117.4 s), while the on probe was served in 2.0 s by the container from probe 1, still up 3 min after its last job. Worker `4vdnf7zsnxb0h1` (US-TX-3) got a new container on both of its on probes (114.1 and 105.6 s); `s8dygdxxif5bqq` (off) 120.9 s. Wherever a new container was captured, vLLM start to engine ready took 102.7–103.8 s. A new container with FlashBoot on and off on the same host was not obtained, so C19's confound stays open | measured | [`flashboot_alternate.json`](./lab/results/flashboot_alternate.json), [`flashboot_alternate_phases.json`](./lab/results/flashboot_alternate_phases.json), `coldstart_logs/flashboot_alternate/`, [`flashboot_alternate.py`](./lab/flashboot_alternate.py) |
 | C30 | The `image pull: pending` state seen in the 2026-10-06 run (T8) did not recur: no worker log line on 2026-11-05 contained `pending`. With `workersMax` 1 the endpoint again held three workers (US-TX-3, US-NC-1 ×2), and 27 of 103 worker readings were `THROTTLED`, spread over all three | observed once | `coldstart_logs/flashboot_alternate/workers_*.json`, `status` per worker |
+| C31 | T9 and T10 were not run: on 2026-11-06 no Secure Cloud Pod of RTX 4090 (EUR-IS-1, EUR-IS-2, EUR-NO-1), A100 80GB PCIe, A100 SXM or H100 PCIe could be created, in the morning (60–120 min of create attempts every 60 s) or at night (23:00–02:01 KST, 179 attempts per run). Every attempt returned "There are no instances currently available", although `stockStatus` read `Low` for RTX 4090 and both A100s at 08:1x, so `Low` did not mean creatable as it did in C25. No Pod was created and nothing was billed | measured | [`capacity_attempts_2026-11-06.json`](./lab/results/capacity_attempts_2026-11-06.json) |
 
 ### Host facts
 
@@ -119,8 +120,8 @@ Not used as pass/fail criteria. Full table: [`PROFILE.md`](./lab/results/PROFILE
 
 ### Not established
 
-- Whether the host differences in C4 change throughput or latency. One host per GPU type was measured, two for RTX 4090; those two ran the same prompt schedule, and paired per-request end-to-end latency was about 1% higher on the repeat host at `chat` 8 and 16 req/s, a difference the pairing resolves but cannot attribute.
-- Performance on the large-KV GPUs without prefix-cache reuse (C21).
+- Whether the host differences in C4 change throughput or latency. One host per GPU type was measured, two for RTX 4090; those two ran the same prompt schedule, and paired per-request end-to-end latency was about 1% higher on the repeat host at `chat` 8 and 16 req/s, a difference the pairing resolves but cannot attribute. The three-host run (T10) found no capacity (C31).
+- Performance on the large-KV GPUs without prefix-cache reuse (C21); the seeded re-run (T9) found no capacity (C31).
 - C3, C5 and C6 on Community Cloud (C7).
 - Why individual cold starts differ, beyond the phases in C12 and C22.
 - Whether the slow first start in C23 is the host's first use of the image or the host itself; and whether the multi-worker case in C24 can hide a cold start behind a warm `delayTime`, since the second container never served a job.
@@ -175,6 +176,7 @@ Not used as pass/fail criteria. Full table: [`PROFILE.md`](./lab/results/PROFILE
 | C28 | 2026-11-05에 같은 구간을 다시 조회하니 청구 API의 Pod 합계가 USD 15.98로, 2026-10-07 02:19 KST 스냅샷의 14.47보다 늘었다. 바뀐 것은 마지막 Pod 3개뿐이고, 청구 시간이 이제 벽시계 시간과 같다: H100 PCIe 46.9분(USD 2.27), A100 80GB PCIe 46.3분(USD 1.23), L4 103.1분(USD 0.86). Pod USD 15.98에 Serverless USD 0.37을 더하면 USD 16.35로, 잔액 감소 USD 16.34와 맞는다. 요금은 Pod가 멈춘 뒤에 반영되므로, 마지막 정지 직후의 조회는 실제보다 적게 나온다 | measured | [`billing_requery_2026-11-05.json`](./lab/results/billing_requery_2026-11-05.json)과 [`billing.json`](./lab/results/billing.json), `podId`별 `timeBilledMs`와 `amount` |
 | C29 | 2026-11-05, 엔드포인트 하나(RTX 4090, C9와 같은 이미지·모델, 유휴 타임아웃 5초)에서 180초 간격 콜드 프로브 6번마다 FlashBoot를 바꿨다. 워커 `j4drrr2mmk2g9t`(US-NC-1)가 프로브 1(끔), 2(켬), 3(끔)을 처리했다. 끔인 두 번은 새 컨테이너를 만들었고(`delayTime` 195.8초, 117.4초), 켬인 프로브는 마지막 작업 3분 뒤에도 떠 있던 프로브 1의 컨테이너가 2.0초 만에 처리했다. 워커 `4vdnf7zsnxb0h1`(US-TX-3)은 켬인 두 프로브 모두 새 컨테이너였다(114.1초, 105.6초). `s8dygdxxif5bqq`(끔)는 120.9초. 새 컨테이너가 기록된 경우 vLLM 시작부터 엔진 준비까지 102.7–103.8초였다. 같은 호스트에서 FlashBoot 켬과 끔의 새 컨테이너를 모두 얻지는 못해 C19의 교란 요인은 여전히 남는다 | measured | [`flashboot_alternate.json`](./lab/results/flashboot_alternate.json), [`flashboot_alternate_phases.json`](./lab/results/flashboot_alternate_phases.json), `coldstart_logs/flashboot_alternate/`, [`flashboot_alternate.py`](./lab/flashboot_alternate.py) |
 | C30 | 2026-10-06 실행에서 본 `image pull: pending` 상태(T8)는 2026-11-05에 다시 나오지 않았다. 워커 로그에 `pending`이 들어간 줄이 없었다. `workersMax` 1인데 엔드포인트에는 다시 워커가 셋(US-TX-3, US-NC-1 두 개) 있었고, 워커 상태 103회 중 27회가 `THROTTLED`였으며 세 워커 모두에 걸쳐 있었다 | observed once | `coldstart_logs/flashboot_alternate/workers_*.json`, 워커별 `status` |
+| C31 | T9와 T10은 실행하지 못했다. 2026-11-06에 Secure Cloud의 RTX 4090(EUR-IS-1, EUR-IS-2, EUR-NO-1), A100 80GB PCIe, A100 SXM, H100 PCIe Pod를 오전(60초마다 60–120분 생성 시도)에도 밤(23:00–02:01 KST, 실행마다 179회)에도 한 대도 만들지 못했다. 모든 시도가 "There are no instances currently available"를 돌려받았다. 08:1x에 RTX 4090과 두 A100의 `stockStatus`가 `Low`였으므로, C25와 달리 `Low`가 생성 가능을 뜻하지 않았다. Pod는 만들어지지 않았고 과금도 없었다 | measured | [`capacity_attempts_2026-11-06.json`](./lab/results/capacity_attempts_2026-11-06.json) |
 
 ### 호스트 정보
 
@@ -242,8 +244,8 @@ NVIDIA는 H100 NVL의 기본 전력을 전원 케이블이 450 또는 600 W로 �
 
 ### 확인하지 못한 것
 
-- C4의 호스트 차이가 처리량이나 지연을 바꾸는지. GPU 종류마다 호스트 1곳(RTX 4090은 2곳)만 측정했다. 두 RTX 4090은 같은 프롬프트 일정으로 돌았고, 요청별로 짝지어 보면 `chat` 8과 16 req/s에서 반복 호스트의 종단 지연이 약 1% 높았다. 짝지은 비교로 구분되는 차이지만 원인은 알 수 없다.
-- 프리픽스 캐시 재사용이 없을 때 대형 KV GPU의 성능(C21).
+- C4의 호스트 차이가 처리량이나 지연을 바꾸는지. GPU 종류마다 호스트 1곳(RTX 4090은 2곳)만 측정했다. 두 RTX 4090은 같은 프롬프트 일정으로 돌았고, 요청별로 짝지어 보면 `chat` 8과 16 req/s에서 반복 호스트의 종단 지연이 약 1% 높았다. 짝지은 비교로 구분되는 차이지만 원인은 알 수 없다. 호스트 3곳 측정(T10)은 장비를 받지 못했다(C31).
+- 프리픽스 캐시 재사용이 없을 때 대형 KV GPU의 성능(C21). 시드를 고정한 재측정(T9)은 장비를 받지 못했다(C31).
 - Community Cloud에서의 C3, C5, C6(C7).
 - C12와 C22의 단계 너머에서 개별 콜드스타트가 서로 다른 이유.
 - C23의 느린 첫 기동이 그 호스트에서 이미지를 처음 쓴 탓인지 호스트 자체 탓인지. C24의 다중 워커 상황에서 콜드스타트가 웜 `delayTime` 뒤에 숨을 수 있는지 — 두 번째 컨테이너는 작업을 받지 못해 확인하지 못했다.
