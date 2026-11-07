@@ -64,6 +64,8 @@ Clusters are created in the console (**Clusters → Create cluster**); the REST 
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}" alt="Deploy Instant Cluster form: B300, B200, H200 SXM and H100 SXM all Unavailable" loading="lazy" width="1400" height="998"></a><figcaption>Deploy Instant Cluster, 2026-11-07: 8 GPUs per Pod, price per GPU-hour and per cluster-hour, every type Unavailable.</figcaption></figure>
 
+<figure class="shot"><a href="{{ '/assets/img/cluster/spend-rate-limit.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/spend-rate-limit.webp' | relative_url }}" alt="Billing page showing a spend rate limit of USD 80 per hour" loading="lazy" width="1400" height="998"></a><figcaption>Billing shows this account's <strong>spend rate limit, USD 80/hr</strong>. The smallest A100 cluster (USD 34.37/hr) and H100 cluster (USD 76.61/hr) fit under it; H200 (USD 101.57) and B200 (USD 153.41) would not — the "default spending limit" the docs mention.</figcaption></figure>
+
 When capacity appears, run on each node:
 
 ```bash
@@ -149,6 +151,8 @@ python3 lab.py delete
 클러스터는 콘솔에서 만든다 (**Clusters → Create cluster**). REST API 에는 클러스터 엔드포인트가 없다. 화면은 클러스터 전체의 시간당 가격과 종류별 Available/Unavailable 을 보여준다. 2026-11-07 에는 모든 종류가 **Unavailable** 이었고, 같은 시각 A100 SXM, H100 SXM 단일 Pod 는 배포할 수 있었다. 화면은 이 값을 GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }` 로 읽으며, Unavailable 이면 `null` 이다.
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}" alt="Deploy Instant Cluster 화면: B300, B200, H200 SXM, H100 SXM 모두 Unavailable" loading="lazy" width="1400" height="998"></a><figcaption>Deploy Instant Cluster, 2026-11-07: Pod 당 GPU 8장, GPU 시간당과 클러스터 시간당 가격, 모든 종류 Unavailable.</figcaption></figure>
+
+<figure class="shot"><a href="{{ '/assets/img/cluster/spend-rate-limit.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/spend-rate-limit.webp' | relative_url }}" alt="시간당 USD 80 의 지출 속도 한도를 보여주는 Billing 화면" loading="lazy" width="1400" height="998"></a><figcaption>Billing 화면에 이 계정의 <strong>지출 속도 한도, 시간당 USD 80</strong> 이 나온다. 가장 작은 A100 클러스터(시간당 USD 34.37)와 H100 클러스터(USD 76.61)는 그 안에 들어가고, H200(USD 101.57)과 B200(USD 153.41)은 넘는다. 문서가 말하는 "기본 지출 한도" 가 이것이다.</figcaption></figure>
 
 자리가 나면 각 노드에서:
 
@@ -236,6 +240,8 @@ python3 lab.py delete
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}" alt="Deploy Instant Cluster 表单：B300、B200、H200 SXM、H100 SXM 均为 Unavailable" loading="lazy" width="1400" height="998"></a><figcaption>Deploy Instant Cluster，2026-11-07：每个 Pod 8 块 GPU，按 GPU 小时和集群小时计价，所有类型 Unavailable。</figcaption></figure>
 
+<figure class="shot"><a href="{{ '/assets/img/cluster/spend-rate-limit.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/spend-rate-limit.webp' | relative_url }}" alt="Billing 页面显示每小时 USD 80 的花费速率上限" loading="lazy" width="1400" height="998"></a><figcaption>Billing 页面显示该账户的<strong>花费速率上限为每小时 USD 80</strong>。最小的 A100 集群（每小时 USD 34.37）和 H100 集群（USD 76.61）在限额内；H200（USD 101.57）和 B200（USD 153.41）则会超出——这就是文档所说的“默认花费限额”。</figcaption></figure>
+
 有容量时，在每个节点上运行：
 
 ```bash
@@ -321,6 +327,8 @@ python3 lab.py delete
 クラスタはコンソールで作成します（**Clusters → Create cluster**）。REST API にクラスタのエンドポイントはありません。フォームはクラスタ全体の時間あたり価格と、種別ごとの Available／Unavailable を表示します。2026-11-07 はすべての種別が **Unavailable** で、同じ時刻に A100 SXM と H100 SXM の単体 Pod はデプロイできました。フォームはこれを GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }` から読み、Unavailable なら `null` が返ります。
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}" alt="Deploy Instant Cluster 画面：B300、B200、H200 SXM、H100 SXM がすべて Unavailable" loading="lazy" width="1400" height="998"></a><figcaption>Deploy Instant Cluster、2026-11-07：Pod あたり GPU 8 基、GPU 時間あたりとクラスタ時間あたりの価格、すべて Unavailable。</figcaption></figure>
+
+<figure class="shot"><a href="{{ '/assets/img/cluster/spend-rate-limit.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/spend-rate-limit.webp' | relative_url }}" alt="時間あたり USD 80 の支出レート上限を示す Billing 画面" loading="lazy" width="1400" height="998"></a><figcaption>Billing にこのアカウントの<strong>支出レート上限、時間あたり USD 80</strong> が表示されます。最小の A100 クラスタ（時間あたり USD 34.37）と H100 クラスタ（USD 76.61）は収まり、H200（USD 101.57）と B200（USD 153.41）は超えます。ドキュメントのいう「既定の支出上限」がこれです。</figcaption></figure>
 
 空きが出たら、各ノードで実行します。
 

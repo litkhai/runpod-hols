@@ -22,7 +22,7 @@ python setup/verify-auth.py     # 3. does the key actually work?
 
 ### API key
 
-Create one at [Console → Settings → API Keys](https://console.runpod.io/user/settings), then run `./setup/init-env.sh`. It reads the key with terminal echo disabled, writes `.env` with `0600` permissions, and prints only a masked confirmation — so the key never reaches your screen or shell history. Re-running is safe: existing values become defaults and the old file is backed up.
+Create one at [Console → Credentials → API Keys](https://console.runpod.io/user/credentials?tab=api-keys), then run `./setup/init-env.sh`. It reads the key with terminal echo disabled, writes `.env` with `0600` permissions, and prints only a masked confirmation — so the key never reaches your screen or shell history. Re-running is safe: existing values become defaults and the old file is backed up.
 
 <div class="warn" markdown="1">
 **Runpod shows the key once and does not store it.** Copy it into a password manager at creation time. If you lose it you cannot recover it — only create a new one.
@@ -87,6 +87,8 @@ Three read-only calls: `get_user`, `get_gpus`, `get_pods`. Nothing is created, s
 
 The official [MCP server](https://github.com/runpod/runpod-mcp) is the most actively maintained integration in the Runpod org. The hosted mode needs no install and stores no API key on disk:
 
+<figure class="shot"><a href="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}"><img src="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}" alt="Console home with the Onboard your agent to Runpod card" loading="lazy" width="1400" height="998"></a><figcaption>The console home, 2026-11-07: Runpod now offers the agent setup itself — one line to paste into a coding agent installs its skills and the MCP server.</figcaption></figure>
+
 ```bash
 claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/
 ```
@@ -115,7 +117,7 @@ python setup/verify-auth.py     # 3. 키가 실제로 동작하는가
 
 ### API 키
 
-[콘솔 → Settings → API Keys](https://console.runpod.io/user/settings) 에서 생성한 뒤 `./setup/init-env.sh` 를 실행합니다. 터미널 에코를 끈 채 키를 입력받고 `.env` 를 `0600` 권한으로 작성하며 마스킹된 확인값만 출력하므로, 키가 화면에도 셸 히스토리에도 남지 않습니다. 여러 번 실행해도 안전합니다. 기존 값이 기본값으로 제시되고 이전 파일은 백업됩니다.
+[콘솔 → Credentials → API Keys](https://console.runpod.io/user/credentials?tab=api-keys) 에서 생성한 뒤 `./setup/init-env.sh` 를 실행합니다. 터미널 에코를 끈 채 키를 입력받고 `.env` 를 `0600` 권한으로 작성하며 마스킹된 확인값만 출력하므로, 키가 화면에도 셸 히스토리에도 남지 않습니다. 여러 번 실행해도 안전합니다. 기존 값이 기본값으로 제시되고 이전 파일은 백업됩니다.
 
 <div class="warn" markdown="1">
 **Runpod 은 키를 한 번만 보여주고 저장하지 않습니다.** 생성 시점에 비밀번호 관리자에 복사해 두세요. 분실하면 복구할 수 없고 새로 만드는 수밖에 없습니다.
@@ -180,6 +182,8 @@ python setup/verify-auth.py     # 3. 키가 실제로 동작하는가
 
 공식 [MCP 서버](https://github.com/runpod/runpod-mcp) 는 Runpod 조직에서 가장 활발히 관리되는 연동 프로젝트입니다. Hosted 방식은 설치가 필요 없고 디스크에 API 키를 저장하지 않습니다.
 
+<figure class="shot"><a href="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}"><img src="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}" alt="콘솔 홈의 Onboard your agent to Runpod 카드" loading="lazy" width="1400" height="998"></a><figcaption>콘솔 홈, 2026-11-07: Runpod 이 에이전트 설정을 직접 안내한다. 코딩 에이전트에 한 줄을 붙여 넣으면 스킬과 MCP 서버가 설치된다.</figcaption></figure>
+
 ```bash
 claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/
 ```
@@ -208,7 +212,7 @@ python setup/verify-auth.py     # 3. does the key actually work?
 
 ### API 密钥
 
-在 [Console → Settings → API Keys](https://console.runpod.io/user/settings) 创建一个，然后运行 `./setup/init-env.sh`。它在关闭终端回显的情况下读取密钥，以 `0600` 权限写入 `.env`，并只打印经过遮盖的确认信息——因此密钥不会出现在屏幕或 shell 历史中。可以安全地重复运行：已有的值会成为默认值，旧文件会被备份。
+在 [Console → Credentials → API Keys](https://console.runpod.io/user/credentials?tab=api-keys) 创建一个，然后运行 `./setup/init-env.sh`。它在关闭终端回显的情况下读取密钥，以 `0600` 权限写入 `.env`，并只打印经过遮盖的确认信息——因此密钥不会出现在屏幕或 shell 历史中。可以安全地重复运行：已有的值会成为默认值，旧文件会被备份。
 
 <div class="warn" markdown="1">
 **Runpod 只显示一次密钥，并且不保存它。** 创建时就把它复制到密码管理器中。一旦丢失就无法找回——只能新建一个。
@@ -273,6 +277,8 @@ python setup/verify-auth.py     # 3. does the key actually work?
 
 官方 [MCP server](https://github.com/runpod/runpod-mcp) 是 Runpod 组织中维护最活跃的集成。托管模式无需安装，也不会在磁盘上保存 API 密钥：
 
+<figure class="shot"><a href="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}"><img src="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}" alt="控制台首页的 Onboard your agent to Runpod 卡片" loading="lazy" width="1400" height="998"></a><figcaption>控制台首页，2026-11-07：Runpod 现在直接提供 agent 配置——把一行文字粘贴到编码 agent 中，就会安装其 skills 和 MCP 服务器。</figcaption></figure>
+
 ```bash
 claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/
 ```
@@ -301,7 +307,7 @@ python setup/verify-auth.py     # 3. does the key actually work?
 
 ### API キー
 
-[Console → Settings → API Keys](https://console.runpod.io/user/settings) で作成し、`./setup/init-env.sh` を実行します。ターミナルのエコーを無効にした状態でキーを読み取り、`.env` を `0600` のパーミッションで書き込み、マスクされた確認表示だけを出力します。そのためキーが画面にもシェル履歴にも残りません。何度実行しても安全です。既存の値がデフォルトになり、古いファイルはバックアップされます。
+[Console → Credentials → API Keys](https://console.runpod.io/user/credentials?tab=api-keys) で作成し、`./setup/init-env.sh` を実行します。ターミナルのエコーを無効にした状態でキーを読み取り、`.env` を `0600` のパーミッションで書き込み、マスクされた確認表示だけを出力します。そのためキーが画面にもシェル履歴にも残りません。何度実行しても安全です。既存の値がデフォルトになり、古いファイルはバックアップされます。
 
 <div class="warn" markdown="1">
 **Runpod はキーを一度しか表示せず、保存もしません。** 作成時にパスワードマネージャーにコピーしてください。紛失すると復元できず、新しく作るしかありません。
@@ -365,6 +371,8 @@ python setup/verify-auth.py     # 3. does the key actually work?
 ### MCP：AI エージェントから Runpod を使う
 
 公式の [MCP server](https://github.com/runpod/runpod-mcp) は、Runpod org の中で最も活発にメンテナンスされている連携です。ホスト型モードはインストール不要で、API キーをディスクに保存しません。
+
+<figure class="shot"><a href="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}"><img src="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}" alt="コンソールのホームにある Onboard your agent to Runpod カード" loading="lazy" width="1400" height="998"></a><figcaption>コンソールのホーム、2026-11-07：Runpod がエージェントの設定を自ら案内しています。コーディングエージェントに 1 行貼り付けると、スキルと MCP サーバーが入ります。</figcaption></figure>
 
 ```bash
 claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/

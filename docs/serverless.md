@@ -33,6 +33,8 @@ Four options. The third is the usual answer; the fourth arrived in SDK 1.12.
 
 Put a Hugging Face ID in the endpoint's **Model** field and Runpod caches the weights on the host at `/runpod-volume/huggingface-cache/hub`, shared across workers there. Code stays in Git, weights stay out of it — the two compose rather than compete.
 
+<figure class="shot"><a href="{{ '/assets/img/serverless/edit-model-field.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-model-field.webp' | relative_url }}" alt="Edit endpoint form: the Model field with a Hugging Face URL pinned to a revision" loading="lazy" width="1400" height="998"></a><figcaption>Edit endpoint → <strong>Model</strong> (02-llm-chat): a Hugging Face link, pinned to a revision after the colon. The field has no API equivalent. Below it, the form now warns when no Hugging Face token is set.</figcaption></figure>
+
 <div class="warn" markdown="1">
 The handler has to be written for it. `HF_HUB_OFFLINE` is read when `huggingface_hub` is imported, so setting it after importing `transformers` silently does nothing — and you would be downloading on the clock while believing you were serving from cache.
 </div>
@@ -104,6 +106,8 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 This keeps each lab self-contained, matching Runpod's own repos — `runpod-workers/*` put one worker per repo with the Dockerfile at the root, and the `runpod/containers` monorepo sets `context = "official-templates/<name>"` per bake target. Nothing in the org uses root-relative `COPY` paths.
 </div>
 
+<figure class="shot"><a href="{{ '/assets/img/serverless/edit-build-context.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-build-context.webp' | relative_url }}" alt="Repository configuration with Branch, Dockerfile path and Build context" loading="lazy" width="1400" height="998"></a><figcaption>Where the field lives when you edit an existing endpoint: <strong>Repository configuration → Build context</strong>, next to the branch and Dockerfile path (02-llm-chat).</figcaption></figure>
+
 <div class="note" markdown="1">
 **Redeploy: docs and observation disagree.** The docs say changes "won't automatically be pushed to your endpoint" and that a **GitHub release** is required. In practice every push to the connected branch triggers a build: 02-llm-chat had 24 releases by 2026-11-07, one for each merge to `main`, including merges that changed no file of the worker (screenshot below). Expect a rebuild, and a new release on the endpoint, on every merge. Earlier builds can be rolled back from the Builds tab.
 
@@ -122,6 +126,8 @@ Lab 01 deployed from GitHub, CPU workers, `workers_min = 0`:
 | Warm | 776–806 ms | 194–217 ms |
 
 `delayTime` is queue plus worker startup, `executionTime` is the handler. The handler is a rounding error — almost all of the first request is cold start, which is exactly what `workers_min = 0` buys you in cost and pays for in latency.
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/hello-world-metrics.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/hello-world-metrics.webp' | relative_url }}" alt="Metrics tab of 01-hello-world: 7 requests completed, execution time chart" loading="lazy" width="1400" height="998"></a><figcaption>Re-run 2026-11-07, seven requests: cold starts showed <code>delayTime</code> 4,755 and 3,092 ms (two workers came up), warm ones 620–845 ms — the same shape as the table. The Metrics tab plots it per request.</figcaption></figure>
 
 <div class="warn" markdown="1">
 **`{"input": {}}` never returns.** An empty input object hung for 90 seconds with a zero-byte response and `retries: 1`, reproducibly. It is not a handler bug — `{"input": {"other": 1}}` takes the identical default path and returns immediately. Always send at least one key.
@@ -146,6 +152,8 @@ The 12 s is container start, imports, a 2.37 s model load and the SDK's fitness 
 <div class="warn" markdown="1">
 **A 16 GB or 24 GB pool can hand you a Blackwell GPU.** The pools include `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` slices (sm_120). A CUDA 12.6 torch stops at sm_90, so the worker logged `no kernel image is available for execution on the device`, then `Worker is unhealthy, exiting.` The same image had served fine on an RTX A5000. The fix is a CUDA 12.8 base, `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime`, plus a minimum CUDA version of 12.8 on the endpoint so older drivers are not picked. With that base the model loaded from cache in 1.49 s on the MIG slice.
 </div>
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}" alt="GPU configuration split into Previous generation and Latest generation tabs" loading="lazy" width="1400" height="998"></a><figcaption>The console now separates the pools into <strong>Previous generation</strong> and <strong>Latest generation</strong> ("require a CUDA 12.8+ image"). 02-llm-chat has 16 GB and 24 GB ticked here and a 24 GB pool on the Latest tab, so the form warns "You selected GPUs from both generations" — the situation above.</figcaption></figure>
 
 <div class="note" markdown="1">
 **Pinning a MIG type needs GraphQL.** The REST API rejects the MIG type in `gpuTypeIds`. The GraphQL `saveEndpoint` mutation takes a pool plus exclusions instead — `gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` left only the MIG slice.
@@ -203,6 +211,8 @@ Runpod Serverless 는 코드를 오토스케일 HTTP 엔드포인트로 실행�
 | **`VolumeCache`** (SDK 1.12+) | 첫 회 이후 수 초 | 작음 | 없음 — 대신 네트워크 볼륨 비용 |
 
 엔드포인트의 **Model** 필드에 Hugging Face ID 를 넣으면 Runpod 이 호스트의 `/runpod-volume/huggingface-cache/hub` 에 가중치를 캐시하고 그 호스트의 워커들이 공유합니다. 코드는 Git 에, 가중치는 Git 밖에 — 둘은 경쟁 관계가 아니라 함께 쓰는 관계입니다.
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/edit-model-field.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-model-field.webp' | relative_url }}" alt="Edit endpoint 화면: 리비전까지 고정한 Hugging Face URL 이 들어간 Model 칸" loading="lazy" width="1400" height="998"></a><figcaption>Edit endpoint → <strong>Model</strong> (02-llm-chat): 콜론 뒤에 리비전을 고정한 Hugging Face 링크. 이 칸에 해당하는 API 는 없다. 그 아래에는 Hugging Face 토큰이 없을 때 경고가 새로 뜬다.</figcaption></figure>
 
 <div class="warn" markdown="1">
 핸들러를 여기에 맞춰 작성해야 합니다. `HF_HUB_OFFLINE` 는 `huggingface_hub` 가 import 될 때 읽히므로, `transformers` 를 import 한 뒤에 설정하면 아무 효과 없이 무시됩니다. 캐시에서 서빙한다고 믿는 동안 실제로는 과금되며 다운로드하게 됩니다.
@@ -275,6 +285,8 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 이렇게 하면 각 실습이 자체 완결적으로 유지되며, 이는 Runpod 자체 저장소 방식과 같습니다. `runpod-workers/*` 는 워커마다 저장소를 두고 Dockerfile 을 루트에 놓고, `runpod/containers` 모노레포는 bake 타겟마다 `context = "official-templates/<name>"` 을 지정합니다. 조직 어디에도 루트 기준 `COPY` 경로는 없습니다.
 </div>
 
+<figure class="shot"><a href="{{ '/assets/img/serverless/edit-build-context.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-build-context.webp' | relative_url }}" alt="Branch, Dockerfile path, Build context 가 있는 Repository configuration" loading="lazy" width="1400" height="998"></a><figcaption>기존 엔드포인트를 편집할 때 이 칸의 위치: 브랜치, Dockerfile 경로 옆의 <strong>Repository configuration → Build context</strong> (02-llm-chat).</figcaption></figure>
+
 <div class="note" markdown="1">
 **재배포 — 문서와 실제가 다릅니다.** 문서는 변경사항이 "won't automatically be pushed to your endpoint" 이며 **GitHub 릴리스**가 필요하다고 합니다. 실제로는 연결된 브랜치에 푸시할 때마다 빌드가 돕니다. 02-llm-chat 은 2026-11-07 까지 `main` 머지마다 하나씩 릴리스 24개가 쌓였고, 워커 파일을 하나도 바꾸지 않은 머지도 포함됩니다 (아래 캡처). 머지할 때마다 재빌드와 새 릴리스가 생긴다고 보세요. 이전 빌드는 Builds 탭에서 롤백할 수 있습니다.
 
@@ -293,6 +305,8 @@ GitHub 연동으로 배포한 Lab 01, CPU 워커, `workers_min = 0` 기준입니
 | 워밍 후 | 776~806 ms | 194~217 ms |
 
 `delayTime` 은 큐 대기와 워커 기동, `executionTime` 은 핸들러 실행입니다. 핸들러는 오차 수준이고 첫 요청의 대부분이 콜드 스타트입니다. `workers_min = 0` 이 비용으로 얻고 지연시간으로 치르는 것이 정확히 이것입니다.
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/hello-world-metrics.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/hello-world-metrics.webp' | relative_url }}" alt="01-hello-world 의 Metrics 탭: 요청 7건 완료, 실행 시간 차트" loading="lazy" width="1400" height="998"></a><figcaption>2026-11-07 재실행, 요청 7건: 콜드 스타트의 <code>delayTime</code> 은 4,755 ms 와 3,092 ms (워커 두 개가 떴다), 웜 요청은 620–845 ms 로 표와 같은 모양이었다. Metrics 탭이 요청별로 그려 준다.</figcaption></figure>
 
 <div class="warn" markdown="1">
 **`{"input": {}}` 는 응답이 오지 않습니다.** 빈 입력 객체는 90초 동안 0바이트 응답에 `retries: 1` 이 붙은 채 멈췄고, 재현됩니다. 핸들러 버그가 아닙니다. `{"input": {"other": 1}}` 은 완전히 같은 기본값 경로를 타면서 즉시 응답합니다. 키를 최소 하나는 보내세요.
@@ -317,6 +331,8 @@ Lab 02 는 `Qwen/Qwen2.5-1.5B-Instruct` 를 GitHub 연동으로 배포하고, �
 <div class="warn" markdown="1">
 **16 GB, 24 GB 풀에서 Blackwell GPU 가 배정될 수 있습니다.** 이 풀에는 `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` 조각(sm_120)이 섞여 있습니다. CUDA 12.6 torch 는 sm_90 까지만 지원하므로 워커가 `no kernel image is available for execution on the device` 를 남기고 `Worker is unhealthy, exiting.` 으로 종료했습니다. 같은 이미지가 RTX A5000 에서는 정상 동작했습니다. 해결책은 CUDA 12.8 베이스 `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime` 로 바꾸고, 엔드포인트의 최소 CUDA 버전을 12.8 로 지정해 오래된 드라이버가 선택되지 않게 하는 것입니다. 이 베이스로 MIG 조각에서 캐시로부터 1.49초 만에 모델을 올렸습니다.
 </div>
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}" alt="Previous generation 과 Latest generation 탭으로 나뉜 GPU configuration" loading="lazy" width="1400" height="998"></a><figcaption>콘솔은 이제 풀을 <strong>Previous generation</strong> 과 <strong>Latest generation</strong> ("CUDA 12.8+ 이미지 필요") 으로 나눈다. 02-llm-chat 은 여기서 16 GB 와 24 GB 를, Latest 탭에서 24 GB 풀을 골라 두어서 "You selected GPUs from both generations" 경고가 뜬다. 위에서 설명한 바로 그 상황이다.</figcaption></figure>
 
 <div class="note" markdown="1">
 **MIG 타입 고정은 GraphQL 로 해야 합니다.** REST API 는 `gpuTypeIds` 에 MIG 타입을 넣으면 거부합니다. GraphQL `saveEndpoint` 뮤테이션은 풀과 제외 목록을 받습니다. `gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` 로 MIG 조각만 남았습니다.
@@ -374,6 +390,8 @@ Runpod Serverless 将你的代码作为自动扩缩的 HTTP 端点运行。请�
 | **`VolumeCache`**（SDK 1.12+） | 首次之后几秒 | 小 | 否——但要为 network volume 付费 |
 
 在端点的 **Model** 字段填入 Hugging Face ID，Runpod 就会把权重缓存到主机上的 `/runpod-volume/huggingface-cache/hub`，由该主机上的 worker 共享。代码放在 Git 里，权重放在 Git 之外——两者是组合关系，而不是竞争关系。
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/edit-model-field.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-model-field.webp' | relative_url }}" alt="Edit endpoint 表单：Model 字段中填有固定到某个 revision 的 Hugging Face URL" loading="lazy" width="1400" height="998"></a><figcaption>Edit endpoint → <strong>Model</strong>（02-llm-chat）：一个 Hugging Face 链接，冒号后固定了 revision。这个字段没有对应的 API。下方现在会在未设置 Hugging Face token 时给出警告。</figcaption></figure>
 
 <div class="warn" markdown="1">
 handler 必须为此专门编写。`HF_HUB_OFFLINE` 在 `huggingface_hub` 被导入时读取，所以在导入 `transformers` 之后再设置它会静默失效——你以为在从缓存提供服务，实际上却在计费期间下载。
@@ -446,6 +464,8 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 这样每个实验都保持自包含，与 Runpod 自己的仓库一致——`runpod-workers/*` 每个 worker 一个仓库，Dockerfile 位于根目录；`runpod/containers` monorepo 则为每个 bake target 设置 `context = "official-templates/<name>"`。该组织中没有任何地方使用相对于根目录的 `COPY` 路径。
 </div>
 
+<figure class="shot"><a href="{{ '/assets/img/serverless/edit-build-context.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-build-context.webp' | relative_url }}" alt="包含 Branch、Dockerfile path 和 Build context 的 Repository configuration" loading="lazy" width="1400" height="998"></a><figcaption>编辑已有端点时该字段的位置：<strong>Repository configuration → Build context</strong>，与分支和 Dockerfile 路径并列（02-llm-chat）。</figcaption></figure>
+
 <div class="note" markdown="1">
 **重新部署：文档与观察不一致。** 文档说变更 "won't automatically be pushed to your endpoint"，并且需要 **GitHub release**。实际上，每次 push 到所连接的分支都会触发构建：到 2026-11-07，02-llm-chat 已有 24 个 release，每次合并到 `main` 一个，其中包括没有改动 worker 任何文件的合并（见下图）。请预期每次合并都会重新构建并在端点上产生新的 release。之前的构建可以在 Builds 标签页中回滚。
 
@@ -464,6 +484,8 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 | 热 | 776–806 ms | 194–217 ms |
 
 `delayTime` 是排队加 worker 启动，`executionTime` 是 handler。handler 的耗时可以忽略不计——第一次请求几乎全是冷启动，这正是 `workers_min = 0` 在成本上换来的、并在延迟上付出的代价。
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/hello-world-metrics.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/hello-world-metrics.webp' | relative_url }}" alt="01-hello-world 的 Metrics 标签页：7 个请求完成，执行时间图表" loading="lazy" width="1400" height="998"></a><figcaption>2026-11-07 重新运行，7 个请求：冷启动的 <code>delayTime</code> 为 4,755 ms 和 3,092 ms（起了两个 worker），热请求为 620–845 ms——与上表形态一致。Metrics 标签页按请求绘制。</figcaption></figure>
 
 <div class="warn" markdown="1">
 **`{"input": {}}` 永远不会返回。** 空的 input 对象挂起了 90 秒，响应为零字节并带有 `retries: 1`，可稳定复现。这不是 handler 的 bug——`{"input": {"other": 1}}` 走完全相同的默认路径，却立即返回。请始终至少发送一个键。
@@ -488,6 +510,8 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 <div class="warn" markdown="1">
 **16 GB 或 24 GB 的池可能分配给你一块 Blackwell GPU。** 这些池中包括 `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` 切片（sm_120）。CUDA 12.6 的 torch 只支持到 sm_90，因此 worker 记录了 `no kernel image is available for execution on the device`，随后 `Worker is unhealthy, exiting.`。同一镜像在 RTX A5000 上运行正常。解决方法是换成 CUDA 12.8 基础镜像 `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime`，并在端点上把最低 CUDA 版本设为 12.8，以免选中较旧的驱动。使用该基础镜像后，模型在 MIG 切片上从缓存加载仅用 1.49 s。
 </div>
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}" alt="GPU configuration 分为 Previous generation 和 Latest generation 两个标签页" loading="lazy" width="1400" height="998"></a><figcaption>控制台现在把 GPU 池分成 <strong>Previous generation</strong> 和 <strong>Latest generation</strong>（"需要 CUDA 12.8+ 镜像"）。02-llm-chat 在这里勾选了 16 GB 和 24 GB，在 Latest 标签页又勾选了一个 24 GB 池，因此表单提示 "You selected GPUs from both generations"——正是上面描述的情况。</figcaption></figure>
 
 <div class="note" markdown="1">
 **固定 MIG 类型需要 GraphQL。** REST API 不接受 `gpuTypeIds` 中的 MIG 类型。GraphQL 的 `saveEndpoint` mutation 则接受一个池加排除项——`gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` 之后只剩下 MIG 切片。
@@ -545,6 +569,8 @@ Runpod Serverless は、コードをオートスケールする HTTP エンド�
 | **`VolumeCache`**（SDK 1.12+） | 初回以降は数秒 | 小さい | されない。代わりに network volume の料金がかかる |
 
 エンドポイントの **Model** フィールドに Hugging Face ID を入れると、Runpod がホストの `/runpod-volume/huggingface-cache/hub` に重みをキャッシュし、そのホスト上の worker で共有します。コードは Git に、重みは Git の外に。両者は競合ではなく組み合わせる関係です。
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/edit-model-field.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-model-field.webp' | relative_url }}" alt="Edit endpoint フォーム：リビジョンまで固定した Hugging Face URL が入った Model 欄" loading="lazy" width="1400" height="998"></a><figcaption>Edit endpoint → <strong>Model</strong>（02-llm-chat）：コロンの後ろでリビジョンを固定した Hugging Face のリンク。この欄に相当する API はありません。その下には、Hugging Face トークン未設定時の警告が新たに出ます。</figcaption></figure>
 
 <div class="warn" markdown="1">
 handler はこれに合わせて書く必要があります。`HF_HUB_OFFLINE` は `huggingface_hub` が import されたときに読まれるので、`transformers` を import した後に設定しても黙って無視されます。キャッシュから配信しているつもりで、実際には課金されながらダウンロードしていることになります。
@@ -617,6 +643,8 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 こうすると各ラボが自己完結し、Runpod 自身のリポジトリと同じ形になります。`runpod-workers/*` は worker ごとに 1 リポジトリで Dockerfile をルートに置き、`runpod/containers` モノレポは bake ターゲットごとに `context = "official-templates/<name>"` を設定しています。組織内にルート基準の `COPY` パスを使っているものはありません。
 </div>
 
+<figure class="shot"><a href="{{ '/assets/img/serverless/edit-build-context.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-build-context.webp' | relative_url }}" alt="Branch、Dockerfile path、Build context がある Repository configuration" loading="lazy" width="1400" height="998"></a><figcaption>既存のエンドポイントを編集するときの欄の場所：ブランチと Dockerfile パスの隣の <strong>Repository configuration → Build context</strong>（02-llm-chat）。</figcaption></figure>
+
 <div class="note" markdown="1">
 **再デプロイ：ドキュメントと観察が食い違います。** ドキュメントは変更が "won't automatically be pushed to your endpoint" であり、**GitHub release** が必要だとしています。実際には、接続したブランチへの push のたびにビルドが走ります。02-llm-chat には 2026-11-07 までに `main` へのマージごとに 1 つずつ、計 24 のリリースがあり、ワーカーのファイルを 1 つも変えていないマージも含まれます（下のスクリーンショット）。マージのたびに再ビルドと新しいリリースが起きると考えてください。以前のビルドは Builds タブからロールバックできます。
 
@@ -635,6 +663,8 @@ GitHub からデプロイした Lab 01、CPU worker、`workers_min = 0`：
 | ウォーム | 776–806 ms | 194–217 ms |
 
 `delayTime` はキュー待ちと worker の起動、`executionTime` は handler です。handler は誤差程度で、初回リクエストのほぼすべてがコールドスタートです。これこそ `workers_min = 0` がコスト面で得て、レイテンシ面で支払うものです。
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/hello-world-metrics.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/hello-world-metrics.webp' | relative_url }}" alt="01-hello-world の Metrics タブ：7 リクエスト完了、実行時間のグラフ" loading="lazy" width="1400" height="998"></a><figcaption>2026-11-07 の再実行、7 リクエスト：コールドスタートの <code>delayTime</code> は 4,755 ms と 3,092 ms（ワーカーが 2 つ起動）、ウォームは 620–845 ms で、表と同じ形でした。Metrics タブがリクエストごとに描きます。</figcaption></figure>
 
 <div class="warn" markdown="1">
 **`{"input": {}}` は返ってきません。** 空の input オブジェクトは、0 バイトのレスポンスと `retries: 1` のまま 90 秒間止まり、再現性があります。handler のバグではありません。`{"input": {"other": 1}}` はまったく同じデフォルトの経路を通り、すぐに返ります。必ず少なくとも 1 つのキーを送ってください。
@@ -659,6 +689,8 @@ Lab 02 は `Qwen/Qwen2.5-1.5B-Instruct` を GitHub からデプロイし、重�
 <div class="warn" markdown="1">
 **16 GB や 24 GB のプールで Blackwell GPU が割り当てられることがあります。** これらのプールには `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` のスライス（sm_120）が含まれます。CUDA 12.6 の torch は sm_90 までなので、worker は `no kernel image is available for execution on the device` を出し、続いて `Worker is unhealthy, exiting.` となりました。同じイメージは RTX A5000 では問題なく動いていました。対処は CUDA 12.8 ベースの `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime` にし、さらにエンドポイントの最小 CUDA バージョンを 12.8 にして古いドライバが選ばれないようにすることです。このベースで、MIG スライス上でモデルがキャッシュから 1.49 s でロードされました。
 </div>
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}" alt="Previous generation と Latest generation のタブに分かれた GPU configuration" loading="lazy" width="1400" height="998"></a><figcaption>コンソールはプールを <strong>Previous generation</strong> と <strong>Latest generation</strong>（「CUDA 12.8+ のイメージが必要」）に分けるようになりました。02-llm-chat はここで 16 GB と 24 GB を、Latest タブで 24 GB のプールを選んでいるため、"You selected GPUs from both generations" と警告が出ます。上で説明した状況そのものです。</figcaption></figure>
 
 <div class="note" markdown="1">
 **MIG タイプの固定には GraphQL が必要です。** REST API は `gpuTypeIds` に MIG タイプを入れると拒否します。GraphQL の `saveEndpoint` ミューテーションは、代わりにプールと除外リストを受け取ります。`gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` で MIG スライスだけが残りました。

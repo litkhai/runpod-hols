@@ -80,7 +80,7 @@ The key difference is **state persistence**. A Pod keeps `/workspace` across sto
 ./setup/init-env.sh
 ```
 
-Create a key at [Console → Settings → API Keys](https://console.runpod.io/user/settings), then run the script above. It reads the key with terminal echo disabled and writes `.env` with `0600` permissions, so the key never reaches your screen or shell history. (`cp .env.example .env` and editing by hand works too.)
+Create a key at [Console → Credentials → API Keys](https://console.runpod.io/user/credentials?tab=api-keys), then run the script above. It reads the key with terminal echo disabled and writes `.env` with `0600` permissions, so the key never reaches your screen or shell history. (`cp .env.example .env` and editing by hand works too.)
 
 You can complete the console-only parts of the labs without a key, but calling endpoints from the SDK or CLI requires one. Runpod shows the key only once — save it in a password manager. See [`setup/README.md`](./setup) for permission levels.
 
@@ -233,7 +233,7 @@ runpod-hols/
 ./setup/init-env.sh
 ```
 
-[콘솔 → Settings → API Keys](https://console.runpod.io/user/settings) 에서 키를 생성한 뒤 위 스크립트를 실행하세요. 터미널 에코를 끈 채 키를 입력받아 `.env` 를 `0600` 권한으로 작성하므로, 키가 화면에도 셸 히스토리에도 남지 않습니다. (`cp .env.example .env` 후 직접 편집해도 됩니다.)
+[콘솔 → Credentials → API Keys](https://console.runpod.io/user/credentials?tab=api-keys) 에서 키를 생성한 뒤 위 스크립트를 실행하세요. 터미널 에코를 끈 채 키를 입력받아 `.env` 를 `0600` 권한으로 작성하므로, 키가 화면에도 셸 히스토리에도 남지 않습니다. (`cp .env.example .env` 후 직접 편집해도 됩니다.)
 
 콘솔 UI 로만 진행하는 부분은 키 없이도 되지만, SDK 나 CLI 로 엔드포인트를 호출하려면 필요합니다. Runpod 은 키를 한 번만 보여주므로 비밀번호 관리자에 저장해 두세요. 권한 등급은 [`setup/README.md`](./setup) 를 참조하세요.
 

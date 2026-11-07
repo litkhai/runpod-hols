@@ -65,6 +65,8 @@ A template's `env` can hold {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %}, r
 
 <figure class="shot"><a href="{{ '/assets/img/pod/create-secret.webp' | relative_url }}"><img src="{{ '/assets/img/pod/create-secret.webp' | relative_url }}" alt="Create secret form with the RUNPOD_SECRET reference example" loading="lazy" width="1400" height="998"></a><figcaption>Create secret (Credentials → Secrets): the form states the rule above — a secret reaches a Pod or endpoint only through an env var that references it.</figcaption></figure>
 
+<figure class="shot"><a href="{{ '/assets/img/pod/template-secret-ref.webp' | relative_url }}"><img src="{{ '/assets/img/pod/template-secret-ref.webp' | relative_url }}" alt="Create template form rejecting a reference to a secret that does not exist" loading="lazy" width="1400" height="998"></a><figcaption>In the console, Create template checks the reference: <code>RUNPOD_SECRET_hf_token</code> does not exist, so the field reads "Secret not found" and the template cannot be created. The form was discarded, not saved.</figcaption></figure>
+
 | Where | What it held |
 |---|---|
 | `GET /templates`, `GET /pods` | The reference, never the value |
@@ -102,6 +104,8 @@ Lab 01 pins `runpod~=1.12.0`. On 2.x its scripts would also misread Pods: the RE
 ### Billing
 
 Per minute, for as long as the Pod is running, idle or not. Stopping releases the GPU but still bills volume storage. Terminating removes everything.
+
+<figure class="shot"><a href="{{ '/assets/img/pod/billing-explorer.webp' | relative_url }}"><img src="{{ '/assets/img/pod/billing-explorer.webp' | relative_url }}" alt="Billing explorer with daily spend split by Cloud GPU, Cloud CPU, Serverless and Storage" loading="lazy" width="1400" height="998"></a><figcaption>Billing → Billing explorer: daily spend by product, in UTC, and "1 hour behind" — a Pod deleted a moment ago is not there yet. 2026-11-05 below is the day of the Pod labs.</figcaption></figure>
 
 <div class="danger" markdown="1">
 This is the single biggest difference from Serverless and the easiest way to run up a bill by accident. Set a spending limit, and get into the habit of terminating the moment a lab ends.
@@ -183,6 +187,8 @@ Pod 는 직접 빌려서 제어하는 GPU 또는 CPU 컨테이너입니다. Serv
 
 <figure class="shot"><a href="{{ '/assets/img/pod/create-secret.webp' | relative_url }}"><img src="{{ '/assets/img/pod/create-secret.webp' | relative_url }}" alt="RUNPOD_SECRET 참조 예시가 있는 Create secret 화면" loading="lazy" width="1400" height="998"></a><figcaption>Create secret (Credentials → Secrets): 화면도 위 규칙을 그대로 적어 둔다. 시크릿은 그것을 참조하는 환경변수를 통해서만 Pod 나 엔드포인트에 들어간다.</figcaption></figure>
 
+<figure class="shot"><a href="{{ '/assets/img/pod/template-secret-ref.webp' | relative_url }}"><img src="{{ '/assets/img/pod/template-secret-ref.webp' | relative_url }}" alt="존재하지 않는 시크릿 참조를 거부하는 Create template 화면" loading="lazy" width="1400" height="998"></a><figcaption>콘솔의 Create template 은 참조를 검사한다. <code>RUNPOD_SECRET_hf_token</code> 이 없으므로 칸에 "Secret not found" 가 뜨고 템플릿을 만들 수 없다. 이 양식은 저장하지 않고 버렸다.</figcaption></figure>
+
 | 위치 | 담긴 것 |
 |---|---|
 | `GET /templates`, `GET /pods` | 참조. 값은 절대 아님 |
@@ -220,6 +226,8 @@ Lab 01 은 `runpod~=1.12.0` 으로 고정합니다. 2.x 에서는 스크립트�
 ### 과금
 
 Pod 가 실행 중인 동안 유휴 여부와 무관하게 분 단위로 과금됩니다. Stop 하면 GPU 는 반납되지만 볼륨 스토리지 요금은 계속 나갑니다. Terminate 해야 전부 제거됩니다.
+
+<figure class="shot"><a href="{{ '/assets/img/pod/billing-explorer.webp' | relative_url }}"><img src="{{ '/assets/img/pod/billing-explorer.webp' | relative_url }}" alt="Cloud GPU, Cloud CPU, Serverless, Storage 별 일일 지출을 보여주는 Billing explorer" loading="lazy" width="1400" height="998"></a><figcaption>Billing → Billing explorer: 제품별 일일 지출, UTC 기준, "1 hour behind". 방금 지운 Pod 는 아직 나오지 않는다. 아래 2026-11-05 는 Pod 실습을 한 날이다.</figcaption></figure>
 
 <div class="danger" markdown="1">
 Serverless 와의 가장 큰 차이이자, 실수로 비용이 늘어나는 가장 흔한 경로입니다. 지출 한도를 설정하고, 실습이 끝나는 즉시 Terminate 하는 습관을 들이세요.
@@ -301,6 +309,8 @@ template 的 `env` 中可以写 {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %
 
 <figure class="shot"><a href="{{ '/assets/img/pod/create-secret.webp' | relative_url }}"><img src="{{ '/assets/img/pod/create-secret.webp' | relative_url }}" alt="带有 RUNPOD_SECRET 引用示例的 Create secret 表单" loading="lazy" width="1400" height="998"></a><figcaption>Create secret（Credentials → Secrets）：表单本身也写明了上面的规则——secret 只有通过引用它的环境变量才会进入 Pod 或端点。</figcaption></figure>
 
+<figure class="shot"><a href="{{ '/assets/img/pod/template-secret-ref.webp' | relative_url }}"><img src="{{ '/assets/img/pod/template-secret-ref.webp' | relative_url }}" alt="Create template 表单拒绝引用一个不存在的 secret" loading="lazy" width="1400" height="998"></a><figcaption>控制台的 Create template 会检查引用：<code>RUNPOD_SECRET_hf_token</code> 不存在，因此字段显示 "Secret not found"，无法创建模板。该表单已丢弃，未保存。</figcaption></figure>
+
 | 位置 | 其中的内容 |
 |---|---|
 | `GET /templates`、`GET /pods` | 引用，从不包含值 |
@@ -338,6 +348,8 @@ Lab 01 固定使用 `runpod~=1.12.0`。在 2.x 上，它的脚本还会误读 Po
 ### 计费
 
 按分钟计费，只要 Pod 在运行就计费，无论是否空闲。stop 会释放 GPU，但 volume 存储仍会计费。terminate 会删除一切。
+
+<figure class="shot"><a href="{{ '/assets/img/pod/billing-explorer.webp' | relative_url }}"><img src="{{ '/assets/img/pod/billing-explorer.webp' | relative_url }}" alt="Billing explorer 按 Cloud GPU、Cloud CPU、Serverless、Storage 显示每日花费" loading="lazy" width="1400" height="998"></a><figcaption>Billing → Billing explorer：按产品显示每日花费，按 UTC 计，且 "1 hour behind"——刚删除的 Pod 还不会出现。下方 2026-11-05 是做 Pod 实验的那天。</figcaption></figure>
 
 <div class="danger" markdown="1">
 这是与 Serverless 最大的区别，也是最容易意外产生高额账单的地方。请设置支出上限，并养成实验一结束就立即 terminate 的习惯。
@@ -419,6 +431,8 @@ template の `env` には {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %} を�
 
 <figure class="shot"><a href="{{ '/assets/img/pod/create-secret.webp' | relative_url }}"><img src="{{ '/assets/img/pod/create-secret.webp' | relative_url }}" alt="RUNPOD_SECRET 参照の例が載った Create secret フォーム" loading="lazy" width="1400" height="998"></a><figcaption>Create secret（Credentials → Secrets）：フォーム自体が上のルールを書いています。シークレットは、それを参照する環境変数を通してのみ Pod やエンドポイントに届きます。</figcaption></figure>
 
+<figure class="shot"><a href="{{ '/assets/img/pod/template-secret-ref.webp' | relative_url }}"><img src="{{ '/assets/img/pod/template-secret-ref.webp' | relative_url }}" alt="存在しないシークレットへの参照を拒否する Create template フォーム" loading="lazy" width="1400" height="998"></a><figcaption>コンソールの Create template は参照を検査します。<code>RUNPOD_SECRET_hf_token</code> は存在しないので欄に "Secret not found" と出て、テンプレートは作成できません。フォームは保存せずに破棄しました。</figcaption></figure>
+
 | 場所 | 中身 |
 |---|---|
 | `GET /templates`、`GET /pods` | 参照のみで、値は決して含まれない |
@@ -456,6 +470,8 @@ Lab 01 は `runpod~=1.12.0` に固定しています。2.x ではスクリプト
 ### 課金
 
 Pod が稼働している間は、アイドルかどうかに関係なく分単位で課金されます。stop すると GPU は解放されますが、volume のストレージは引き続き課金されます。terminate するとすべて削除されます。
+
+<figure class="shot"><a href="{{ '/assets/img/pod/billing-explorer.webp' | relative_url }}"><img src="{{ '/assets/img/pod/billing-explorer.webp' | relative_url }}" alt="Cloud GPU、Cloud CPU、Serverless、Storage 別の日次支出を示す Billing explorer" loading="lazy" width="1400" height="998"></a><figcaption>Billing → Billing explorer：製品別の日次支出、UTC 基準、"1 hour behind"。削除した直後の Pod はまだ出ません。下の 2026-11-05 は Pod のラボを行った日です。</figcaption></figure>
 
 <div class="danger" markdown="1">
 これが Serverless との最大の違いであり、うっかり請求額を膨らませる最も簡単な原因です。支出上限を設定し、ラボが終わったらすぐに terminate する習慣をつけてください。
