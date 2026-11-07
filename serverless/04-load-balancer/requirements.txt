@@ -1,0 +1,4 @@
+# Plain HTTP server; no runpod SDK needed for a load-balancing worker.
+# 평범한 HTTP 서버. 로드밸런싱 워커에는 runpod SDK 가 필요 없다.
+fastapi==0.115.6
+uvicorn==0.34.0
