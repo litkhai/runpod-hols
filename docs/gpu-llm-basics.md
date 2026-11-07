@@ -494,7 +494,7 @@ A reasoning model multiplies output tokens, and decode throughput is the product
 **Cold start.** Weights baked into a tens-of-GB image take minutes to pull; keep them out of the image and load from a cache or volume. `safetensors` with mmap pages in only the tensors needed. On Serverless the platform offers three of these levers: the endpoint's **Model** field caches Hugging Face weights on the host, a network volume holds them across workers, and FlashBoot keeps a stopped worker's state for a fast restart.
 
 <div class="note" markdown="1">
-**Measured here.** Every logged cold start of the inference sweep's vLLM endpoint created a new container and downloaded 14.19 GiB of weights again, FlashBoot on or off (C17). With FlashBoot on and a 5 s idle timeout, requests 15 s and 30 s apart reused the same container (`delayTime` 1.9 and 1.3 s); from a 60 s gap on, each got a new one at 97–104 s (C22). See [Serverless]({{ '/serverless/' | relative_url }}) for the Model field and the cold-start phases.
+**Measured here.** Every logged cold start of the inference sweep's vLLM endpoint created a new container and downloaded 14.19 GiB of weights again, FlashBoot on or off (C17). With FlashBoot on and a 5 s idle timeout, requests 15 s and 30 s apart reused the same container (`delayTime` 1.9 and 1.3 s); from a 60 s gap on, each got a new one at 97–104 s (C22). With FlashBoot set to Standard on 2026-11-07, gaps of 30–120 s reused the container (1.1–1.2 s) — the window had grown (C34). See [Serverless]({{ '/serverless/' | relative_url }}) for the Model field and the cold-start phases.
 </div>
 
 ## Cost
@@ -1061,7 +1061,7 @@ FLOPs 는 사실상 전부 텐서 코어의 GEMM 입니다. 나머지는 모두 
 **콜드스타트.** 가중치를 넣어 수십 GB 가 된 이미지는 pull 에 수 분이 걸립니다. 가중치는 이미지에서 빼고 캐시나 볼륨에서 로드하세요. `safetensors` 를 mmap 으로 쓰면 필요한 텐서만 페이지 인 됩니다. Serverless 에서는 플랫폼이 이 중 세 가지 레버를 제공합니다. 엔드포인트의 **Model** 필드는 Hugging Face 가중치를 호스트에 캐시하고, 네트워크 볼륨은 워커 간에 가중치를 유지하며, FlashBoot 는 멈춘 워커의 상태를 보존해 빠르게 재시작합니다.
 
 <div class="note" markdown="1">
-**여기서 측정한 것.** 추론 스윕의 vLLM 엔드포인트에서 기록된 콜드스타트는 FlashBoot 를 켜든 끄든 매번 새 컨테이너를 만들고 14.19 GiB 의 가중치를 다시 내려받았습니다 (C17). FlashBoot 를 켜고 idle timeout 5 s 로 두면 15 s, 30 s 간격의 요청은 같은 컨테이너를 재사용했고(`delayTime` 1.9 s, 1.3 s), 60 s 간격부터는 매번 새 컨테이너가 떠서 97–104 s 가 걸렸습니다 (C22). Model 필드와 콜드스타트 단계는 [Serverless]({{ '/serverless/' | relative_url }}) 를 보세요.
+**여기서 측정한 것.** 추론 스윕의 vLLM 엔드포인트에서 기록된 콜드스타트는 FlashBoot 를 켜든 끄든 매번 새 컨테이너를 만들고 14.19 GiB 의 가중치를 다시 내려받았습니다 (C17). FlashBoot 를 켜고 idle timeout 5 s 로 두면 15 s, 30 s 간격의 요청은 같은 컨테이너를 재사용했고(`delayTime` 1.9 s, 1.3 s), 60 s 간격부터는 매번 새 컨테이너가 떠서 97–104 s 가 걸렸습니다 (C22). 2026-11-07 FlashBoot 를 Standard 로 두었을 때는 30–120 초 간격도 컨테이너를 재사용했습니다(1.1–1.2 초). 재사용 구간이 늘었습니다(C34). Model 필드와 콜드스타트 단계는 [Serverless]({{ '/serverless/' | relative_url }}) 를 보세요.
 </div>
 
 ## 비용
@@ -1628,7 +1628,7 @@ Token 是 BPE 子词。词表覆盖不足的文字——在许多模型中包括
 **冷启动。** 把权重打包进几十 GB 的镜像，拉取就要几分钟；应把权重放在镜像之外，从缓存或卷中加载。`safetensors` 配合 mmap 只按需载入所需的张量。在 Serverless 上，平台提供了其中三种手段：端点的 **Model** 字段在主机上缓存 Hugging Face 权重，network volume 在 worker 之间保存权重，FlashBoot 保留已停止 worker 的状态以便快速重启。
 
 <div class="note" markdown="1">
-**此处实测。** 推理扫描实验的 vLLM 端点，日志中记录的每一次冷启动都创建了新容器，并重新下载了 14.19 GiB 的权重，无论 FlashBoot 开启与否（C17）。开启 FlashBoot 且空闲超时为 5 s 时，间隔 15 s 和 30 s 的请求复用了同一个容器（`delayTime` 1.9 和 1.3 s）；间隔达到 60 s 起，每个请求都会得到一个新容器，耗时 97–104 s（C22）。Model 字段和冷启动各阶段见 [Serverless]({{ '/serverless/' | relative_url }})。
+**此处实测。** 推理扫描实验的 vLLM 端点，日志中记录的每一次冷启动都创建了新容器，并重新下载了 14.19 GiB 的权重，无论 FlashBoot 开启与否（C17）。开启 FlashBoot 且空闲超时为 5 s 时，间隔 15 s 和 30 s 的请求复用了同一个容器（`delayTime` 1.9 和 1.3 s）；间隔达到 60 s 起，每个请求都会得到一个新容器，耗时 97–104 s（C22）。Model 2026-11-07 把 FlashBoot 设为 Standard 后，30–120 秒的间隔也复用了容器（1.1–1.2 秒）——复用窗口变长了（C34）。 字段和冷启动各阶段见 [Serverless]({{ '/serverless/' | relative_url }})。
 </div>
 
 ## 成本
@@ -2195,7 +2195,7 @@ FLOPs のほぼすべては Tensor コア上の GEMM です。それ以外はす
 **コールドスタート。** 数十 GB のイメージに焼き込んだ重みは、取得に数分かかります。重みはイメージの外に置き、キャッシュかボリュームから読み込んでください。mmap を使う `safetensors` なら、必要なテンソルだけがページインされます。Serverless では、プラットフォームがこのうち 3 つの手段を提供しています。エンドポイントの **Model** フィールドは Hugging Face の重みをホストにキャッシュし、ネットワークボリュームは worker をまたいで重みを保持し、FlashBoot は停止した worker の状態を保持して高速に再起動します。
 
 <div class="note" markdown="1">
-**ここで測定したもの。** 推論スイープの vLLM エンドポイントで記録されたコールドスタートはすべて、FlashBoot のオン・オフにかかわらず、新しいコンテナを作成して 14.19 GiB の重みを再ダウンロードしました（C17）。FlashBoot をオンにしてアイドルタイムアウトを 5 秒にすると、15 秒と 30 秒の間隔のリクエストは同じコンテナを再利用しました（`delayTime` 1.9 秒と 1.3 秒）。60 秒の間隔からは、毎回新しいコンテナで 97–104 秒かかりました（C22）。Model フィールドとコールドスタートの各段階については [Serverless]({{ '/serverless/' | relative_url }}) を参照してください。
+**ここで測定したもの。** 推論スイープの vLLM エンドポイントで記録されたコールドスタートはすべて、FlashBoot のオン・オフにかかわらず、新しいコンテナを作成して 14.19 GiB の重みを再ダウンロードしました（C17）。FlashBoot をオンにしてアイドルタイムアウトを 5 秒にすると、15 秒と 30 秒の間隔のリクエストは同じコンテナを再利用しました（`delayTime` 1.9 秒と 1.3 秒）。60 秒の間隔からは、毎回新しいコンテナで 97–104 秒かかりました（C22）。Model 2026-11-07 に FlashBoot を Standard にしたところ、30〜120 秒の間隔でもコンテナが再利用されました（1.1〜1.2 秒）。再利用の幅が広がっています（C34）。 フィールドとコールドスタートの各段階については [Serverless]({{ '/serverless/' | relative_url }}) を参照してください。
 </div>
 
 ## コスト
