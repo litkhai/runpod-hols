@@ -1,0 +1,76 @@
+{
+  "world_size": 4,
+  "nnodes": 1,
+  "host": "48bc0630c9c3",
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "torch": "2.9.1+cu128",
+  "nccl": "2.27.5",
+  "rows": [
+    {
+      "bytes": 1048576,
+      "time_us": 142.2,
+      "algbw_GBps": 7.38,
+      "busbw_GBps": 11.06
+    },
+    {
+      "bytes": 2097152,
+      "time_us": 111.3,
+      "algbw_GBps": 18.84,
+      "busbw_GBps": 28.26
+    },
+    {
+      "bytes": 4194304,
+      "time_us": 109.1,
+      "algbw_GBps": 38.44,
+      "busbw_GBps": 57.65
+    },
+    {
+      "bytes": 8388608,
+      "time_us": 96.4,
+      "algbw_GBps": 87.0,
+      "busbw_GBps": 130.5
+    },
+    {
+      "bytes": 16777216,
+      "time_us": 102.8,
+      "algbw_GBps": 163.14,
+      "busbw_GBps": 244.71
+    },
+    {
+      "bytes": 33554432,
+      "time_us": 177.6,
+      "algbw_GBps": 188.98,
+      "busbw_GBps": 283.47
+    },
+    {
+      "bytes": 67108864,
+      "time_us": 328.9,
+      "algbw_GBps": 204.05,
+      "busbw_GBps": 306.08
+    },
+    {
+      "bytes": 134217728,
+      "time_us": 618.8,
+      "algbw_GBps": 216.9,
+      "busbw_GBps": 325.34
+    },
+    {
+      "bytes": 268435456,
+      "time_us": 1184.2,
+      "algbw_GBps": 226.69,
+      "busbw_GBps": 340.03
+    },
+    {
+      "bytes": 536870912,
+      "time_us": 2311.6,
+      "algbw_GBps": 232.25,
+      "busbw_GBps": 348.38
+    },
+    {
+      "bytes": 1073741824,
+      "time_us": 4520.6,
+      "algbw_GBps": 237.52,
+      "busbw_GBps": 356.28
+    }
+  ]
+}

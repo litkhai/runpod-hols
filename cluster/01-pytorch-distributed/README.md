@@ -57,6 +57,29 @@ What the numbers say:
 
 Raw files: [`results/2x4090/`](./results/2x4090/), [`results/2xA100SXM/`](./results/2xA100SXM/).
 
+### Four H100 SXM in one Pod
+
+While no cluster was in stock, a single Pod with four H100 SXM was (stock "Low"; the first 19 create attempts over ten minutes got *"no instances currently available"*):
+
+```bash
+python3 lab.py create --gpu "NVIDIA H100 80GB HBM3" --count 4   # then push, run 4xH100SXM, pull, delete
+```
+
+| 2026-11-08, US-NE-1 | 4x H100 SXM 80GB |
+|---|---|
+| Price | USD 15.96/hr |
+| Link (`topo -m`) | `NV18`: 18 NVLinks between every pair |
+| all-reduce `busbw`, 1 MiB / 1 GiB | 11.1 / **356.3 GB/s** |
+| DDP, 1 GPU | 54,981 samples/s (4.7 ms/step) |
+| DDP, 4 GPUs | 179,442 samples/s (5.7 ms/step) |
+| Scaling efficiency (4 GPUs / 4 × 1 GPU) | **0.82** |
+
+- **The link is 1.8× the A100 pair's** (356 against 201 GB/s at 1 GiB), and one H100 trains this fp32 model 2.4× as fast as one A100.
+- **Efficiency fell to 0.82 from 0.91** because the compute got faster than the link: 4.7 ms of compute against about 1 ms of all-reduce per step. The faster the GPU, the more the link decides.
+- This is the in-node ceiling a cluster has to be compared with: the socket run of stage 2 reached 0.32 GB/s between nodes, a thousandth of it.
+
+The Pod ran 11.5 minutes, about USD 3. Raw files: [`results/4xH100SXM/`](./results/4xH100SXM/).
+
 ![Pod deploy form with RTX 4090 and GPU count 2](../../docs/assets/img/cluster/pod-deploy-2gpu.webp)
 ![Pod Telemetry during the 2x RTX 4090 DDP run: both GPUs at 100%](../../docs/assets/img/cluster/pod-telemetry-2x4090.webp)
 
@@ -169,6 +192,29 @@ python3 lab.py create --gpu "NVIDIA A100-SXM4-80GB"     # 이어서 태그 2xA10
 - 달러당으로는 이 모델에서 RTX 4090 한 장(USD 0.89/hr 에 초당 39,453)이 두 조합보다 나았다. GPU 를 늘리는 것은 링크가 기울기 크기를 감당할 때만 이득이다.
 
 원본: [`results/2x4090/`](./results/2x4090/), [`results/2xA100SXM/`](./results/2xA100SXM/).
+
+### Pod 한 대에 H100 SXM 4장
+
+클러스터 재고가 없을 때도 H100 SXM 4장짜리 Pod 한 대는 재고가 있었다 (재고 "Low". 처음 10분 동안 19번의 생성 시도는 *"no instances currently available"* 로 거절됐다):
+
+```bash
+python3 lab.py create --gpu "NVIDIA H100 80GB HBM3" --count 4   # 이어서 push, run 4xH100SXM, pull, delete
+```
+
+| 2026-11-08, US-NE-1 | H100 SXM 80GB 4장 |
+|---|---|
+| 가격 | 시간당 USD 15.96 |
+| 연결 (`topo -m`) | `NV18`: 모든 쌍 사이 NVLink 18개 |
+| all-reduce `busbw`, 1 MiB / 1 GiB | 11.1 / **356.3 GB/s** |
+| DDP, GPU 1장 | 54,981 samples/s (스텝 4.7 ms) |
+| DDP, GPU 4장 | 179,442 samples/s (스텝 5.7 ms) |
+| 확장 효율 (4장 / 1장 × 4) | **0.82** |
+
+- **연결은 A100 두 장의 1.8배** (1 GiB 에서 356 대 201 GB/s) 이고, 이 fp32 모델에서 H100 한 장은 A100 한 장의 2.4배 속도로 학습했다.
+- **효율이 0.91 에서 0.82 로 떨어졌다.** 계산이 연결보다 빨라졌기 때문이다: 스텝마다 계산 4.7 ms 에 all-reduce 약 1 ms. GPU 가 빠를수록 연결이 성능을 좌우한다.
+- 클러스터와 비교할 노드 안의 천장이 이것이다. 2단계의 소켓 실행은 노드 사이 0.32 GB/s 로, 그 1000분의 1 이었다.
+
+Pod 는 11.5분, 약 USD 3. 원본: [`results/4xH100SXM/`](./results/4xH100SXM/).
 
 ![RTX 4090, GPU count 2 를 고른 Pod 배포 화면](../../docs/assets/img/cluster/pod-deploy-2gpu.webp)
 ![RTX 4090 두 장 DDP 실행 중 Pod Telemetry: 두 GPU 모두 100%](../../docs/assets/img/cluster/pod-telemetry-2x4090.webp)
