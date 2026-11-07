@@ -8,7 +8,7 @@
 
 **Goal:** measure how fast GPUs exchange gradients, first inside one Pod, then across the nodes of an Instant Cluster, and see what that does to data-parallel training.
 
-**Time:** ~15 minutes per Pod · **Cost:** stage 1 about USD 0.40 on 2026-11-07 (two Pods, 7 and 3 minutes); stage 2 capped at USD 50 ([#52](https://github.com/litkhai/runpod-hols/issues/52))
+**Time:** ~15 minutes per Pod · **Cost:** stage 1 about USD 0.40 on 2026-11-07 (two Pods, 7 and 3 minutes); stage 2 about USD 20 on 2026-11-07 (2 × 8 A100 SXM for 35 minutes; [#52](https://github.com/litkhai/runpod-hols/issues/52))
 
 ### Files
 
@@ -85,13 +85,43 @@ createCluster(input: {clusterName: "hol-cluster-01", gpuTypeId: "NVIDIA A100-SXM
 
 (`type` takes `TRAINING` or `SLURM`), starts a detached watchdog that runs `deleteCluster(input: {id})` 75 minutes later whatever happens, waits for SSH on both nodes, runs `run.sh` on both at once (the cluster variables are read from the container's PID 1, since an SSH session does not inherit them), fetches `results/`, and deletes the cluster. It refuses to create anything above USD 40/hr. Manual steps: `create`, `show`, `push`, `run <tag>`, `pull`, `delete`.
 
+**`deployCost` is required.** Without it `createCluster` fails with *"The requested price 0 is less than the current minimum price (14.32)"*. The minimum is per Pod, and `deployCost` is for the whole cluster: 14.32 came back as *"requested price 7.16"*, so `cluster.py` offers the minimum × `podCount` (28.64). The Pods were then billed at the list price, USD 17.184/hr each (USD 34.37/hr), not at the offer.
+
+### Stage 2 run — sockets instead of InfiniBand
+
+| Step | Time (KST) |
+|---|---|
+| A100 SXM `Available` again | 21:42 |
+| `createCluster` accepted | 21:48:04 |
+| SSH open on both nodes | 21:49:59 (114 s) |
+| `run.sh` on both nodes, exit 0 / 0 | 21:50:14 – 22:08:55 |
+| Second run after installing `libibverbs` | 22:09:23 – stopped 22:20 |
+| `deleteCluster` | 22:23:04 |
+
+Both nodes had eight NVLinked A100s (`NV12`), twelve Mellanox HCAs (`mlx5_0`–`mlx5_11`) and `ens1` on 10.65.0.0/24; Runpod sets `NCCL_IB_HCA` to the eight HCAs next to the GPUs.
+
+| 16 GPUs, image as is | Result |
+|---|---|
+| NCCL network | **`Socket` over `ens1`**: *"Failed to open libibverbs.so[.1]"* |
+| all-reduce `busbw`, 1 GiB | **0.32 GB/s** (best 0.68 GB/s at 32 MiB) |
+| DDP, 1 GPU | 23,497 samples/s (10.9 ms/step) |
+| DDP, 16 GPUs | **1,105 samples/s (3,705 ms/step)** |
+| Scaling efficiency | 0.003 |
+
+- **The image has no RDMA user space.** `runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404` lacks `libibverbs`, so NCCL fell back to TCP sockets on `ens1`. Inside each node it still used NVLink (`P2P/CUMEM`); between the nodes every gradient went over sockets.
+- **Sixteen GPUs trained 21× slower than one.** About 400 MB of gradients per step over 0.3 GB/s is more than a second each way; a step took 3.7 s against 11 ms of compute.
+- **Installing the library from Ubuntu did not fix it.** After `apt-get install libibverbs1 ibverbs-providers` NCCL picked `IB` on all eight HCAs with GPU Direct RDMA, and then every HCA reported *"async fatal event: local catastrophic error"*; the all-reduce made no progress in ten minutes. The likely cause is a mismatch between Ubuntu's rdma-core and the host's driver; a cluster image built for RDMA (Runpod's [pytorch-cluster](https://github.com/runpod/containers/tree/main/official-templates/pytorch-cluster) template) is the next thing to try.
+- Whatever image you use, check the NCCL log for `Using network IB` before you trust the numbers: the fallback to `Socket` is silent and the job still finishes.
+
+Raw files: [`results/2x8xA100SXM-socket/`](./results/2x8xA100SXM-socket/) (with `nccl-transport.txt`, `timeline.json`), [`results/2x8xA100SXM-ib/nccl-ib.txt`](./results/2x8xA100SXM-ib/nccl-ib.txt).
+
 ---
 
 ## 한국어
 
 **목표:** GPU 끼리 기울기를 얼마나 빨리 주고받는지 Pod 한 대 안에서, 그다음 Instant Cluster 의 노드 사이에서 재고, 그것이 데이터 병렬 학습에 어떤 영향을 주는지 본다.
 
-**시간:** Pod 당 약 15분 · **비용:** 1단계는 2026-11-07 기준 약 USD 0.40 (Pod 두 대, 7분과 3분). 2단계는 상한 USD 50 ([#52](https://github.com/litkhai/runpod-hols/issues/52))
+**시간:** Pod 당 약 15분 · **비용:** 1단계는 2026-11-07 기준 약 USD 0.40 (Pod 두 대, 7분과 3분). 2단계는 2026-11-07 기준 약 USD 20 (A100 SXM 2 × 8장, 35분. [#52](https://github.com/litkhai/runpod-hols/issues/52))
 
 ### 파일
 
@@ -159,3 +189,33 @@ python3 cluster.py auto 2x8xA100SXM --hours 48 # 재고를 기다렸다가 아�
 ```
 
 `auto` 는 2분마다 재고를 확인하고, A100 SXM 이 나오면 위의 영어 절에 있는 `createCluster` 를 호출한다 (`type` 은 `TRAINING` 또는 `SLURM`). 그다음 무슨 일이 있어도 75분 뒤 `deleteCluster(input: {id})` 를 부르는 분리된 감시 프로세스를 띄우고, 두 노드의 SSH 를 기다려 `run.sh` 를 동시에 돌린다 (SSH 세션은 클러스터 변수를 물려받지 않으므로 컨테이너 PID 1 에서 읽는다). 이어서 `results/` 를 받아 오고 클러스터를 지운다. 시간당 USD 40 을 넘는 것은 만들지 않는다. 수동 단계: `create`, `show`, `push`, `run <tag>`, `pull`, `delete`.
+
+**`deployCost` 가 필요하다.** 빼면 `createCluster` 가 *"The requested price 0 is less than the current minimum price (14.32)"* 로 거절된다. 최소 가격은 Pod 당이고 `deployCost` 는 클러스터 전체 값이다. 14.32 를 넣으면 *"requested price 7.16"* 으로 나뉘어 돌아오므로, `cluster.py` 는 최소 가격 × `podCount` (28.64) 로 요청한다. 실제 청구는 요청 값이 아니라 정가, Pod 당 시간당 USD 17.184 (전체 USD 34.37) 였다.
+
+### 2단계 실행 — InfiniBand 대신 소켓
+
+| 단계 | 시각 (KST) |
+|---|---|
+| A100 SXM 이 다시 `Available` | 21:42 |
+| `createCluster` 수락 | 21:48:04 |
+| 두 노드 SSH 열림 | 21:49:59 (114초) |
+| 두 노드에서 `run.sh`, 종료 코드 0 / 0 | 21:50:14 – 22:08:55 |
+| `libibverbs` 설치 후 두 번째 실행 | 22:09:23 – 22:20 중단 |
+| `deleteCluster` | 22:23:04 |
+
+두 노드 모두 NVLink 로 묶인 A100 8장 (`NV12`), Mellanox HCA 12개 (`mlx5_0`–`mlx5_11`), 10.65.0.0/24 의 `ens1` 을 가졌다. Runpod 은 `NCCL_IB_HCA` 를 GPU 옆의 HCA 8개로 설정해 둔다.
+
+| GPU 16장, 이미지 그대로 | 결과 |
+|---|---|
+| NCCL 네트워크 | **`ens1` 위의 `Socket`**: *"Failed to open libibverbs.so[.1]"* |
+| all-reduce `busbw`, 1 GiB | **0.32 GB/s** (최고 0.68 GB/s, 32 MiB) |
+| DDP, GPU 1장 | 23,497 samples/s (스텝 10.9 ms) |
+| DDP, GPU 16장 | **1,105 samples/s (스텝 3,705 ms)** |
+| 확장 효율 | 0.003 |
+
+- **이미지에 RDMA 사용자 공간 라이브러리가 없다.** `runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404` 에는 `libibverbs` 가 없어서 NCCL 이 `ens1` 의 TCP 소켓으로 내려갔다. 노드 안에서는 여전히 NVLink (`P2P/CUMEM`) 를 썼지만, 노드 사이의 그래디언트는 모두 소켓으로 갔다.
+- **GPU 16장이 1장보다 21배 느렸다.** 스텝마다 약 400 MB 의 그래디언트를 0.3 GB/s 로 주고받으니 한 방향에만 1초가 넘는다. 계산 11 ms 에 스텝은 3.7초였다.
+- **Ubuntu 패키지로 라이브러리를 넣어도 해결되지 않았다.** `apt-get install libibverbs1 ibverbs-providers` 뒤 NCCL 은 HCA 8개 모두에서 GPU Direct RDMA 와 함께 `IB` 를 골랐지만, 곧 모든 HCA 가 *"async fatal event: local catastrophic error"* 를 냈고 all-reduce 는 10분 동안 진척이 없었다. Ubuntu 의 rdma-core 와 호스트 드라이버가 맞지 않는 것으로 보인다. 다음에는 RDMA 용으로 만든 클러스터 이미지 (Runpod 의 [pytorch-cluster](https://github.com/runpod/containers/tree/main/official-templates/pytorch-cluster) 템플릿) 로 시도한다.
+- 어떤 이미지를 쓰든, 수치를 믿기 전에 NCCL 로그에서 `Using network IB` 를 확인한다. `Socket` 으로 내려가도 경고 없이 작업은 끝난다.
+
+원본 파일: [`results/2x8xA100SXM-socket/`](./results/2x8xA100SXM-socket/) (`nccl-transport.txt`, `timeline.json` 포함), [`results/2x8xA100SXM-ib/nccl-ib.txt`](./results/2x8xA100SXM-ib/nccl-ib.txt).

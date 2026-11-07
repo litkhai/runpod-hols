@@ -1,0 +1,19 @@
+# 2x8 A100 SXM, after apt-get install libibverbs1 ibverbs-providers on both nodes (excerpt of ssh-node*.log)
+# run started 22:09:23 KST, no all-reduce result after 10 min, stopped
+## node 0, lines x count
+      8 NCCL INFO NCCL_IB_HCA set to mlx5_0,mlx5_1,mlx5_2,mlx5_3,mlx5_6,mlx5_7,mlx5_8,mlx5_9
+      8 NCCL INFO NET/IB : Using [0]mlx5_0:1/IB [1]mlx5_1:1/IB [2]mlx5_2:1/IB [3]mlx5_3:1/IB [4]mlx5_6:1/IB [5]mlx5_7:1/IB [6]mlx5_8:1/IB [7]mlx5_9:1/IB [RO]; OOB ens1:10.65.0.2<0>
+      8 NCCL INFO Using network IB
+     16 transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_0:1 async fatal event: local catastrophic error
+     16 transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_1:1 async fatal event: local catastrophic error
+     16 transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_2:1 async fatal event: local catastrophic error
+     16 transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_3:1 async fatal event: local catastrophic error
+     16 transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_6:1 async fatal event: local catastrophic error
+     16 transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_7:1 async fatal event: local catastrophic error
+     16 transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_8:1 async fatal event: local catastrophic error
+     16 transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_9:1 async fatal event: local catastrophic error
+## node 1
+      8 transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_1:1 async fatal event: local catastrophic error
+      6 transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_6:1 async fatal event: local catastrophic error
+      2 transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_8:1 async fatal event: local catastrophic error
+      6 transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_9:1 async fatal event: local catastrophic error

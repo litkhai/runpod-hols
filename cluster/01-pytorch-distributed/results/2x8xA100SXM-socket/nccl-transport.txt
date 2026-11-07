@@ -1,0 +1,7 @@
+# 2x8 A100 SXM, runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404 as is (excerpt of ssh-node0.log), lines x count over 8 ranks
+     17 NCCL INFO Failed to open libibverbs.so[.1]
+     17 NCCL INFO NCCL_SOCKET_IFNAME set to ens1
+     17 NCCL INFO NET/Socket : Using [0]ens1:10.65.0.2<0>
+     17 NCCL INFO Using network Socket
+     12 via NET/Socket/0
+     58 via P2P/CUMEM/read
