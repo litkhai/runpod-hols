@@ -25,6 +25,7 @@ Runpod Serverless runs your code as an autoscaling HTTP endpoint. Workers start 
 | [07-streaming](https://github.com/litkhai/runpod-hols/tree/main/serverless/07-streaming) | Run 2026-11-07 | `/stream` chunk latency, the cost of each `yield`, `/runsync` with a generator |
 | [08-job-lifecycle](https://github.com/litkhai/runpod-hols/tree/main/serverless/08-job-lifecycle) | Run 2026-11-07 | Every way a job ends: failed, cancelled, timed out, expired, purged, retried |
 | [10-flash](https://github.com/litkhai/runpod-hols/tree/main/serverless/10-flash) | Run 2026-11-07 | Flash (`runpod` 2.x, `rp flash`): a decorated function deployed without a Dockerfile |
+| [11-hub](https://github.com/litkhai/runpod-hols/tree/main/serverless/11-hub) | Run 2026-11-07 | One-click Faster Whisper from the Hub: what the console creates, cold and warm calls |
 
 ### Where the model lives
 
@@ -283,6 +284,20 @@ Flash now ships inside the main SDK (`runpod` 2.x, CLI `rp`); the standalone `ru
 **Flash copies the deploying API key into each endpoint's template env** (`RUNPOD_API_KEY`), so the worker and every dependency it installs can act on the whole account. The template outlived `undeploy` and `app delete` for up to 90 minutes. Deploy with a key you can revoke. The execution timeout is also off by default: a job with an empty `input` stayed `IN_PROGRESS` until cancelled.
 </div>
 
+### Lab 11 — one-click deploy from the Hub
+
+**Hub → Serverless Repos → Faster Whisper → Deploy** builds the repo into Runpod's registry and creates a queue endpoint (max 3 workers, FlashBoot on, 600 s execution timeout, empty template env).
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/hub-deploy-gpu-pools.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/hub-deploy-gpu-pools.webp' | relative_url }}" alt="Deploy Faster Whisper dialog with GPU pools; only the 24 GB PRO pool at $1.34/hr is ticked" loading="lazy" width="1140" height="1400"></a><figcaption>The deploy dialog as it opened: only the 24 GB PRO pool (USD 1.34/hr) ticked. "4 GPUs" counts GPU types in a pool.</figcaption></figure>
+
+| 2026-11-07, 10 s of audio, RTX A4500 | `delayTime` | `executionTime` |
+|---|---|---|
+| First call / after 90 s idle | 8.9 / 9.5 s | 6.5 / 5.7 s |
+| Warm | 0.09 s | 0.9 s |
+| Switching to `large-v3` | 0.09 s | 6.4 s, then 1.2 s |
+
+Untick the preselected PRO pool unless you need it. The worker keeps one model loaded and swaps on every change of `model`, so pin one model per endpoint.
+
 [Full lab in the repo →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
 </div>
@@ -306,6 +321,7 @@ Runpod Serverless 는 코드를 오토스케일 HTTP 엔드포인트로 실행�
 | [07-streaming](https://github.com/litkhai/runpod-hols/tree/main/serverless/07-streaming) | 2026-11-07 실행 | `/stream` 청크 지연, `yield` 한 번의 비용, 제너레이터와 `/runsync` |
 | [08-job-lifecycle](https://github.com/litkhai/runpod-hols/tree/main/serverless/08-job-lifecycle) | 2026-11-07 실행 | 작업이 끝나는 모든 방식: 실패, 취소, 시간 초과, 만료, purge, 재시도 |
 | [10-flash](https://github.com/litkhai/runpod-hols/tree/main/serverless/10-flash) | 2026-11-07 실행 | Flash (`runpod` 2.x, `rp flash`): Dockerfile 없이 데코레이터 함수를 배포 |
+| [11-hub](https://github.com/litkhai/runpod-hols/tree/main/serverless/11-hub) | 2026-11-07 실행 | Hub 에서 Faster Whisper 원클릭 배포: 콘솔이 만드는 것, 콜드·웜 호출 |
 
 ### 모델은 어디에 두는가
 
@@ -564,6 +580,20 @@ Flash 는 이제 메인 SDK (`runpod` 2.x, CLI `rp`) 안에 있습니다. 별도
 **Flash 는 배포한 API 키를 각 엔드포인트의 템플릿 env (`RUNPOD_API_KEY`) 에 복사합니다.** 워커와 그것이 설치하는 모든 의존성이 계정 전체를 다룰 수 있습니다. 템플릿은 `undeploy` 와 `app delete` 뒤에도 최대 90분 남았습니다. 폐기할 수 있는 키로 배포하세요. 실행 시간 제한도 기본으로 꺼져 있어, 빈 `input` 으로 보낸 작업은 취소할 때까지 `IN_PROGRESS` 였습니다.
 </div>
 
+### 실습 11 — Hub 원클릭 배포
+
+**Hub → Serverless Repos → Faster Whisper → Deploy** 는 저장소를 Runpod 레지스트리로 빌드하고 큐 엔드포인트를 만듭니다 (최대 워커 3, FlashBoot 켬, 실행 제한 600초, 템플릿 env 비어 있음).
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/hub-deploy-gpu-pools.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/hub-deploy-gpu-pools.webp' | relative_url }}" alt="GPU 풀이 있는 Deploy Faster Whisper 대화상자; USD 1.34/hr 의 24 GB PRO 풀만 선택됨" loading="lazy" width="1140" height="1400"></a><figcaption>처음 열린 배포 대화상자: 24 GB PRO 풀 (USD 1.34/hr) 만 선택돼 있다. "4 GPUs" 는 풀 안의 GPU 종류 수다.</figcaption></figure>
+
+| 2026-11-07, 10초 오디오, RTX A4500 | `delayTime` | `executionTime` |
+|---|---|---|
+| 첫 호출 / 90초 유휴 뒤 | 8.9 / 9.5초 | 6.5 / 5.7초 |
+| 웜 | 0.09초 | 0.9초 |
+| `large-v3` 로 바꿀 때 | 0.09초 | 6.4초, 다음엔 1.2초 |
+
+필요하지 않다면 미리 선택된 PRO 풀을 해제하세요. 워커는 모델 하나만 올려 두고 `model` 이 바뀔 때마다 갈아 끼우므로, 엔드포인트마다 모델 하나로 고정하세요.
+
 [저장소에서 전체 실습 보기 →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
 </div>
@@ -587,6 +617,7 @@ Runpod Serverless 将你的代码作为自动扩缩的 HTTP 端点运行。请�
 | [07-streaming](https://github.com/litkhai/runpod-hols/tree/main/serverless/07-streaming) | 2026-11-07 已运行 | `/stream` 分块延迟、每次 `yield` 的开销、生成器下的 `/runsync` |
 | [08-job-lifecycle](https://github.com/litkhai/runpod-hols/tree/main/serverless/08-job-lifecycle) | 2026-11-07 已运行 | 任务结束的所有方式：失败、取消、超时、过期、清空、重试 |
 | [10-flash](https://github.com/litkhai/runpod-hols/tree/main/serverless/10-flash) | 2026-11-07 已运行 | Flash（`runpod` 2.x，`rp flash`）：不写 Dockerfile 部署一个装饰过的函数 |
+| [11-hub](https://github.com/litkhai/runpod-hols/tree/main/serverless/11-hub) | 2026-11-07 已运行 | 从 Hub 一键部署 Faster Whisper：控制台创建了什么，冷/热调用 |
 
 ### 模型放在哪里
 
@@ -845,6 +876,20 @@ Flash 现在包含在主 SDK（`runpod` 2.x，CLI `rp`）中；独立包 `runpod
 **Flash 会把部署所用的 API 密钥复制到每个端点的模板 env（`RUNPOD_API_KEY`）中**，因此 worker 及其安装的每个依赖都能操作整个账户。该模板在 `undeploy` 和 `app delete` 之后仍保留了最多 90 分钟。请用可以吊销的密钥部署。执行超时默认也是关闭的：`input` 为空的任务一直处于 `IN_PROGRESS`，直到被取消。
 </div>
 
+### 实验 11 — 从 Hub 一键部署
+
+**Hub → Serverless Repos → Faster Whisper → Deploy** 会把仓库构建到 Runpod 的镜像仓库并创建一个队列端点（最多 3 个 worker，FlashBoot 开启，执行超时 600 秒，模板 env 为空）。
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/hub-deploy-gpu-pools.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/hub-deploy-gpu-pools.webp' | relative_url }}" alt="Deploy Faster Whisper 对话框与 GPU 池；只勾选了 1.34 美元/小时的 24 GB PRO 池" loading="lazy" width="1140" height="1400"></a><figcaption>打开时的部署对话框：只勾选了 24 GB PRO 池（1.34 美元/小时）。"4 GPUs" 指池中的 GPU 型号数。</figcaption></figure>
+
+| 2026-11-07，10 秒音频，RTX A4500 | `delayTime` | `executionTime` |
+|---|---|---|
+| 首次调用 / 空闲 90 秒后 | 8.9 / 9.5 秒 | 6.5 / 5.7 秒 |
+| 热调用 | 0.09 秒 | 0.9 秒 |
+| 切换到 `large-v3` | 0.09 秒 | 6.4 秒，之后 1.2 秒 |
+
+除非需要，请取消预选的 PRO 池。worker 只保留一个已加载的模型，每次 `model` 变化都会换载，因此每个端点固定一个模型。
+
 [在仓库中查看完整实验 →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
 </div>
@@ -868,6 +913,7 @@ Runpod Serverless は、コードをオートスケールする HTTP エンド�
 | [07-streaming](https://github.com/litkhai/runpod-hols/tree/main/serverless/07-streaming) | 2026-11-07 実行 | `/stream` のチャンク遅延、`yield` 1 回のコスト、ジェネレーターと `/runsync` |
 | [08-job-lifecycle](https://github.com/litkhai/runpod-hols/tree/main/serverless/08-job-lifecycle) | 2026-11-07 実行 | ジョブの終わり方すべて：失敗、キャンセル、タイムアウト、期限切れ、パージ、リトライ |
 | [10-flash](https://github.com/litkhai/runpod-hols/tree/main/serverless/10-flash) | 2026-11-07 実行 | Flash（`runpod` 2.x、`rp flash`）：Dockerfile なしでデコレーター付き関数をデプロイ |
+| [11-hub](https://github.com/litkhai/runpod-hols/tree/main/serverless/11-hub) | 2026-11-07 実行 | Hub から Faster Whisper をワンクリックデプロイ：コンソールが作るもの、コールド・ウォーム呼び出し |
 
 ### モデルをどこに置くか
 
@@ -1125,6 +1171,20 @@ Flash は今やメイン SDK（`runpod` 2.x、CLI `rp`）に含まれていま�
 <div class="warn" markdown="1">
 **Flash はデプロイに使った API キーを各エンドポイントのテンプレート env（`RUNPOD_API_KEY`）にコピーします。** ワーカーとそれがインストールするすべての依存関係がアカウント全体を操作できます。テンプレートは `undeploy` と `app delete` の後も最大 90 分残りました。失効できるキーでデプロイしてください。実行タイムアウトもデフォルトでオフで、空の `input` のジョブはキャンセルするまで `IN_PROGRESS` のままでした。
 </div>
+
+### ラボ 11 — Hub からワンクリックデプロイ
+
+**Hub → Serverless Repos → Faster Whisper → Deploy** はリポジトリを Runpod のレジストリにビルドし、キュー型エンドポイントを作ります（最大ワーカー 3、FlashBoot オン、実行タイムアウト 600 秒、テンプレート env は空）。
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/hub-deploy-gpu-pools.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/hub-deploy-gpu-pools.webp' | relative_url }}" alt="GPU プールのある Deploy Faster Whisper ダイアログ。1.34 ドル/時の 24 GB PRO プールだけが選択" loading="lazy" width="1140" height="1400"></a><figcaption>開いた直後のデプロイダイアログ：24 GB PRO プール（1.34 ドル/時）だけが選択されている。「4 GPUs」はプール内の GPU 種類の数。</figcaption></figure>
+
+| 2026-11-07、10 秒の音声、RTX A4500 | `delayTime` | `executionTime` |
+|---|---|---|
+| 最初の呼び出し / 90 秒アイドル後 | 8.9 / 9.5 秒 | 6.5 / 5.7 秒 |
+| ウォーム | 0.09 秒 | 0.9 秒 |
+| `large-v3` に切り替え | 0.09 秒 | 6.4 秒、次は 1.2 秒 |
+
+必要でなければ、事前選択された PRO プールを外してください。ワーカーはモデルを 1 つだけ載せ、`model` が変わるたびに入れ替えるので、エンドポイントごとにモデルを 1 つに固定してください。
 
 [リポジトリでラボ全体を見る →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
