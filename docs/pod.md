@@ -59,6 +59,27 @@ Run on 2026-11-05 in EU-RO-1 with marker files on each tier ([the lab](https://g
 
 While stopped, the account's `currentSpendPerHr` was `0.003` for a 10 GB Pod volume, but the Pod's `costPerHr` still showed the running rate, `0.89`. In EU-RO-1 both kinds of volume were a FUSE mount, `mfs#euro.runpod.net:9421`; `df` showed the whole 2.3 PB filesystem, and writes stopped at the 10 GB allocation with `Disk quota exceeded`.
 
+### Global volume (beta) — what was measured
+
+A third kind of persistent storage, listed first in **Add volume** with a **Global** badge: no datacenter, no size, USD 0.09 per GB-month stored plus IOPS. It is created through `POST https://api.runpod.io/v2/global-volumes` (name only) or the console, but REST v1 cannot attach it: the console's deploy mutation passes `volumeMounts: [{volumeId, volumeType: "OBJECT_STORE_VOLUME", mountPath: "/workspace"}]`. Inside the Pod it is a FUSE mount of an object store.
+
+| 2026-11-07 | Pod A, CA-MTL-1 (RTX A5000) | Pod B, EU-RO-1 (RTX 4090) |
+|---|---|---|
+| `/workspace` | `fuse.geesefs`, 1.0P | same volume |
+| Write 512 MiB | **61 MiB/s** (container disk 273) | |
+| First read of that file | 344 MiB/s | **39 MiB/s** across regions |
+| Re-read | 275 MiB/s | 985 MiB/s (local cache) |
+| 200 small files | 338 ms | 59 ms |
+
+<figure class="shot"><a href="{{ '/assets/img/pod/global-volume-storage.webp' | relative_url }}"><img src="{{ '/assets/img/pod/global-volume-storage.webp' | relative_url }}" alt="Storage page listing the global volume with 537MB stored, 205 objects, location Any" loading="lazy" width="1400" height="998"></a><figcaption>Storage, 2026-11-07: the test volume — location <strong>Any</strong>, 537 MB in 205 objects, USD 0.05/month.</figcaption></figure>
+
+- **One volume, two continents.** A marker and a 512 MiB file written in Canada were readable in Romania with the same sha256; a new file written in Romania appeared in Canada **3 s** later.
+- **Concurrent writes diverge.** Both Pods wrote the same file at the same moment; each kept reading its own version — still so 45 s later. The docs say the last write wins and recommend network volumes for shared mutable data; here neither Pod saw the other's write.
+- **Billing is per object.** The Storage page showed 537 MB, 205 objects, USD 0.05/month for this test.
+- Pod B was deployed with the same GraphQL mutation and `dataCenterId: "EU-RO-1"` — the first choice, RTX A5000, had no capacity there.
+
+Use it for read-mostly data that several regions need — weights, configs, datasets — and keep checkpoints and anything two workers write on a network volume or the container disk.
+
 ### Templates and secrets — what Lab 03 found
 
 A template's `env` can hold {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %}, replaced with the secret's value at boot. Run on 2026-11-05 with a random demo secret ([the lab](https://github.com/litkhai/runpod-hols/tree/main/pod/03-custom-template)):
@@ -180,6 +201,27 @@ Pod 는 직접 빌려서 제어하는 GPU 또는 CPU 컨테이너입니다. Serv
 </div>
 
 중지 중 계정의 `currentSpendPerHr` 는 10 GB Pod 볼륨에 대해 `0.003` 이었지만, Pod 의 `costPerHr` 는 실행 중 요금 `0.89` 를 그대로 보여줬습니다. EU-RO-1 에서는 두 종류의 볼륨 모두 FUSE 마운트 `mfs#euro.runpod.net:9421` 이었고, `df` 는 2.3 PB 파일시스템 전체를 보여줬으며, 쓰기는 10 GB 할당에서 `Disk quota exceeded` 로 멈췄습니다.
+
+### Global volume (베타) — 측정한 것
+
+세 번째 영구 스토리지로, **Add volume** 목록 맨 앞에 **Global** 배지와 함께 나옵니다. 데이터센터도 크기도 없고, 저장 GB·월 USD 0.09 에 IOPS 요금이 붙습니다. `POST https://api.runpod.io/v2/global-volumes` (이름만) 나 콘솔로 만들지만, REST v1 로는 Pod 에 붙일 수 없습니다. 콘솔의 배포 mutation 은 `volumeMounts: [{volumeId, volumeType: "OBJECT_STORE_VOLUME", mountPath: "/workspace"}]` 를 보냅니다. Pod 안에서는 오브젝트 스토어의 FUSE 마운트입니다.
+
+| 2026-11-07 | Pod A, CA-MTL-1 (RTX A5000) | Pod B, EU-RO-1 (RTX 4090) |
+|---|---|---|
+| `/workspace` | `fuse.geesefs`, 1.0P | 같은 볼륨 |
+| 512 MiB 쓰기 | **61 MiB/s** (컨테이너 디스크 273) | |
+| 그 파일 첫 읽기 | 344 MiB/s | 지역 간 **39 MiB/s** |
+| 다시 읽기 | 275 MiB/s | 985 MiB/s (로컬 캐시) |
+| 작은 파일 200개 | 338 ms | 59 ms |
+
+<figure class="shot"><a href="{{ '/assets/img/pod/global-volume-storage.webp' | relative_url }}"><img src="{{ '/assets/img/pod/global-volume-storage.webp' | relative_url }}" alt="537MB, 객체 205개, 위치 Any 로 표시된 global volume 의 Storage 화면" loading="lazy" width="1400" height="998"></a><figcaption>Storage, 2026-11-07: 테스트 볼륨 — 위치 <strong>Any</strong>, 객체 205개에 537 MB, 월 USD 0.05.</figcaption></figure>
+
+- **볼륨 하나, 두 대륙.** 캐나다에서 쓴 마커와 512 MiB 파일을 루마니아에서 같은 sha256 으로 읽었고, 루마니아에서 쓴 새 파일은 **3초** 뒤 캐나다에 보였습니다.
+- **동시 쓰기는 갈라집니다.** 두 Pod 이 같은 순간에 같은 파일을 쓰자 각자 자기 버전을 계속 읽었고, 45초 뒤에도 그대로였습니다. 문서는 마지막 쓰기가 이긴다고 하고 공유 가변 데이터에는 네트워크 볼륨을 권하는데, 여기서는 어느 쪽도 상대의 쓰기를 보지 못했습니다.
+- **과금은 객체 단위입니다.** Storage 화면에 이 테스트는 537 MB, 객체 205개, 월 USD 0.05 로 나왔습니다.
+- Pod B 는 같은 GraphQL mutation 에 `dataCenterId: "EU-RO-1"` 을 넣어 띄웠습니다. 첫 선택인 RTX A5000 은 그곳에 자리가 없었습니다.
+
+여러 지역이 함께 읽는 데이터 — 가중치, 설정, 데이터셋 — 에 쓰고, 체크포인트처럼 둘 이상이 쓰는 데이터는 네트워크 볼륨이나 컨테이너 디스크에 두세요.
 
 ### 템플릿과 시크릿 — Lab 03 이 확인한 것
 
@@ -303,6 +345,27 @@ Pod 是你租用并自行控制的 GPU 或 CPU 容器。与 Serverless 不同，
 
 停止期间，对于一个 10 GB 的 Pod volume，账号的 `currentSpendPerHr` 为 `0.003`，但 Pod 的 `costPerHr` 仍显示运行时的费率 `0.89`。在 EU-RO-1，两种 volume 都是 FUSE 挂载 `mfs#euro.runpod.net:9421`；`df` 显示的是整个 2.3 PB 的文件系统，而写入在达到 10 GB 分配量时以 `Disk quota exceeded` 停止。
 
+### Global volume（测试版）——实测结果
+
+第三种持久存储，在 **Add volume** 列表中排在最前，带 **Global** 标记：没有数据中心，也没有容量，按存储每 GB·月 USD 0.09 加 IOPS 计费。可以用 `POST https://api.runpod.io/v2/global-volumes`（只需名称）或控制台创建，但 REST v1 无法把它挂到 Pod 上：控制台的部署 mutation 传的是 `volumeMounts: [{volumeId, volumeType: "OBJECT_STORE_VOLUME", mountPath: "/workspace"}]`。在 Pod 内它是一个对象存储的 FUSE 挂载。
+
+| 2026-11-07 | Pod A，CA-MTL-1（RTX A5000） | Pod B，EU-RO-1（RTX 4090） |
+|---|---|---|
+| `/workspace` | `fuse.geesefs`，1.0P | 同一个卷 |
+| 写入 512 MiB | **61 MiB/s**（容器盘 273） | |
+| 首次读取该文件 | 344 MiB/s | 跨区域 **39 MiB/s** |
+| 再次读取 | 275 MiB/s | 985 MiB/s（本地缓存） |
+| 200 个小文件 | 338 ms | 59 ms |
+
+<figure class="shot"><a href="{{ '/assets/img/pod/global-volume-storage.webp' | relative_url }}"><img src="{{ '/assets/img/pod/global-volume-storage.webp' | relative_url }}" alt="Storage 页面列出的 global volume：537MB、205 个对象、位置 Any" loading="lazy" width="1400" height="998"></a><figcaption>Storage，2026-11-07：测试卷——位置 <strong>Any</strong>，205 个对象共 537 MB，每月 USD 0.05。</figcaption></figure>
+
+- **一个卷，两个大洲。** 在加拿大写入的标记文件和 512 MiB 文件，在罗马尼亚读取时 sha256 一致；在罗马尼亚写入的新文件 **3 秒** 后出现在加拿大。
+- **并发写入会分叉。** 两个 Pod 在同一时刻写同一个文件，各自一直读到自己的版本，45 秒后仍然如此。文档说最后一次写入生效，并建议共享可变数据使用 network volume；而这里两边都没有看到对方的写入。
+- **按对象计费。** 这次测试在 Storage 页面显示 537 MB、205 个对象、每月 USD 0.05。
+- Pod B 是用同一个 GraphQL mutation 加上 `dataCenterId: "EU-RO-1"` 部署的——首选的 RTX A5000 在那里没有容量。
+
+适合多个区域都要读取、以读为主的数据——权重、配置、数据集；检查点以及会被多个 worker 写入的数据，请放在 network volume 或容器盘上。
+
 ### Template 与 secret——Lab 03 的发现
 
 template 的 `env` 中可以写 {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %}，启动时会被替换为 secret 的值。2026-11-05 使用一个随机的演示 secret 运行（[实验](https://github.com/litkhai/runpod-hols/tree/main/pod/03-custom-template)）：
@@ -424,6 +487,27 @@ Pod は借りて自分で制御する GPU または CPU コンテナです。Ser
 </div>
 
 停止中、10 GB の Pod volume に対してアカウントの `currentSpendPerHr` は `0.003` でしたが、Pod の `costPerHr` は稼働時の料金 `0.89` のままでした。EU-RO-1 ではどちらの volume も FUSE マウント `mfs#euro.runpod.net:9421` でした。`df` は 2.3 PB のファイルシステム全体を表示し、書き込みは 10 GB の割り当てで `Disk quota exceeded` となって止まりました。
+
+### Global volume（ベータ）：測定したこと
+
+3 つ目の永続ストレージで、**Add volume** の一覧の先頭に **Global** バッジ付きで表示されます。データセンターも容量もなく、保存 GB・月あたり USD 0.09 に IOPS 料金が加わります。`POST https://api.runpod.io/v2/global-volumes`（名前のみ）かコンソールで作成できますが、REST v1 では Pod にアタッチできません。コンソールのデプロイ mutation は `volumeMounts: [{volumeId, volumeType: "OBJECT_STORE_VOLUME", mountPath: "/workspace"}]` を送っています。Pod の中ではオブジェクトストアの FUSE マウントです。
+
+| 2026-11-07 | Pod A、CA-MTL-1（RTX A5000） | Pod B、EU-RO-1（RTX 4090） |
+|---|---|---|
+| `/workspace` | `fuse.geesefs`、1.0P | 同じボリューム |
+| 512 MiB 書き込み | **61 MiB/s**（コンテナディスク 273） | |
+| そのファイルの初回読み込み | 344 MiB/s | リージョン間 **39 MiB/s** |
+| 再読み込み | 275 MiB/s | 985 MiB/s（ローカルキャッシュ） |
+| 小さなファイル 200 個 | 338 ms | 59 ms |
+
+<figure class="shot"><a href="{{ '/assets/img/pod/global-volume-storage.webp' | relative_url }}"><img src="{{ '/assets/img/pod/global-volume-storage.webp' | relative_url }}" alt="537MB、205 オブジェクト、場所 Any と表示された global volume の Storage 画面" loading="lazy" width="1400" height="998"></a><figcaption>Storage、2026-11-07：テスト用ボリューム——場所 <strong>Any</strong>、205 オブジェクトで 537 MB、月 USD 0.05。</figcaption></figure>
+
+- **1 つのボリュームを 2 つの大陸で。** カナダで書いたマーカーと 512 MiB のファイルを、ルーマニアで同じ sha256 のまま読めました。ルーマニアで書いた新しいファイルは **3 秒** 後にカナダで見えました。
+- **同時書き込みは分岐します。** 2 つの Pod が同じ瞬間に同じファイルを書くと、それぞれが自分のバージョンを読み続け、45 秒後もそのままでした。ドキュメントは最後の書き込みが勝つとし、共有する可変データには network volume を勧めていますが、ここではどちらも相手の書き込みを見ませんでした。
+- **課金はオブジェクト単位です。** Storage 画面ではこのテストが 537 MB、205 オブジェクト、月 USD 0.05 と表示されました。
+- Pod B は同じ GraphQL mutation に `dataCenterId: "EU-RO-1"` を加えてデプロイしました。最初に選んだ RTX A5000 はそこに空きがありませんでした。
+
+複数のリージョンが読む、読み取り中心のデータ（重み、設定、データセット）に使い、チェックポイントや複数のワーカーが書くデータは network volume かコンテナディスクに置いてください。
 
 ### Template と secret：Lab 03 でわかったこと
 
