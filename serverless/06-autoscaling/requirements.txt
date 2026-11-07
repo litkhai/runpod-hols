@@ -1,0 +1,3 @@
+# Same SDK pin as the other labs (#37).
+# 다른 실습과 같은 SDK 고정 (#37).
+runpod~=1.12.0
