@@ -7,13 +7,14 @@ Usage:
     python3 serverless_endpoint.py delete
 
 create makes a template (runpod/worker-v1-vllm) and an endpoint with workersMin 0, workersMax 1,
-idleTimeout 5, and records both ids in results/serverless.json so delete needs no argument.
+idleTimeout 5, PATCHes flashboot after the create and checks the read-back (the create call
+ignored false on 2026-11-07, #60), and records both ids in results/serverless.json so delete needs no argument.
 Workers bill only while running; delete removes the endpoint and the template.
 
 Field names come from the published OpenAPI spec (rest.runpod.io/v1/openapi.json, read 2026-10-06):
 TemplateCreateInput and EndpointCreateInput.
 """
-import argparse, json, os, sys
+import argparse, json, os, sys, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from pod_sweep import RESULTS, api, jload, jsave, load_env  # noqa: E402
@@ -38,7 +39,8 @@ def main():
         if st.get("endpoint_id"):
             sys.exit("endpoint %s already recorded; delete it first" % st["endpoint_id"])
         tpl = api("POST", "/templates", {
-            "name": "ic-coldstart-vllm", "imageName": IMAGE, "isServerless": True,
+            # Unique per run: a deleted endpoint holds its template for ~90 min, and names must be unique.
+            "name": "ic-coldstart-vllm-" + time.strftime("%m%d%H%M"), "imageName": IMAGE, "isServerless": True,
             "containerDiskInGb": 60, "volumeInGb": 0,
             "env": {"MODEL_NAME": MODEL, "MAX_MODEL_LEN": "8192"}})
         st = {"template_id": tpl["id"], "image": IMAGE, "model": MODEL}
@@ -52,6 +54,15 @@ def main():
             "flashboot": a.flashboot == "on"})
         st.update(endpoint_id=ep["id"], flashboot=a.flashboot, gpu=a.gpu, workers_max=a.workers_max)
         jsave(STATE, st)
+        # On 2026-11-07 the create call ignored "flashboot": false and the endpoint read back true
+        # (#60), so set it again and record what the API reports rather than what was asked for.
+        want = a.flashboot == "on"
+        api("PATCH", "/endpoints/" + ep["id"], {"flashboot": want})
+        got = api("GET", "/endpoints/" + ep["id"]).get("flashboot")
+        st.update(flashboot_reported=got)
+        jsave(STATE, st)
+        if got != want:
+            sys.exit("flashboot reads back %s after PATCH, wanted %s; endpoint %s left in place" % (got, want, ep["id"]))
         print(json.dumps(st, indent=2))
         print("ENDPOINT_ID=%s" % ep["id"])
     elif a.action == "show":
