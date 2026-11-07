@@ -17,10 +17,10 @@ Updated 2026-10-20.
 | [`terraform/01-endpoint`](./terraform/01-endpoint) | **Yes** — `apply` and `destroy` run 2026-10-11 with two provider workarounds; one request served 2026-10-20 from a Docker Hub image on RTX 4090, then destroyed |
 | [`terraform/02-pod`](./terraform/02-pod) | **Yes** — `apply`, SSH, network volume and `destroy` run 2026-10-16; provider ignores `gpu_type_id` (Pods came up as RTX 4090); Jupyter not checked |
 | [`cluster/01-pytorch-distributed`](./cluster/01-pytorch-distributed) | **Partly** — stage 1 run 2026-11-07 on 2× RTX 4090 (`SYS`, NCCL via host memory, 15.6 GB/s, DDP 0.21 scaling) and 2× A100 SXM (`NV12`, 201 GB/s, 0.91); stage 2 Instant Cluster not run, every type Unavailable ([#52](https://github.com/litkhai/runpod-hols/issues/52)) |
-| [`inference-characterization/`](./inference-characterization) | **Yes** — Pod sweeps on Secure Cloud GPU types, Serverless cold-start probes with worker logs, 2026-10-06/07; Community Cloud Pod never reachable over SSH; per-run seed re-run and three-host run found no Secure capacity on 2026-11-06 (C31, [#6](https://github.com/litkhai/runpod-hols/issues/6) closed); review follow-up tests done except T4 ([#8](https://github.com/litkhai/runpod-hols/issues/8)) |
+| [`inference-characterization/`](./inference-characterization) | **Yes** — Pod sweeps on Secure Cloud GPU types, Serverless cold-start probes with worker logs, 2026-10-06/07; Community Cloud Pod never reachable over SSH; per-run seed re-run and three-host run found no Secure capacity on 2026-11-06 (C31, [#6](https://github.com/litkhai/runpod-hols/issues/6) closed); review follow-up tests all done ([#8](https://github.com/litkhai/runpod-hols/issues/8) closed; T4 cached model 2026-11-07, C32: no weight download, a container per cold start); FlashBoot-off claims C9/C17/C19 re-run with the state read back (C33, [#60](https://github.com/litkhai/runpod-hols/issues/60)): the create call had ignored `flashboot: false`, and October's off figures did not recur |
 | [`sdk/`](./sdk) | Source read at 1.11.0 and 1.12.0; client exercised live |
 | [`gpu-topology/`](./gpu-topology) | **Yes** — catalogue and OpenAPI queried live; `topo -m` (`NV12`), MIG refusal and CUDA MPS run 2026-11-05 on a 2× A100 SXM Secure Cloud Pod; Bare Metal MIG stays vendor-doc only |
-| [`docs/`](./docs) | <https://runpod.litkhai.dev> |
+| [`docs/`](./docs) | <https://runpod.litkhai.dev> — four languages; console screenshots on setup, serverless, pod, sdk pages and cluster (#53, #56); [GPU & LLM Basics](https://runpod.litkhai.dev/readings/gpu-llm-basics/) with sizing calculators (#58) |
 
 ## CI
 
@@ -50,5 +50,5 @@ Tracked as issues — [all open](https://github.com/litkhai/runpod-hols/issues) 
 [new labs](https://github.com/litkhai/runpod-hols/issues?q=is%3Aopen+label%3Aenhancement).
 
 - Re-verify: [#37](https://github.com/litkhai/runpod-hols/issues/37) `runpod` SDK 2.x ·
-  [#8](https://github.com/litkhai/runpod-hols/issues/8) T4 (console-only cached model).
-- New labs: [#19](https://github.com/litkhai/runpod-hols/issues/19) the cluster track — [#52](https://github.com/litkhai/runpod-hols/issues/52) stage 2 waits for Instant Cluster capacity.
+  [#65](https://github.com/litkhai/runpod-hols/issues/65) FlashBoot Standard mode.
+- New labs: [#19](https://github.com/litkhai/runpod-hols/issues/19) the cluster track — [#52](https://github.com/litkhai/runpod-hols/issues/52) stage 2 waits for Instant Cluster capacity. Serverless: [#62](https://github.com/litkhai/runpod-hols/issues/62) load-balancing endpoints, [#63](https://github.com/litkhai/runpod-hols/issues/63) Bulk Requests. Pod: [#64](https://github.com/litkhai/runpod-hols/issues/64) Global volume.
