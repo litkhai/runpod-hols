@@ -62,7 +62,7 @@ Stage 1 cost about USD 0.40 (7 and 3 minutes of Pod time).
 
 ### Stage 2 — Instant Cluster
 
-Clusters are created in the console (**Clusters → Create cluster**); the REST API has no cluster endpoints. The form prices the whole cluster per hour and marks each type Available or Unavailable. On 2026-11-07 every type was **Unavailable**, while single A100 SXM and H100 SXM Pods could be deployed at the same time. The form reads this from GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }`, which returns `null` for Unavailable.
+Clusters are created in the console (**Clusters → Create cluster**) or over GraphQL with `createCluster` / `deleteCluster`; the REST API has no cluster endpoints. The form prices the whole cluster per hour and marks each type Available or Unavailable. On 2026-11-07 every type was **Unavailable**, while single A100 SXM and H100 SXM Pods could be deployed at the same time. The form reads this from GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }`, which returns `null` for Unavailable. That evening A100 SXM showed Available from about 19:29 to 19:36 KST and was gone by 19:46, so this lab waits for stock with a script that creates the cluster through GraphQL, runs both nodes and deletes it after at most 75 minutes ([`cluster.py`](https://github.com/litkhai/runpod-hols/blob/main/cluster/01-pytorch-distributed/cluster.py)).
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}" alt="Deploy Instant Cluster form: B300, B200, H200 SXM and H100 SXM all Unavailable" loading="lazy" width="1400" height="998"></a><figcaption>Deploy Instant Cluster, 2026-11-07: 8 GPUs per Pod, price per GPU-hour and per cluster-hour, every type Unavailable.</figcaption></figure>
 
@@ -152,7 +152,7 @@ python3 lab.py delete
 
 ### 2단계 — Instant Cluster
 
-클러스터는 콘솔에서 만든다 (**Clusters → Create cluster**). REST API 에는 클러스터 엔드포인트가 없다. 화면은 클러스터 전체의 시간당 가격과 종류별 Available/Unavailable 을 보여준다. 2026-11-07 에는 모든 종류가 **Unavailable** 이었고, 같은 시각 A100 SXM, H100 SXM 단일 Pod 는 배포할 수 있었다. 화면은 이 값을 GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }` 로 읽으며, Unavailable 이면 `null` 이다.
+클러스터는 콘솔 (**Clusters → Create cluster**) 이나 GraphQL 의 `createCluster` / `deleteCluster` 로 만든다. REST API 에는 클러스터 엔드포인트가 없다. 화면은 클러스터 전체의 시간당 가격과 종류별 Available/Unavailable 을 보여준다. 2026-11-07 에는 모든 종류가 **Unavailable** 이었고, 같은 시각 A100 SXM, H100 SXM 단일 Pod 는 배포할 수 있었다. 화면은 이 값을 GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }` 로 읽으며, Unavailable 이면 `null` 이다. 같은 날 저녁 A100 SXM 이 한국 시간 약 19:29–19:36 에 Available 이었다가 19:46 에는 사라졌다. 그래서 이 실습은 스크립트로 재고를 기다려, GraphQL 로 클러스터를 만들고 두 노드에서 돌린 뒤 늦어도 75분 안에 지운다 ([`cluster.py`](https://github.com/litkhai/runpod-hols/blob/main/cluster/01-pytorch-distributed/cluster.py)).
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}" alt="Deploy Instant Cluster 화면: B300, B200, H200 SXM, H100 SXM 모두 Unavailable" loading="lazy" width="1400" height="998"></a><figcaption>Deploy Instant Cluster, 2026-11-07: Pod 당 GPU 8장, GPU 시간당과 클러스터 시간당 가격, 모든 종류 Unavailable.</figcaption></figure>
 
@@ -242,7 +242,7 @@ python3 lab.py delete
 
 ### 第 2 阶段 — Instant Cluster
 
-集群在控制台创建（**Clusters → Create cluster**）；REST API 没有集群端点。表单按小时显示整个集群的价格，并把每种类型标为 Available 或 Unavailable。2026-11-07 所有类型都是 **Unavailable**，而同一时间单台 A100 SXM 和 H100 SXM Pod 可以部署。表单从 GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }` 读取，Unavailable 时返回 `null`。
+集群可以在控制台创建（**Clusters → Create cluster**），也可以用 GraphQL 的 `createCluster` / `deleteCluster`；REST API 没有集群端点。表单按小时显示整个集群的价格，并把每种类型标为 Available 或 Unavailable。2026-11-07 所有类型都是 **Unavailable**，而同一时间单台 A100 SXM 和 H100 SXM Pod 可以部署。表单从 GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }` 读取，Unavailable 时返回 `null`。当天晚上 A100 SXM 在韩国时间约 19:29–19:36 显示 Available，到 19:46 又消失了；因此本实验用脚本等待库存，通过 GraphQL 创建集群，在两个节点上运行，最迟 75 分钟后删除（[`cluster.py`](https://github.com/litkhai/runpod-hols/blob/main/cluster/01-pytorch-distributed/cluster.py)）。
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}" alt="Deploy Instant Cluster 表单：B300、B200、H200 SXM、H100 SXM 均为 Unavailable" loading="lazy" width="1400" height="998"></a><figcaption>Deploy Instant Cluster，2026-11-07：每个 Pod 8 块 GPU，按 GPU 小时和集群小时计价，所有类型 Unavailable。</figcaption></figure>
 
@@ -332,7 +332,7 @@ python3 lab.py delete
 
 ### ステージ 2 — Instant Cluster
 
-クラスタはコンソールで作成します（**Clusters → Create cluster**）。REST API にクラスタのエンドポイントはありません。フォームはクラスタ全体の時間あたり価格と、種別ごとの Available／Unavailable を表示します。2026-11-07 はすべての種別が **Unavailable** で、同じ時刻に A100 SXM と H100 SXM の単体 Pod はデプロイできました。フォームはこれを GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }` から読み、Unavailable なら `null` が返ります。
+クラスタはコンソール（**Clusters → Create cluster**）か、GraphQL の `createCluster` / `deleteCluster` で作成します。REST API にクラスタのエンドポイントはありません。フォームはクラスタ全体の時間あたり価格と、種別ごとの Available／Unavailable を表示します。2026-11-07 はすべての種別が **Unavailable** で、同じ時刻に A100 SXM と H100 SXM の単体 Pod はデプロイできました。フォームはこれを GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }` から読み、Unavailable なら `null` が返ります。同じ日の夜、A100 SXM は韓国時間 19:29〜19:36 ごろ Available になり、19:46 には消えていました。そこでこのラボはスクリプトで在庫を待ち、GraphQL でクラスタを作成して両ノードで実行し、遅くとも 75 分後に削除します（[`cluster.py`](https://github.com/litkhai/runpod-hols/blob/main/cluster/01-pytorch-distributed/cluster.py)）。
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}" alt="Deploy Instant Cluster 画面：B300、B200、H200 SXM、H100 SXM がすべて Unavailable" loading="lazy" width="1400" height="998"></a><figcaption>Deploy Instant Cluster、2026-11-07：Pod あたり GPU 8 基、GPU 時間あたりとクラスタ時間あたりの価格、すべて Unavailable。</figcaption></figure>
 
