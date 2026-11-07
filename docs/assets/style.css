@@ -616,3 +616,8 @@ th { background: var(--bg-soft); font-weight: 600; }
   .content { padding-top: 24px; }
   .header-inner { padding-bottom: 8px; }
 }
+
+/* Console screenshots (#52, #53): captured in dark mode, account details masked. */
+.shot { margin: 1.25rem 0 1.5rem; }
+.shot img { display: block; max-width: 100%; height: auto; border: 1px solid var(--border-strong); border-radius: 8px; }
+.shot figcaption { margin-top: .45rem; font-size: .85rem; color: var(--fg-muted); }

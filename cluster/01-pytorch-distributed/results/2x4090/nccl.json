@@ -1,0 +1,76 @@
+{
+  "world_size": 2,
+  "nnodes": 1,
+  "host": "1652a31a5834",
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "torch": "2.9.1+cu128",
+  "nccl": "2.27.5",
+  "rows": [
+    {
+      "bytes": 1048576,
+      "time_us": 96.2,
+      "algbw_GBps": 10.9,
+      "busbw_GBps": 10.9
+    },
+    {
+      "bytes": 2097152,
+      "time_us": 166.4,
+      "algbw_GBps": 12.61,
+      "busbw_GBps": 12.61
+    },
+    {
+      "bytes": 4194304,
+      "time_us": 301.0,
+      "algbw_GBps": 13.94,
+      "busbw_GBps": 13.94
+    },
+    {
+      "bytes": 8388608,
+      "time_us": 567.7,
+      "algbw_GBps": 14.78,
+      "busbw_GBps": 14.78
+    },
+    {
+      "bytes": 16777216,
+      "time_us": 1139.5,
+      "algbw_GBps": 14.72,
+      "busbw_GBps": 14.72
+    },
+    {
+      "bytes": 33554432,
+      "time_us": 2242.6,
+      "algbw_GBps": 14.96,
+      "busbw_GBps": 14.96
+    },
+    {
+      "bytes": 67108864,
+      "time_us": 4476.3,
+      "algbw_GBps": 14.99,
+      "busbw_GBps": 14.99
+    },
+    {
+      "bytes": 134217728,
+      "time_us": 9003.6,
+      "algbw_GBps": 14.91,
+      "busbw_GBps": 14.91
+    },
+    {
+      "bytes": 268435456,
+      "time_us": 17627.8,
+      "algbw_GBps": 15.23,
+      "busbw_GBps": 15.23
+    },
+    {
+      "bytes": 536870912,
+      "time_us": 34380.5,
+      "algbw_GBps": 15.62,
+      "busbw_GBps": 15.62
+    },
+    {
+      "bytes": 1073741824,
+      "time_us": 68794.0,
+      "algbw_GBps": 15.61,
+      "busbw_GBps": 15.61
+    }
+  ]
+}

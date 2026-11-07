@@ -16,8 +16,8 @@ Updated 2026-10-20.
 | [`pod/04-pod-to-serverless`](./pod/04-pod-to-serverless) | **Yes** — handler tested on an RTX 4090 Pod, served unchanged from Serverless via a shared network volume, 2026-11-05 EU-RO-1; first job `delayTime` 205 s, `runsync` returned `IN_QUEUE` at 90.9 s |
 | [`terraform/01-endpoint`](./terraform/01-endpoint) | **Yes** — `apply` and `destroy` run 2026-10-11 with two provider workarounds; one request served 2026-10-20 from a Docker Hub image on RTX 4090, then destroyed |
 | [`terraform/02-pod`](./terraform/02-pod) | **Yes** — `apply`, SSH, network volume and `destroy` run 2026-10-16; provider ignores `gpu_type_id` (Pods came up as RTX 4090); Jupyter not checked |
-| [`cluster/`](./cluster) | No — README only, deferred on cost ([#19](https://github.com/litkhai/runpod-hols/issues/19)) |
-| [`inference-characterization/`](./inference-characterization) | **Yes** — Pod sweeps on Secure Cloud GPU types, Serverless cold-start probes with worker logs, 2026-10-06/07; Community Cloud Pod never reachable over SSH; per-run seed not re-run ([#6](https://github.com/litkhai/runpod-hols/issues/6)); review follow-up tests T2/T3/T5/T7/T11 done 2026-10-07, T1/T4/T6/T8–T10 open ([#8](https://github.com/litkhai/runpod-hols/issues/8)) |
+| [`cluster/01-pytorch-distributed`](./cluster/01-pytorch-distributed) | **Partly** — stage 1 run 2026-11-07 on 2× RTX 4090 (`SYS`, NCCL via host memory, 15.6 GB/s, DDP 0.21 scaling) and 2× A100 SXM (`NV12`, 201 GB/s, 0.91); stage 2 Instant Cluster not run, every type Unavailable ([#52](https://github.com/litkhai/runpod-hols/issues/52)) |
+| [`inference-characterization/`](./inference-characterization) | **Yes** — Pod sweeps on Secure Cloud GPU types, Serverless cold-start probes with worker logs, 2026-10-06/07; Community Cloud Pod never reachable over SSH; per-run seed re-run and three-host run found no Secure capacity on 2026-11-06 (C31, [#6](https://github.com/litkhai/runpod-hols/issues/6) closed); review follow-up tests done except T4 ([#8](https://github.com/litkhai/runpod-hols/issues/8)) |
 | [`sdk/`](./sdk) | Source read at 1.11.0 and 1.12.0; client exercised live |
 | [`gpu-topology/`](./gpu-topology) | **Yes** — catalogue and OpenAPI queried live; `topo -m` (`NV12`), MIG refusal and CUDA MPS run 2026-11-05 on a 2× A100 SXM Secure Cloud Pod; Bare Metal MIG stays vendor-doc only |
 | [`docs/`](./docs) | <https://runpod.litkhai.dev> |
@@ -50,5 +50,5 @@ Tracked as issues — [all open](https://github.com/litkhai/runpod-hols/issues) 
 [new labs](https://github.com/litkhai/runpod-hols/issues?q=is%3Aopen+label%3Aenhancement).
 
 - Re-verify: [#37](https://github.com/litkhai/runpod-hols/issues/37) `runpod` SDK 2.x ·
-  [#6](https://github.com/litkhai/runpod-hols/issues/6) [#8](https://github.com/litkhai/runpod-hols/issues/8) inference-characterization follow-ups.
-- New labs: [#19](https://github.com/litkhai/runpod-hols/issues/19) the cluster track.
+  [#8](https://github.com/litkhai/runpod-hols/issues/8) T4 (console-only cached model).
+- New labs: [#19](https://github.com/litkhai/runpod-hols/issues/19) the cluster track — [#52](https://github.com/litkhai/runpod-hols/issues/52) stage 2 waits for Instant Cluster capacity.

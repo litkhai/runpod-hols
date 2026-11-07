@@ -1,9 +1,9 @@
-# Cluster Track — TBD
+# Cluster Track
 
 [English](#english) | [한국어](#한국어)
 
-> **Status: 🚧 TBD.** Placeholder. Scope is sketched below; no labs written yet.
-> **상태: 🚧 TBD.** 자리만 잡아둔 상태입니다. 아래에 범위만 정리했고 실습은 아직 없습니다.
+> **Status:** [01-pytorch-distributed](./01-pytorch-distributed/) stage 1 done (2026-11-07, one Pod with two GPUs); stage 2 on an Instant Cluster waits for capacity ([#52](https://github.com/litkhai/runpod-hols/issues/52)).
+> **상태:** [01-pytorch-distributed](./01-pytorch-distributed/) 1단계 완료 (2026-11-07, GPU 두 장짜리 Pod 한 대). Instant Cluster 에서 하는 2단계는 자리를 기다린다 ([#52](https://github.com/litkhai/runpod-hols/issues/52)).
 
 ---
 
@@ -26,7 +26,7 @@ Clusters give you more GPUs, not more privilege — they run as Docker container
 
 | Lab | Contents |
 |---|---|
-| 01-pytorch-distributed | Multi-node `torchrun`, NCCL over the high-speed interfaces |
+| [01-pytorch-distributed](./01-pytorch-distributed/) | `torchrun` and NCCL: 2 GPUs in one Pod (done), then 2 nodes × 8 GPUs |
 | 02-slurm-cluster | Deploy a managed Slurm cluster and submit a job |
 | 03-axolotl-finetune | Multi-node LLM fine-tuning with Axolotl |
 
@@ -68,7 +68,7 @@ Instant Clusters are considerably more expensive than a single Pod — you lease
 
 | 실습 | 내용 |
 |---|---|
-| 01-pytorch-distributed | 다중 노드 `torchrun`, 고속 인터페이스 위의 NCCL |
+| [01-pytorch-distributed](./01-pytorch-distributed/) | `torchrun` 과 NCCL: Pod 한 대의 GPU 2장 (완료), 그다음 노드 2개 × GPU 8장 |
 | 02-slurm-cluster | 관리형 Slurm 클러스터 배포 및 잡 제출 |
 | 03-axolotl-finetune | Axolotl 을 이용한 다중 노드 LLM 파인튜닝 |
 

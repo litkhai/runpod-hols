@@ -20,7 +20,7 @@ These labs cover Runpod's three compute products, plus the two things you need a
 - **Serverless** — autoscaling inference endpoints, billed per execution
 - **Pods** — GPU containers you rent and control, billed per minute
 - **Terraform** — the same resources as infrastructure as code
-- **Instant Clusters** — multi-node distributed training (TBD)
+- **Instant Clusters** — multi-node distributed training (lab 01 stage 1 done)
 
 ### 📁 Repository Structure
 
@@ -35,7 +35,7 @@ runpod-hols/
 │   └── 02-pod/          # runpod_pod + optional network volume
 ├── pod/                 # GPU containers (SSH / Jupyter)
 │   └── 01-launch-connect/ # launch, connect, tear down — CPU by default
-├── cluster/             # Multi-node distributed training — TBD
+├── cluster/             # Multi-node distributed training — 01 in progress
 └── docs/                # GitHub Pages source
 ```
 
@@ -45,7 +45,7 @@ runpod-hols/
 | [`serverless/`](./serverless) | ✅ 2 labs ready | Write handler → test locally → containerize → deploy endpoint |
 | [`terraform/`](./terraform) | ✅ 2 labs ready | Provision endpoint and Pod declaratively |
 | [`pod/`](./pod) | ✅ Lab 01 ready | Launch from Python → connect over SSH → tear down |
-| [`cluster/`](./cluster) | 🚧 TBD | Multi-node PyTorch / Slurm / Axolotl |
+| [`cluster/`](./cluster) | 🚧 01 stage 1 | Multi-node PyTorch / Slurm / Axolotl |
 | [`gpu-topology/`](./gpu-topology) | 📖 Reference | NVLink and MIG — what they are, what Runpod lets you control |
 
 ### Comparing the Three Products
@@ -173,7 +173,7 @@ Runpod 의 세 가지 컴퓨트 제품과, 그 주변에 필요한 두 가지를
 - **Serverless** — 오토스케일 추론 엔드포인트, 실행된 시간만큼 과금
 - **Pods** — 직접 빌려서 제어하는 GPU 컨테이너, 분 단위 과금
 - **Terraform** — 같은 리소스를 코드형 인프라로
-- **Instant Clusters** — 다중 노드 분산 학습 (TBD)
+- **Instant Clusters** — 다중 노드 분산 학습 (실습 01 1단계 완료)
 
 ### 📁 저장소 구조
 
@@ -188,7 +188,7 @@ runpod-hols/
 │   └── 02-pod/          # runpod_pod + 선택적 network volume
 ├── pod/                 # GPU 컨테이너 (SSH / Jupyter)
 │   └── 01-launch-connect/ # 기동·접속·정리 — 기본값 CPU
-├── cluster/             # 다중 노드 분산 학습 — TBD
+├── cluster/             # 다중 노드 분산 학습 — 01 진행 중
 └── docs/                # GitHub Pages 소스
 ```
 
@@ -198,7 +198,7 @@ runpod-hols/
 | [`serverless/`](./serverless) | ✅ 2개 준비됨 | handler 작성 → 로컬 테스트 → 컨테이너화 → 엔드포인트 배포 |
 | [`terraform/`](./terraform) | ✅ 2개 준비됨 | 엔드포인트와 Pod 를 선언적으로 프로비저닝 |
 | [`pod/`](./pod) | ✅ Lab 01 준비됨 | Python 으로 기동 → SSH 접속 → 정리 |
-| [`cluster/`](./cluster) | 🚧 TBD | 다중 노드 PyTorch / Slurm / Axolotl |
+| [`cluster/`](./cluster) | 🚧 01 1단계 | 다중 노드 PyTorch / Slurm / Axolotl |
 | [`gpu-topology/`](./gpu-topology) | 📖 레퍼런스 | NVLink 와 MIG — 무엇이며, Runpod 에서 무엇을 제어할 수 있는가 |
 
 ### 세 제품의 차이
