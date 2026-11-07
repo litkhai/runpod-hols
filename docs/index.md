@@ -118,12 +118,12 @@ AI/ML 워크로드를 위한 GPU 클라우드 [Runpod](https://runpod.io) 의 �
   <div class="card">
     <h3><a href="{{ '/serverless/' | relative_url }}">Serverless</a></h3>
     <p>오토스케일 추론 엔드포인트. 실행 시간만큼 과금.</p>
-    <span class="badge ready">Lab 01–03 실행</span>
+    <span class="badge ready">실습 01–03 실행</span>
   </div>
   <div class="card">
     <h3><a href="{{ '/pod/' | relative_url }}">Pod</a></h3>
     <p>SSH·Jupyter 로 쓰는 GPU 컨테이너. 분 단위 과금.</p>
-    <span class="badge ready">Lab 01–04 실행</span>
+    <span class="badge ready">실습 01–04 실행</span>
   </div>
   <div class="card">
     <h3><a href="{{ '/cluster/' | relative_url }}">Cluster</a></h3>
