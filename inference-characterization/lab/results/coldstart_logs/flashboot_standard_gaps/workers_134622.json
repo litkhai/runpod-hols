@@ -1,0 +1,1 @@
+{"endpointVersion":1,"summary":{"idle":0,"initializing":0,"running":0,"throttled":1,"total":1,"unhealthy":0},"workers":[{"dataCenterId":"US-NC-1","gpuCount":1,"gpuTypeId":"NVIDIA GeForce RTX 4090","id":"bz11lkiyfomlqr","image":"runpod/worker-v1-vllm:v2.28.0","isStale":false,"startedAt":"2026-11-07T04:41:23.27Z","status":"THROTTLED","version":1}]}
