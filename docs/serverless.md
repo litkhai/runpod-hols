@@ -68,7 +68,7 @@ Base URL is `https://api.runpod.ai/v2/{ENDPOINT_ID}`, authenticated with `Author
 
 <figure class="shot"><a href="{{ '/assets/img/serverless/endpoint-quick-start.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/endpoint-quick-start.webp' | relative_url }}" alt="Endpoint Overview tab with the Quick start cURL for /runsync" loading="lazy" width="1400" height="998"></a><figcaption>Endpoint Overview (02-llm-chat): the Quick start builds the same <code>/runsync</code> call on <code>https://api.runpod.ai/v2/{ENDPOINT_ID}</code>, and the panel below shows the repo, branch and model the endpoint was built from.</figcaption></figure>
 
-### Lab 01 in brief
+### Lab 01 — hello worker
 
 ```bash
 cd serverless/01-hello-worker
@@ -146,7 +146,7 @@ Lab 01 deployed from GitHub, CPU workers, `workers_min = 0`:
 **`/runsync` can return `IN_PROGRESS`.** It is not guaranteed to return `COMPLETED` with an `output`; be ready to poll `/status/{id}`.
 </div>
 
-### Lab 02 — what the runs found
+### Lab 02 — LLM chat deployed from GitHub
 
 Lab 02 deploys `Qwen/Qwen2.5-1.5B-Instruct` from GitHub, with the weights in the endpoint's **Model** field. Everything below was run on 2026-10-11; [the lab README](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat#what-was-run) has the full record.
 
@@ -174,7 +174,7 @@ The 12 s is container start, imports, a 2.37 s model load and the SDK's fitness 
 
 **Pass `top_p` only when sampling.** With `temperature: 0` the handler runs greedy decoding, where `top_p` has no effect. transformers 5 warns about a caller-set sampling flag that greedy decoding ignores, so the first handler logged `generation flags are not valid` on every greedy request. The handler now builds `temperature` and `top_p` only when `temperature` > 0. The rebuilt worker ran a `temperature: 0` request with no such warning between `Started.` and `Finished.`
 
-### Lab 03 — what the run found
+### Lab 03 — vLLM endpoint
 
 Lab 03 deploys Runpod's prebuilt `runpod/worker-v1-vllm:v2.30.2` with `Qwen/Qwen2.5-1.5B-Instruct` from a script, and calls it with the OpenAI SDK at `https://api.runpod.ai/v2/<endpoint>/openai/v1`. Run once on 2026-11-05 on an RTX 4090, FlashBoot on; [the lab README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) has the full record.
 
@@ -332,7 +332,7 @@ Runpod Serverless 는 코드를 오토스케일 HTTP 엔드포인트로 실행�
 
 <figure class="shot"><a href="{{ '/assets/img/serverless/endpoint-quick-start.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/endpoint-quick-start.webp' | relative_url }}" alt="엔드포인트 Overview 탭과 /runsync 용 Quick start cURL" loading="lazy" width="1400" height="998"></a><figcaption>엔드포인트 Overview (02-llm-chat): Quick start 는 <code>https://api.runpod.ai/v2/{ENDPOINT_ID}</code> 에 같은 <code>/runsync</code> 호출을 만들어 주고, 아래 패널은 엔드포인트를 빌드한 저장소, 브랜치, 모델을 보여준다.</figcaption></figure>
 
-### Lab 01 요약
+### 실습 01 — Hello Worker
 
 ```bash
 cd serverless/01-hello-worker
@@ -393,7 +393,7 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 
 ### 실제 엔드포인트 실측
 
-GitHub 연동으로 배포한 Lab 01, CPU 워커, `workers_min = 0` 기준입니다.
+GitHub 연동으로 배포한 실습 01, CPU 워커, `workers_min = 0` 기준입니다.
 
 | 요청 | `delayTime` | `executionTime` |
 |---|---|---|
@@ -410,9 +410,9 @@ GitHub 연동으로 배포한 Lab 01, CPU 워커, `workers_min = 0` 기준입니
 **`/runsync` 가 `IN_PROGRESS` 를 반환할 수 있습니다.** 항상 `output` 이 담긴 `COMPLETED` 가 오는 것은 아니므로 `/status/{id}` 폴링을 대비하세요.
 </div>
 
-### Lab 02 — 실행에서 확인한 것
+### 실습 02 — GitHub 로 배포한 LLM 채팅
 
-Lab 02 는 `Qwen/Qwen2.5-1.5B-Instruct` 를 GitHub 연동으로 배포하고, 가중치는 엔드포인트의 **Model** 필드로 공급합니다. 아래는 모두 2026-10-11 에 실행한 결과이며, 전체 기록은 [실습 README](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat#한국어) 에 있습니다.
+실습 02 는 `Qwen/Qwen2.5-1.5B-Instruct` 를 GitHub 연동으로 배포하고, 가중치는 엔드포인트의 **Model** 필드로 공급합니다. 아래는 모두 2026-10-11 에 실행한 결과이며, 전체 기록은 [실습 README](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat#한국어) 에 있습니다.
 
 **캐시는 문서에 적힌 경로에 있습니다.** 문서와 SDK 가 서로 다른 위치를 말하므로 핸들러가 둘 다 확인하고 `cache_probe` 한 줄을 로그에 남깁니다. 채워진 쪽은 문서 경로 `/runpod-volume/huggingface-cache/hub/models--Qwen--Qwen2.5-1.5B-Instruct/snapshots/989aa79…` 였고, `/runpod/cache` 는 존재하지 않았습니다.
 
@@ -438,9 +438,9 @@ Lab 02 는 `Qwen/Qwen2.5-1.5B-Instruct` 를 GitHub 연동으로 배포하고, �
 
 **`top_p` 는 샘플링할 때만 넘깁니다.** `temperature: 0` 이면 핸들러는 greedy 디코딩을 하고, 이때 `top_p` 는 아무 효과가 없습니다. transformers 5 는 호출자가 지정했지만 greedy 디코딩이 무시하는 샘플링 플래그에 경고를 내므로, 처음 핸들러는 greedy 요청마다 `generation flags are not valid` 를 남겼습니다. 지금 핸들러는 `temperature` > 0 일 때만 `temperature` 와 `top_p` 를 넘깁니다. 다시 빌드한 워커로 `temperature: 0` 요청을 실행했고, `Started.` 와 `Finished.` 사이에 이 경고가 없었습니다.
 
-### Lab 03 — 실행에서 확인한 것
+### 실습 03 — vLLM 엔드포인트
 
-Lab 03 은 Runpod 이 미리 빌드한 `runpod/worker-v1-vllm:v2.30.2` 에 `Qwen/Qwen2.5-1.5B-Instruct` 를 스크립트로 배포하고, OpenAI SDK 로 `https://api.runpod.ai/v2/<endpoint>/openai/v1` 를 호출합니다. 2026-11-05 RTX 4090, FlashBoot 켬으로 한 번 실행했습니다. 전체 기록은 [실습 README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) 에 있습니다.
+실습 03 은 Runpod 이 미리 빌드한 `runpod/worker-v1-vllm:v2.30.2` 에 `Qwen/Qwen2.5-1.5B-Instruct` 를 스크립트로 배포하고, OpenAI SDK 로 `https://api.runpod.ai/v2/<endpoint>/openai/v1` 를 호출합니다. 2026-11-05 RTX 4090, FlashBoot 켬으로 한 번 실행했습니다. 전체 기록은 [실습 README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) 에 있습니다.
 
 | 워커가 뜬 뒤 | 결과 |
 |---|---|
@@ -596,7 +596,7 @@ handler 必须为此专门编写。`HF_HUB_OFFLINE` 在 `huggingface_hub` 被导
 
 <figure class="shot"><a href="{{ '/assets/img/serverless/endpoint-quick-start.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/endpoint-quick-start.webp' | relative_url }}" alt="端点 Overview 标签页和 /runsync 的 Quick start cURL" loading="lazy" width="1400" height="998"></a><figcaption>端点 Overview（02-llm-chat）：Quick start 在 <code>https://api.runpod.ai/v2/{ENDPOINT_ID}</code> 上生成同样的 <code>/runsync</code> 调用，下方面板显示构建该端点的仓库、分支和模型。</figcaption></figure>
 
-### 实验 01 概要
+### 实验 01 — Hello Worker
 
 ```bash
 cd serverless/01-hello-worker
@@ -674,7 +674,7 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 **`/runsync` 可能返回 `IN_PROGRESS`。** 它并不保证返回带有 `output` 的 `COMPLETED`；请准备好轮询 `/status/{id}`。
 </div>
 
-### 实验 02——运行发现
+### 实验 02 — 从 GitHub 部署的 LLM 聊天
 
 实验 02 从 GitHub 部署 `Qwen/Qwen2.5-1.5B-Instruct`，权重通过端点的 **Model** 字段提供。以下全部在 2026-10-11 运行；完整记录见[实验 README](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat#what-was-run)。
 
@@ -702,7 +702,7 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 
 **只在采样时传入 `top_p`。** 当 `temperature: 0` 时，handler 执行贪心解码，此时 `top_p` 不起作用。transformers 5 会对调用方设置、但被贪心解码忽略的采样标志发出警告，所以最初的 handler 在每个贪心请求上都记录了 `generation flags are not valid`。现在 handler 只在 `temperature` > 0 时才构造 `temperature` 和 `top_p`。重新构建的 worker 运行了一个 `temperature: 0` 请求，在 `Started.` 和 `Finished.` 之间没有出现该警告。
 
-### 实验 03——运行发现
+### 实验 03 — vLLM 端点
 
 实验 03 用脚本部署 Runpod 预构建的 `runpod/worker-v1-vllm:v2.30.2` 和 `Qwen/Qwen2.5-1.5B-Instruct`，并用 OpenAI SDK 通过 `https://api.runpod.ai/v2/<endpoint>/openai/v1` 调用。于 2026-11-05 在 RTX 4090 上运行一次，FlashBoot 开启；完整记录见[实验 README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint)。
 
@@ -860,7 +860,7 @@ handler はこれに合わせて書く必要があります。`HF_HUB_OFFLINE` �
 
 <figure class="shot"><a href="{{ '/assets/img/serverless/endpoint-quick-start.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/endpoint-quick-start.webp' | relative_url }}" alt="エンドポイントの Overview タブと /runsync の Quick start cURL" loading="lazy" width="1400" height="998"></a><figcaption>エンドポイントの Overview（02-llm-chat）：Quick start は <code>https://api.runpod.ai/v2/{ENDPOINT_ID}</code> に同じ <code>/runsync</code> 呼び出しを組み立て、下のパネルはエンドポイントのビルド元のリポジトリ、ブランチ、モデルを示します。</figcaption></figure>
 
-### Lab 01 の概要
+### ラボ 01 — Hello Worker
 
 ```bash
 cd serverless/01-hello-worker
@@ -921,7 +921,7 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 
 ### 稼働中のエンドポイントでの実測
 
-GitHub からデプロイした Lab 01、CPU worker、`workers_min = 0`：
+GitHub からデプロイした ラボ 01、CPU worker、`workers_min = 0`：
 
 | リクエスト | `delayTime` | `executionTime` |
 |---|---|---|
@@ -938,9 +938,9 @@ GitHub からデプロイした Lab 01、CPU worker、`workers_min = 0`：
 **`/runsync` は `IN_PROGRESS` を返すことがあります。** `output` 付きの `COMPLETED` が返る保証はないので、`/status/{id}` をポーリングできるようにしておいてください。
 </div>
 
-### Lab 02：実行でわかったこと
+### ラボ 02 — GitHub からデプロイした LLM チャット
 
-Lab 02 は `Qwen/Qwen2.5-1.5B-Instruct` を GitHub からデプロイし、重みはエンドポイントの **Model** フィールドで渡します。以下はすべて 2026-10-11 に実行したもので、完全な記録は[ラボの README](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat#what-was-run) にあります。
+ラボ 02 は `Qwen/Qwen2.5-1.5B-Instruct` を GitHub からデプロイし、重みはエンドポイントの **Model** フィールドで渡します。以下はすべて 2026-10-11 に実行したもので、完全な記録は[ラボの README](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat#what-was-run) にあります。
 
 **キャッシュはドキュメントに書かれたパスにあります。** ドキュメントと SDK が別の場所を挙げているため、handler は両方を調べて `cache_probe` の行をログに出します。中身があったのはドキュメントのパス `/runpod-volume/huggingface-cache/hub/models--Qwen--Qwen2.5-1.5B-Instruct/snapshots/989aa79…` でした。`/runpod/cache` は存在しませんでした。
 
@@ -966,9 +966,9 @@ Lab 02 は `Qwen/Qwen2.5-1.5B-Instruct` を GitHub からデプロイし、重�
 
 **`top_p` はサンプリングするときだけ渡します。** `temperature: 0` では handler は greedy デコーディングを行い、このとき `top_p` は効果がありません。transformers 5 は、呼び出し側が設定したが greedy デコーディングでは無視されるサンプリングフラグに警告を出すため、最初の handler は greedy リクエストのたびに `generation flags are not valid` をログに出していました。現在の handler は `temperature` > 0 のときだけ `temperature` と `top_p` を組み立てます。再ビルドした worker で `temperature: 0` のリクエストを実行したところ、`Started.` と `Finished.` の間にこの警告は出ませんでした。
 
-### Lab 03：実行でわかったこと
+### ラボ 03 — vLLM エンドポイント
 
-Lab 03 は Runpod のビルド済み `runpod/worker-v1-vllm:v2.30.2` と `Qwen/Qwen2.5-1.5B-Instruct` をスクリプトでデプロイし、OpenAI SDK で `https://api.runpod.ai/v2/<endpoint>/openai/v1` を呼び出します。2026-11-05 に RTX 4090、FlashBoot オンで 1 回実行しました。完全な記録は[ラボの README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) にあります。
+ラボ 03 は Runpod のビルド済み `runpod/worker-v1-vllm:v2.30.2` と `Qwen/Qwen2.5-1.5B-Instruct` をスクリプトでデプロイし、OpenAI SDK で `https://api.runpod.ai/v2/<endpoint>/openai/v1` を呼び出します。2026-11-05 に RTX 4090、FlashBoot オンで 1 回実行しました。完全な記録は[ラボの README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) にあります。
 
 | worker が起動した後 | 結果 |
 |---|---|

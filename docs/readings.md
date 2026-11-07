@@ -197,12 +197,12 @@ Links, all published by Runpod. Competitor comparisons and marketing pieces are 
 | 문서 | 이유 |
 |---|---|
 | [Overview](https://docs.runpod.io/serverless/overview) | "AI 모델과 연산 집약 워크로드를 위한 종량제 컴퓨트" |
-| [Quickstart](https://docs.runpod.io/serverless/quickstart) | Lab 01 의 공식 버전 |
+| [Quickstart](https://docs.runpod.io/serverless/quickstart) | 실습 01 의 공식 버전 |
 | [Handler functions](https://docs.runpod.io/serverless/workers/handler-functions) | 내 코드가 지켜야 할 계약. [Worker SDK]({{ '/sdk/worker/' | relative_url }}) 와 함께 보세요 |
 | [Deploy from GitHub](https://docs.runpod.io/serverless/workers/github-integration) | 이 실습들이 쓰는 배포 경로. 단 Build context 필드는 빠져 있습니다 |
 | [Endpoint settings](https://docs.runpod.io/serverless/endpoints/endpoint-configurations) | 생성 화면의 모든 설정에 대한 레퍼런스 |
 | [Job states and metrics](https://docs.runpod.io/serverless/endpoints/job-states) | `/runsync` 가 왜 `IN_PROGRESS` 를 주는지 궁금해지기 전에 |
-| [Cached models](https://docs.runpod.io/serverless/endpoints/model-caching) | 모델을 이미지에 넣지 않는 이유. Lab 02 의 근거 |
+| [Cached models](https://docs.runpod.io/serverless/endpoints/model-caching) | 모델을 이미지에 넣지 않는 이유. 실습 02 의 근거 |
 | [Fitness checks](https://docs.runpod.io/serverless/development/fitness-checks) | 기동 시 검증. `runpod>=1.9.0` 필요 |
 | [Local testing](https://docs.runpod.io/serverless/development/local-testing) | 변경마다 빌드하지 않아도 되는 루프 |
 | [Concurrent handlers](https://docs.runpod.io/serverless/workers/concurrent-handler) | 워커 하나로 여러 요청 — `concurrency_modifier` 가 쓸모를 발휘하는 지점 |
@@ -425,12 +425,12 @@ Links, all published by Runpod. Competitor comparisons and marketing pieces are 
 | ページ | 理由 |
 |---|---|
 | [Overview](https://docs.runpod.io/serverless/overview) | 「AI モデルと計算負荷の高いワークロードのための従量課金コンピュート」 |
-| [Quickstart](https://docs.runpod.io/serverless/quickstart) | Lab 01 の公式版 |
+| [Quickstart](https://docs.runpod.io/serverless/quickstart) | ラボ 01 の公式版 |
 | [Handler functions](https://docs.runpod.io/serverless/workers/handler-functions) | コードが満たすべき契約。[Worker SDK]({{ '/sdk/worker/' | relative_url }}) と合わせて読んでください |
 | [Deploy from GitHub](https://docs.runpod.io/serverless/workers/github-integration) | これらのラボが使うデプロイ経路。Build context フィールドが書かれていない点に注意 |
 | [Endpoint settings](https://docs.runpod.io/serverless/endpoints/endpoint-configurations) | 作成フォームの全設定のリファレンス |
 | [Job states and metrics](https://docs.runpod.io/serverless/endpoints/job-states) | `/runsync` がなぜ `IN_PROGRESS` を返したのか悩む前に読んでください |
-| [Cached models](https://docs.runpod.io/serverless/endpoints/model-caching) | モデルをイメージに入れるべきでない理由。Lab 02 の土台 |
+| [Cached models](https://docs.runpod.io/serverless/endpoints/model-caching) | モデルをイメージに入れるべきでない理由。ラボ 02 の土台 |
 | [Fitness checks](https://docs.runpod.io/serverless/development/fitness-checks) | 起動時の検証。`runpod>=1.9.0` が必要 |
 | [Local testing](https://docs.runpod.io/serverless/development/local-testing) | 変更のたびにビルドしなくて済むループ |
 | [Concurrent handlers](https://docs.runpod.io/serverless/workers/concurrent-handler) | 1 つの worker で複数のリクエスト。`concurrency_modifier` が真価を発揮するところ |
