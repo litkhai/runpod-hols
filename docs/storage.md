@@ -83,6 +83,22 @@ Same vLLM worker (`worker-v1-vllm` v2.28.0, Qwen2.5-7B-Instruct, 14.29 GiB), RTX
 
 The network volume saved the download and then spent as long reading from MooseFS, and the cold starts came out slower overall. For a model of this size, set the endpoint's Model field ([Serverless]({{ '/serverless/' | relative_url }})) and leave the network volume for data that must persist and be shared — outputs, checkpoints, datasets that several Pods read. The global volume was not tried for weights: its measured cold read across regions (39 MiB/s) rules it out.
 
+## Getting data in without a Pod — the S3 API
+{: #s3 }
+
+Network volumes in S3-capable datacenters (EU-RO-1 here) also answer at `https://s3api-<dc>.runpod.io`, with the volume id as the bucket. It needs an S3 API key from **Credentials → S3 API Keys**, separate from the Runpod API key and with read and write access to every S3-capable volume. Measured on 2026-11-07 with `aws s3 cp`, 1 GiB:
+
+| Client | Upload | Download |
+|---|---|---|
+| This repo's build server, outside Runpod | 20 MiB/s | 66 MiB/s |
+| A CPU Pod in the same datacenter | 30 MiB/s | 210 MiB/s |
+| The same file through the Pod's mount | | 1.27 GB/s |
+
+- **The two views are one filesystem.** A file uploaded through S3 appeared on the Pod's `/workspace` with the same sha256, and a file written in the Pod was listed by S3 straight away.
+- **Uploads are slow from anywhere.** 20–30 MiB/s is about 35–50 s per GiB; 100 small files went at 20 per second. Fine for configs and adapters, slow for a 15 GB model — compare the Model field.
+- **Uploaded files are `root`, mode 600** (directories 750). A container that runs as another user cannot read them until you `chmod`.
+- The key is shown once and grants every S3-capable volume; delete it when done. This test's key was revoked afterwards.
+
 ## Choosing
 {: #choosing }
 
@@ -95,7 +111,7 @@ The network volume saved the download and then spent as long reading from MooseF
 | Read-mostly files that several regions need | Global volume — one writer, expect seconds of delay |
 | Data that must survive Pod deletion but needs no sharing | Pod volume is the same system as a network volume, at a higher price |
 
-Not covered yet: the S3-compatible API for network volumes (it needs an S3 key created in the console), and Instant Cluster volumes.
+Not covered yet: Instant Cluster volumes.
 
 </div>
 
@@ -175,6 +191,22 @@ Runpod 의 모든 제품은 같은 몇 가지 스토리지 계층 위에 놓여 
 
 네트워크 볼륨은 다운로드를 아꼈지만 그만큼을 MooseFS 에서 읽는 데 썼고, 콜드 스타트는 전체적으로 더 느렸습니다. 이 크기의 모델이라면 엔드포인트의 Model 필드를 설정하고([Serverless]({{ '/serverless/' | relative_url }})), 네트워크 볼륨은 유지·공유되어야 하는 데이터 — 출력물, 체크포인트, 여러 Pod 가 읽는 데이터셋 — 에 남겨두세요. 글로벌 볼륨은 가중치용으로 시험하지 않았습니다. 측정된 리전 간 콜드 리드(39 MiB/s)만으로 제외됩니다.
 
+## Pod 없이 데이터 넣기 — S3 API
+{: #s3-ko }
+
+S3 를 지원하는 데이터센터(여기서는 EU-RO-1)의 네트워크 볼륨은 `https://s3api-<dc>.runpod.io` 로도 응답하며, 볼륨 id 가 버킷 이름입니다. **Credentials → S3 API Keys** 에서 만드는 S3 API 키가 필요합니다. Runpod API 키와 별개이고, S3 를 지원하는 모든 볼륨에 읽기·쓰기 권한을 가집니다. 2026-11-07 `aws s3 cp` 로 1 GiB 를 잰 결과:
+
+| 클라이언트 | 업로드 | 다운로드 |
+|---|---|---|
+| 이 저장소의 빌드 서버, Runpod 외부 | 20 MiB/s | 66 MiB/s |
+| 같은 데이터센터의 CPU Pod | 30 MiB/s | 210 MiB/s |
+| 같은 파일을 Pod 의 마운트로 | | 1.27 GB/s |
+
+- **두 경로는 같은 파일시스템입니다.** S3 로 올린 파일이 Pod 의 `/workspace` 에 같은 sha256 으로 보였고, Pod 에서 쓴 파일은 S3 목록에 곧바로 나왔습니다.
+- **업로드는 어디서나 느립니다.** 20–30 MiB/s 는 GiB 당 35–50 초입니다. 작은 파일 100개는 초당 20개였습니다. 설정 파일이나 어댑터에는 괜찮지만 15 GB 모델에는 느립니다 — Model 칸과 비교하세요.
+- **올린 파일은 `root`, 권한 600 입니다** (디렉터리 750). 다른 사용자로 도는 컨테이너는 `chmod` 하기 전까지 읽지 못합니다.
+- 키는 한 번만 보여 주고 S3 를 지원하는 모든 볼륨에 권한이 있으니, 다 쓰면 지우세요. 이 테스트의 키도 끝난 뒤 폐기했습니다.
+
 ## 선택 가이드
 {: #choosing-ko }
 
@@ -187,7 +219,7 @@ Runpod 의 모든 제품은 같은 몇 가지 스토리지 계층 위에 놓여 
 | 여러 리전이 필요로 하는, 주로 읽기만 하는 파일 | 글로벌 볼륨 — 작성자는 하나, 수 초의 지연을 예상하세요 |
 | Pod 삭제 후에도 남아야 하지만 공유는 필요 없는 데이터 | Pod 볼륨은 네트워크 볼륨과 같은 시스템이며, 가격만 더 높습니다 |
 
-아직 다루지 않은 것: 네트워크 볼륨의 S3 호환 API(콘솔에서 S3 키를 만들어야 함)와 Instant Cluster 볼륨.
+아직 다루지 않은 것: Instant Cluster 볼륨.
 
 </div>
 
@@ -267,6 +299,22 @@ Network volume 表现得像一个共享文件系统。Global volume 则不然：
 
 Network volume 省掉了下载，却又花了同样长的时间从 MooseFS 读取，冷启动总体反而更慢。对于这个规模的模型，请设置 endpoint 的 Model 字段（[Serverless]({{ '/serverless/' | relative_url }})），把 network volume 留给需要持久保存并共享的数据——输出、checkpoint、多个 Pod 共同读取的数据集。Global volume 没有用来测试权重：实测的跨区域冷读速度（39 MiB/s）已经将其排除。
 
+## 不用 Pod 也能放入数据——S3 API
+{: #s3-zh }
+
+在支持 S3 的数据中心（这里是 EU-RO-1），network volume 还可以通过 `https://s3api-<dc>.runpod.io` 访问，卷 id 就是 bucket 名。需要在 **Credentials → S3 API Keys** 创建 S3 API 密钥；它独立于 Runpod API 密钥，并对所有支持 S3 的卷拥有读写权限。2026-11-07 用 `aws s3 cp` 测量 1 GiB：
+
+| 客户端 | 上传 | 下载 |
+|---|---|---|
+| 本仓库的构建服务器，在 Runpod 之外 | 20 MiB/s | 66 MiB/s |
+| 同一数据中心的 CPU Pod | 30 MiB/s | 210 MiB/s |
+| 同一文件经 Pod 的挂载读取 | | 1.27 GB/s |
+
+- **两种访问方式是同一个文件系统。** 通过 S3 上传的文件出现在 Pod 的 `/workspace` 上，sha256 一致；在 Pod 中写入的文件会立即出现在 S3 列表里。
+- **从哪里上传都慢。** 20–30 MiB/s 意味着每 GiB 约 35–50 秒；100 个小文件每秒 20 个。放配置文件和 adapter 没问题，放 15 GB 的模型就慢了——请与 Model 字段比较。
+- **上传的文件属于 `root`，权限 600**（目录 750）。以其他用户运行的容器在 `chmod` 之前读不到它们。
+- 密钥只显示一次，并对所有支持 S3 的卷有效；用完请删除。本次测试的密钥在测试后已撤销。
+
 ## 如何选择
 {: #choosing-zh }
 
@@ -279,7 +327,7 @@ Network volume 省掉了下载，却又花了同样长的时间从 MooseFS 读�
 | 多个区域都需要、以读为主的文件 | Global volume——单一写入方，预期有数秒延迟 |
 | 必须在 Pod 删除后保留、但无需共享的数据 | Pod volume 与 network volume 是同一套系统，价格却更高 |
 
-尚未覆盖：network volume 的 S3 兼容 API（需要先在控制台创建 S3 密钥），以及 Instant Cluster 的 volume。
+尚未覆盖：Instant Cluster 的卷。
 
 </div>
 
@@ -359,6 +407,22 @@ network volume は 1 つの共有ファイルシステムとして振る舞い�
 
 network volume はダウンロードを省きましたが、その分だけ MooseFS からの読み込みに時間がかかり、コールドスタートは全体として遅くなりました。このサイズのモデルなら、エンドポイントの Model フィールド（[Serverless]({{ '/serverless/' | relative_url }})）を設定し、network volume は永続化と共有が必要なデータ、つまり出力、チェックポイント、複数の Pod が読むデータセットのために残しておいてください。グローバルボリュームは重みには試していません。測定したリージョン間のコールド読み込み（39 MiB/s）で候補から外れます。
 
+## Pod なしでデータを入れる — S3 API
+{: #s3-ja }
+
+S3 対応のデータセンター（ここでは EU-RO-1）にある network volume は `https://s3api-<dc>.runpod.io` でも応答し、ボリューム id がバケット名になります。**Credentials → S3 API Keys** で作る S3 API キーが必要です。Runpod の API キーとは別物で、S3 対応のすべてのボリュームに読み書き権限を持ちます。2026-11-07 に `aws s3 cp` で 1 GiB を測った結果：
+
+| クライアント | アップロード | ダウンロード |
+|---|---|---|
+| このリポジトリのビルドサーバー（Runpod の外） | 20 MiB/s | 66 MiB/s |
+| 同じデータセンターの CPU Pod | 30 MiB/s | 210 MiB/s |
+| 同じファイルを Pod のマウント経由で | | 1.27 GB/s |
+
+- **2 つの経路は同じファイルシステムです。** S3 でアップロードしたファイルは Pod の `/workspace` に同じ sha256 で現れ、Pod で書いたファイルはすぐに S3 の一覧に出ました。
+- **アップロードはどこからでも遅いです。** 20〜30 MiB/s は 1 GiB あたり 35〜50 秒です。小さなファイル 100 個は毎秒 20 個でした。設定ファイルやアダプターには十分ですが、15 GB のモデルには遅いです——Model 欄と比べてください。
+- **アップロードしたファイルは `root`、パーミッション 600 です**（ディレクトリは 750）。別ユーザーで動くコンテナは `chmod` するまで読めません。
+- キーは一度しか表示されず、S3 対応のすべてのボリュームに効きます。使い終わったら削除してください。このテストのキーも終了後に失効させました。
+
 ## 選び方
 {: #choosing-ja }
 
@@ -371,7 +435,7 @@ network volume はダウンロードを省きましたが、その分だけ Moos
 | 複数のリージョンが必要とする、主に読むだけのファイル | グローバルボリューム。書き込み元は 1 つにし、数秒の遅延を見込んでください |
 | Pod の削除後も残す必要があるが共有は不要なデータ | Pod ボリュームは network volume と同じシステムで、料金はより高いです |
 
-まだ扱っていないもの：network volume の S3 互換 API（コンソールで S3 キーを作成する必要があります）と、Instant Cluster のボリュームです。
+まだ扱っていないもの：Instant Cluster のボリューム。
 
 </div>
 
