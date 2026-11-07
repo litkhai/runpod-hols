@@ -22,7 +22,11 @@ export NNODES
 if [ "$NNODES" -gt 1 ]; then
   # Inter-node traffic must use the cluster interfaces, not eth0 (172.x, internet only).
   # 노드 간 통신은 eth0(172.x, 인터넷용)가 아니라 클러스터 인터페이스를 써야 한다.
-  export NCCL_SOCKET_IFNAME=${NCCL_SOCKET_IFNAME:-ens1}
+  # ens1 in the docs; fall back to the first interface that is neither lo nor eth0.
+  # 문서상 ens1. 없으면 lo, eth0 가 아닌 첫 인터페이스를 쓴다.
+  IF=$(ip -o -4 addr show | awk '$2!="lo" && $2!="eth0"{print $2; exit}')
+  ip link show ens1 >/dev/null 2>&1 && IF=ens1
+  export NCCL_SOCKET_IFNAME=${NCCL_SOCKET_IFNAME:-${IF:-ens1}}
 fi
 export NCCL_DEBUG=${NCCL_DEBUG:-INFO}
 export NCCL_DEBUG_SUBSYS=${NCCL_DEBUG_SUBSYS:-INIT,NET}
