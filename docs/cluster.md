@@ -60,6 +60,19 @@ Why the gap is this large: a ring all-reduce moves 2(n−1)/n of the gradient pe
 
 Stage 1 cost about USD 0.40 (7 and 3 minutes of Pod time).
 
+**Four H100 SXM in one Pod** (2026-11-08; a single Pod had stock while no cluster did):
+
+| 2026-11-08, US-NE-1 | 4x H100 SXM 80GB |
+|---|---|
+| Price | USD 15.96/hr |
+| Link (`topo -m`) | `NV18`: 18 NVLinks between every pair |
+| all-reduce `busbw`, 1 MiB / 1 GiB | 11.1 / **356.3 GB/s** |
+| DDP, 1 GPU | 54,981 samples/s (4.7 ms/step) |
+| DDP, 4 GPUs | 179,442 samples/s (5.7 ms/step) |
+| Scaling efficiency (4 GPUs / 4 × 1 GPU) | **0.82** |
+
+The link is 1.8× the A100 pair's and one H100 is 2.4× one A100 here, but efficiency fell to 0.82: with 4.7 ms of compute against about 1 ms of all-reduce, the faster the GPU, the more the link decides. This is the in-node ceiling to compare a cluster against — stage 2's socket run moved 0.32 GB/s between nodes. About USD 3 for 11.5 minutes.
+
 ### Stage 2 — Instant Cluster
 
 Clusters are created in the console (**Clusters → Create cluster**) or over GraphQL with `createCluster` / `deleteCluster`; the REST API has no cluster endpoints. The form prices the whole cluster per hour and marks each type Available or Unavailable. On 2026-11-07 every type was **Unavailable**, while single A100 SXM and H100 SXM Pods could be deployed at the same time. The form reads this from GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }`, which returns `null` for Unavailable. That evening A100 SXM showed Available from about 19:29 to 19:36 KST and was gone by 19:46, so this lab waits for stock with a script that creates the cluster through GraphQL, runs both nodes and deletes it after at most 75 minutes ([`cluster.py`](https://github.com/litkhai/runpod-hols/blob/main/cluster/01-pytorch-distributed/cluster.py)).
@@ -158,6 +171,19 @@ python3 lab.py delete
 <figure class="shot"><a href="{{ '/assets/img/cluster/pod-telemetry-2x4090.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/pod-telemetry-2x4090.webp' | relative_url }}" alt="Pod Telemetry 탭: RTX 4090 두 장 사용률 100%" loading="lazy" width="1400" height="998"></a><figcaption>RTX 4090 두 장 실행 중 Telemetry: 두 GPU 모두 100% 인데, 학습 속도는 이상치의 5분의 1 이었다.</figcaption></figure>
 
 1단계 비용은 약 USD 0.40 (Pod 7분과 3분).
+
+**Pod 한 대에 H100 SXM 4장** (2026-11-08. 클러스터 재고가 없을 때도 단일 Pod 는 재고가 있었다):
+
+| 2026-11-08, US-NE-1 | H100 SXM 80GB 4장 |
+|---|---|
+| 가격 | 시간당 USD 15.96 |
+| 연결 (`topo -m`) | `NV18`: 모든 쌍 사이 NVLink 18개 |
+| all-reduce `busbw`, 1 MiB / 1 GiB | 11.1 / **356.3 GB/s** |
+| DDP, GPU 1장 | 54,981 samples/s (스텝 4.7 ms) |
+| DDP, GPU 4장 | 179,442 samples/s (스텝 5.7 ms) |
+| 확장 효율 (4장 / 1장 × 4) | **0.82** |
+
+연결은 A100 두 장의 1.8배, H100 한 장은 A100 한 장의 2.4배였지만 효율은 0.82 로 떨어졌다. 계산 4.7 ms 에 all-reduce 약 1 ms 라, GPU 가 빠를수록 연결이 성능을 좌우한다. 클러스터와 비교할 노드 안의 천장이 이것이다. 2단계 소켓 실행은 노드 사이 0.32 GB/s 였다. 11.5분에 약 USD 3.
 
 ### 2단계 — Instant Cluster
 
@@ -258,6 +284,19 @@ python3 lab.py delete
 
 第 1 阶段花费约 USD 0.40（Pod 运行 7 分钟和 3 分钟）。
 
+**一台 Pod 中的 4 块 H100 SXM**（2026-11-08；没有集群库存时，单台 Pod 有库存）：
+
+| 2026-11-08，US-NE-1 | 4 块 H100 SXM 80GB |
+|---|---|
+| 价格 | 每小时 USD 15.96 |
+| 连接（`topo -m`） | `NV18`：每对之间 18 条 NVLink |
+| all-reduce `busbw`，1 MiB / 1 GiB | 11.1 / **356.3 GB/s** |
+| DDP，1 块 GPU | 54,981 samples/s（每步 4.7 ms） |
+| DDP，4 块 GPU | 179,442 samples/s（每步 5.7 ms） |
+| 扩展效率（4 块 / 1 块 × 4） | **0.82** |
+
+连接是两块 A100 的 1.8 倍，单块 H100 在这里是单块 A100 的 2.4 倍，但扩展效率降到 0.82：计算 4.7 ms 对 all-reduce 约 1 ms，GPU 越快，连接越起决定作用。这是与集群比较的节点内上限——第 2 阶段的 Socket 运行在节点间只有 0.32 GB/s。11.5 分钟约 USD 3。
+
 ### 第 2 阶段 — Instant Cluster
 
 集群可以在控制台创建（**Clusters → Create cluster**），也可以用 GraphQL 的 `createCluster` / `deleteCluster`；REST API 没有集群端点。表单按小时显示整个集群的价格，并把每种类型标为 Available 或 Unavailable。2026-11-07 所有类型都是 **Unavailable**，而同一时间单台 A100 SXM 和 H100 SXM Pod 可以部署。表单从 GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }` 读取，Unavailable 时返回 `null`。当天晚上 A100 SXM 在韩国时间约 19:29–19:36 显示 Available，到 19:46 又消失了；因此本实验用脚本等待库存，通过 GraphQL 创建集群，在两个节点上运行，最迟 75 分钟后删除（[`cluster.py`](https://github.com/litkhai/runpod-hols/blob/main/cluster/01-pytorch-distributed/cluster.py)）。
@@ -356,6 +395,19 @@ python3 lab.py delete
 <figure class="shot"><a href="{{ '/assets/img/cluster/pod-telemetry-2x4090.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/pod-telemetry-2x4090.webp' | relative_url }}" alt="Pod の Telemetry タブ：RTX 4090 2 基とも使用率 100%" loading="lazy" width="1400" height="998"></a><figcaption>RTX 4090 × 2 の実行中の Telemetry：2 基とも 100% なのに、学習速度は理想の 5 分の 1 でした。</figcaption></figure>
 
 ステージ 1 の費用は約 USD 0.40（Pod 7 分と 3 分）。
+
+**Pod 1 台に H100 SXM 4 基**（2026-11-08。クラスタの在庫がないときも単体 Pod には在庫がありました）：
+
+| 2026-11-08、US-NE-1 | H100 SXM 80GB 4 基 |
+|---|---|
+| 価格 | 時間あたり USD 15.96 |
+| 接続（`topo -m`） | `NV18`：すべてのペア間に NVLink 18 本 |
+| all-reduce `busbw`、1 MiB / 1 GiB | 11.1 / **356.3 GB/s** |
+| DDP、GPU 1 基 | 54,981 samples/s（ステップ 4.7 ms） |
+| DDP、GPU 4 基 | 179,442 samples/s（ステップ 5.7 ms） |
+| スケーリング効率（4 基 / 1 基 × 4） | **0.82** |
+
+接続は A100 2 基の 1.8 倍、H100 1 基はここで A100 1 基の 2.4 倍でしたが、効率は 0.82 に下がりました。計算 4.7 ms に対し all-reduce 約 1 ms で、GPU が速いほど接続が性能を左右します。これがクラスタと比べるべきノード内の上限です。ステージ 2 のソケット実行はノード間 0.32 GB/s でした。11.5 分で約 USD 3。
 
 ### ステージ 2 — Instant Cluster
 
