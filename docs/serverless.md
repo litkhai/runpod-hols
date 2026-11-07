@@ -24,6 +24,7 @@ Runpod Serverless runs your code as an autoscaling HTTP endpoint. Workers start 
 | [06-autoscaling](https://github.com/litkhai/runpod-hols/tree/main/serverless/06-autoscaling) | Run 2026-11-07 | Queue delay vs request count scalers, per-worker concurrency |
 | [07-streaming](https://github.com/litkhai/runpod-hols/tree/main/serverless/07-streaming) | Run 2026-11-07 | `/stream` chunk latency, the cost of each `yield`, `/runsync` with a generator |
 | [08-job-lifecycle](https://github.com/litkhai/runpod-hols/tree/main/serverless/08-job-lifecycle) | Run 2026-11-07 | Every way a job ends: failed, cancelled, timed out, expired, purged, retried |
+| [09-active-workers](https://github.com/litkhai/runpod-hols/tree/main/serverless/09-active-workers) | Run 2026-11-07 | One active worker for an hour: cold starts and billing |
 | [10-flash](https://github.com/litkhai/runpod-hols/tree/main/serverless/10-flash) | Run 2026-11-07 | Flash (`runpod` 2.x, `rp flash`): a decorated function deployed without a Dockerfile |
 | [11-hub](https://github.com/litkhai/runpod-hols/tree/main/serverless/11-hub) | Run 2026-11-07 | One-click Faster Whisper from the Hub: what the console creates, cold and warm calls |
 
@@ -268,6 +269,20 @@ A generator handler with `return_aggregate_stream: True`, read through `/stream/
 
 A client should read `error` to tell the three kinds of `FAILED` apart, treat a 404 after a successful submit as a lost job, and fall back from `/runsync` to `/status` for anything near 90 s. Catch exceptions in the handler if callers should not see your tracebacks.
 
+### Lab 09 — active workers
+
+`workersMin` 1 keeps a worker running between requests. One active worker on the CPU endpoint of Lab 06, 17:00–18:00 KST, with a 1 s job every ten minutes:
+
+| 2026-11-07, CPU 2 vCPU | Result |
+|---|---|
+| First job, 2 min after `workersMin` 1 | `delayTime` 4.4 s: the worker started only then |
+| Next five jobs | One worker, `delayTime` 0.09 s |
+| Job after `workersMin` 0 | New worker, `delayTime` 3.6 s |
+| Billed for the active hour | 3,353 s, USD 0.01746 |
+| Rate, active vs flex hours | **USD 0.0000052/s vs 0.0000050–0.0000052/s** |
+
+No active-worker discount showed on this CPU endpoint. Six jobs that would have billed under a minute on flex billed nearly the whole hour, so keep a worker active only for steady traffic where every request needs a warm start.
+
 ### Lab 10 — Flash
 
 Flash now ships inside the main SDK (`runpod` 2.x, CLI `rp`); the standalone `runpod-flash` package stopped receiving fixes on 2026-10-29. A function decorated with `@app.queue(cpu="cpu3c-2-4", dependencies=["numpy"])` became an ordinary queue endpoint (2026-11-07):
@@ -320,6 +335,7 @@ Runpod Serverless 는 코드를 오토스케일 HTTP 엔드포인트로 실행�
 | [06-autoscaling](https://github.com/litkhai/runpod-hols/tree/main/serverless/06-autoscaling) | 2026-11-07 실행 | Queue delay 와 Request count 스케일러, 워커당 동시성 |
 | [07-streaming](https://github.com/litkhai/runpod-hols/tree/main/serverless/07-streaming) | 2026-11-07 실행 | `/stream` 청크 지연, `yield` 한 번의 비용, 제너레이터와 `/runsync` |
 | [08-job-lifecycle](https://github.com/litkhai/runpod-hols/tree/main/serverless/08-job-lifecycle) | 2026-11-07 실행 | 작업이 끝나는 모든 방식: 실패, 취소, 시간 초과, 만료, purge, 재시도 |
+| [09-active-workers](https://github.com/litkhai/runpod-hols/tree/main/serverless/09-active-workers) | 2026-11-07 실행 | 활성 워커 하나를 한 시간: 콜드 스타트와 청구 |
 | [10-flash](https://github.com/litkhai/runpod-hols/tree/main/serverless/10-flash) | 2026-11-07 실행 | Flash (`runpod` 2.x, `rp flash`): Dockerfile 없이 데코레이터 함수를 배포 |
 | [11-hub](https://github.com/litkhai/runpod-hols/tree/main/serverless/11-hub) | 2026-11-07 실행 | Hub 에서 Faster Whisper 원클릭 배포: 콘솔이 만드는 것, 콜드·웜 호출 |
 
@@ -564,6 +580,20 @@ GitHub 연동으로 배포한 실습 01, CPU 워커, `workers_min = 0` 기준입
 
 클라이언트는 `error` 를 읽어 세 종류의 `FAILED` 를 구분하고, 제출에 성공한 뒤의 404 는 잃어버린 작업으로 처리하며, 90초에 가까운 작업은 `/runsync` 대신 `/status` 로 넘어가야 합니다. 호출자에게 트레이스백을 보이고 싶지 않다면 핸들러에서 예외를 잡으세요.
 
+### 실습 09 — 활성 워커
+
+`workersMin` 1 은 요청 사이에도 워커를 켜 둡니다. 실습 06 의 CPU 엔드포인트에 17:00–18:00 KST 동안 활성 워커 하나를 두고 10분마다 1초짜리 작업을 보냈습니다.
+
+| 2026-11-07, CPU 2 vCPU | 결과 |
+|---|---|
+| `workersMin` 1 2분 뒤 첫 작업 | `delayTime` 4.4초: 워커가 그때야 시작 |
+| 다음 다섯 작업 | 워커 하나, `delayTime` 0.09초 |
+| `workersMin` 0 이후 작업 | 새 워커, `delayTime` 3.6초 |
+| 활성 시간대 청구 | 3,353초, USD 0.01746 |
+| 요율, 활성 vs flex 시간대 | **초당 USD 0.0000052 vs 0.0000050–0.0000052** |
+
+이 CPU 엔드포인트에서는 활성 워커 할인이 보이지 않았습니다. flex 였다면 1분도 안 됐을 작업 6건이 한 시간 가까이 청구됐으니, 활성 워커는 모든 요청에 웜 스타트가 필요한 꾸준한 트래픽에만 두세요.
+
 ### 실습 10 — Flash
 
 Flash 는 이제 메인 SDK (`runpod` 2.x, CLI `rp`) 안에 있습니다. 별도 패키지 `runpod-flash` 는 2026-10-29 부터 수정을 받지 않습니다. `@app.queue(cpu="cpu3c-2-4", dependencies=["numpy"])` 를 단 함수가 평범한 큐 엔드포인트가 되었습니다 (2026-11-07):
@@ -616,6 +646,7 @@ Runpod Serverless 将你的代码作为自动扩缩的 HTTP 端点运行。请�
 | [06-autoscaling](https://github.com/litkhai/runpod-hols/tree/main/serverless/06-autoscaling) | 2026-11-07 已运行 | Queue delay 与 Request count 扩缩器、每个 worker 的并发 |
 | [07-streaming](https://github.com/litkhai/runpod-hols/tree/main/serverless/07-streaming) | 2026-11-07 已运行 | `/stream` 分块延迟、每次 `yield` 的开销、生成器下的 `/runsync` |
 | [08-job-lifecycle](https://github.com/litkhai/runpod-hols/tree/main/serverless/08-job-lifecycle) | 2026-11-07 已运行 | 任务结束的所有方式：失败、取消、超时、过期、清空、重试 |
+| [09-active-workers](https://github.com/litkhai/runpod-hols/tree/main/serverless/09-active-workers) | 2026-11-07 已运行 | 一个 active worker 运行一小时：冷启动与账单 |
 | [10-flash](https://github.com/litkhai/runpod-hols/tree/main/serverless/10-flash) | 2026-11-07 已运行 | Flash（`runpod` 2.x，`rp flash`）：不写 Dockerfile 部署一个装饰过的函数 |
 | [11-hub](https://github.com/litkhai/runpod-hols/tree/main/serverless/11-hub) | 2026-11-07 已运行 | 从 Hub 一键部署 Faster Whisper：控制台创建了什么，冷/热调用 |
 
@@ -860,6 +891,20 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 
 客户端应读取 `error` 来区分三种 `FAILED`，把提交成功后的 404 当作丢失的任务，接近 90 秒的任务应从 `/runsync` 退回到 `/status`。若不想让调用方看到 traceback，请在 handler 中捕获异常。
 
+### 实验 09 — active worker
+
+`workersMin` 1 让 worker 在请求之间也保持运行。在实验 06 的 CPU 端点上，17:00–18:00 KST 保持一个 active worker，每十分钟发送一个 1 秒的任务：
+
+| 2026-11-07，CPU 2 vCPU | 结果 |
+|---|---|
+| 设为 `workersMin` 1 两分钟后的首个任务 | `delayTime` 4.4 秒：worker 这时才启动 |
+| 之后五个任务 | 同一个 worker，`delayTime` 0.09 秒 |
+| 设回 `workersMin` 0 后的任务 | 新 worker，`delayTime` 3.6 秒 |
+| active 那一小时的计费 | 3,353 秒，USD 0.01746 |
+| 费率，active 与 flex 时段 | **每秒 USD 0.0000052 对 0.0000050–0.0000052** |
+
+在这个 CPU 端点上没有看到 active worker 折扣。按 flex 计费不到一分钟的 6 个任务，被计了将近一整小时；只有在流量稳定、每个请求都需要热启动时才保留 active worker。
+
 ### 实验 10 — Flash
 
 Flash 现在包含在主 SDK（`runpod` 2.x，CLI `rp`）中；独立包 `runpod-flash` 自 2026-10-29 起不再修复。一个带 `@app.queue(cpu="cpu3c-2-4", dependencies=["numpy"])` 装饰器的函数变成了普通的队列端点（2026-11-07）：
@@ -912,6 +957,7 @@ Runpod Serverless は、コードをオートスケールする HTTP エンド�
 | [06-autoscaling](https://github.com/litkhai/runpod-hols/tree/main/serverless/06-autoscaling) | 2026-11-07 実行 | Queue delay と Request count のスケーラー、ワーカーあたりの同時実行数 |
 | [07-streaming](https://github.com/litkhai/runpod-hols/tree/main/serverless/07-streaming) | 2026-11-07 実行 | `/stream` のチャンク遅延、`yield` 1 回のコスト、ジェネレーターと `/runsync` |
 | [08-job-lifecycle](https://github.com/litkhai/runpod-hols/tree/main/serverless/08-job-lifecycle) | 2026-11-07 実行 | ジョブの終わり方すべて：失敗、キャンセル、タイムアウト、期限切れ、パージ、リトライ |
+| [09-active-workers](https://github.com/litkhai/runpod-hols/tree/main/serverless/09-active-workers) | 2026-11-07 実行 | アクティブワーカー 1 つを 1 時間：コールドスタートと請求 |
 | [10-flash](https://github.com/litkhai/runpod-hols/tree/main/serverless/10-flash) | 2026-11-07 実行 | Flash（`runpod` 2.x、`rp flash`）：Dockerfile なしでデコレーター付き関数をデプロイ |
 | [11-hub](https://github.com/litkhai/runpod-hols/tree/main/serverless/11-hub) | 2026-11-07 実行 | Hub から Faster Whisper をワンクリックデプロイ：コンソールが作るもの、コールド・ウォーム呼び出し |
 
@@ -1155,6 +1201,20 @@ GitHub からデプロイした ラボ 01、CPU worker、`workers_min = 0`：
 | 完了した `/run` の結果 | 約 30 分読めて、その後 404 |
 
 クライアントは `error` を読んで 3 種類の `FAILED` を区別し、送信成功後の 404 は失われたジョブとして扱い、90 秒に近いジョブは `/runsync` から `/status` に切り替えるべきです。呼び出し側にトレースバックを見せたくなければ、ハンドラーで例外を捕まえてください。
+
+### ラボ 09 — アクティブワーカー
+
+`workersMin` 1 はリクエストの合間もワーカーを動かし続けます。ラボ 06 の CPU エンドポイントで 17:00〜18:00 KST にアクティブワーカーを 1 つ置き、10 分ごとに 1 秒のジョブを送りました。
+
+| 2026-11-07、CPU 2 vCPU | 結果 |
+|---|---|
+| `workersMin` 1 の 2 分後の最初のジョブ | `delayTime` 4.4 秒：ワーカーはこの時点で起動 |
+| 続く 5 ジョブ | 同じワーカー、`delayTime` 0.09 秒 |
+| `workersMin` 0 に戻した後のジョブ | 新しいワーカー、`delayTime` 3.6 秒 |
+| アクティブな 1 時間の請求 | 3,353 秒、USD 0.01746 |
+| 料金、アクティブ vs flex の時間帯 | **毎秒 USD 0.0000052 対 0.0000050〜0.0000052** |
+
+この CPU エンドポイントではアクティブワーカーの割引は見えませんでした。flex なら 1 分未満の 6 ジョブがほぼ 1 時間分請求されたので、アクティブワーカーはすべてのリクエストにウォームスタートが必要な安定したトラフィックにだけ置いてください。
 
 ### ラボ 10 — Flash
 
