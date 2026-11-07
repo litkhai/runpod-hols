@@ -21,6 +21,7 @@ Runpod Serverless runs your code as an autoscaling HTTP endpoint. Workers start 
 | [03-vllm-endpoint](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) | Run 2026-11-05 | Prebuilt `worker-vllm` image deployed from a script, OpenAI SDK client |
 | [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | Run 2026-11-07 | HTTP-server worker on a load-balancing endpoint, latency against a queue endpoint |
 | [05-bulk-requests](https://github.com/litkhai/runpod-hols/tree/main/serverless/05-bulk-requests) | Run 2026-11-07 | Bulk Requests: batches on a dedicated worker, checked against billing |
+| [06-autoscaling](https://github.com/litkhai/runpod-hols/tree/main/serverless/06-autoscaling) | Run 2026-11-07 | Queue delay vs request count scalers, per-worker concurrency |
 
 ### Where the model lives
 
@@ -219,6 +220,20 @@ Queue endpoints now carry a **Bulk Requests** tab: submit an array of `/run`-sha
 
 No rate discount showed on this CPU endpoint; the saving came from packing 30 requests onto one worker instead of paying start-up and idle time for each.
 
+### Lab 06 — autoscaling and concurrency
+
+Fifty 2-second jobs sent at once to a CPU endpoint with at most five workers, under each scaler type and with the worker's `concurrency_modifier` raised to 4:
+
+| Scaler | Concurrency | Workers used | All done after |
+|---|---|---|---|
+| Queue delay, 4 s | 1 | 5, all within 2 s | 42.6 s |
+| Request count, 25 | 1 | 2, one retired once the queue fell under 25 | 135.6 s |
+| Request count, 25 | 4 | 2 | 36.0 s |
+
+- **Queue delay** jumps to the cap as soon as requests wait; **request count** keeps one worker per N queued requests on the way down as well as up, so a long tail runs on one worker.
+- **Concurrency is the cheaper scale-out** for I/O-bound handlers: the same two workers did the work almost four times faster.
+- A one-job-at-a-time worker lost about 1.3 s fetching each next job, and every worker's first job paid about 3 s of start-up even when `/health` called it *idle*. `/health` itself trailed by about 20 s.
+
 [Full lab in the repo →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
 </div>
@@ -238,6 +253,7 @@ Runpod Serverless 는 코드를 오토스케일 HTTP 엔드포인트로 실행�
 | [03-vllm-endpoint](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) | 2026-11-05 실행 | 미리 빌드된 `worker-vllm` 이미지를 스크립트로 배포, OpenAI SDK 클라이언트 |
 | [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | 2026-11-07 실행 | 로드밸런싱 엔드포인트의 HTTP 서버 워커, 큐 엔드포인트와 지연 비교 |
 | [05-bulk-requests](https://github.com/litkhai/runpod-hols/tree/main/serverless/05-bulk-requests) | 2026-11-07 실행 | Bulk Requests: 전용 워커의 배치, 청구 내역으로 확인 |
+| [06-autoscaling](https://github.com/litkhai/runpod-hols/tree/main/serverless/06-autoscaling) | 2026-11-07 실행 | Queue delay 와 Request count 스케일러, 워커당 동시성 |
 
 ### 모델은 어디에 두는가
 
@@ -436,6 +452,20 @@ Lab 03 은 Runpod 이 미리 빌드한 `runpod/worker-v1-vllm:v2.30.2` 에 `Qwen
 
 이 CPU 엔드포인트에서는 요율 할인이 보이지 않았습니다. 절약은 요청 30건을 워커 하나에 몰아, 건마다 기동·유휴 시간을 내지 않은 데서 나왔습니다.
 
+### 실습 06 — 오토스케일링과 동시성
+
+최대 워커 5개인 CPU 엔드포인트에 2초짜리 작업 50개를 한꺼번에 보내고, 스케일러 유형별로, 그리고 워커의 `concurrency_modifier` 를 4로 올려 비교했습니다:
+
+| 스케일러 | 동시성 | 쓴 워커 | 모두 끝난 시점 |
+|---|---|---|---|
+| Queue delay, 4초 | 1 | 5, 모두 2초 안에 | 42.6초 |
+| Request count, 25 | 1 | 2, 대기열이 25 아래로 내려가자 하나가 내려감 | 135.6초 |
+| Request count, 25 | 4 | 2 | 36.0초 |
+
+- **Queue delay** 는 요청이 기다리기 시작하면 곧바로 상한까지 늘립니다. **Request count** 는 대기 요청 N 개마다 워커 하나를 늘릴 때뿐 아니라 줄일 때도 지켜서, 긴 꼬리를 워커 하나가 처리합니다.
+- I/O 위주 핸들러라면 **동시성이 더 싼 확장**입니다. 같은 워커 둘이 거의 네 배 빨리 끝냈습니다.
+- 한 번에 하나씩 처리하는 워커는 다음 작업을 가져올 때마다 약 1.3초를 잃었고, 모든 워커의 첫 작업은 `/health` 가 *idle* 이라고 보여 줄 때도 약 3초의 기동 시간을 냈습니다. `/health` 자체도 약 20초 늦었습니다.
+
 [저장소에서 전체 실습 보기 →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
 </div>
@@ -455,6 +485,7 @@ Runpod Serverless 将你的代码作为自动扩缩的 HTTP 端点运行。请�
 | [03-vllm-endpoint](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) | 2026-11-05 已运行 | 用脚本部署预构建的 `worker-vllm` 镜像，OpenAI SDK 客户端 |
 | [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | 2026-11-07 已运行 | 负载均衡端点上的 HTTP 服务器 worker，与队列端点比较延迟 |
 | [05-bulk-requests](https://github.com/litkhai/runpod-hols/tree/main/serverless/05-bulk-requests) | 2026-11-07 已运行 | Bulk Requests：专用 worker 上的批处理，用账单核对 |
+| [06-autoscaling](https://github.com/litkhai/runpod-hols/tree/main/serverless/06-autoscaling) | 2026-11-07 已运行 | Queue delay 与 Request count 扩缩器、每个 worker 的并发 |
 
 ### 模型放在哪里
 
@@ -653,6 +684,20 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 
 在这个 CPU 端点上没有看到费率折扣；省下的钱来自把 30 个请求集中到一个 worker 上，而不是每个请求都付启动和空闲时间。
 
+### 实验 06 — 自动扩缩与并发
+
+向最多 5 个 worker 的 CPU 端点一次性发送 50 个 2 秒的任务，分别使用两种扩缩器，并把 worker 的 `concurrency_modifier` 提高到 4：
+
+| 扩缩器 | 并发 | 使用的 worker | 全部完成 |
+|---|---|---|---|
+| Queue delay，4 秒 | 1 | 5 个，2 秒内全部开始 | 42.6 秒 |
+| Request count，25 | 1 | 2 个，队列降到 25 以下后撤掉一个 | 135.6 秒 |
+| Request count，25 | 4 | 2 个 | 36.0 秒 |
+
+- **Queue delay** 一旦有请求等待就直接扩到上限；**Request count** 在扩和缩两个方向上都按每 N 个排队请求一个 worker，因此长尾由一个 worker 处理。
+- 对 I/O 密集的 handler，**并发是更便宜的扩展方式**：同样两个 worker 快了将近四倍。
+- 每次只处理一个任务的 worker 每取一个新任务约损失 1.3 秒；即使 `/health` 显示为 *idle*，每个 worker 的第一个任务仍要付出约 3 秒的启动时间。`/health` 本身约滞后 20 秒。
+
 [在仓库中查看完整实验 →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
 </div>
@@ -672,6 +717,7 @@ Runpod Serverless は、コードをオートスケールする HTTP エンド�
 | [03-vllm-endpoint](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) | 2026-11-05 実行 | ビルド済みの `worker-vllm` イメージをスクリプトでデプロイ、OpenAI SDK クライアント |
 | [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | 2026-11-07 実行 | ロードバランシング・エンドポイント上の HTTP サーバーワーカー、キュー型エンドポイントと遅延を比較 |
 | [05-bulk-requests](https://github.com/litkhai/runpod-hols/tree/main/serverless/05-bulk-requests) | 2026-11-07 実行 | Bulk Requests：専用ワーカー上のバッチを請求で確認 |
+| [06-autoscaling](https://github.com/litkhai/runpod-hols/tree/main/serverless/06-autoscaling) | 2026-11-07 実行 | Queue delay と Request count のスケーラー、ワーカーあたりの同時実行数 |
 
 ### モデルをどこに置くか
 
@@ -869,6 +915,20 @@ Lab 03 は Runpod のビルド済み `runpod/worker-v1-vllm:v2.30.2` と `Qwen/Q
 | 課金時間 | 30 件で 45 秒（1 件あたり 1.5 秒） |
 
 この CPU エンドポイントでは料金の割引は見えませんでした。節約になったのは、30 件を 1 つのワーカーにまとめ、リクエストごとに起動やアイドルの時間を払わずに済んだ点です。
+
+### ラボ 06 — オートスケーリングと同時実行
+
+最大ワーカー 5 の CPU エンドポイントに 2 秒のジョブ 50 件を一度に送り、スケーラーの種類ごとに、さらにワーカーの `concurrency_modifier` を 4 に上げて比べました：
+
+| スケーラー | 同時実行 | 使ったワーカー | すべて完了 |
+|---|---|---|---|
+| Queue delay、4 秒 | 1 | 5、すべて 2 秒以内 | 42.6 秒 |
+| Request count、25 | 1 | 2、キューが 25 を切ると 1 つ停止 | 135.6 秒 |
+| Request count、25 | 4 | 2 | 36.0 秒 |
+
+- **Queue delay** はリクエストが待ち始めるとすぐ上限まで増やします。**Request count** は待機リクエスト N 件ごとにワーカー 1 つを、増やすときだけでなく減らすときも守るため、長い裾野を 1 つのワーカーが処理します。
+- I/O 中心のハンドラーなら **同時実行の方が安い拡張** です。同じ 2 つのワーカーがほぼ 4 倍速く終えました。
+- 1 件ずつ処理するワーカーは次のジョブを取るたびに約 1.3 秒を失い、`/health` が *idle* と表示していても、各ワーカーの最初のジョブは約 3 秒の起動時間を払いました。`/health` 自体も約 20 秒遅れていました。
 
 [リポジトリでラボ全体を見る →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
