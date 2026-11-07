@@ -22,6 +22,7 @@ Runpod Serverless runs your code as an autoscaling HTTP endpoint. Workers start 
 | [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | Run 2026-11-07 | HTTP-server worker on a load-balancing endpoint, latency against a queue endpoint |
 | [05-bulk-requests](https://github.com/litkhai/runpod-hols/tree/main/serverless/05-bulk-requests) | Run 2026-11-07 | Bulk Requests: batches on a dedicated worker, checked against billing |
 | [06-autoscaling](https://github.com/litkhai/runpod-hols/tree/main/serverless/06-autoscaling) | Run 2026-11-07 | Queue delay vs request count scalers, per-worker concurrency |
+| [07-streaming](https://github.com/litkhai/runpod-hols/tree/main/serverless/07-streaming) | Run 2026-11-07 | `/stream` chunk latency, the cost of each `yield`, `/runsync` with a generator |
 | [08-job-lifecycle](https://github.com/litkhai/runpod-hols/tree/main/serverless/08-job-lifecycle) | Run 2026-11-07 | Every way a job ends: failed, cancelled, timed out, expired, purged, retried |
 
 ### Where the model lives
@@ -235,6 +236,21 @@ Fifty 2-second jobs sent at once to a CPU endpoint with at most five workers, un
 - **Concurrency is the cheaper scale-out** for I/O-bound handlers: the same two workers did the work almost four times faster.
 - A one-job-at-a-time worker lost about 1.3 s fetching each next job, and every worker's first job paid about 3 s of start-up even when `/health` called it *idle*. `/health` itself trailed by about 20 s.
 
+### Lab 07 — streaming
+
+A generator handler with `return_aggregate_stream: True`, read through `/stream/<id>` (2026-11-07, CPU):
+
+| | 20 chunks × 0.5 s | 200 chunks × 20 ms |
+|---|---|---|
+| First chunk, warm worker | 1.6–1.7 s | 0.95 s |
+| Chunk made → received, median | 0.31–0.37 s | 0.51–0.55 s |
+| Handler time | 11.1 s for 10 s | **13.0–13.4 s for 4 s** |
+| `/runsync` | All at once, 12.2 s | All at once, 14.9 s |
+
+- `/stream` is a long poll: each call returns as soon as new chunks exist.
+- **Each `yield` held the generator for about 45–55 ms.** A model yielding single tokens at 50 per second would be slowed to under 15 — yield groups of tokens.
+- `/runsync` and the final `/status` return the whole list only at the end; only `/stream` streams.
+
 ### Lab 08 — how jobs end
 
 | Case | What `/status` showed (2026-11-07) |
@@ -270,6 +286,7 @@ Runpod Serverless 는 코드를 오토스케일 HTTP 엔드포인트로 실행�
 | [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | 2026-11-07 실행 | 로드밸런싱 엔드포인트의 HTTP 서버 워커, 큐 엔드포인트와 지연 비교 |
 | [05-bulk-requests](https://github.com/litkhai/runpod-hols/tree/main/serverless/05-bulk-requests) | 2026-11-07 실행 | Bulk Requests: 전용 워커의 배치, 청구 내역으로 확인 |
 | [06-autoscaling](https://github.com/litkhai/runpod-hols/tree/main/serverless/06-autoscaling) | 2026-11-07 실행 | Queue delay 와 Request count 스케일러, 워커당 동시성 |
+| [07-streaming](https://github.com/litkhai/runpod-hols/tree/main/serverless/07-streaming) | 2026-11-07 실행 | `/stream` 청크 지연, `yield` 한 번의 비용, 제너레이터와 `/runsync` |
 | [08-job-lifecycle](https://github.com/litkhai/runpod-hols/tree/main/serverless/08-job-lifecycle) | 2026-11-07 실행 | 작업이 끝나는 모든 방식: 실패, 취소, 시간 초과, 만료, purge, 재시도 |
 
 ### 모델은 어디에 두는가
@@ -483,6 +500,21 @@ Lab 03 은 Runpod 이 미리 빌드한 `runpod/worker-v1-vllm:v2.30.2` 에 `Qwen
 - I/O 위주 핸들러라면 **동시성이 더 싼 확장**입니다. 같은 워커 둘이 거의 네 배 빨리 끝냈습니다.
 - 한 번에 하나씩 처리하는 워커는 다음 작업을 가져올 때마다 약 1.3초를 잃었고, 모든 워커의 첫 작업은 `/health` 가 *idle* 이라고 보여 줄 때도 약 3초의 기동 시간을 냈습니다. `/health` 자체도 약 20초 늦었습니다.
 
+### 실습 07 — 스트리밍
+
+`return_aggregate_stream: True` 인 제너레이터 핸들러를 `/stream/<id>` 로 읽었습니다 (2026-11-07, CPU):
+
+| | 청크 20개 × 0.5초 | 청크 200개 × 20 ms |
+|---|---|---|
+| 첫 청크, 워커가 떠 있을 때 | 1.6–1.7초 | 0.95초 |
+| 청크 생성 → 수신, 중앙값 | 0.31–0.37초 | 0.51–0.55초 |
+| 핸들러 시간 | 10초 분량에 11.1초 | **4초 분량에 13.0–13.4초** |
+| `/runsync` | 12.2초 뒤 한꺼번에 | 14.9초 뒤 한꺼번에 |
+
+- `/stream` 은 롱 폴링입니다. 호출마다 새 청크가 생기는 즉시 돌아옵니다.
+- **`yield` 한 번마다 제너레이터가 약 45–55 ms 멈췄습니다.** 초당 50 토큰을 하나씩 yield 하는 모델은 초당 15 토큰 아래로 느려집니다 — 토큰을 묶어서 yield 하세요.
+- `/runsync` 와 최종 `/status` 는 끝난 뒤 전체 목록을 한꺼번에 돌려줍니다. 스트리밍은 `/stream` 뿐입니다.
+
 ### 실습 08 — 작업이 끝나는 방식
 
 | 경우 | `/status` 가 보여 준 것 (2026-11-07) |
@@ -518,6 +550,7 @@ Runpod Serverless 将你的代码作为自动扩缩的 HTTP 端点运行。请�
 | [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | 2026-11-07 已运行 | 负载均衡端点上的 HTTP 服务器 worker，与队列端点比较延迟 |
 | [05-bulk-requests](https://github.com/litkhai/runpod-hols/tree/main/serverless/05-bulk-requests) | 2026-11-07 已运行 | Bulk Requests：专用 worker 上的批处理，用账单核对 |
 | [06-autoscaling](https://github.com/litkhai/runpod-hols/tree/main/serverless/06-autoscaling) | 2026-11-07 已运行 | Queue delay 与 Request count 扩缩器、每个 worker 的并发 |
+| [07-streaming](https://github.com/litkhai/runpod-hols/tree/main/serverless/07-streaming) | 2026-11-07 已运行 | `/stream` 分块延迟、每次 `yield` 的开销、生成器下的 `/runsync` |
 | [08-job-lifecycle](https://github.com/litkhai/runpod-hols/tree/main/serverless/08-job-lifecycle) | 2026-11-07 已运行 | 任务结束的所有方式：失败、取消、超时、过期、清空、重试 |
 
 ### 模型放在哪里
@@ -731,6 +764,21 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 - 对 I/O 密集的 handler，**并发是更便宜的扩展方式**：同样两个 worker 快了将近四倍。
 - 每次只处理一个任务的 worker 每取一个新任务约损失 1.3 秒；即使 `/health` 显示为 *idle*，每个 worker 的第一个任务仍要付出约 3 秒的启动时间。`/health` 本身约滞后 20 秒。
 
+### 实验 07 — 流式输出
+
+使用 `return_aggregate_stream: True` 的生成器 handler，通过 `/stream/<id>` 读取（2026-11-07，CPU）：
+
+| | 20 块 × 0.5 秒 | 200 块 × 20 ms |
+|---|---|---|
+| 第一块，worker 已在运行 | 1.6–1.7 秒 | 0.95 秒 |
+| 生成 → 收到，中位数 | 0.31–0.37 秒 | 0.51–0.55 秒 |
+| handler 用时 | 10 秒的内容用了 11.1 秒 | **4 秒的内容用了 13.0–13.4 秒** |
+| `/runsync` | 12.2 秒后一次性返回 | 14.9 秒后一次性返回 |
+
+- `/stream` 是长轮询：每次调用在有新块时立即返回。
+- **每次 `yield` 让生成器停顿约 45–55 ms。** 每秒 50 个 token、逐个 yield 的模型会被拖慢到每秒不足 15 个——请成组 yield。
+- `/runsync` 和最终的 `/status` 只在结束后一次性返回全部列表；只有 `/stream` 是流式的。
+
 ### 实验 08 — 任务如何结束
 
 | 情形 | `/status` 显示（2026-11-07） |
@@ -766,6 +814,7 @@ Runpod Serverless は、コードをオートスケールする HTTP エンド�
 | [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | 2026-11-07 実行 | ロードバランシング・エンドポイント上の HTTP サーバーワーカー、キュー型エンドポイントと遅延を比較 |
 | [05-bulk-requests](https://github.com/litkhai/runpod-hols/tree/main/serverless/05-bulk-requests) | 2026-11-07 実行 | Bulk Requests：専用ワーカー上のバッチを請求で確認 |
 | [06-autoscaling](https://github.com/litkhai/runpod-hols/tree/main/serverless/06-autoscaling) | 2026-11-07 実行 | Queue delay と Request count のスケーラー、ワーカーあたりの同時実行数 |
+| [07-streaming](https://github.com/litkhai/runpod-hols/tree/main/serverless/07-streaming) | 2026-11-07 実行 | `/stream` のチャンク遅延、`yield` 1 回のコスト、ジェネレーターと `/runsync` |
 | [08-job-lifecycle](https://github.com/litkhai/runpod-hols/tree/main/serverless/08-job-lifecycle) | 2026-11-07 実行 | ジョブの終わり方すべて：失敗、キャンセル、タイムアウト、期限切れ、パージ、リトライ |
 
 ### モデルをどこに置くか
@@ -978,6 +1027,21 @@ Lab 03 は Runpod のビルド済み `runpod/worker-v1-vllm:v2.30.2` と `Qwen/Q
 - **Queue delay** はリクエストが待ち始めるとすぐ上限まで増やします。**Request count** は待機リクエスト N 件ごとにワーカー 1 つを、増やすときだけでなく減らすときも守るため、長い裾野を 1 つのワーカーが処理します。
 - I/O 中心のハンドラーなら **同時実行の方が安い拡張** です。同じ 2 つのワーカーがほぼ 4 倍速く終えました。
 - 1 件ずつ処理するワーカーは次のジョブを取るたびに約 1.3 秒を失い、`/health` が *idle* と表示していても、各ワーカーの最初のジョブは約 3 秒の起動時間を払いました。`/health` 自体も約 20 秒遅れていました。
+
+### ラボ 07 — ストリーミング
+
+`return_aggregate_stream: True` のジェネレーター・ハンドラーを `/stream/<id>` で読みました（2026-11-07、CPU）：
+
+| | チャンク 20 個 × 0.5 秒 | チャンク 200 個 × 20 ms |
+|---|---|---|
+| 最初のチャンク、ワーカー起動済み | 1.6〜1.7 秒 | 0.95 秒 |
+| 生成 → 受信、中央値 | 0.31〜0.37 秒 | 0.51〜0.55 秒 |
+| ハンドラー時間 | 10 秒分に 11.1 秒 | **4 秒分に 13.0〜13.4 秒** |
+| `/runsync` | 12.2 秒後にまとめて | 14.9 秒後にまとめて |
+
+- `/stream` はロングポーリングです。呼び出しごとに新しいチャンクができ次第返ります。
+- **`yield` のたびにジェネレーターが約 45〜55 ms 止まりました。** 毎秒 50 トークンを 1 つずつ yield するモデルは毎秒 15 トークン未満に落ちます——トークンはまとめて yield してください。
+- `/runsync` と最終の `/status` は終了後に全リストをまとめて返します。ストリーミングするのは `/stream` だけです。
 
 ### ラボ 08 — ジョブの終わり方
 
