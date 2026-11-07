@@ -98,7 +98,7 @@ Community Cloud runs once, at the smallest scale that proves F1 and F2 — one u
 python3 pod_sweep.py --label RTX_4090_community --gpu "NVIDIA GeForce RTX 4090" --cloud COMMUNITY --cases chat --rates 1
 ```
 
-To measure one GPU type on different hosts, pin each run to a datacenter with `--dc` (e.g. `--dc EUR-IS-1`). On 2026-11-06 no Secure Cloud RTX 4090, A100 or H100 PCIe could be created for 60–120 minutes of retries, although the stock query said `Low`; the attempts are in [`results/capacity_attempts_2026-11-06.json`](./lab/results/capacity_attempts_2026-11-06.json).
+To measure one GPU type on different hosts, pin each run to a datacenter with `--dc` (e.g. `--dc EUR-IS-1`). On 2026-11-06 no Secure Cloud RTX 4090, A100 or H100 PCIe could be created for 60–120 minutes of retries, although the stock query said `Low`, and a 180-minute night retry (23:00–02:01 KST) got none either; the attempts are in [`results/capacity_attempts_2026-11-06.json`](./lab/results/capacity_attempts_2026-11-06.json).
 
 ### Results
 
@@ -208,7 +208,7 @@ Community Cloud는 F1과 F2를 확인하는 최소 규모로 한 번만 돌린�
 python3 pod_sweep.py --label RTX_4090_community --gpu "NVIDIA GeForce RTX 4090" --cloud COMMUNITY --cases chat --rates 1
 ```
 
-같은 GPU 종류를 서로 다른 호스트에서 재려면 `--dc`로 실행마다 데이터센터를 고정한다(예: `--dc EUR-IS-1`). 2026-11-06에는 재고 조회가 `Low`였는데도 Secure Cloud RTX 4090, A100, H100 PCIe를 60–120분 재시도하는 동안 한 대도 만들지 못했다. 시도 기록은 [`results/capacity_attempts_2026-11-06.json`](./lab/results/capacity_attempts_2026-11-06.json)에 있다.
+같은 GPU 종류를 서로 다른 호스트에서 재려면 `--dc`로 실행마다 데이터센터를 고정한다(예: `--dc EUR-IS-1`). 2026-11-06에는 재고 조회가 `Low`였는데도 Secure Cloud RTX 4090, A100, H100 PCIe를 60–120분 재시도하는 동안 한 대도 만들지 못했고, 밤 180분 재시도(23:00–02:01 KST)에서도 마찬가지였다. 시도 기록은 [`results/capacity_attempts_2026-11-06.json`](./lab/results/capacity_attempts_2026-11-06.json)에 있다.
 
 ### 결과
 
