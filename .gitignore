@@ -55,6 +55,7 @@ docs/Gemfile.lock
 **/.template.json
 **/.p2s.json
 **/.dist.json
+**/.watchdog.log
 
 # Lab artifacts / 실습 중 생성되는 산출물
 *.log
