@@ -51,7 +51,7 @@ The function's keyword arguments are the job's `input`. Imports go inside the fu
 
 The deployed endpoint was an ordinary queue endpoint — `/run`, `/runsync`, `/status` work with plain JSON — with FlashBoot on (`flashBootType: FLASHBOOT`), queue-delay scaling, `workersStandby: 2`, and all CPU datacenters allowed.
 
-> **Flash copies your account API key into every endpoint it creates.** The template env holds `RUNPOD_API_KEY` set to the exact key that ran `rp flash deploy` (also in dev sessions), so code on the worker — your function and every dependency — can act on the whole account. The SDK source says it is there so a worker can call other Flash functions. Use a key you can revoke, and check what stays behind: after `undeploy` and `app delete` the deploy template still existed with the key in it, "held by deleted endpoint … pending cleanup" for up to 90 minutes; this lab overwrote its env and deleted it afterwards. The dev session's template has no name and could not be found to check.
+> **Flash copies your account API key into every endpoint it creates.** The template env holds `RUNPOD_API_KEY` set to the exact key that ran `rp flash deploy` (also in dev sessions), so code on the worker — your function and every dependency — can act on the whole account. The SDK source says it is there so a worker can call other Flash functions. Use a key you can revoke, and check what stays behind: after `undeploy` and `app delete` the deploy template still existed with the key in it, "held by deleted endpoint … pending cleanup" for up to 90 minutes; this lab overwrote the key in its env right away. The dev session's template has no name and could not be found to check.
 
 Two more things to know:
 
@@ -107,7 +107,7 @@ rp flash undeploy --app lab10-flash -y && rp flash app delete lab10-flash -y
 
 배포된 엔드포인트는 평범한 큐 엔드포인트였다 — `/run`, `/runsync`, `/status` 가 일반 JSON 으로 동작 — FlashBoot 켬 (`flashBootType: FLASHBOOT`), queue delay 스케일링, `workersStandby: 2`, 모든 CPU 데이터센터 허용.
 
-> **Flash 는 만드는 모든 엔드포인트에 계정 API 키를 복사한다.** 템플릿 env 에 `rp flash deploy` 를 실행한 바로 그 키가 `RUNPOD_API_KEY` 로 들어가므로 (dev 세션도 마찬가지), 워커에서 도는 코드 — 내 함수와 모든 의존성 — 가 계정 전체를 다룰 수 있다. SDK 소스는 워커가 다른 Flash 함수를 부르기 위해서라고 설명한다. 폐기할 수 있는 키를 쓰고, 남는 것을 확인하자: `undeploy` 와 `app delete` 뒤에도 배포 템플릿이 키를 담은 채 남아 최대 90분간 "held by deleted endpoint … pending cleanup" 상태였다. 이 실습은 그 env 를 덮어쓰고 나중에 지웠다. dev 세션의 템플릿은 이름이 없어 찾아 확인할 수 없었다.
+> **Flash 는 만드는 모든 엔드포인트에 계정 API 키를 복사한다.** 템플릿 env 에 `rp flash deploy` 를 실행한 바로 그 키가 `RUNPOD_API_KEY` 로 들어가므로 (dev 세션도 마찬가지), 워커에서 도는 코드 — 내 함수와 모든 의존성 — 가 계정 전체를 다룰 수 있다. SDK 소스는 워커가 다른 Flash 함수를 부르기 위해서라고 설명한다. 폐기할 수 있는 키를 쓰고, 남는 것을 확인하자: `undeploy` 와 `app delete` 뒤에도 배포 템플릿이 키를 담은 채 남아 최대 90분간 "held by deleted endpoint … pending cleanup" 상태였다. 이 실습은 곧바로 env 의 키를 덮어썼다. dev 세션의 템플릿은 이름이 없어 찾아 확인할 수 없었다.
 
 알아 둘 것 두 가지:
 
