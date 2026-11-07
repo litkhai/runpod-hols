@@ -36,7 +36,10 @@ PODS, PER_POD = 2, 8
 IMAGE = "runpod/pytorch:1.0.7-cu1300-torch291-ubuntu2404-cluster"
 REMOTE = "/workspace/dist"
 FILES = ["run.sh", "nccl_bench.py", "ddp_train.py"]
-MAX_PER_HR = 40.0  # 16 x USD 2.148 = 34.37; anything above means a different price, so stop
+MAX_PER_HR = 80.0  # the account's spend limit; A100 16 x 2.148 = 34.37, H100 16 x 4.788 = 76.61
+# --gpus: the first type in stock wins; its short name goes into the results tag.
+# --gpus: 먼저 재고가 나온 종류로 만들고, 결과 태그에 그 짧은 이름을 넣는다.
+SHORT = {"NVIDIA A100-SXM4-80GB": "A100SXM", "NVIDIA H100 80GB HBM3": "H100SXM"}
 # Runpod puts these in the container environment; an SSH session does not inherit them.
 # Runpod 이 컨테이너 환경에 넣는 값. SSH 세션은 물려받지 않으므로 PID 1 에서 읽는다.
 ENV_FROM_PID1 = (". /etc/rp_environment 2>/dev/null; eval \"$(tr '\\0' '\\n' < /proc/1/environ | grep -E "
@@ -194,10 +197,16 @@ def pull(ts: list) -> None:
 
 def auto(a) -> int:
     end = time.time() + a.hours * 3600
+    global GPU
     while True:
-        s, price = stock()
+        for GPU in a.gpus.split(","):
+            s, price = stock()
+            if s:
+                break
         if s:
-            log("stock", s, f"${price}/GPU-hr")
+            log("stock", GPU, s, f"${price}/GPU-hr")
+            if a.tag == "auto":
+                a.tag = f"{PODS}x{PER_POD}x{SHORT.get(GPU, GPU.split()[-1])}-cluster"
             if price * PODS * PER_POD > MAX_PER_HR:
                 log("price above cap, not creating")
             elif clusters():
@@ -249,6 +258,7 @@ def main() -> int:
     ap.add_argument("action", choices=["stock", "list", "auto", "create", "show", "push", "run", "pull", "delete"])
     ap.add_argument("tag", nargs="?", default="2x8xA100SXM")
     ap.add_argument("--hours", type=float, default=48)
+    ap.add_argument("--gpus", default=GPU, help="comma-separated GPU type ids to wait for, in order")
     ap.add_argument("--every", type=int, default=120, help="seconds between stock checks")
     ap.add_argument("--stop", type=int, default=75, help="hard stop, minutes after create")
     a = ap.parse_args()
