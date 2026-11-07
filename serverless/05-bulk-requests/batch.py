@@ -62,9 +62,10 @@ def main() -> None:
     ap.add_argument("--every", type=int, default=300)
     ap.add_argument("--hours", type=float, default=26)
     ap.add_argument("--out", default="results/batch.json")
+    ap.add_argument("--input", help="job input as JSON; each gets an \"id\" field")
     a = ap.parse_args()
     if a.action == "submit":
-        b = call("POST", f"/{a.endpoint}/batch", [{"input": {"name": f"batch-{i}"}} for i in range(a.n)])
+        b = call("POST", f"/{a.endpoint}/batch", [{"input": ({**json.loads(a.input), "id": i} if a.input else {"name": f"batch-{i}"})} for i in range(a.n)])
         print(json.dumps(b))
         f = call("POST", f"/{a.endpoint}/batch/{b['id']}/finalize")
         print(json.dumps(f))

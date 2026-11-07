@@ -1,0 +1,67 @@
+{
+ "endpoint": "3xiuyqtrh6r0zl",
+ "start": "2026-11-07T20:30:00",
+ "minutes": 60,
+ "events": [
+  {
+   "at": "2026-11-07T20:31:30",
+   "label": "flex_0",
+   "wall_s": 90.65,
+   "status": "IN_QUEUE",
+   "delayTime_ms": null,
+   "executionTime_ms": null,
+   "workerId": null,
+   "worker_uptime_s": null
+  },
+  {
+   "at": "2026-11-07T20:33:56",
+   "label": "flex_1",
+   "wall_s": 25.32,
+   "status": "COMPLETED",
+   "delayTime_ms": 23855,
+   "executionTime_ms": 954,
+   "workerId": "hpt5ges02gw5zj",
+   "worker_uptime_s": null
+  },
+  {
+   "at": "2026-11-07T20:36:08",
+   "label": "flex_2",
+   "wall_s": 12.01,
+   "status": "COMPLETED",
+   "delayTime_ms": 10808,
+   "executionTime_ms": 729,
+   "workerId": "83o1r4cfbd3h8c",
+   "worker_uptime_s": null
+  },
+  {
+   "at": "2026-11-07T20:38:38",
+   "label": "flex_3",
+   "wall_s": 30.43,
+   "status": "COMPLETED",
+   "delayTime_ms": 29171,
+   "executionTime_ms": 746,
+   "workerId": "hpt5ges02gw5zj",
+   "worker_uptime_s": null
+  },
+  {
+   "at": "2026-11-07T20:40:59",
+   "label": "flex_4",
+   "wall_s": 20.71,
+   "status": "COMPLETED",
+   "delayTime_ms": 19421,
+   "executionTime_ms": 779,
+   "workerId": "c4fnnnpcluxmhf",
+   "worker_uptime_s": null
+  },
+  {
+   "at": "2026-11-07T20:43:25",
+   "label": "flex_5",
+   "wall_s": 25.48,
+   "status": "COMPLETED",
+   "delayTime_ms": 24150,
+   "executionTime_ms": 821,
+   "workerId": "ciqqunv56pirnq",
+   "worker_uptime_s": null
+  }
+ ]
+}

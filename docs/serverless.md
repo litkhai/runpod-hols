@@ -225,6 +225,8 @@ Queue endpoints now carry a **Bulk Requests** tab: submit an array of `/run`-sha
 
 No rate discount showed on this CPU endpoint; the saving came from packing 30 requests onto one worker instead of paying start-up and idle time for each.
 
+**On a GPU endpoint** (02-llm-chat pinned to RTX A5000, Qwen2.5-1.5B, 2026-11-07), 30 prompts as one batch ran on one worker in about three minutes (`delayTime` 93–133 s, 0.4–1.0 s each). Its billing hour came to **USD 0.000198/s against 0.000209/s** for ordinary and active-worker hours, 5% lower; that hour also held two minutes of an active worker and one cold job, and with those taken out at the ordinary rate the batch comes to about 8% off. Some discount, then, but nowhere near "up to 30%".
+
 ### Lab 06 — autoscaling and concurrency
 
 Fifty 2-second jobs sent at once to a CPU endpoint with at most five workers, under each scaler type and with the worker's `concurrency_modifier` raised to 4:
@@ -282,6 +284,8 @@ A client should read `error` to tell the three kinds of `FAILED` apart, treat a 
 | Rate, active vs flex hours | **USD 0.0000052/s vs 0.0000050–0.0000052/s** |
 
 No active-worker discount showed on this CPU endpoint. Six jobs that would have billed under a minute on flex billed nearly the whole hour, so keep a worker active only for steady traffic where every request needs a warm start.
+
+**On a GPU endpoint** (02-llm-chat pinned to RTX A5000, 21:00–22:00 KST): every job, the first included, ran on the same warm worker with `delayTime` 0.12–0.14 s, against 11–29 s cold on flex. The active hour billed 3,419 s for USD 0.713 at **USD 0.0002085/s — the same as the flex hour (0.0002085/s)**. No active-worker discount here either; the hour cost ten times what six flex jobs did (USD 0.071).
 
 ### Lab 10 — Flash
 
@@ -536,6 +540,8 @@ GitHub 연동으로 배포한 실습 01, CPU 워커, `workers_min = 0` 기준입
 
 이 CPU 엔드포인트에서는 요율 할인이 보이지 않았습니다. 절약은 요청 30건을 워커 하나에 몰아, 건마다 기동·유휴 시간을 내지 않은 데서 나왔습니다.
 
+**GPU 엔드포인트에서는** (02-llm-chat 을 RTX A5000 으로 고정, Qwen2.5-1.5B, 2026-11-07) 프롬프트 30건 배치가 워커 하나에서 약 3분 만에 끝났습니다 (`delayTime` 93–133초, 건당 0.4–1.0초). 그 시간대 청구는 **초당 USD 0.000198 로, 일반·활성 워커 시간대의 0.000209 보다** 5% 낮았습니다. 그 시간대에는 활성 워커 2분과 콜드 작업 하나도 섞여 있어, 이를 일반 요율로 빼면 배치는 약 8% 할인입니다. 할인은 있지만 "최대 30%" 와는 거리가 멉니다.
+
 ### 실습 06 — 오토스케일링과 동시성
 
 최대 워커 5개인 CPU 엔드포인트에 2초짜리 작업 50개를 한꺼번에 보내고, 스케일러 유형별로, 그리고 워커의 `concurrency_modifier` 를 4로 올려 비교했습니다:
@@ -593,6 +599,8 @@ GitHub 연동으로 배포한 실습 01, CPU 워커, `workers_min = 0` 기준입
 | 요율, 활성 vs flex 시간대 | **초당 USD 0.0000052 vs 0.0000050–0.0000052** |
 
 이 CPU 엔드포인트에서는 활성 워커 할인이 보이지 않았습니다. flex 였다면 1분도 안 됐을 작업 6건이 한 시간 가까이 청구됐으니, 활성 워커는 모든 요청에 웜 스타트가 필요한 꾸준한 트래픽에만 두세요.
+
+**GPU 엔드포인트에서는** (02-llm-chat 을 RTX A5000 으로 고정, 21:00–22:00 KST) 첫 작업을 포함해 모든 작업이 같은 웜 워커에서 `delayTime` 0.12–0.14초로 돌았습니다. flex 의 콜드 11–29초와 대비됩니다. 활성 시간대는 3,419초, USD 0.713 이 청구됐고 **초당 USD 0.0002085 로 flex 시간대 (0.0002085) 와 같았습니다.** 여기서도 활성 워커 할인은 없었고, 한 시간 비용은 flex 작업 6건 (USD 0.071) 의 10배였습니다.
 
 ### 실습 10 — Flash
 
@@ -847,6 +855,8 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 
 在这个 CPU 端点上没有看到费率折扣；省下的钱来自把 30 个请求集中到一个 worker 上，而不是每个请求都付启动和空闲时间。
 
+**在 GPU 端点上**（02-llm-chat 固定为 RTX A5000，Qwen2.5-1.5B，2026-11-07），30 个提示作为一个批次在一个 worker 上约三分钟跑完（`delayTime` 93–133 秒，每个 0.4–1.0 秒）。该小时的计费为**每秒 USD 0.000198，而普通与 active worker 时段为 0.000209**，低 5%；该小时还包含两分钟 active worker 和一个冷启动任务，按普通费率扣除后，批次约便宜 8%。有折扣，但远不到"最高 30%"。
+
 ### 实验 06 — 自动扩缩与并发
 
 向最多 5 个 worker 的 CPU 端点一次性发送 50 个 2 秒的任务，分别使用两种扩缩器，并把 worker 的 `concurrency_modifier` 提高到 4：
@@ -904,6 +914,8 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 | 费率，active 与 flex 时段 | **每秒 USD 0.0000052 对 0.0000050–0.0000052** |
 
 在这个 CPU 端点上没有看到 active worker 折扣。按 flex 计费不到一分钟的 6 个任务，被计了将近一整小时；只有在流量稳定、每个请求都需要热启动时才保留 active worker。
+
+**在 GPU 端点上**（02-llm-chat 固定为 RTX A5000，21:00–22:00 KST），包括第一个在内的所有任务都在同一个热 worker 上运行，`delayTime` 0.12–0.14 秒，而 flex 冷启动为 11–29 秒。active 那一小时计费 3,419 秒、USD 0.713，**每秒 USD 0.0002085，与 flex 时段（0.0002085）相同**。这里同样没有 active worker 折扣；这一小时的费用是 6 个 flex 任务（USD 0.071）的十倍。
 
 ### 实验 10 — Flash
 
@@ -1158,6 +1170,8 @@ GitHub からデプロイした ラボ 01、CPU worker、`workers_min = 0`：
 
 この CPU エンドポイントでは料金の割引は見えませんでした。節約になったのは、30 件を 1 つのワーカーにまとめ、リクエストごとに起動やアイドルの時間を払わずに済んだ点です。
 
+**GPU エンドポイントでは**（02-llm-chat を RTX A5000 に固定、Qwen2.5-1.5B、2026-11-07）、30 件のプロンプトのバッチが 1 つのワーカーで約 3 分で終わりました（`delayTime` 93〜133 秒、1 件 0.4〜1.0 秒）。その時間帯の請求は**毎秒 USD 0.000198 で、通常・アクティブワーカーの時間帯の 0.000209 より** 5% 低くなりました。その時間帯にはアクティブワーカー 2 分とコールドジョブ 1 件も含まれ、これらを通常料金で除くとバッチは約 8% 引きです。割引はあるものの、「最大 30%」には遠く及びません。
+
 ### ラボ 06 — オートスケーリングと同時実行
 
 最大ワーカー 5 の CPU エンドポイントに 2 秒のジョブ 50 件を一度に送り、スケーラーの種類ごとに、さらにワーカーの `concurrency_modifier` を 4 に上げて比べました：
@@ -1215,6 +1229,8 @@ GitHub からデプロイした ラボ 01、CPU worker、`workers_min = 0`：
 | 料金、アクティブ vs flex の時間帯 | **毎秒 USD 0.0000052 対 0.0000050〜0.0000052** |
 
 この CPU エンドポイントではアクティブワーカーの割引は見えませんでした。flex なら 1 分未満の 6 ジョブがほぼ 1 時間分請求されたので、アクティブワーカーはすべてのリクエストにウォームスタートが必要な安定したトラフィックにだけ置いてください。
+
+**GPU エンドポイントでは**（02-llm-chat を RTX A5000 に固定、21:00〜22:00 KST）、最初を含むすべてのジョブが同じウォームワーカーで `delayTime` 0.12〜0.14 秒で動きました。flex のコールドは 11〜29 秒です。アクティブな 1 時間は 3,419 秒、USD 0.713 が請求され、**毎秒 USD 0.0002085 で flex の時間帯（0.0002085）と同じでした。** ここでもアクティブワーカーの割引はなく、1 時間の費用は flex ジョブ 6 件（USD 0.071）の 10 倍でした。
 
 ### ラボ 10 — Flash
 

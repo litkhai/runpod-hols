@@ -8,7 +8,7 @@
 
 **Goal:** keep one active worker (`workersMin` 1) on a CPU queue endpoint for a clock hour, check whether requests skip the cold start, and compare the billed rate with flex hours on the same endpoint.
 
-**Time:** one clock hour plus about an hour of billing lag · **Cost:** USD 0.018 for the hour (CPU 2 vCPU, 2026-11-07)
+**Time:** one clock hour plus about an hour of billing lag · **Cost:** USD 0.018 for the hour on CPU 2 vCPU, USD 0.78 for the GPU run (RTX A5000, 2026-11-07)
 
 ### Files
 
@@ -16,6 +16,7 @@
 |---|---|
 | `active.py` | At `--start` PATCHes `workersMin` 1, sends a 1 s job with `/runsync` every `--every` minutes, PATCHes `workersMin` 0 at the end, then sends one more job two minutes later |
 | `results/active.json` | Each PATCH and each job: `delayTime`, `executionTime`, `workerId`, the worker's uptime |
+| `results/gpu_flex.json`, `results/gpu_active.json` | The GPU run below: `--flex 6` reference jobs, then the active hour |
 
 Worker: the probe from [`../06-autoscaling`](../06-autoscaling), on that lab's endpoint (CPU 2 vCPU, max 5 workers, idle timeout 5 s).
 
@@ -45,11 +46,39 @@ Start on the hour: billing comes only in hourly buckets, so the active hour shou
 
 - **The first request still paid a cold start.** `workersMin` 1 was set at 17:00:00, but the worker's handler started only when the first job arrived at 17:02 (`delayTime` 4.4 s, uptime 1.9 s).
 - **After that, one worker stayed for the hour.** The same worker served every job, its uptime grew by 600 s between jobs, and `delayTime` stayed at about 0.09 s against 3.6–4.4 s cold.
-- **No active-worker discount on this CPU endpoint.** The active hour billed USD 0.0000052 per second, the same as the flex hours (0.0000050–0.0000052); the differences follow the disk billed in each hour. The advertised discount may apply to GPU workers only.
+- **No active-worker discount on this CPU endpoint.** The active hour billed USD 0.0000052 per second, the same as the flex hours (0.0000050–0.0000052); the differences follow the disk billed in each hour. The GPU run below showed none either.
 - **Billing counted 3,353 of 3,600 s.** That is about 93 % of the hour, close to the time from the worker's start at 17:02 to the end of the hour.
 - **The cost of skipping cold starts.** Six jobs in the hour billed 3,353 s with an active worker. The same six on flex would have billed a few seconds each, under 60 s in all, so here an always-on worker cost more than fifty times as much to save about 4 s per request.
 
 Only keep a worker active where the latency matters on every request, and when traffic is steady enough to keep it busy.
+
+### GPU — RTX A5000 (2026-11-07, 20:30–22:05 KST)
+
+Endpoint 02-llm-chat (Qwen2.5-1.5B, model cached on a network volume) pinned to **RTX A5000** for the evening so every hour billed the same GPU; the original GPU list was restored afterwards. Prompt: *"What is Runpod Serverless in two sentences?"*, `max_tokens` 120.
+
+```bash
+P='{"prompt":"What is Runpod Serverless in two sentences?","max_tokens":120}'
+python3 active.py 3xiuyqtrh6r0zl --flex 6 --every 2 --input "$P" --out results/gpu_flex.json
+python3 active.py 3xiuyqtrh6r0zl --start 21:00 --minutes 55 --every 10 --input "$P" --out results/gpu_active.json
+```
+
+| Jobs | `delayTime` | `executionTime` | Workers |
+|---|---|---|---|
+| Flex, first | over 90 s (image pull and model load; `/runsync` gave up with `IN_QUEUE`) | — | — |
+| Flex, next five | **10.8–29.2 s** | 0.73–0.95 s | four different |
+| Active, all six (first at 21:02) | **0.12–0.14 s** | 0.48–0.81 s | one, `abso9nm3g445k0` |
+| After `workersMin` 0 | 30.2 s | 0.78 s | a flex worker again |
+
+| Billing hour (UTC) | What ran | Billed time | Amount | Per second |
+|---|---|---|---|---|
+| 11:00 | Six flex jobs, 20:31–20:43 KST | 342 s | USD 0.0712 | 0.0002085 |
+| 12:00 | One active worker, six jobs | 3,419 s | USD 0.7129 | 0.0002085 |
+| 13:00 | Active worker to 22:02, one flex job, the 30-request batch | 414 s | USD 0.0818 | 0.0001977 |
+
+- **Unlike the CPU run, the first active job was already warm.** The GPU worker started on the 21:00 PATCH and was ready when the first job came at 21:02.
+- **No active-worker discount on the GPU either.** The active hour billed USD 0.0002085 per second, to four significant digits the flex hour's rate, and 3,419 of 3,600 s.
+- **The price of warm starts.** The hour cost USD 0.713 for six jobs; the six flex jobs cost USD 0.071, each paying 11–29 s of cold start. An active worker pays off only when the requests in the hour would otherwise add up to most of it.
+- The 13:00 hour is the batch of [Lab 05](../05-bulk-requests).
 
 ---
 
@@ -57,7 +86,7 @@ Only keep a worker active where the latency matters on every request, and when t
 
 **목표:** CPU 큐 엔드포인트에 활성 워커 (`workersMin` 1) 하나를 정각부터 한 시간 켜 두고, 요청이 콜드 스타트를 건너뛰는지, 같은 엔드포인트의 flex 시간대와 비교해 청구 요율이 어떤지 본다.
 
-**시간:** 정각부터 한 시간 + 청구 반영 약 1시간 · **비용:** 한 시간에 USD 0.018 (CPU 2 vCPU, 2026-11-07)
+**시간:** 정각부터 한 시간 + 청구 반영 약 1시간 · **비용:** CPU 2 vCPU 한 시간 USD 0.018, GPU 실행 USD 0.78 (RTX A5000, 2026-11-07)
 
 ### 파일
 
@@ -65,6 +94,7 @@ Only keep a worker active where the latency matters on every request, and when t
 |---|---|
 | `active.py` | `--start` 에 `workersMin` 1 로 PATCH, `--every` 분마다 1초짜리 작업을 `/runsync` 로 보내고, 끝나면 `workersMin` 0 으로 PATCH 한 뒤 2분 뒤에 작업을 한 번 더 보낸다 |
 | `results/active.json` | PATCH 와 작업마다 `delayTime`, `executionTime`, `workerId`, 워커 가동 시간 |
+| `results/gpu_flex.json`, `results/gpu_active.json` | 아래 GPU 실행: `--flex 6` 기준 작업, 이어서 활성 시간대 |
 
 워커: [`../06-autoscaling`](../06-autoscaling) 의 프로브를 그 실습의 엔드포인트 (CPU 2 vCPU, 최대 워커 5, 유휴 제한 5초) 에서 그대로 쓴다.
 
@@ -94,8 +124,36 @@ curl -s -H "Authorization: Bearer $RUNPOD_API_KEY" \
 
 - **첫 요청은 여전히 콜드 스타트를 냈다.** 17:00:00 에 `workersMin` 1 로 바꿨지만, 워커의 핸들러는 첫 작업이 들어온 17:02 에야 시작했다 (`delayTime` 4.4초, 가동 시간 1.9초).
 - **그 뒤로는 워커 하나가 한 시간 내내 있었다.** 모든 작업을 같은 워커가 처리했고, 가동 시간은 작업마다 600초씩 늘었으며, `delayTime` 은 콜드일 때 3.6–4.4초에 비해 약 0.09초에 머물렀다.
-- **이 CPU 엔드포인트에서는 활성 워커 할인이 없었다.** 활성 시간대는 초당 USD 0.0000052 로, flex 시간대 (0.0000050–0.0000052) 와 같다. 차이는 시간대마다 청구된 디스크 양을 따라간다. 광고된 할인은 GPU 워커에만 적용될 수 있다.
+- **이 CPU 엔드포인트에서는 활성 워커 할인이 없었다.** 활성 시간대는 초당 USD 0.0000052 로, flex 시간대 (0.0000050–0.0000052) 와 같다. 차이는 시간대마다 청구된 디스크 양을 따라간다. 아래 GPU 실행에서도 할인은 없었다.
 - **청구는 3,600초 중 3,353초였다.** 한 시간의 약 93 % 로, 17:02 에 워커가 시작한 뒤 정각까지의 시간과 비슷하다.
 - **콜드 스타트를 없앤 값.** 활성 워커로 한 시간에 작업 6건을 처리하는 데 3,353초가 청구됐다. 같은 6건을 flex 로 보냈다면 건당 몇 초, 모두 합쳐 60초 미만이었을 것이다. 여기서는 상시 워커가 요청당 약 4초를 줄이는 데 50배 넘게 들었다.
 
 모든 요청에서 지연이 중요하고, 워커를 계속 바쁘게 할 만큼 트래픽이 꾸준할 때만 활성 워커를 둔다.
+
+### GPU — RTX A5000 (2026-11-07, 20:30–22:05 KST)
+
+엔드포인트 02-llm-chat (Qwen2.5-1.5B, 네트워크 볼륨 캐시) 을 그날 저녁 **RTX A5000** 하나로 고정해 모든 시간대가 같은 GPU 로 청구되게 했고, 끝난 뒤 원래 GPU 목록으로 되돌렸다. 프롬프트: *"What is Runpod Serverless in two sentences?"*, `max_tokens` 120.
+
+```bash
+P='{"prompt":"What is Runpod Serverless in two sentences?","max_tokens":120}'
+python3 active.py 3xiuyqtrh6r0zl --flex 6 --every 2 --input "$P" --out results/gpu_flex.json
+python3 active.py 3xiuyqtrh6r0zl --start 21:00 --minutes 55 --every 10 --input "$P" --out results/gpu_active.json
+```
+
+| 작업 | `delayTime` | `executionTime` | 워커 |
+|---|---|---|---|
+| flex, 첫 작업 | 90초 넘음 (이미지 받기와 모델 로드. `/runsync` 가 `IN_QUEUE` 로 끊김) | — | — |
+| flex, 다음 5건 | **10.8–29.2초** | 0.73–0.95초 | 서로 다른 4개 |
+| 활성, 6건 모두 (첫 건 21:02) | **0.12–0.14초** | 0.48–0.81초 | 하나, `abso9nm3g445k0` |
+| `workersMin` 0 이후 | 30.2초 | 0.78초 | 다시 flex 워커 |
+
+| 청구 시간대 (UTC) | 실행한 것 | 청구 시간 | 금액 | 초당 |
+|---|---|---|---|---|
+| 11:00 | flex 작업 6건, 20:31–20:43 KST | 342초 | USD 0.0712 | 0.0002085 |
+| 12:00 | 활성 워커 하나, 작업 6건 | 3,419초 | USD 0.7129 | 0.0002085 |
+| 13:00 | 22:02 까지 활성 워커, flex 작업 1건, 30건 배치 | 414초 | USD 0.0818 | 0.0001977 |
+
+- **CPU 때와 달리 첫 활성 작업도 이미 웜이었다.** GPU 워커는 21:00 PATCH 에 시작해, 21:02 첫 작업이 올 때 준비돼 있었다.
+- **GPU 에서도 활성 워커 할인은 없었다.** 활성 시간대는 초당 USD 0.0002085 로 유효숫자 네 자리까지 flex 시간대와 같았고, 3,600초 중 3,419초가 청구됐다.
+- **웜 스타트의 값.** 작업 6건에 한 시간 USD 0.713 이 들었다. flex 작업 6건은 건마다 11–29초의 콜드 스타트를 내고도 USD 0.071 이었다. 활성 워커는 그 시간의 요청을 합치면 한 시간 대부분을 채울 때만 이득이다.
+- 13:00 시간대는 [실습 05](../05-bulk-requests) 의 배치다.

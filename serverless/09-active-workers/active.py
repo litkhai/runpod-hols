@@ -34,9 +34,9 @@ def patch(endpoint: str, body: dict) -> dict:
     return {k: d.get(k) for k in ("workersMin", "workersMax", "idleTimeout")}
 
 
-def probe(endpoint: str, label: str) -> dict:
+def probe(endpoint: str, label: str, inp: dict | None = None) -> dict:
     t = time.time()
-    r = call(f"https://api.runpod.ai/v2/{endpoint}/runsync", {"input": {"mode": "sleep", "seconds": 1, "tag": label}},
+    r = call(f"https://api.runpod.ai/v2/{endpoint}/runsync", {"input": inp or {"mode": "sleep", "seconds": 1, "tag": label}},
              timeout=200)
     o = r.get("output") or {}
     return {"at": dt.datetime.now().isoformat(timespec="seconds"), "label": label, "wall_s": round(time.time() - t, 2),
@@ -51,7 +51,10 @@ def main() -> None:
     ap.add_argument("--minutes", type=int, default=60)
     ap.add_argument("--every", type=int, default=10)
     ap.add_argument("--out", default="results/active.json")
+    ap.add_argument("--input", help="job input as JSON (default: the 06 probe's 1 s sleep)")
+    ap.add_argument("--flex", type=int, default=0, help="instead: N plain jobs, --every minutes apart, no PATCH")
     a = ap.parse_args()
+    inp = json.loads(a.input) if a.input else None
     now = dt.datetime.now()
     start = now.replace(hour=int(a.start[:2]), minute=int(a.start[3:]), second=0, microsecond=0)
     log = {"endpoint": a.endpoint, "start": start.isoformat(), "minutes": a.minutes, "events": []}
@@ -64,6 +67,12 @@ def main() -> None:
         out.write_text(json.dumps(log, indent=1) + "\n")
 
     time.sleep(max(0, (start - dt.datetime.now()).total_seconds()))
+    if a.flex:
+        for n in range(a.flex):
+            save(probe(a.endpoint, f"flex_{n}", inp))
+            if n < a.flex - 1:
+                time.sleep(a.every * 60)
+        return
     save({"at": dt.datetime.now().isoformat(timespec="seconds"), "patch": patch(a.endpoint, {"workersMin": 1})})
     end = start + dt.timedelta(minutes=a.minutes)
     n = 0
@@ -72,12 +81,12 @@ def main() -> None:
         time.sleep(max(0, (nxt - dt.datetime.now()).total_seconds()))
         if dt.datetime.now() >= end - dt.timedelta(seconds=30):
             break
-        save(probe(a.endpoint, f"active_{n}"))
+        save(probe(a.endpoint, f"active_{n}", inp))
         n += 1
     time.sleep(max(0, (end - dt.datetime.now()).total_seconds()))
     save({"at": dt.datetime.now().isoformat(timespec="seconds"), "patch": patch(a.endpoint, {"workersMin": 0})})
     time.sleep(120)
-    save(probe(a.endpoint, "after_flex"))
+    save(probe(a.endpoint, "after_flex", inp))
 
 
 if __name__ == "__main__":
