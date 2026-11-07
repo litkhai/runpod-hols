@@ -1,0 +1,217 @@
+[
+  {
+    "ok": true,
+    "total_s": 38.613,
+    "attempts": [
+      {
+        "status": 502,
+        "s": 33.161,
+        "error": "error code: 502\n"
+      },
+      {
+        "status": 200,
+        "s": 0.449,
+        "error": null
+      }
+    ],
+    "body": {
+      "greeting": "Hello, load_balancer-0!",
+      "worker_id": "vehfixeusto49o",
+      "served_by_this_worker": 1,
+      "uptime_s": 36.7,
+      "handler_ms": 0.033
+    },
+    "endpoint": "load_balancer",
+    "n": 0,
+    "phase": "cold",
+    "utc": "2026-11-07T04:13:26Z"
+  },
+  {
+    "ok": true,
+    "total_s": 0.749,
+    "attempts": [
+      {
+        "status": 200,
+        "s": 0.749,
+        "error": null
+      }
+    ],
+    "body": {
+      "greeting": "Hello, load_balancer-1!",
+      "worker_id": "vehfixeusto49o",
+      "served_by_this_worker": 2,
+      "uptime_s": 37.4,
+      "handler_ms": 0.025
+    },
+    "endpoint": "load_balancer",
+    "n": 1,
+    "phase": "warm",
+    "utc": "2026-11-07T04:13:27Z"
+  },
+  {
+    "ok": true,
+    "total_s": 0.749,
+    "attempts": [
+      {
+        "status": 200,
+        "s": 0.749,
+        "error": null
+      }
+    ],
+    "body": {
+      "greeting": "Hello, load_balancer-2!",
+      "worker_id": "vehfixeusto49o",
+      "served_by_this_worker": 3,
+      "uptime_s": 38.2,
+      "handler_ms": 0.024
+    },
+    "endpoint": "load_balancer",
+    "n": 2,
+    "phase": "warm",
+    "utc": "2026-11-07T04:13:28Z"
+  },
+  {
+    "ok": true,
+    "total_s": 0.368,
+    "attempts": [
+      {
+        "status": 200,
+        "s": 0.368,
+        "error": null
+      }
+    ],
+    "body": {
+      "greeting": "Hello, load_balancer-3!",
+      "worker_id": "vehfixeusto49o",
+      "served_by_this_worker": 4,
+      "uptime_s": 38.5,
+      "handler_ms": 0.03
+    },
+    "endpoint": "load_balancer",
+    "n": 3,
+    "phase": "warm",
+    "utc": "2026-11-07T04:13:28Z"
+  },
+  {
+    "ok": true,
+    "total_s": 0.339,
+    "attempts": [
+      {
+        "status": 200,
+        "s": 0.339,
+        "error": null
+      }
+    ],
+    "body": {
+      "greeting": "Hello, load_balancer-4!",
+      "worker_id": "vehfixeusto49o",
+      "served_by_this_worker": 5,
+      "uptime_s": 38.9,
+      "handler_ms": 0.024
+    },
+    "endpoint": "load_balancer",
+    "n": 4,
+    "phase": "warm",
+    "utc": "2026-11-07T04:13:29Z"
+  },
+  {
+    "ok": true,
+    "total_s": 0.336,
+    "attempts": [
+      {
+        "status": 200,
+        "s": 0.336,
+        "error": null
+      }
+    ],
+    "body": {
+      "greeting": "Hello, load_balancer-5!",
+      "worker_id": "vehfixeusto49o",
+      "served_by_this_worker": 6,
+      "uptime_s": 39.2,
+      "handler_ms": 0.025
+    },
+    "endpoint": "load_balancer",
+    "n": 5,
+    "phase": "warm",
+    "utc": "2026-11-07T04:13:29Z"
+  },
+  {
+    "ok": true,
+    "total_s": 4.741,
+    "status": 200,
+    "delayTime_ms": 4126,
+    "executionTime_ms": 164,
+    "workerId": "h170erdxibnzpa",
+    "job_status": "COMPLETED",
+    "endpoint": "queue",
+    "n": 0,
+    "phase": "cold",
+    "utc": "2026-11-07T04:14:34Z"
+  },
+  {
+    "ok": true,
+    "total_s": 1.35,
+    "status": 200,
+    "delayTime_ms": 874,
+    "executionTime_ms": 182,
+    "workerId": "h170erdxibnzpa",
+    "job_status": "COMPLETED",
+    "endpoint": "queue",
+    "n": 1,
+    "phase": "warm",
+    "utc": "2026-11-07T04:14:35Z"
+  },
+  {
+    "ok": true,
+    "total_s": 1.323,
+    "status": 200,
+    "delayTime_ms": 838,
+    "executionTime_ms": 206,
+    "workerId": "h170erdxibnzpa",
+    "job_status": "COMPLETED",
+    "endpoint": "queue",
+    "n": 2,
+    "phase": "warm",
+    "utc": "2026-11-07T04:14:36Z"
+  },
+  {
+    "ok": true,
+    "total_s": 1.33,
+    "status": 200,
+    "delayTime_ms": 833,
+    "executionTime_ms": 218,
+    "workerId": "h170erdxibnzpa",
+    "job_status": "COMPLETED",
+    "endpoint": "queue",
+    "n": 3,
+    "phase": "warm",
+    "utc": "2026-11-07T04:14:38Z"
+  },
+  {
+    "ok": true,
+    "total_s": 1.232,
+    "status": 200,
+    "delayTime_ms": 829,
+    "executionTime_ms": 135,
+    "workerId": "h170erdxibnzpa",
+    "job_status": "COMPLETED",
+    "endpoint": "queue",
+    "n": 4,
+    "phase": "warm",
+    "utc": "2026-11-07T04:14:39Z"
+  },
+  {
+    "ok": true,
+    "total_s": 1.329,
+    "status": 200,
+    "delayTime_ms": 892,
+    "executionTime_ms": 166,
+    "workerId": "h170erdxibnzpa",
+    "job_status": "COMPLETED",
+    "endpoint": "queue",
+    "n": 5,
+    "phase": "warm",
+    "utc": "2026-11-07T04:14:40Z"
+  }
+]

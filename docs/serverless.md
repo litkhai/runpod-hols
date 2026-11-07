@@ -19,6 +19,7 @@ Runpod Serverless runs your code as an autoscaling HTTP endpoint. Workers start 
 | [01-hello-worker](https://github.com/litkhai/runpod-hols/tree/main/serverless/01-hello-worker) | Ready | handler → local test → Docker image → deploy |
 | [02-llm-chat](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat) | Ready | Small instruct model from GitHub, weights from Runpod's cached-model store |
 | [03-vllm-endpoint](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) | Run 2026-11-05 | Prebuilt `worker-vllm` image deployed from a script, OpenAI SDK client |
+| [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | Run 2026-11-07 | HTTP-server worker on a load-balancing endpoint, latency against a queue endpoint |
 
 ### Where the model lives
 
@@ -185,6 +186,23 @@ Lab 03 deploys Runpod's prebuilt `runpod/worker-v1-vllm:v2.30.2` with `Qwen/Qwen
 **Deleting the template can wait an hour and a half or more.** After the endpoint delete, `DELETE /templates/{id}` answered *"Template is still held by deleted endpoint …, which is pending cleanup"*. The message says *"within about 90 minutes"*; on 2026-11-05 one template was still refused at 86 minutes and deleted at 116, another deleted at 92. The lab's `teardown.py` keeps the id and asks you to rerun it.
 </div>
 
+### Lab 04 — load-balancing endpoints
+
+A load-balancing endpoint sends `https://<id>.api.runpod.ai/<path>` straight to a plain HTTP server in the worker — no handler, no queue, no runpod SDK. The platform polls the worker's `GET /ping` (204 while starting, 200 when ready) to decide where to route. It is created in the console, not the REST API (`POST /endpoints` has no type field), and it scales on request count only.
+
+| 2026-11-07 | Load balancer | Queue (01-hello-world) |
+|---|---|---|
+| Cold request, total | 38.6 s, 34.0 s | 4.7 s, 5.1 s |
+| Warm requests | **0.34–0.75 s** | 1.23–1.38 s |
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/lb-endpoint-overview.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/lb-endpoint-overview.webp' | relative_url }}" alt="Load balancer endpoint overview with the endpoint URL and the PORT and PORT_HEALTH contract" loading="lazy" width="1400" height="998"></a><figcaption>A load-balancing endpoint: one host per endpoint, a <strong>Test</strong> tab instead of Requests, and the worker contract spelled out — HTTP server on <code>PORT</code>, <code>/ping</code> on <code>PORT_HEALTH</code>.</figcaption></figure>
+
+- **Warm calls are 2–4× faster** — no queue and no status round trip.
+- **A cold call is held, then refused:** after 28–33 s it got HTTP 502, and a retry 5 s later succeeded. Nothing queues, so the client must retry.
+- **The response is the app's own** — no `delayTime`, `executionTime` or `workerId`.
+
+Use it for latency-sensitive HTTP APIs with a warm worker and a retrying client; keep the queue for long jobs and anything that must survive a scale-up from zero.
+
 [Full lab in the repo →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
 </div>
@@ -202,6 +220,7 @@ Runpod Serverless 는 코드를 오토스케일 HTTP 엔드포인트로 실행�
 | [01-hello-worker](https://github.com/litkhai/runpod-hols/tree/main/serverless/01-hello-worker) | 준비됨 | handler → 로컬 테스트 → Docker 이미지 → 배포 |
 | [02-llm-chat](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat) | 준비됨 | GitHub 연동으로 소형 instruct 모델 배포, 가중치는 Runpod 모델 캐시 |
 | [03-vllm-endpoint](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) | 2026-11-05 실행 | 미리 빌드된 `worker-vllm` 이미지를 스크립트로 배포, OpenAI SDK 클라이언트 |
+| [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | 2026-11-07 실행 | 로드밸런싱 엔드포인트의 HTTP 서버 워커, 큐 엔드포인트와 지연 비교 |
 
 ### 모델은 어디에 두는가
 
@@ -368,6 +387,23 @@ Lab 03 은 Runpod 이 미리 빌드한 `runpod/worker-v1-vllm:v2.30.2` 에 `Qwen
 **템플릿 삭제는 1시간 반 이상 기다려야 할 수 있습니다.** 엔드포인트를 지운 뒤 `DELETE /templates/{id}` 가 *"Template is still held by deleted endpoint …, which is pending cleanup"* 으로 응답했습니다. 메시지는 *"within about 90 minutes"* 라고 하지만, 2026-11-05 에는 한 템플릿이 86분에도 거부되다 116분에 지워졌고, 다른 하나는 92분에 지워졌습니다. 실습의 `teardown.py` 는 id 를 남기고 다시 실행하라고 안내합니다.
 </div>
 
+### 실습 04 — 로드밸런싱 엔드포인트
+
+로드밸런싱 엔드포인트는 `https://<id>.api.runpod.ai/<경로>` 를 워커 안의 평범한 HTTP 서버로 바로 보냅니다. 핸들러도 큐도 runpod SDK 도 없습니다. 플랫폼은 워커의 `GET /ping` (기동 중 204, 준비되면 200) 을 보고 라우팅할 곳을 정합니다. REST API 로는 만들 수 없어 콘솔에서 만들고 (`POST /endpoints` 에 유형 필드가 없음), 스케일링은 요청 수 방식만 됩니다.
+
+| 2026-11-07 | 로드밸런서 | 큐 (01-hello-world) |
+|---|---|---|
+| 콜드 요청, 전체 | 38.6초, 34.0초 | 4.7초, 5.1초 |
+| 웜 요청 | **0.34–0.75초** | 1.23–1.38초 |
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/lb-endpoint-overview.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/lb-endpoint-overview.webp' | relative_url }}" alt="엔드포인트 URL 과 PORT, PORT_HEALTH 규약이 보이는 로드밸런서 엔드포인트 개요" loading="lazy" width="1400" height="998"></a><figcaption>로드밸런싱 엔드포인트: 엔드포인트마다 호스트 하나, Requests 대신 <strong>Test</strong> 탭, 그리고 워커 규약 — <code>PORT</code> 의 HTTP 서버, <code>PORT_HEALTH</code> 의 <code>/ping</code>.</figcaption></figure>
+
+- **웜 호출은 2–4배 빠릅니다.** 큐도 상태 왕복도 없습니다.
+- **콜드 호출은 붙잡혀 있다가 거절됩니다.** 28–33초 뒤 HTTP 502 를 받았고, 5초 뒤 재시도는 성공했습니다. 줄을 서지 않으므로 클라이언트가 재시도해야 합니다.
+- **응답은 앱의 것입니다.** `delayTime`, `executionTime`, `workerId` 가 없습니다.
+
+웜 워커가 있고 클라이언트가 재시도하는, 지연에 민감한 HTTP API 에 쓰세요. 긴 작업과 0 에서 확장하는 동안 살아남아야 하는 요청은 큐를 쓰세요.
+
 [저장소에서 전체 실습 보기 →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
 </div>
@@ -385,6 +421,7 @@ Runpod Serverless 将你的代码作为自动扩缩的 HTTP 端点运行。请�
 | [01-hello-worker](https://github.com/litkhai/runpod-hols/tree/main/serverless/01-hello-worker) | 就绪 | handler → 本地测试 → Docker 镜像 → 部署 |
 | [02-llm-chat](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat) | 就绪 | 从 GitHub 部署小型 instruct 模型，权重来自 Runpod 的缓存模型存储 |
 | [03-vllm-endpoint](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) | 2026-11-05 已运行 | 用脚本部署预构建的 `worker-vllm` 镜像，OpenAI SDK 客户端 |
+| [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | 2026-11-07 已运行 | 负载均衡端点上的 HTTP 服务器 worker，与队列端点比较延迟 |
 
 ### 模型放在哪里
 
@@ -551,6 +588,23 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 **删除模板可能要等一个半小时甚至更久。** 删除端点后，`DELETE /templates/{id}` 返回 *"Template is still held by deleted endpoint …, which is pending cleanup"*。消息称 *"within about 90 minutes"*；2026-11-05 当天，一个模板在 86 分钟时仍被拒绝，到 116 分钟才删除，另一个在 92 分钟删除。实验的 `teardown.py` 会保留 id 并提示你重新运行。
 </div>
 
+### 实验 04 — 负载均衡端点
+
+负载均衡端点把 `https://<id>.api.runpod.ai/<路径>` 直接转发给 worker 里的普通 HTTP 服务器——没有 handler、没有队列、也不需要 runpod SDK。平台轮询 worker 的 `GET /ping`（启动中 204，就绪 200）来决定路由。它只能在控制台创建，REST API 不行（`POST /endpoints` 没有类型字段），且只支持按请求数扩缩。
+
+| 2026-11-07 | 负载均衡 | 队列（01-hello-world） |
+|---|---|---|
+| 冷请求，总计 | 38.6 秒，34.0 秒 | 4.7 秒，5.1 秒 |
+| 热请求 | **0.34–0.75 秒** | 1.23–1.38 秒 |
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/lb-endpoint-overview.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/lb-endpoint-overview.webp' | relative_url }}" alt="负载均衡端点概览，显示端点 URL 以及 PORT 和 PORT_HEALTH 约定" loading="lazy" width="1400" height="998"></a><figcaption>负载均衡端点：每个端点一个主机名，用 <strong>Test</strong> 标签页代替 Requests，并写明 worker 约定——<code>PORT</code> 上的 HTTP 服务器，<code>PORT_HEALTH</code> 上的 <code>/ping</code>。</figcaption></figure>
+
+- **热调用快 2–4 倍**——没有队列，也没有状态往返。
+- **冷调用会被挂起然后被拒绝：** 28–33 秒后收到 HTTP 502，5 秒后重试成功。请求不会排队，客户端必须重试。
+- **响应完全来自应用**——没有 `delayTime`、`executionTime` 或 `workerId`。
+
+适合有热 worker、客户端会重试、对延迟敏感的 HTTP API；长任务以及必须在从零扩容期间保住的请求，仍用队列。
+
 [在仓库中查看完整实验 →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
 </div>
@@ -568,6 +622,7 @@ Runpod Serverless は、コードをオートスケールする HTTP エンド�
 | [01-hello-worker](https://github.com/litkhai/runpod-hols/tree/main/serverless/01-hello-worker) | 準備済み | handler → ローカルテスト → Docker イメージ → デプロイ |
 | [02-llm-chat](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat) | 準備済み | GitHub から小型の instruct モデル、重みは Runpod のキャッシュモデルストアから |
 | [03-vllm-endpoint](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) | 2026-11-05 実行 | ビルド済みの `worker-vllm` イメージをスクリプトでデプロイ、OpenAI SDK クライアント |
+| [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | 2026-11-07 実行 | ロードバランシング・エンドポイント上の HTTP サーバーワーカー、キュー型エンドポイントと遅延を比較 |
 
 ### モデルをどこに置くか
 
@@ -733,6 +788,23 @@ Lab 03 は Runpod のビルド済み `runpod/worker-v1-vllm:v2.30.2` と `Qwen/Q
 <div class="note" markdown="1">
 **テンプレートの削除は 1 時間半以上待つことがあります。** エンドポイントを削除した後、`DELETE /templates/{id}` は *"Template is still held by deleted endpoint …, which is pending cleanup"* と応答しました。メッセージには *"within about 90 minutes"* とありますが、2026-11-05 には、あるテンプレートは 86 分の時点でまだ拒否され 116 分で削除でき、別のものは 92 分で削除できました。ラボの `teardown.py` は id を保持し、再実行するよう案内します。
 </div>
+
+### ラボ 04 — ロードバランシング・エンドポイント
+
+ロードバランシング・エンドポイントは `https://<id>.api.runpod.ai/<パス>` をワーカー内の普通の HTTP サーバーに直接送ります。ハンドラーもキューも runpod SDK もありません。プラットフォームはワーカーの `GET /ping`（起動中 204、準備完了で 200）を見てルーティング先を決めます。REST API では作れずコンソールで作成し（`POST /endpoints` に種別フィールドがない）、スケーリングはリクエスト数方式だけです。
+
+| 2026-11-07 | ロードバランサー | キュー（01-hello-world） |
+|---|---|---|
+| コールドリクエスト、合計 | 38.6 秒、34.0 秒 | 4.7 秒、5.1 秒 |
+| ウォームリクエスト | **0.34–0.75 秒** | 1.23–1.38 秒 |
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/lb-endpoint-overview.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/lb-endpoint-overview.webp' | relative_url }}" alt="エンドポイント URL と PORT・PORT_HEALTH の規約が見えるロードバランサー・エンドポイントの概要" loading="lazy" width="1400" height="998"></a><figcaption>ロードバランシング・エンドポイント：エンドポイントごとにホスト名が 1 つ、Requests の代わりに <strong>Test</strong> タブ、そしてワーカーの規約——<code>PORT</code> の HTTP サーバーと <code>PORT_HEALTH</code> の <code>/ping</code>。</figcaption></figure>
+
+- **ウォーム呼び出しは 2〜4 倍速い**——キューもステータスの往復もありません。
+- **コールド呼び出しは保留されたあと拒否されます：** 28〜33 秒後に HTTP 502 が返り、5 秒後の再試行は成功しました。キューに並ばないので、クライアントが再試行する必要があります。
+- **レスポンスはアプリのもの**——`delayTime`、`executionTime`、`workerId` はありません。
+
+ウォームなワーカーがあり、クライアントが再試行する、遅延に敏感な HTTP API に向きます。長いジョブや、ゼロからのスケールアップ中も落とせないリクエストはキューを使ってください。
 
 [リポジトリでラボ全体を見る →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
