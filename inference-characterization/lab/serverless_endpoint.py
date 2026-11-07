@@ -31,6 +31,8 @@ def main():
     ap.add_argument("--flashboot", default="on", choices=["on", "off"])
     ap.add_argument("--gpu", default="NVIDIA GeForce RTX 4090")
     ap.add_argument("--workers-max", type=int, default=1)
+    ap.add_argument("--network-volume", default="", help="attach a network volume (weights then land in /runpod-volume, #69)")
+    ap.add_argument("--dc", default="", help="pin to the volume's datacenter")
     a = ap.parse_args()
     load_env()
     st = jload(STATE, {})
@@ -51,7 +53,9 @@ def main():
             "workersMin": 0, "workersMax": a.workers_max, "idleTimeout": 5,
             # Same driver floor as the Pods; a CUDA 13 driver also runs a CUDA 12.x image.
             "minCudaVersion": "13.0",
-            "flashboot": a.flashboot == "on"})
+            "flashboot": a.flashboot == "on",
+            **({"networkVolumeId": a.network_volume} if a.network_volume else {}),
+            **({"dataCenterIds": [a.dc]} if a.dc else {})})
         st.update(endpoint_id=ep["id"], flashboot=a.flashboot, gpu=a.gpu, workers_max=a.workers_max)
         jsave(STATE, st)
         # On 2026-11-07 the create call ignored "flashboot": false and the endpoint read back true

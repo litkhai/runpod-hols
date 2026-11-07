@@ -65,6 +65,7 @@ nav:
   - { title: Readings, url: /readings/, group: readings }
   - { title: GPU & LLM Basics, url: /readings/gpu-llm-basics/, group: readings, parent: Readings }
   - { title: GPU Topology, url: /readings/gpu-topology/, group: readings, parent: Readings }
+  - { title: Storage, url: /readings/storage/, group: readings, parent: Readings }
 
   # The repository itself — the only meta item / 저장소 자체. 유일한 메타 항목
   - { title: About, url: /about/, group: about }

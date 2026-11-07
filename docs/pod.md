@@ -71,6 +71,8 @@ A third kind of persistent storage, listed first in **Add volume** with a **Glob
 | Re-read | 275 MiB/s | 985 MiB/s (local cache) |
 | 200 small files | 338 ms | 59 ms |
 
+These figures came from `dd` on `/dev/urandom`, which caps near 300 MB/s by itself; the same tiers measured with one fio method are in [Storage]({{ '/readings/storage/#benchmark' | relative_url }}).
+
 <figure class="shot"><a href="{{ '/assets/img/pod/global-volume-storage.webp' | relative_url }}"><img src="{{ '/assets/img/pod/global-volume-storage.webp' | relative_url }}" alt="Storage page listing the global volume with 537MB stored, 205 objects, location Any" loading="lazy" width="1400" height="998"></a><figcaption>Storage, 2026-11-07: the test volume — location <strong>Any</strong>, 537 MB in 205 objects, USD 0.05/month.</figcaption></figure>
 
 - **One volume, two continents.** A marker and a 512 MiB file written in Canada were readable in Romania with the same sha256; a new file written in Romania appeared in Canada **3 s** later.
@@ -213,6 +215,8 @@ Pod 는 직접 빌려서 제어하는 GPU 또는 CPU 컨테이너입니다. Serv
 | 그 파일 첫 읽기 | 344 MiB/s | 지역 간 **39 MiB/s** |
 | 다시 읽기 | 275 MiB/s | 985 MiB/s (로컬 캐시) |
 | 작은 파일 200개 | 338 ms | 59 ms |
+
+이 수치는 `/dev/urandom` 으로 `dd` 를 돌려 얻은 것인데, urandom 자체가 300 MB/s 근처에서 막힙니다. 같은 fio 방법으로 모든 층을 다시 잰 결과는 [Storage]({{ '/readings/storage/#benchmark-ko' | relative_url }}) 에 있습니다.
 
 <figure class="shot"><a href="{{ '/assets/img/pod/global-volume-storage.webp' | relative_url }}"><img src="{{ '/assets/img/pod/global-volume-storage.webp' | relative_url }}" alt="537MB, 객체 205개, 위치 Any 로 표시된 global volume 의 Storage 화면" loading="lazy" width="1400" height="998"></a><figcaption>Storage, 2026-11-07: 테스트 볼륨 — 위치 <strong>Any</strong>, 객체 205개에 537 MB, 월 USD 0.05.</figcaption></figure>
 
@@ -357,6 +361,8 @@ Pod 是你租用并自行控制的 GPU 或 CPU 容器。与 Serverless 不同，
 | 再次读取 | 275 MiB/s | 985 MiB/s（本地缓存） |
 | 200 个小文件 | 338 ms | 59 ms |
 
+这些数字来自对 `/dev/urandom` 运行 `dd`，而 urandom 本身就在 300 MB/s 附近封顶；用同一种 fio 方法重新测量所有层级的结果见 [Storage]({{ '/readings/storage/#benchmark-zh' | relative_url }})。
+
 <figure class="shot"><a href="{{ '/assets/img/pod/global-volume-storage.webp' | relative_url }}"><img src="{{ '/assets/img/pod/global-volume-storage.webp' | relative_url }}" alt="Storage 页面列出的 global volume：537MB、205 个对象、位置 Any" loading="lazy" width="1400" height="998"></a><figcaption>Storage，2026-11-07：测试卷——位置 <strong>Any</strong>，205 个对象共 537 MB，每月 USD 0.05。</figcaption></figure>
 
 - **一个卷，两个大洲。** 在加拿大写入的标记文件和 512 MiB 文件，在罗马尼亚读取时 sha256 一致；在罗马尼亚写入的新文件 **3 秒** 后出现在加拿大。
@@ -499,6 +505,8 @@ Pod は借りて自分で制御する GPU または CPU コンテナです。Ser
 | そのファイルの初回読み込み | 344 MiB/s | リージョン間 **39 MiB/s** |
 | 再読み込み | 275 MiB/s | 985 MiB/s（ローカルキャッシュ） |
 | 小さなファイル 200 個 | 338 ms | 59 ms |
+
+これらの数値は `/dev/urandom` を使った `dd` によるもので、urandom 自体が 300 MB/s 付近で頭打ちになります。同じ fio の方法ですべての層を測り直した結果は [Storage]({{ '/readings/storage/#benchmark-ja' | relative_url }}) にあります。
 
 <figure class="shot"><a href="{{ '/assets/img/pod/global-volume-storage.webp' | relative_url }}"><img src="{{ '/assets/img/pod/global-volume-storage.webp' | relative_url }}" alt="537MB、205 オブジェクト、場所 Any と表示された global volume の Storage 画面" loading="lazy" width="1400" height="998"></a><figcaption>Storage、2026-11-07：テスト用ボリューム——場所 <strong>Any</strong>、205 オブジェクトで 537 MB、月 USD 0.05。</figcaption></figure>
 

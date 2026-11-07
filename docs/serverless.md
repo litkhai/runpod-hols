@@ -40,6 +40,8 @@ Why weights are the cold-start problem, and the general levers behind these four
 
 **Measured with the 7B vLLM endpoint (C32, 2026-11-07).** With the Model field set, four cold starts had no weight-download step at all — the shards loaded from the host cache in 5–46 s, where every earlier cold start of the same image had downloaded them first (9.6–55.9 s). A container is still created and vLLM still restarts on every cold start, so `delayTime` fell to 86–130 s rather than to zero ([FINDINGS](https://github.com/litkhai/runpod-hols/blob/main/inference-characterization/FINDINGS.md)).
 
+A network volume did not help: with the weights on `/runpod-volume`, cold starts took 138–195 s, longer than downloading every time ([Storage → model weights]({{ '/readings/storage/#model-weights' | relative_url }}), C35).
+
 <div class="warn" markdown="1">
 The handler has to be written for it. `HF_HUB_OFFLINE` is read when `huggingface_hub` is imported, so setting it after importing `transformers` silently does nothing — and you would be downloading on the clock while believing you were serving from cache.
 </div>
@@ -240,6 +242,8 @@ Runpod Serverless 는 코드를 오토스케일 HTTP 엔드포인트로 실행�
 <figure class="shot"><a href="{{ '/assets/img/serverless/edit-model-field.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-model-field.webp' | relative_url }}" alt="Edit endpoint 화면: 리비전까지 고정한 Hugging Face URL 이 들어간 Model 칸" loading="lazy" width="1400" height="998"></a><figcaption>Edit endpoint → <strong>Model</strong> (02-llm-chat): 콜론 뒤에 리비전을 고정한 Hugging Face 링크. 이 칸에 해당하는 API 는 없다. 그 아래에는 Hugging Face 토큰이 없을 때 경고가 새로 뜬다.</figcaption></figure>
 
 **7B vLLM 엔드포인트로 잰 결과 (C32, 2026-11-07).** Model 칸을 채우자 콜드 스타트 네 번 모두 가중치 다운로드 단계가 아예 없었습니다. 샤드는 호스트 캐시에서 5–46 초 만에 읽혔고, 같은 이미지의 이전 콜드 스타트는 매번 먼저 내려받았습니다(9.6–55.9 초). 다만 콜드 스타트마다 컨테이너는 새로 만들어지고 vLLM 도 다시 시작하므로 `delayTime` 은 0 이 아니라 86–130 초로 줄었습니다 ([FINDINGS](https://github.com/litkhai/runpod-hols/blob/main/inference-characterization/FINDINGS.md)).
+
+네트워크 볼륨은 도움이 되지 않았습니다. 가중치를 `/runpod-volume` 에 두자 콜드 스타트가 138–195 초로, 매번 내려받을 때보다 길었습니다 ([Storage → 모델 가중치]({{ '/readings/storage/#model-weights-ko' | relative_url }}), C35).
 
 <div class="warn" markdown="1">
 핸들러를 여기에 맞춰 작성해야 합니다. `HF_HUB_OFFLINE` 는 `huggingface_hub` 가 import 될 때 읽히므로, `transformers` 를 import 한 뒤에 설정하면 아무 효과 없이 무시됩니다. 캐시에서 서빙한다고 믿는 동안 실제로는 과금되며 다운로드하게 됩니다.
@@ -442,6 +446,8 @@ Runpod Serverless 将你的代码作为自动扩缩的 HTTP 端点运行。请�
 
 **用 7B vLLM 端点实测（C32，2026-11-07）。** 填写 Model 字段后，四次冷启动都完全没有权重下载步骤——分片从主机缓存加载，用时 5–46 秒；而同一镜像此前的每次冷启动都要先下载权重（9.6–55.9 秒）。每次冷启动仍会创建新容器并重启 vLLM，因此 `delayTime` 降到 86–130 秒，而不是降到零（[FINDINGS](https://github.com/litkhai/runpod-hols/blob/main/inference-characterization/FINDINGS.md)）。
 
+network volume 没有帮助：把权重放在 `/runpod-volume` 上，冷启动需要 138–195 秒，比每次都下载还慢（[Storage → 模型权重]({{ '/readings/storage/#model-weights-zh' | relative_url }})，C35）。
+
 <div class="warn" markdown="1">
 handler 必须为此专门编写。`HF_HUB_OFFLINE` 在 `huggingface_hub` 被导入时读取，所以在导入 `transformers` 之后再设置它会静默失效——你以为在从缓存提供服务，实际上却在计费期间下载。
 </div>
@@ -642,6 +648,8 @@ Runpod Serverless は、コードをオートスケールする HTTP エンド�
 <figure class="shot"><a href="{{ '/assets/img/serverless/edit-model-field.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-model-field.webp' | relative_url }}" alt="Edit endpoint フォーム：リビジョンまで固定した Hugging Face URL が入った Model 欄" loading="lazy" width="1400" height="998"></a><figcaption>Edit endpoint → <strong>Model</strong>（02-llm-chat）：コロンの後ろでリビジョンを固定した Hugging Face のリンク。この欄に相当する API はありません。その下には、Hugging Face トークン未設定時の警告が新たに出ます。</figcaption></figure>
 
 **7B vLLM エンドポイントで測定（C32、2026-11-07）。** Model 欄を設定すると、4 回のコールドスタートすべてで重みのダウンロード工程がなくなりました。シャードはホストのキャッシュから 5–46 秒で読み込まれ、同じイメージの以前のコールドスタートは毎回まずダウンロードしていました（9.6–55.9 秒）。ただしコールドスタートのたびにコンテナは新しく作られ vLLM も再起動するため、`delayTime` はゼロではなく 86–130 秒に縮みました（[FINDINGS](https://github.com/litkhai/runpod-hols/blob/main/inference-characterization/FINDINGS.md)）。
+
+network volume は役に立ちませんでした。重みを `/runpod-volume` に置くとコールドスタートは 138〜195 秒で、毎回ダウンロードするより長くかかりました（[Storage → モデルの重み]({{ '/readings/storage/#model-weights-ja' | relative_url }})、C35）。
 
 <div class="warn" markdown="1">
 handler はこれに合わせて書く必要があります。`HF_HUB_OFFLINE` は `huggingface_hub` が import されたときに読まれるので、`transformers` を import した後に設定しても黙って無視されます。キャッシュから配信しているつもりで、実際には課金されながらダウンロードしていることになります。

@@ -19,6 +19,7 @@ Concepts that need more than a link — written out, with the Runpod-specific pa
 |---|---|
 | [GPU & LLM Basics]({{ '/readings/gpu-llm-basics/' | relative_url }}) | Hardware and roofline · precision · the four sizing formulas with calculators · serving · cost — each next to what these labs measured |
 | [GPU Topology]({{ '/readings/gpu-topology/' | relative_url }}) | What NVLink and MIG are · bandwidth and isolation · which of them Runpod lets you control |
+| [Storage]({{ '/readings/storage/' | relative_url }}) | Every storage tier through one benchmark · what each really is · two writers on one volume · where model weights should live |
 
 ## Background — GPU, training, inference, deployment
 {: #background }
@@ -132,6 +133,7 @@ Links, all published by Runpod. Competitor comparisons and marketing pieces are 
 |---|---|
 | [GPU·LLM 기초]({{ '/readings/gpu-llm-basics/' | relative_url }}) | 하드웨어와 roofline · 정밀도 · 사이징 공식 네 개와 계산기 · 서빙 · 비용 — 각각을 이 실습들의 측정값과 나란히 |
 | [GPU Topology]({{ '/readings/gpu-topology/' | relative_url }}) | NVLink 와 MIG 가 무엇인가 · 대역폭과 격리 · Runpod 에서 제어 가능한 것은 무엇인가 |
+| [Storage]({{ '/readings/storage/' | relative_url }}) | 모든 스토리지 층을 같은 벤치마크로 · 각 층의 실체 · 한 볼륨에 두 작성자 · 모델 가중치를 둘 곳 |
 
 ## 배경 — GPU, 학습, 추론, 배포
 {: #background-ko }
@@ -245,6 +247,7 @@ Links, all published by Runpod. Competitor comparisons and marketing pieces are 
 |---|---|
 | [GPU 与 LLM 基础]({{ '/readings/gpu-llm-basics/' | relative_url }}) | 硬件与 roofline · 精度 · 四个规模估算公式及计算器 · 推理服务 · 成本——每一项都附上这些实验的实测结果 |
 | [GPU Topology]({{ '/readings/gpu-topology/' | relative_url }}) | NVLink 和 MIG 是什么 · 带宽与隔离 · Runpod 允许你控制其中哪些 |
+| [Storage]({{ '/readings/storage/' | relative_url }}) | 用同一基准测试所有存储层级 · 每一层的真实面目 · 一个卷上的两个写入者 · 模型权重放在哪里 |
 
 ## 背景——GPU、训练、推理、部署
 {: #background-zh }
@@ -358,6 +361,7 @@ Links, all published by Runpod. Competitor comparisons and marketing pieces are 
 |---|---|
 | [GPU と LLM の基礎]({{ '/readings/gpu-llm-basics/' | relative_url }}) | ハードウェアとルーフライン · 精度 · 計算機付きの 4 つのサイジング式 · サービング · コスト — それぞれをこれらのラボの測定結果と並べて |
 | [GPU Topology]({{ '/readings/gpu-topology/' | relative_url }}) | NVLink と MIG とは何か · 帯域幅と分離 · そのうち Runpod で制御できるもの |
+| [Storage]({{ '/readings/storage/' | relative_url }}) | すべてのストレージ層を同じベンチマークで · 各層の正体 · 1 つのボリュームに 2 つの書き手 · モデルの重みの置き場所 |
 
 ## 背景知識：GPU、学習、推論、デプロイ
 {: #background-ja }
