@@ -101,7 +101,7 @@ Nothing to build locally. Runpod clones the repo, builds the image and stores it
 
 > The first build pulls a ~4GB base image, so expect several minutes. Later builds reuse cached layers.
 
-> **Use a release to redeploy.** The docs say a **GitHub release** is required; in testing a plain push also triggered builds, but only on an endpoint with no successful build yet. Treat the release as the reliable trigger, and get the config right before deploying — the iteration loop is slow.
+> **Every push redeploys.** The docs say a **GitHub release** is required, but every push to the connected branch triggered a build: this endpoint had 24 releases by 2026-11-07, one per merge to `main`, including merges that changed nothing under `serverless/02-llm-chat/`. Get the config right before deploying — each loop is a full image build.
 
 ### Step 2 — Call it
 
@@ -285,7 +285,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 > 첫 빌드는 약 4GB 베이스 이미지를 받으므로 수 분 걸립니다. 이후 빌드는 레이어 캐시를 재사용합니다.
 
-> **재배포는 릴리스로 하세요.** 문서는 **GitHub 릴리스**가 필요하다고 하고, 실제로는 일반 푸시도 빌드를 트리거했지만 성공한 빌드가 없던 엔드포인트에서만 확인됐습니다. 릴리스를 확실한 트리거로 보시고, 반복 주기가 느리므로 배포 전에 설정을 제대로 잡아두세요.
+> **푸시할 때마다 재배포됩니다.** 문서는 **GitHub 릴리스**가 필요하다고 하지만, 연결된 브랜치에 푸시할 때마다 빌드가 돌았습니다. 이 엔드포인트는 2026-11-07 까지 `main` 머지마다 하나씩 릴리스 24개가 쌓였고, `serverless/02-llm-chat/` 아래를 전혀 바꾸지 않은 머지도 포함됩니다. 매번 이미지 전체를 빌드하므로 배포 전에 설정을 제대로 잡아두세요.
 
 ### 2단계 — 호출
 

@@ -35,6 +35,8 @@ Three tiers, and confusing them is how people lose work:
 | Volume Disk | Survives stop, dies on terminate | `/workspace` | Working code, datasets |
 | Network Volume | Independent of any Pod, shareable | configurable | Weights reused across Pods |
 
+<figure class="shot"><a href="{{ '/assets/img/pod/create-storage.webp' | relative_url }}"><img src="{{ '/assets/img/pod/create-storage.webp' | relative_url }}" alt="Create storage dialog: Network volume, Global volume (beta) and Volume disk (legacy) with prices" loading="lazy" width="1400" height="998"></a><figcaption>Create storage, from the Pod deploy form, 2026-11-07: Network volume USD 0.07/GB-month in one datacenter; Global volume (beta) USD 0.09/GB-month plus IOPS across datacenters; Volume disk (legacy — the Pod volume) USD 0.10/GB-month running, 0.20 stopped.</figcaption></figure>
+
 Anything you want to keep goes in `/workspace` or a Network Volume. Never leave work on the container disk.
 
 <div class="warn" markdown="1">
@@ -60,6 +62,8 @@ While stopped, the account's `currentSpendPerHr` was `0.003` for a 10 GB Pod vol
 ### Templates and secrets — what Lab 03 found
 
 A template's `env` can hold {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %}, replaced with the secret's value at boot. Run on 2026-11-05 with a random demo secret ([the lab](https://github.com/litkhai/runpod-hols/tree/main/pod/03-custom-template)):
+
+<figure class="shot"><a href="{{ '/assets/img/pod/create-secret.webp' | relative_url }}"><img src="{{ '/assets/img/pod/create-secret.webp' | relative_url }}" alt="Create secret form with the RUNPOD_SECRET reference example" loading="lazy" width="1400" height="998"></a><figcaption>Create secret (Credentials → Secrets): the form states the rule above — a secret reaches a Pod or endpoint only through an env var that references it.</figcaption></figure>
 
 | Where | What it held |
 |---|---|
@@ -149,6 +153,8 @@ Pod 는 직접 빌려서 제어하는 GPU 또는 CPU 컨테이너입니다. Serv
 | Volume Disk | 중지해도 유지, 삭제 시 소멸 | `/workspace` | 작업 코드, 데이터셋 |
 | Network Volume | Pod 와 독립적, 공유 가능 | 설정 가능 | 여러 Pod 에서 재사용하는 가중치 |
 
+<figure class="shot"><a href="{{ '/assets/img/pod/create-storage.webp' | relative_url }}"><img src="{{ '/assets/img/pod/create-storage.webp' | relative_url }}" alt="Create storage 화면: Network volume, Global volume (베타), Volume disk (레거시) 와 가격" loading="lazy" width="1400" height="998"></a><figcaption>Pod 배포 화면의 Create storage, 2026-11-07: Network volume 은 데이터센터 하나에 GB·월 USD 0.07, Global volume (베타) 은 데이터센터 간 GB·월 USD 0.09 + IOPS, Volume disk (레거시, 곧 Pod 볼륨) 는 실행 중 GB·월 USD 0.10, 중지 시 0.20.</figcaption></figure>
+
 보존할 것은 반드시 `/workspace` 또는 Network Volume 에 둡니다. 컨테이너 디스크에 작업물을 남기지 마세요.
 
 <div class="warn" markdown="1">
@@ -174,6 +180,8 @@ Pod 는 직접 빌려서 제어하는 GPU 또는 CPU 컨테이너입니다. Serv
 ### 템플릿과 시크릿 — Lab 03 이 확인한 것
 
 템플릿의 `env` 에 {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %} 를 넣으면 부팅 시 시크릿 값으로 바뀝니다. 2026-11-05 임의의 데모 시크릿으로 실행했습니다 ([실습](https://github.com/litkhai/runpod-hols/tree/main/pod/03-custom-template)).
+
+<figure class="shot"><a href="{{ '/assets/img/pod/create-secret.webp' | relative_url }}"><img src="{{ '/assets/img/pod/create-secret.webp' | relative_url }}" alt="RUNPOD_SECRET 참조 예시가 있는 Create secret 화면" loading="lazy" width="1400" height="998"></a><figcaption>Create secret (Credentials → Secrets): 화면도 위 규칙을 그대로 적어 둔다. 시크릿은 그것을 참조하는 환경변수를 통해서만 Pod 나 엔드포인트에 들어간다.</figcaption></figure>
 
 | 위치 | 담긴 것 |
 |---|---|
@@ -263,6 +271,8 @@ Pod 是你租用并自行控制的 GPU 或 CPU 容器。与 Serverless 不同，
 | Volume Disk | stop 后保留，terminate 时销毁 | `/workspace` | 工作代码、数据集 |
 | Network Volume | 独立于任何 Pod，可共享 | 可配置 | 在多个 Pod 间复用的权重 |
 
+<figure class="shot"><a href="{{ '/assets/img/pod/create-storage.webp' | relative_url }}"><img src="{{ '/assets/img/pod/create-storage.webp' | relative_url }}" alt="Create storage 对话框：Network volume、Global volume（测试版）和 Volume disk（旧版）及价格" loading="lazy" width="1400" height="998"></a><figcaption>Pod 部署表单中的 Create storage，2026-11-07：Network volume 单个数据中心，每 GB·月 USD 0.07；Global volume（测试版）跨数据中心，每 GB·月 USD 0.09 加 IOPS；Volume disk（旧版，即 Pod 卷）运行时每 GB·月 USD 0.10，停止时 0.20。</figcaption></figure>
+
 任何想保留的东西都放在 `/workspace` 或 Network Volume 中。绝不要把工作成果留在 container disk 上。
 
 <div class="warn" markdown="1">
@@ -288,6 +298,8 @@ Pod 是你租用并自行控制的 GPU 或 CPU 容器。与 Serverless 不同，
 ### Template 与 secret——Lab 03 的发现
 
 template 的 `env` 中可以写 {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %}，启动时会被替换为 secret 的值。2026-11-05 使用一个随机的演示 secret 运行（[实验](https://github.com/litkhai/runpod-hols/tree/main/pod/03-custom-template)）：
+
+<figure class="shot"><a href="{{ '/assets/img/pod/create-secret.webp' | relative_url }}"><img src="{{ '/assets/img/pod/create-secret.webp' | relative_url }}" alt="带有 RUNPOD_SECRET 引用示例的 Create secret 表单" loading="lazy" width="1400" height="998"></a><figcaption>Create secret（Credentials → Secrets）：表单本身也写明了上面的规则——secret 只有通过引用它的环境变量才会进入 Pod 或端点。</figcaption></figure>
 
 | 位置 | 其中的内容 |
 |---|---|
@@ -377,6 +389,8 @@ Pod は借りて自分で制御する GPU または CPU コンテナです。Ser
 | Volume Disk | stop では残り、terminate で消える | `/workspace` | 作業中のコード、データセット |
 | Network Volume | どの Pod からも独立、共有可能 | 設定可能 | 複数の Pod で使い回す重み |
 
+<figure class="shot"><a href="{{ '/assets/img/pod/create-storage.webp' | relative_url }}"><img src="{{ '/assets/img/pod/create-storage.webp' | relative_url }}" alt="Create storage ダイアログ：Network volume、Global volume（ベータ）、Volume disk（レガシー）と価格" loading="lazy" width="1400" height="998"></a><figcaption>Pod デプロイ画面の Create storage、2026-11-07：Network volume は 1 データセンターで GB・月 USD 0.07、Global volume（ベータ）はデータセンター横断で GB・月 USD 0.09 + IOPS、Volume disk（レガシー、つまり Pod ボリューム）は実行中 GB・月 USD 0.10、停止中 0.20。</figcaption></figure>
+
 残しておきたいものは `/workspace` か Network Volume に置いてください。作業を container disk に残してはいけません。
 
 <div class="warn" markdown="1">
@@ -402,6 +416,8 @@ Pod は借りて自分で制御する GPU または CPU コンテナです。Ser
 ### Template と secret：Lab 03 でわかったこと
 
 template の `env` には {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %} を書くことができ、起動時に secret の値に置き換えられます。2026-11-05 にランダムなデモ用 secret で実行しました（[ラボ](https://github.com/litkhai/runpod-hols/tree/main/pod/03-custom-template)）。
+
+<figure class="shot"><a href="{{ '/assets/img/pod/create-secret.webp' | relative_url }}"><img src="{{ '/assets/img/pod/create-secret.webp' | relative_url }}" alt="RUNPOD_SECRET 参照の例が載った Create secret フォーム" loading="lazy" width="1400" height="998"></a><figcaption>Create secret（Credentials → Secrets）：フォーム自体が上のルールを書いています。シークレットは、それを参照する環境変数を通してのみ Pod やエンドポイントに届きます。</figcaption></figure>
 
 | 場所 | 中身 |
 |---|---|
