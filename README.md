@@ -29,24 +29,32 @@ runpod-hols/
 ├── setup/               # ← Start here: keys, tools, auth check, MCP
 ├── serverless/          # Autoscaling inference endpoints
 │   ├── 01-hello-worker/ # handler → local test → container → deploy
-│   └── 02-llm-chat/     # LLM from GitHub + Runpod cached model
+│   ├── 02-llm-chat/     # LLM from GitHub + Runpod cached model
+│   ├── 03-vllm-endpoint/ # prebuilt worker-vllm from a script
+│   ├── 04-load-balancer/ # HTTP worker on a load-balancing endpoint
+│   └── 05-bulk-requests/ # batches on dedicated workers
 ├── terraform/           # Infrastructure as code
 │   ├── 01-endpoint/     # runpod_template + runpod_endpoint
 │   └── 02-pod/          # runpod_pod + optional network volume
 ├── pod/                 # GPU containers (SSH / Jupyter)
-│   └── 01-launch-connect/ # launch, connect, tear down — CPU by default
+│   ├── 01-launch-connect/ # launch, connect, tear down — CPU by default
+│   ├── 02-storage/      # what survives stop/terminate; global volume
+│   ├── 03-custom-template/ # template, env vars and secrets
+│   └── 04-pod-to-serverless/ # one handler, Pod then Serverless
 ├── cluster/             # Multi-node distributed training — 01 in progress
+├── storage/             # Every storage tier through one benchmark
 └── docs/                # GitHub Pages source
 ```
 
 | Track | Status | Contents |
 |---|---|---|
 | [`setup/`](./setup) | ✅ Ready | API key, tool checks, auth smoke test, MCP server |
-| [`serverless/`](./serverless) | ✅ 2 labs ready | Write handler → test locally → containerize → deploy endpoint |
+| [`serverless/`](./serverless) | ✅ 5 labs | Write handler → test locally → containerize → deploy endpoint |
 | [`terraform/`](./terraform) | ✅ 2 labs ready | Provision endpoint and Pod declaratively |
 | [`pod/`](./pod) | ✅ Lab 01 ready | Launch from Python → connect over SSH → tear down |
 | [`cluster/`](./cluster) | 🚧 01 stage 1 | Multi-node PyTorch / Slurm / Axolotl |
 | [`gpu-topology/`](./gpu-topology) | 📖 Reference | NVLink and MIG — what they are, what Runpod lets you control |
+| [`storage/`](./storage) | 📖 Reference | Every storage tier through one benchmark, sharing, where model weights should live |
 
 ### Comparing the Three Products
 
@@ -182,24 +190,32 @@ runpod-hols/
 ├── setup/               # ← 여기서 시작: 키, 도구, 인증 확인, MCP
 ├── serverless/          # 오토스케일 추론 엔드포인트
 │   ├── 01-hello-worker/ # handler 작성 → 로컬 테스트 → 컨테이너화 → 배포
-│   └── 02-llm-chat/     # GitHub 연동 LLM + Runpod 모델 캐시
+│   ├── 02-llm-chat/     # GitHub 연동 LLM + Runpod 모델 캐시
+│   ├── 03-vllm-endpoint/ # 미리 빌드된 worker-vllm 을 스크립트로
+│   ├── 04-load-balancer/ # 로드밸런싱 엔드포인트의 HTTP 워커
+│   └── 05-bulk-requests/ # 전용 워커에서 도는 배치
 ├── terraform/           # 코드형 인프라
 │   ├── 01-endpoint/     # runpod_template + runpod_endpoint
 │   └── 02-pod/          # runpod_pod + 선택적 network volume
 ├── pod/                 # GPU 컨테이너 (SSH / Jupyter)
-│   └── 01-launch-connect/ # 기동·접속·정리 — 기본값 CPU
+│   ├── 01-launch-connect/ # 기동·접속·정리 — 기본값 CPU
+│   ├── 02-storage/      # 중지·삭제 뒤 남는 것, global volume
+│   ├── 03-custom-template/ # 템플릿, 환경변수, 시크릿
+│   └── 04-pod-to-serverless/ # 같은 핸들러를 Pod 에서 Serverless 로
 ├── cluster/             # 다중 노드 분산 학습 — 01 진행 중
+├── storage/             # 모든 스토리지 층을 같은 벤치마크로
 └── docs/                # GitHub Pages 소스
 ```
 
 | 트랙 | 상태 | 내용 |
 |---|---|---|
 | [`setup/`](./setup) | ✅ 준비됨 | API 키, 도구 검사, 인증 스모크 테스트, MCP 서버 |
-| [`serverless/`](./serverless) | ✅ 2개 준비됨 | handler 작성 → 로컬 테스트 → 컨테이너화 → 엔드포인트 배포 |
+| [`serverless/`](./serverless) | ✅ 실습 5개 | handler 작성 → 로컬 테스트 → 컨테이너화 → 엔드포인트 배포 |
 | [`terraform/`](./terraform) | ✅ 2개 준비됨 | 엔드포인트와 Pod 를 선언적으로 프로비저닝 |
 | [`pod/`](./pod) | ✅ Lab 01 준비됨 | Python 으로 기동 → SSH 접속 → 정리 |
 | [`cluster/`](./cluster) | 🚧 01 1단계 | 다중 노드 PyTorch / Slurm / Axolotl |
 | [`gpu-topology/`](./gpu-topology) | 📖 레퍼런스 | NVLink 와 MIG — 무엇이며, Runpod 에서 무엇을 제어할 수 있는가 |
+| [`storage/`](./storage) | 📖 레퍼런스 | 모든 스토리지 층을 같은 벤치마크로, 함께 쓰기, 모델 가중치를 둘 곳 |
 
 ### 세 제품의 차이
 

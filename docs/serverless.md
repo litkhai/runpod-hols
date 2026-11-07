@@ -20,6 +20,7 @@ Runpod Serverless runs your code as an autoscaling HTTP endpoint. Workers start 
 | [02-llm-chat](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat) | Ready | Small instruct model from GitHub, weights from Runpod's cached-model store |
 | [03-vllm-endpoint](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) | Run 2026-11-05 | Prebuilt `worker-vllm` image deployed from a script, OpenAI SDK client |
 | [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | Run 2026-11-07 | HTTP-server worker on a load-balancing endpoint, latency against a queue endpoint |
+| [05-bulk-requests](https://github.com/litkhai/runpod-hols/tree/main/serverless/05-bulk-requests) | Run 2026-11-07 | Bulk Requests: batches on a dedicated worker, checked against billing |
 
 ### Where the model lives
 
@@ -205,6 +206,19 @@ A load-balancing endpoint sends `https://<id>.api.runpod.ai/<path>` straight to 
 
 Use it for latency-sensitive HTTP APIs with a warm worker and a retrying client; keep the queue for long jobs and anything that must survive a scale-up from zero.
 
+### Lab 05 — Bulk Requests
+
+Queue endpoints now carry a **Bulk Requests** tab: submit an array of `/run`-shaped inputs to `POST /v2/<endpoint>/batch`, finalize it, and it runs "on dedicated workers" within 24 hours, "billed at a discounted rate" — the console banner says "up to 30% off".
+
+| 2026-11-07, 01-hello-world (CPU) | Result |
+|---|---|
+| Two batches of 30 | Done 2–4 minutes after submission, all completed |
+| Where | One dedicated worker per batch, requests one after another |
+| Billed rate, batch-only hour | **USD 0.0000050/s — the same as ordinary requests** |
+| Billed time | 45 s for 30 requests (1.5 s each) |
+
+No rate discount showed on this CPU endpoint; the saving came from packing 30 requests onto one worker instead of paying start-up and idle time for each.
+
 [Full lab in the repo →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
 </div>
@@ -223,6 +237,7 @@ Runpod Serverless 는 코드를 오토스케일 HTTP 엔드포인트로 실행�
 | [02-llm-chat](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat) | 준비됨 | GitHub 연동으로 소형 instruct 모델 배포, 가중치는 Runpod 모델 캐시 |
 | [03-vllm-endpoint](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) | 2026-11-05 실행 | 미리 빌드된 `worker-vllm` 이미지를 스크립트로 배포, OpenAI SDK 클라이언트 |
 | [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | 2026-11-07 실행 | 로드밸런싱 엔드포인트의 HTTP 서버 워커, 큐 엔드포인트와 지연 비교 |
+| [05-bulk-requests](https://github.com/litkhai/runpod-hols/tree/main/serverless/05-bulk-requests) | 2026-11-07 실행 | Bulk Requests: 전용 워커의 배치, 청구 내역으로 확인 |
 
 ### 모델은 어디에 두는가
 
@@ -408,6 +423,19 @@ Lab 03 은 Runpod 이 미리 빌드한 `runpod/worker-v1-vllm:v2.30.2` 에 `Qwen
 
 웜 워커가 있고 클라이언트가 재시도하는, 지연에 민감한 HTTP API 에 쓰세요. 긴 작업과 0 에서 확장하는 동안 살아남아야 하는 요청은 큐를 쓰세요.
 
+### 실습 05 — Bulk Requests
+
+큐 엔드포인트에 **Bulk Requests** 탭이 생겼습니다. `/run` 과 같은 모양의 입력 배열을 `POST /v2/<endpoint>/batch` 로 보내 확정하면, 24시간 안에 "on dedicated workers" 로 실행되고 "billed at a discounted rate" 로 청구된다고 합니다. 콘솔 배너는 "up to 30% off" 라고 합니다.
+
+| 2026-11-07, 01-hello-world (CPU) | 결과 |
+|---|---|
+| 30건짜리 배치 두 번 | 제출 2–4분 뒤 모두 완료 |
+| 실행 위치 | 배치마다 전용 워커 하나, 요청을 차례로 처리 |
+| 배치만 돈 시간대의 요율 | **초당 USD 0.0000050 — 일반 요청과 같음** |
+| 청구 시간 | 30건에 45초 (건당 1.5초) |
+
+이 CPU 엔드포인트에서는 요율 할인이 보이지 않았습니다. 절약은 요청 30건을 워커 하나에 몰아, 건마다 기동·유휴 시간을 내지 않은 데서 나왔습니다.
+
 [저장소에서 전체 실습 보기 →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
 </div>
@@ -426,6 +454,7 @@ Runpod Serverless 将你的代码作为自动扩缩的 HTTP 端点运行。请�
 | [02-llm-chat](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat) | 就绪 | 从 GitHub 部署小型 instruct 模型，权重来自 Runpod 的缓存模型存储 |
 | [03-vllm-endpoint](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) | 2026-11-05 已运行 | 用脚本部署预构建的 `worker-vllm` 镜像，OpenAI SDK 客户端 |
 | [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | 2026-11-07 已运行 | 负载均衡端点上的 HTTP 服务器 worker，与队列端点比较延迟 |
+| [05-bulk-requests](https://github.com/litkhai/runpod-hols/tree/main/serverless/05-bulk-requests) | 2026-11-07 已运行 | Bulk Requests：专用 worker 上的批处理，用账单核对 |
 
 ### 模型放在哪里
 
@@ -611,6 +640,19 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 
 适合有热 worker、客户端会重试、对延迟敏感的 HTTP API；长任务以及必须在从零扩容期间保住的请求，仍用队列。
 
+### 实验 05 — Bulk Requests
+
+队列端点现在多了 **Bulk Requests** 标签页：把一组与 `/run` 同形的输入提交到 `POST /v2/<endpoint>/batch` 并 finalize，它会在 24 小时内 "on dedicated workers" 运行，并 "billed at a discounted rate"——控制台横幅写的是 "up to 30% off"。
+
+| 2026-11-07，01-hello-world（CPU） | 结果 |
+|---|---|
+| 两批，各 30 个请求 | 提交后 2–4 分钟全部完成 |
+| 运行位置 | 每批一个专用 worker，请求依次处理 |
+| 只跑批处理的那一小时的费率 | **每秒 USD 0.0000050——与普通请求相同** |
+| 计费时间 | 30 个请求共 45 秒（每个 1.5 秒） |
+
+在这个 CPU 端点上没有看到费率折扣；省下的钱来自把 30 个请求集中到一个 worker 上，而不是每个请求都付启动和空闲时间。
+
 [在仓库中查看完整实验 →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
 </div>
@@ -629,6 +671,7 @@ Runpod Serverless は、コードをオートスケールする HTTP エンド�
 | [02-llm-chat](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat) | 準備済み | GitHub から小型の instruct モデル、重みは Runpod のキャッシュモデルストアから |
 | [03-vllm-endpoint](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) | 2026-11-05 実行 | ビルド済みの `worker-vllm` イメージをスクリプトでデプロイ、OpenAI SDK クライアント |
 | [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | 2026-11-07 実行 | ロードバランシング・エンドポイント上の HTTP サーバーワーカー、キュー型エンドポイントと遅延を比較 |
+| [05-bulk-requests](https://github.com/litkhai/runpod-hols/tree/main/serverless/05-bulk-requests) | 2026-11-07 実行 | Bulk Requests：専用ワーカー上のバッチを請求で確認 |
 
 ### モデルをどこに置くか
 
@@ -813,6 +856,19 @@ Lab 03 は Runpod のビルド済み `runpod/worker-v1-vllm:v2.30.2` と `Qwen/Q
 - **レスポンスはアプリのもの**——`delayTime`、`executionTime`、`workerId` はありません。
 
 ウォームなワーカーがあり、クライアントが再試行する、遅延に敏感な HTTP API に向きます。長いジョブや、ゼロからのスケールアップ中も落とせないリクエストはキューを使ってください。
+
+### ラボ 05 — Bulk Requests
+
+キュー型エンドポイントに **Bulk Requests** タブが加わりました。`/run` と同じ形の入力の配列を `POST /v2/<endpoint>/batch` に送って確定すると、24 時間以内に "on dedicated workers" で実行され、"billed at a discounted rate" で請求されるとされています。コンソールのバナーは "up to 30% off" です。
+
+| 2026-11-07、01-hello-world（CPU） | 結果 |
+|---|---|
+| 30 件のバッチを 2 回 | 送信の 2〜4 分後にすべて完了 |
+| 実行場所 | バッチごとに専用ワーカー 1 つ、リクエストは順番に処理 |
+| バッチだけの時間帯の料金 | **毎秒 USD 0.0000050——通常リクエストと同じ** |
+| 課金時間 | 30 件で 45 秒（1 件あたり 1.5 秒） |
+
+この CPU エンドポイントでは料金の割引は見えませんでした。節約になったのは、30 件を 1 つのワーカーにまとめ、リクエストごとに起動やアイドルの時間を払わずに済んだ点です。
 
 [リポジトリでラボ全体を見る →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
