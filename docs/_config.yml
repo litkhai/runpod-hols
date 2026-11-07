@@ -63,6 +63,7 @@ nav:
   # `parent` 가 있으면 자식 페이지다. 상단 바에서 빠지고 사이드바에서
   # 부모 아래에 나열된다.
   - { title: Readings, url: /readings/, group: readings }
+  - { title: GPU & LLM Basics, url: /readings/gpu-llm-basics/, group: readings, parent: Readings }
   - { title: GPU Topology, url: /readings/gpu-topology/, group: readings, parent: Readings }
 
   # The repository itself — the only meta item / 저장소 자체. 유일한 메타 항목

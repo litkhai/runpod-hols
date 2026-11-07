@@ -54,6 +54,8 @@ python3 lab.py delete
 - **The console's GPU utilization hid it.** Both 4090s read 100% while most of each step was waiting on the transfer; NCCL kernels hold the GPU while they wait.
 - The single A100 was slower than the single 4090 here because the model runs plain fp32 (TF32 off, the PyTorch default). Per dollar, one RTX 4090 beat both pairs for this model.
 
+Why the gap is this large: a ring all-reduce moves 2(n−1)/n of the gradient per GPU every step, so the link — not the GPU — sets the ceiling, and `SYS` against `NV12` decides which side of it you land on. The arithmetic, and why tensor parallelism must never leave the NVLink domain, is in [GPU Topology → in numbers]({{ '/readings/gpu-topology/#in-numbers' | relative_url }}); sizing and cost in [GPU & LLM Basics]({{ '/readings/gpu-llm-basics/' | relative_url }}).
+
 <figure class="shot"><a href="{{ '/assets/img/cluster/pod-telemetry-2x4090.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/pod-telemetry-2x4090.webp' | relative_url }}" alt="Pod Telemetry tab: two RTX 4090 GPUs at 100% utilization" loading="lazy" width="1400" height="998"></a><figcaption>Telemetry during the 2x RTX 4090 run: 100% on both GPUs, yet the pair trained at a fifth of its ideal speed.</figcaption></figure>
 
 Stage 1 cost about USD 0.40 (7 and 3 minutes of Pod time).
@@ -141,6 +143,8 @@ python3 lab.py delete
 - **A100 두 장은 91% 로 확장됐다.** NVLink 로는 400 MB 가 약 2 ms 다.
 - **콘솔의 GPU 사용률로는 보이지 않았다.** 4090 두 장 모두 100% 였지만 스텝 대부분은 전송 대기였다. NCCL 커널은 기다리는 동안에도 GPU 를 점유한다.
 - 여기서 A100 한 장이 4090 한 장보다 느린 것은 모델이 순수 fp32 (TF32 꺼짐, PyTorch 기본값) 이기 때문이다. 달러당으로는 이 모델에서 RTX 4090 한 장이 두 조합보다 나았다.
+
+차이가 이렇게 큰 이유: ring all-reduce 는 매 스텝 GPU 당 그래디언트의 2(n−1)/n 을 전송하므로, 상한을 정하는 것은 GPU 가 아니라 링크이고, `SYS` 냐 `NV12` 냐가 그 상한의 어느 쪽에 떨어지는지를 가른다. 계산 과정과 텐서 병렬이 NVLink 도메인을 절대 벗어나면 안 되는 이유는 [GPU Topology → 숫자로]({{ '/readings/gpu-topology/#in-numbers-ko' | relative_url }}) 에, 사이징과 비용은 [GPU·LLM 기초]({{ '/readings/gpu-llm-basics/' | relative_url }}) 에 있다.
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/pod-telemetry-2x4090.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/pod-telemetry-2x4090.webp' | relative_url }}" alt="Pod Telemetry 탭: RTX 4090 두 장 사용률 100%" loading="lazy" width="1400" height="998"></a><figcaption>RTX 4090 두 장 실행 중 Telemetry: 두 GPU 모두 100% 인데, 학습 속도는 이상치의 5분의 1 이었다.</figcaption></figure>
 
@@ -230,6 +234,8 @@ python3 lab.py delete
 - **控制台的 GPU 利用率看不出这一点。** 两块 4090 都显示 100%，但每步大部分时间在等传输；NCCL 内核在等待时也占着 GPU。
 - 这里单块 A100 比单块 4090 慢，是因为模型跑的是纯 fp32（TF32 关闭，PyTorch 默认）。按每美元计算，这个模型用一块 RTX 4090 比两种双卡组合都划算。
 
+差距为何如此之大：环形 all-reduce 每一步每块 GPU 都要搬运 2(n−1)/n 的梯度，所以设定上限的是链路而不是 GPU，而 `SYS` 还是 `NV12` 决定了你落在哪一侧。具体计算，以及为什么张量并行绝不能离开 NVLink 域，见 [GPU Topology → 用数字说话]({{ '/readings/gpu-topology/#in-numbers-zh' | relative_url }})；规模估算和成本见 [GPU 与 LLM 基础]({{ '/readings/gpu-llm-basics/' | relative_url }})。
+
 <figure class="shot"><a href="{{ '/assets/img/cluster/pod-telemetry-2x4090.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/pod-telemetry-2x4090.webp' | relative_url }}" alt="Pod Telemetry 标签：两块 RTX 4090 利用率 100%" loading="lazy" width="1400" height="998"></a><figcaption>2 块 RTX 4090 运行时的 Telemetry：两块 GPU 都是 100%，训练速度却只有理想值的五分之一。</figcaption></figure>
 
 第 1 阶段花费约 USD 0.40（Pod 运行 7 分钟和 3 分钟）。
@@ -317,6 +323,8 @@ python3 lab.py delete
 - **A100 2 基は 91% でスケールしました**。NVLink なら 400 MB は約 2 ms です。
 - **コンソールの GPU 使用率には表れませんでした。** 4090 は 2 基とも 100% でしたが、各ステップの大半は転送待ちでした。NCCL のカーネルは待っている間も GPU を占有します。
 - ここで A100 1 基が 4090 1 基より遅いのは、モデルが素の fp32（TF32 オフ、PyTorch の既定）だからです。ドルあたりでは、このモデルは RTX 4090 1 基がどちらの 2 基構成よりも有利でした。
+
+差がこれほど大きい理由：リング all-reduce は毎ステップ GPU あたり勾配の 2(n−1)/n を転送するので、上限を決めるのは GPU ではなくリンクです。そして `SYS` か `NV12` かが、その上限のどちら側に来るかを決めます。計算の詳細と、テンソル並列が決して NVLink ドメインの外に出てはならない理由は [GPU Topology → 数値で見る]({{ '/readings/gpu-topology/#in-numbers-ja' | relative_url }})にあります。サイジングとコストは [GPU と LLM の基礎]({{ '/readings/gpu-llm-basics/' | relative_url }})にあります。
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/pod-telemetry-2x4090.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/pod-telemetry-2x4090.webp' | relative_url }}" alt="Pod の Telemetry タブ：RTX 4090 2 基とも使用率 100%" loading="lazy" width="1400" height="998"></a><figcaption>RTX 4090 × 2 の実行中の Telemetry：2 基とも 100% なのに、学習速度は理想の 5 分の 1 でした。</figcaption></figure>
 

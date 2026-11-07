@@ -33,6 +33,8 @@ Four options. The third is the usual answer; the fourth arrived in SDK 1.12.
 
 Put a Hugging Face ID in the endpoint's **Model** field and Runpod caches the weights on the host at `/runpod-volume/huggingface-cache/hub`, shared across workers there. Code stays in Git, weights stay out of it — the two compose rather than compete.
 
+Why weights are the cold-start problem, and the general levers behind these four options — keep weights out of the image, mmap with `safetensors`, a warm host cache, snapshot restore — are in [GPU & LLM Basics → Operations]({{ '/readings/gpu-llm-basics/#operations' | relative_url }}).
+
 <figure class="shot"><a href="{{ '/assets/img/serverless/edit-model-field.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-model-field.webp' | relative_url }}" alt="Edit endpoint form: the Model field with a Hugging Face URL pinned to a revision" loading="lazy" width="1400" height="998"></a><figcaption>Edit endpoint → <strong>Model</strong> (02-llm-chat): a Hugging Face link, pinned to a revision after the colon. The field has no API equivalent. Below it, the form now warns when no Hugging Face token is set.</figcaption></figure>
 
 <div class="warn" markdown="1">
@@ -211,6 +213,8 @@ Runpod Serverless 는 코드를 오토스케일 HTTP 엔드포인트로 실행�
 | **`VolumeCache`** (SDK 1.12+) | 첫 회 이후 수 초 | 작음 | 없음 — 대신 네트워크 볼륨 비용 |
 
 엔드포인트의 **Model** 필드에 Hugging Face ID 를 넣으면 Runpod 이 호스트의 `/runpod-volume/huggingface-cache/hub` 에 가중치를 캐시하고 그 호스트의 워커들이 공유합니다. 코드는 Git 에, 가중치는 Git 밖에 — 둘은 경쟁 관계가 아니라 함께 쓰는 관계입니다.
+
+가중치가 왜 콜드스타트의 핵심 문제인지, 그리고 이 네 가지 선택지 뒤에 있는 일반적인 레버 — 가중치를 이미지에서 분리, `safetensors` 로 mmap, 따뜻한 호스트 캐시, 스냅샷 복원 — 는 [GPU·LLM 기초 → 운영]({{ '/readings/gpu-llm-basics/#operations-ko' | relative_url }}) 에 있습니다.
 
 <figure class="shot"><a href="{{ '/assets/img/serverless/edit-model-field.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-model-field.webp' | relative_url }}" alt="Edit endpoint 화면: 리비전까지 고정한 Hugging Face URL 이 들어간 Model 칸" loading="lazy" width="1400" height="998"></a><figcaption>Edit endpoint → <strong>Model</strong> (02-llm-chat): 콜론 뒤에 리비전을 고정한 Hugging Face 링크. 이 칸에 해당하는 API 는 없다. 그 아래에는 Hugging Face 토큰이 없을 때 경고가 새로 뜬다.</figcaption></figure>
 
@@ -391,6 +395,8 @@ Runpod Serverless 将你的代码作为自动扩缩的 HTTP 端点运行。请�
 
 在端点的 **Model** 字段填入 Hugging Face ID，Runpod 就会把权重缓存到主机上的 `/runpod-volume/huggingface-cache/hub`，由该主机上的 worker 共享。代码放在 Git 里，权重放在 Git 之外——两者是组合关系，而不是竞争关系。
 
+为什么权重是冷启动的症结，以及这四种选项背后的通用手段——把权重放在镜像之外、用 `safetensors` 做 mmap、预热的主机缓存、快照恢复——见 [GPU 与 LLM 基础 → 运维]({{ '/readings/gpu-llm-basics/#operations-zh' | relative_url }})。
+
 <figure class="shot"><a href="{{ '/assets/img/serverless/edit-model-field.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-model-field.webp' | relative_url }}" alt="Edit endpoint 表单：Model 字段中填有固定到某个 revision 的 Hugging Face URL" loading="lazy" width="1400" height="998"></a><figcaption>Edit endpoint → <strong>Model</strong>（02-llm-chat）：一个 Hugging Face 链接，冒号后固定了 revision。这个字段没有对应的 API。下方现在会在未设置 Hugging Face token 时给出警告。</figcaption></figure>
 
 <div class="warn" markdown="1">
@@ -569,6 +575,8 @@ Runpod Serverless は、コードをオートスケールする HTTP エンド�
 | **`VolumeCache`**（SDK 1.12+） | 初回以降は数秒 | 小さい | されない。代わりに network volume の料金がかかる |
 
 エンドポイントの **Model** フィールドに Hugging Face ID を入れると、Runpod がホストの `/runpod-volume/huggingface-cache/hub` に重みをキャッシュし、そのホスト上の worker で共有します。コードは Git に、重みは Git の外に。両者は競合ではなく組み合わせる関係です。
+
+重みがコールドスタートの問題になる理由と、これら 4 つの選択肢の背後にある一般的な手段（重みをイメージに入れない、`safetensors` で mmap する、ホストのキャッシュを温めておく、スナップショットから復元する）は [GPU と LLM の基礎 → 運用]({{ '/readings/gpu-llm-basics/#operations-ja' | relative_url }})にあります。
 
 <figure class="shot"><a href="{{ '/assets/img/serverless/edit-model-field.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-model-field.webp' | relative_url }}" alt="Edit endpoint フォーム：リビジョンまで固定した Hugging Face URL が入った Model 欄" loading="lazy" width="1400" height="998"></a><figcaption>Edit endpoint → <strong>Model</strong>（02-llm-chat）：コロンの後ろでリビジョンを固定した Hugging Face のリンク。この欄に相当する API はありません。その下には、Hugging Face トークン未設定時の警告が新たに出ます。</figcaption></figure>
 
