@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import pathlib
+import re
 import subprocess
 import sys
 import time
@@ -79,8 +80,20 @@ def create() -> dict:
     inp = {"clusterName": "hol-cluster-01", "gpuTypeId": GPU, "podCount": PODS, "gpuCountPerPod": PER_POD,
            "type": "TRAINING", "imageName": IMAGE, "containerDiskInGb": 50, "volumeInGb": 0,
            "ports": "22/tcp", "startSsh": True}
-    c = gql("mutation($i: CreateClusterInput!){ createCluster(input:$i){ id name pods { id } } }",
-            {"i": inp})["createCluster"]
+    q = "mutation($i: CreateClusterInput!){ createCluster(input:$i){ id name pods { id } } }"
+    try:
+        c = gql(q, {"i": inp})["createCluster"]
+    except RuntimeError as e:
+        # Without deployCost the API asks for price 0 and names the per-pod minimum; deployCost is
+        # for the whole cluster (it is divided by podCount), so offer minimum x podCount.
+        # deployCost 가 없으면 가격 0 으로 거절되고 오류에 노드당 최소 가격이 나온다. deployCost 는
+        # 클러스터 전체 값 (podCount 로 나눠 비교) 이므로 최소 가격 x podCount 로 다시 요청한다.
+        m = re.search(r"minimum price \(([\d.]+)\)", str(e))
+        if not m or float(m.group(1)) * PODS > MAX_PER_HR:
+            raise
+        inp["deployCost"] = round(float(m.group(1)) * PODS, 2)
+        log("retry with deployCost", inp["deployCost"])
+        c = gql(q, {"i": inp})["createCluster"]
     st.update(cluster_id=c["id"], pod_ids=[p["id"] for p in c["pods"]], created=time.time())
     save_state(st)
     log("created cluster", c["id"], "pods", st["pod_ids"])

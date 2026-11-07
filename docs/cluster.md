@@ -11,7 +11,7 @@ permalink: /cluster/
 ## English
 
 <div class="note" markdown="1">
-**Status: lab 01 stage 1 done (2026-11-07).** Stage 2, a 2-node Instant Cluster, waits for capacity: every cluster type was Unavailable on 2026-11-07 ([#52](https://github.com/litkhai/runpod-hols/issues/52)).
+**Status: lab 01 stage 1 done; stage 2 ran once (2026-11-07).** A 2 × 8 A100 SXM cluster ran for 35 minutes, but NCCL could not use InfiniBand from the stock PyTorch image; a rerun with an RDMA-ready image is open ([#52](https://github.com/litkhai/runpod-hols/issues/52)).
 </div>
 
 [Instant Clusters](https://docs.runpod.io/instant-clusters) are Runpod's multi-node offering: fully managed clusters with high-speed interconnect for distributed training and large-scale inference.
@@ -68,18 +68,27 @@ Clusters are created in the console (**Clusters → Create cluster**) or over Gr
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/spend-rate-limit.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/spend-rate-limit.webp' | relative_url }}" alt="Billing page showing a spend rate limit of USD 80 per hour" loading="lazy" width="1400" height="998"></a><figcaption>Billing shows this account's <strong>spend rate limit, USD 80/hr</strong>. The smallest A100 cluster (USD 34.37/hr) and H100 cluster (USD 76.61/hr) fit under it; H200 (USD 101.57) and B200 (USD 153.41) would not — the "default spending limit" the docs mention.</figcaption></figure>
 
-When capacity appears, run on each node:
+### Sockets instead of InfiniBand
 
-```bash
-git clone https://github.com/litkhai/runpod-hols && cd runpod-hols/cluster/01-pytorch-distributed
-bash run.sh cluster-2x8xA100            # NUM_NODES, NODE_RANK, PRIMARY_ADDR come from Runpod; NCCL uses ens1
-```
+A100 SXM came back at 21:42 KST; `cluster.py` created the cluster at 21:48, SSH was open on both nodes 114 s later, `run.sh` ran 21:50–22:09, and the cluster was deleted at 22:23: 35 minutes at USD 34.37/hr, about USD 20. `createCluster` needs `deployCost` (the whole cluster's hourly offer; the API checks it per Pod against a minimum of USD 14.32), and the Pods were billed at the list price whatever the offer.
+
+| 16 GPUs, `runpod/pytorch` image as is | Result |
+|---|---|
+| NCCL network between nodes | **`Socket` over `ens1`**: *"Failed to open libibverbs.so[.1]"* |
+| all-reduce `busbw`, 1 GiB | **0.32 GB/s** (2 A100s over NVLink in stage 1: 201 GB/s) |
+| DDP, 1 GPU → 16 GPUs | 23,497 → **1,105 samples/s** (step 10.9 ms → 3,705 ms) |
+
+- **The image had no RDMA user space**, so NCCL fell back to TCP on `ens1` without a warning and the job finished anyway: sixteen GPUs trained 21× slower than one. Each node had twelve Mellanox HCAs, and Runpod had already set `NCCL_IB_HCA` to the eight next to the GPUs.
+- **Installing `libibverbs1` from Ubuntu was not enough.** NCCL then chose `IB` with GPU Direct RDMA on all eight HCAs, and every HCA reported *"local catastrophic error"*; the all-reduce made no progress in ten minutes and the run was stopped.
+- Check the NCCL log for `Using network IB` before trusting any multi-node number. The next run will use an image built for clusters (Runpod's pytorch-cluster template).
+
+Details and raw logs: [lab README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#stage-2-run--sockets-instead-of-infiniband).
 
 ### Possible labs
 
 | Lab | Contents |
 |---|---|
-| 01-pytorch-distributed | Stage 1 done; stage 2 (2 nodes × 8 A100, cap USD 50) waits for capacity |
+| 01-pytorch-distributed | Stage 1 done; stage 2 ran on sockets, rerun with an RDMA-ready image open |
 | 02-slurm-cluster | Deploy a managed Slurm cluster and submit a job |
 | 03-axolotl-finetune | Multi-node LLM fine-tuning with Axolotl |
 
@@ -101,7 +110,7 @@ bash run.sh cluster-2x8xA100            # NUM_NODES, NODE_RANK, PRIMARY_ADDR com
 ## 한국어
 
 <div class="note" markdown="1">
-**상태: 실습 01 의 1단계 완료 (2026-11-07).** 2단계인 노드 2개짜리 Instant Cluster 는 자리를 기다리고 있다. 2026-11-07 에는 모든 클러스터 종류가 Unavailable 이었다 ([#52](https://github.com/litkhai/runpod-hols/issues/52)).
+**상태: 실습 01 의 1단계 완료, 2단계 1회 실행 (2026-11-07).** A100 SXM 2 × 8장 클러스터를 35분 돌렸지만, 기본 PyTorch 이미지에서는 NCCL 이 InfiniBand 를 쓰지 못했다. RDMA 를 갖춘 이미지로 다시 돌리는 일이 남아 있다 ([#52](https://github.com/litkhai/runpod-hols/issues/52)).
 </div>
 
 [Instant Clusters](https://docs.runpod.io/instant-clusters) 는 Runpod 의 다중 노드 제품입니다. 분산 학습과 대규모 추론을 위한, 고속 인터커넥트를 갖춘 완전관리형 클러스터입니다.
@@ -158,18 +167,27 @@ python3 lab.py delete
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/spend-rate-limit.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/spend-rate-limit.webp' | relative_url }}" alt="시간당 USD 80 의 지출 속도 한도를 보여주는 Billing 화면" loading="lazy" width="1400" height="998"></a><figcaption>Billing 화면에 이 계정의 <strong>지출 속도 한도, 시간당 USD 80</strong> 이 나온다. 가장 작은 A100 클러스터(시간당 USD 34.37)와 H100 클러스터(USD 76.61)는 그 안에 들어가고, H200(USD 101.57)과 B200(USD 153.41)은 넘는다. 문서가 말하는 "기본 지출 한도" 가 이것이다.</figcaption></figure>
 
-자리가 나면 각 노드에서:
+### InfiniBand 대신 소켓
 
-```bash
-git clone https://github.com/litkhai/runpod-hols && cd runpod-hols/cluster/01-pytorch-distributed
-bash run.sh cluster-2x8xA100            # NUM_NODES, NODE_RANK, PRIMARY_ADDR 는 Runpod 이 넣고, NCCL 은 ens1 사용
-```
+A100 SXM 이 한국 시간 21:42 에 다시 나왔다. `cluster.py` 가 21:48 에 클러스터를 만들었고, 114초 뒤 두 노드에 SSH 가 열렸으며, `run.sh` 가 21:50–22:09 에 돌고 22:23 에 클러스터를 지웠다. 시간당 USD 34.37 로 35분, 약 USD 20 이다. `createCluster` 에는 `deployCost` (클러스터 전체의 시간당 제시 가격. API 는 이를 Pod 당으로 나눠 최소 USD 14.32 와 비교한다) 가 필요하고, 제시 가격과 관계없이 Pod 는 정가로 청구됐다.
+
+| GPU 16장, `runpod/pytorch` 이미지 그대로 | 결과 |
+|---|---|
+| 노드 간 NCCL 네트워크 | **`ens1` 위의 `Socket`**: *"Failed to open libibverbs.so[.1]"* |
+| all-reduce `busbw`, 1 GiB | **0.32 GB/s** (1단계 NVLink A100 2장: 201 GB/s) |
+| DDP, GPU 1장 → 16장 | 23,497 → **1,105 samples/s** (스텝 10.9 ms → 3,705 ms) |
+
+- **이미지에 RDMA 사용자 공간 라이브러리가 없어서** NCCL 이 경고 없이 `ens1` 의 TCP 로 내려갔고, 작업은 그대로 끝났다. GPU 16장이 1장보다 21배 느렸다. 노드마다 Mellanox HCA 가 12개 있었고, Runpod 은 이미 `NCCL_IB_HCA` 를 GPU 옆의 8개로 설정해 두었다.
+- **Ubuntu 의 `libibverbs1` 을 설치하는 것만으로는 부족했다.** 그러자 NCCL 은 HCA 8개 모두에서 GPU Direct RDMA 와 함께 `IB` 를 골랐지만, 모든 HCA 가 *"local catastrophic error"* 를 냈고 all-reduce 는 10분 동안 진척이 없어 중단했다.
+- 다중 노드 수치를 믿기 전에 NCCL 로그에서 `Using network IB` 를 확인한다. 다음 실행은 클러스터용 이미지 (Runpod 의 pytorch-cluster 템플릿) 로 한다.
+
+자세한 내용과 원본 로그: [실습 README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#2단계-실행--infiniband-대신-소켓).
 
 ### 검토 중인 실습
 
 | 실습 | 내용 |
 |---|---|
-| 01-pytorch-distributed | 1단계 완료. 2단계 (노드 2개 × A100 8장, 상한 USD 50) 는 자리 대기 |
+| 01-pytorch-distributed | 1단계 완료. 2단계는 소켓으로 1회 실행, RDMA 이미지로 재실행 남음 |
 | 02-slurm-cluster | 관리형 Slurm 클러스터 배포 및 잡 제출 |
 | 03-axolotl-finetune | Axolotl 을 이용한 다중 노드 LLM 파인튜닝 |
 
@@ -191,7 +209,7 @@ bash run.sh cluster-2x8xA100            # NUM_NODES, NODE_RANK, PRIMARY_ADDR 는
 ## 简体中文
 
 <div class="note" markdown="1">
-**状态：实验 01 第 1 阶段已完成（2026-11-07）。** 第 2 阶段（2 节点 Instant Cluster）正在等待容量：2026-11-07 所有集群类型均为 Unavailable（[#52](https://github.com/litkhai/runpod-hols/issues/52)）。
+**状态：实验 01 第 1 阶段已完成，第 2 阶段运行过一次（2026-11-07）。** 2 × 8 A100 SXM 集群运行了 35 分钟，但在默认 PyTorch 镜像中 NCCL 无法使用 InfiniBand；用支持 RDMA 的镜像重跑仍待完成（[#52](https://github.com/litkhai/runpod-hols/issues/52)）。
 </div>
 
 [Instant Clusters](https://docs.runpod.io/instant-clusters) 是 Runpod 的多节点产品：带高速互连的全托管集群，用于分布式训练和大规模推理。
@@ -248,18 +266,27 @@ python3 lab.py delete
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/spend-rate-limit.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/spend-rate-limit.webp' | relative_url }}" alt="Billing 页面显示每小时 USD 80 的花费速率上限" loading="lazy" width="1400" height="998"></a><figcaption>Billing 页面显示该账户的<strong>花费速率上限为每小时 USD 80</strong>。最小的 A100 集群（每小时 USD 34.37）和 H100 集群（USD 76.61）在限额内；H200（USD 101.57）和 B200（USD 153.41）则会超出——这就是文档所说的“默认花费限额”。</figcaption></figure>
 
-有容量时，在每个节点上运行：
+### 走 Socket 而不是 InfiniBand
 
-```bash
-git clone https://github.com/litkhai/runpod-hols && cd runpod-hols/cluster/01-pytorch-distributed
-bash run.sh cluster-2x8xA100            # NUM_NODES、NODE_RANK、PRIMARY_ADDR 由 Runpod 设置；NCCL 走 ens1
-```
+A100 SXM 在韩国时间 21:42 再次出现；`cluster.py` 在 21:48 创建集群，114 秒后两个节点都能 SSH，`run.sh` 在 21:50–22:09 运行，22:23 删除集群：按每小时 USD 34.37 运行 35 分钟，约 USD 20。`createCluster` 需要 `deployCost`（整个集群每小时的出价；API 按 Pod 拆分后与最低价 USD 14.32 比较），而无论出价多少，Pod 都按标价计费。
+
+| 16 块 GPU，`runpod/pytorch` 镜像原样 | 结果 |
+|---|---|
+| 节点间 NCCL 网络 | **`ens1` 上的 `Socket`**：*"Failed to open libibverbs.so[.1]"* |
+| all-reduce `busbw`，1 GiB | **0.32 GB/s**（第 1 阶段 NVLink 两块 A100：201 GB/s） |
+| DDP，1 块 → 16 块 GPU | 23,497 → **1,105 samples/s**（每步 10.9 ms → 3,705 ms） |
+
+- **镜像中没有 RDMA 用户态库**，NCCL 在没有警告的情况下退回 `ens1` 上的 TCP，任务照样完成：16 块 GPU 比 1 块慢 21 倍。每个节点有 12 个 Mellanox HCA，Runpod 已把 `NCCL_IB_HCA` 设为靠近 GPU 的 8 个。
+- **只从 Ubuntu 安装 `libibverbs1` 不够。** 之后 NCCL 在全部 8 个 HCA 上选择了带 GPU Direct RDMA 的 `IB`，随即每个 HCA 都报告 *"local catastrophic error"*；all-reduce 十分钟没有进展，于是中止。
+- 相信任何多节点数据之前，先在 NCCL 日志中确认 `Using network IB`。下一次运行将使用为集群构建的镜像（Runpod 的 pytorch-cluster 模板）。
+
+详情与原始日志：[实验 README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#stage-2-run--sockets-instead-of-infiniband)。
 
 ### 可能的实验
 
 | 实验 | 内容 |
 |---|---|
-| 01-pytorch-distributed | 第 1 阶段完成；第 2 阶段（2 节点 × 8 块 A100，上限 USD 50）等待容量 |
+| 01-pytorch-distributed | 第 1 阶段完成；第 2 阶段以 Socket 运行过一次，待用支持 RDMA 的镜像重跑 |
 | 02-slurm-cluster | 部署托管 Slurm 集群并提交作业 |
 | 03-axolotl-finetune | 用 Axolotl 进行多节点 LLM 微调 |
 
@@ -281,7 +308,7 @@ bash run.sh cluster-2x8xA100            # NUM_NODES、NODE_RANK、PRIMARY_ADDR �
 ## 日本語
 
 <div class="note" markdown="1">
-**状態：ラボ 01 のステージ 1 完了（2026-11-07）。** ステージ 2 の 2 ノード Instant Cluster は空きを待っています。2026-11-07 はすべてのクラスタ種別が Unavailable でした（[#52](https://github.com/litkhai/runpod-hols/issues/52)）。
+**状態：ラボ 01 のステージ 1 完了、ステージ 2 を 1 回実行（2026-11-07）。** A100 SXM 2 × 8 基のクラスタを 35 分動かしましたが、標準の PyTorch イメージでは NCCL が InfiniBand を使えませんでした。RDMA 対応イメージでの再実行が残っています（[#52](https://github.com/litkhai/runpod-hols/issues/52)）。
 </div>
 
 [Instant Clusters](https://docs.runpod.io/instant-clusters) は Runpod のマルチノード製品です。分散学習と大規模推論のための、高速インターコネクトを備えたフルマネージドのクラスタです。
@@ -338,18 +365,27 @@ python3 lab.py delete
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/spend-rate-limit.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/spend-rate-limit.webp' | relative_url }}" alt="時間あたり USD 80 の支出レート上限を示す Billing 画面" loading="lazy" width="1400" height="998"></a><figcaption>Billing にこのアカウントの<strong>支出レート上限、時間あたり USD 80</strong> が表示されます。最小の A100 クラスタ（時間あたり USD 34.37）と H100 クラスタ（USD 76.61）は収まり、H200（USD 101.57）と B200（USD 153.41）は超えます。ドキュメントのいう「既定の支出上限」がこれです。</figcaption></figure>
 
-空きが出たら、各ノードで実行します。
+### InfiniBand ではなくソケット
 
-```bash
-git clone https://github.com/litkhai/runpod-hols && cd runpod-hols/cluster/01-pytorch-distributed
-bash run.sh cluster-2x8xA100            # NUM_NODES、NODE_RANK、PRIMARY_ADDR は Runpod が設定。NCCL は ens1 を使う
-```
+A100 SXM は韓国時間 21:42 に再び出ました。`cluster.py` が 21:48 にクラスタを作成し、114 秒後に両ノードで SSH が開き、`run.sh` が 21:50〜22:09 に実行され、22:23 にクラスタを削除しました。時間あたり USD 34.37 で 35 分、約 USD 20 です。`createCluster` には `deployCost`（クラスタ全体の時間あたりの提示価格。API は Pod ごとに割って最低価格 USD 14.32 と比較）が必要で、提示価格にかかわらず Pod は定価で請求されました。
+
+| GPU 16 基、`runpod/pytorch` イメージそのまま | 結果 |
+|---|---|
+| ノード間の NCCL ネットワーク | **`ens1` 上の `Socket`**：*"Failed to open libibverbs.so[.1]"* |
+| all-reduce `busbw`、1 GiB | **0.32 GB/s**（ステージ 1 の NVLink A100 2 基：201 GB/s） |
+| DDP、GPU 1 基 → 16 基 | 23,497 → **1,105 samples/s**（ステップ 10.9 ms → 3,705 ms） |
+
+- **イメージに RDMA のユーザー空間ライブラリがなく**、NCCL は警告なしに `ens1` の TCP へフォールバックし、ジョブはそのまま完了しました。GPU 16 基が 1 基より 21 倍遅くなりました。各ノードには Mellanox HCA が 12 個あり、Runpod は `NCCL_IB_HCA` を GPU 近くの 8 個に設定済みでした。
+- **Ubuntu の `libibverbs1` を入れるだけでは足りませんでした。** すると NCCL は 8 個すべての HCA で GPU Direct RDMA 付きの `IB` を選びましたが、どの HCA も *"local catastrophic error"* を報告し、all-reduce は 10 分間進まなかったため中止しました。
+- マルチノードの数値を信じる前に、NCCL のログで `Using network IB` を確認してください。次回はクラスタ向けに作られたイメージ（Runpod の pytorch-cluster テンプレート）で実行します。
+
+詳細と生ログ：[ラボの README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#stage-2-run--sockets-instead-of-infiniband)。
 
 ### 候補のラボ
 
 | ラボ | 内容 |
 |---|---|
-| 01-pytorch-distributed | ステージ 1 完了。ステージ 2（2 ノード × A100 8 基、上限 USD 50）は空き待ち |
+| 01-pytorch-distributed | ステージ 1 完了。ステージ 2 は Socket で 1 回実行、RDMA 対応イメージでの再実行待ち |
 | 02-slurm-cluster | マネージド Slurm クラスタをデプロイしてジョブを投入 |
 | 03-axolotl-finetune | Axolotl によるマルチノードの LLM ファインチューニング |
 
