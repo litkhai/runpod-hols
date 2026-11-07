@@ -80,7 +80,7 @@ A100 SXM came back at 21:42 KST; `cluster.py` created the cluster at 21:48, SSH 
 
 - **The image had no RDMA user space**, so NCCL fell back to TCP on `ens1` without a warning and the job finished anyway: sixteen GPUs trained 21× slower than one. Each node had twelve Mellanox HCAs, and Runpod had already set `NCCL_IB_HCA` to the eight next to the GPUs.
 - **Installing `libibverbs1` from Ubuntu was not enough.** NCCL then chose `IB` with GPU Direct RDMA on all eight HCAs, and every HCA reported *"local catastrophic error"*; the all-reduce made no progress in ten minutes and the run was stopped.
-- Check the NCCL log for `Using network IB` before trusting any multi-node number. The next run will use an image built for clusters (Runpod's pytorch-cluster template).
+- Check the NCCL log for `Using network IB` before trusting any multi-node number. The console's cluster templates use a separate image, `runpod/pytorch:1.0.7-cu1300-torch291-ubuntu2404-cluster`; the next run uses it.
 
 Details and raw logs: [lab README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#stage-2-run--sockets-instead-of-infiniband).
 
@@ -179,7 +179,7 @@ A100 SXM 이 한국 시간 21:42 에 다시 나왔다. `cluster.py` 가 21:48 �
 
 - **이미지에 RDMA 사용자 공간 라이브러리가 없어서** NCCL 이 경고 없이 `ens1` 의 TCP 로 내려갔고, 작업은 그대로 끝났다. GPU 16장이 1장보다 21배 느렸다. 노드마다 Mellanox HCA 가 12개 있었고, Runpod 은 이미 `NCCL_IB_HCA` 를 GPU 옆의 8개로 설정해 두었다.
 - **Ubuntu 의 `libibverbs1` 을 설치하는 것만으로는 부족했다.** 그러자 NCCL 은 HCA 8개 모두에서 GPU Direct RDMA 와 함께 `IB` 를 골랐지만, 모든 HCA 가 *"local catastrophic error"* 를 냈고 all-reduce 는 10분 동안 진척이 없어 중단했다.
-- 다중 노드 수치를 믿기 전에 NCCL 로그에서 `Using network IB` 를 확인한다. 다음 실행은 클러스터용 이미지 (Runpod 의 pytorch-cluster 템플릿) 로 한다.
+- 다중 노드 수치를 믿기 전에 NCCL 로그에서 `Using network IB` 를 확인한다. 콘솔의 클러스터 템플릿은 별도 이미지 `runpod/pytorch:1.0.7-cu1300-torch291-ubuntu2404-cluster` 를 쓰며, 다음 실행은 이 이미지로 한다.
 
 자세한 내용과 원본 로그: [실습 README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#2단계-실행--infiniband-대신-소켓).
 
@@ -278,7 +278,7 @@ A100 SXM 在韩国时间 21:42 再次出现；`cluster.py` 在 21:48 创建集�
 
 - **镜像中没有 RDMA 用户态库**，NCCL 在没有警告的情况下退回 `ens1` 上的 TCP，任务照样完成：16 块 GPU 比 1 块慢 21 倍。每个节点有 12 个 Mellanox HCA，Runpod 已把 `NCCL_IB_HCA` 设为靠近 GPU 的 8 个。
 - **只从 Ubuntu 安装 `libibverbs1` 不够。** 之后 NCCL 在全部 8 个 HCA 上选择了带 GPU Direct RDMA 的 `IB`，随即每个 HCA 都报告 *"local catastrophic error"*；all-reduce 十分钟没有进展，于是中止。
-- 相信任何多节点数据之前，先在 NCCL 日志中确认 `Using network IB`。下一次运行将使用为集群构建的镜像（Runpod 的 pytorch-cluster 模板）。
+- 相信任何多节点数据之前，先在 NCCL 日志中确认 `Using network IB`。控制台的集群模板使用单独的镜像 `runpod/pytorch:1.0.7-cu1300-torch291-ubuntu2404-cluster`，下一次运行将使用它。
 
 详情与原始日志：[实验 README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#stage-2-run--sockets-instead-of-infiniband)。
 
@@ -377,7 +377,7 @@ A100 SXM は韓国時間 21:42 に再び出ました。`cluster.py` が 21:48 �
 
 - **イメージに RDMA のユーザー空間ライブラリがなく**、NCCL は警告なしに `ens1` の TCP へフォールバックし、ジョブはそのまま完了しました。GPU 16 基が 1 基より 21 倍遅くなりました。各ノードには Mellanox HCA が 12 個あり、Runpod は `NCCL_IB_HCA` を GPU 近くの 8 個に設定済みでした。
 - **Ubuntu の `libibverbs1` を入れるだけでは足りませんでした。** すると NCCL は 8 個すべての HCA で GPU Direct RDMA 付きの `IB` を選びましたが、どの HCA も *"local catastrophic error"* を報告し、all-reduce は 10 分間進まなかったため中止しました。
-- マルチノードの数値を信じる前に、NCCL のログで `Using network IB` を確認してください。次回はクラスタ向けに作られたイメージ（Runpod の pytorch-cluster テンプレート）で実行します。
+- マルチノードの数値を信じる前に、NCCL のログで `Using network IB` を確認してください。コンソールのクラスタ用テンプレートは別のイメージ `runpod/pytorch:1.0.7-cu1300-torch291-ubuntu2404-cluster` を使っており、次回はこれで実行します。
 
 詳細と生ログ：[ラボの README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#stage-2-run--sockets-instead-of-infiniband)。
 
