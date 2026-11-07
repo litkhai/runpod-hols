@@ -18,6 +18,7 @@ Runpod Serverless runs your code as an **autoscaling HTTP endpoint**. Workers sp
 | [04-load-balancer](./04-load-balancer) | ✅ Run 2026-11-07 | HTTP-server worker on a load-balancing endpoint, latency against a queue endpoint |
 | [05-bulk-requests](./05-bulk-requests) | ✅ Run 2026-11-07 | Bulk Requests: batches on a dedicated worker, checked against billing |
 | [06-autoscaling](./06-autoscaling) | ✅ Run 2026-11-07 | Queue delay vs request count scalers, per-worker concurrency |
+| [07-streaming](./07-streaming) | ✅ Run 2026-11-07 | `/stream` chunk latency, the cost of each `yield`, `/runsync` with a generator |
 | [08-job-lifecycle](./08-job-lifecycle) | ✅ Run 2026-11-07 | Every way a job ends: failed, cancelled, timed out, expired, purged, retried |
 
 ### Where the model lives
@@ -132,6 +133,7 @@ Runpod Serverless 는 코드를 **오토스케일 HTTP 엔드포인트**로 실�
 | [04-load-balancer](./04-load-balancer) | ✅ 2026-11-07 실행 | 로드밸런싱 엔드포인트의 HTTP 서버 워커, 큐 엔드포인트와 지연 비교 |
 | [05-bulk-requests](./05-bulk-requests) | ✅ 2026-11-07 실행 | Bulk Requests: 전용 워커의 배치, 청구 내역으로 확인 |
 | [06-autoscaling](./06-autoscaling) | ✅ 2026-11-07 실행 | Queue delay 와 Request count 스케일러, 워커당 동시성 |
+| [07-streaming](./07-streaming) | ✅ 2026-11-07 실행 | `/stream` 청크 지연, `yield` 한 번의 비용, 제너레이터와 `/runsync` |
 | [08-job-lifecycle](./08-job-lifecycle) | ✅ 2026-11-07 실행 | 작업이 끝나는 모든 방식: 실패, 취소, 시간 초과, 만료, purge, 재시도 |
 
 ### 모델은 어디에 두는가
