@@ -95,7 +95,8 @@ Created in the console (**Clusters → Create cluster**) or over GraphQL: the RE
 
 ```bash
 python3 cluster.py stock                      # stockStatus and price per GPU-hour
-python3 cluster.py auto 2x8xA100SXM --hours 48 # wait for stock, then everything below
+python3 cluster.py auto auto --hours 48 --gpus "NVIDIA A100-SXM4-80GB,NVIDIA H100 80GB HBM3"
+#   wait for whichever type comes first, then everything below; tag auto -> 2x8x<GPU>-cluster
 ```
 
 `auto` checks stock every 2 minutes; when A100 SXM is available it calls
@@ -106,7 +107,7 @@ createCluster(input: {clusterName: "hol-cluster-01", gpuTypeId: "NVIDIA A100-SXM
   containerDiskInGb: 50, volumeInGb: 0, ports: "22/tcp", startSsh: true}) { id pods { id } }
 ```
 
-(`type` takes `TRAINING` or `SLURM`), starts a detached watchdog that runs `deleteCluster(input: {id})` 75 minutes later whatever happens, waits for SSH on both nodes, runs `run.sh` on both at once (the cluster variables are read from the container's PID 1, since an SSH session does not inherit them), fetches `results/`, and deletes the cluster. It refuses to create anything above USD 40/hr. Manual steps: `create`, `show`, `push`, `run <tag>`, `pull`, `delete`.
+(`type` takes `TRAINING` or `SLURM`), starts a detached watchdog that runs `deleteCluster(input: {id})` 75 minutes later whatever happens, waits for SSH on both nodes, runs `run.sh` on both at once (the cluster variables are read from the container's PID 1, since an SSH session does not inherit them), fetches `results/`, and deletes the cluster. It refuses to create anything above USD 80/hr, the account's spend limit (H100: USD 76.61/hr). Manual steps: `create`, `show`, `push`, `run <tag>`, `pull`, `delete`.
 
 **`deployCost` is required.** Without it `createCluster` fails with *"The requested price 0 is less than the current minimum price (14.32)"*. The minimum is per Pod, and `deployCost` is for the whole cluster: 14.32 came back as *"requested price 7.16"*, so `cluster.py` offers the minimum × `podCount` (28.64). The Pods were then billed at the list price, USD 17.184/hr each (USD 34.37/hr), not at the offer.
 
@@ -231,10 +232,11 @@ Pod 는 11.5분, 약 USD 3. 원본: [`results/4xH100SXM/`](./results/4xH100SXM/)
 
 ```bash
 python3 cluster.py stock                      # stockStatus 와 GPU 시간당 가격
-python3 cluster.py auto 2x8xA100SXM --hours 48 # 재고를 기다렸다가 아래를 모두 진행
+python3 cluster.py auto auto --hours 48 --gpus "NVIDIA A100-SXM4-80GB,NVIDIA H100 80GB HBM3"
+#   먼저 재고가 나온 종류로 아래를 모두 진행. 태그 auto -> 2x8x<GPU>-cluster
 ```
 
-`auto` 는 2분마다 재고를 확인하고, A100 SXM 이 나오면 위의 영어 절에 있는 `createCluster` 를 호출한다 (`type` 은 `TRAINING` 또는 `SLURM`). 그다음 무슨 일이 있어도 75분 뒤 `deleteCluster(input: {id})` 를 부르는 분리된 감시 프로세스를 띄우고, 두 노드의 SSH 를 기다려 `run.sh` 를 동시에 돌린다 (SSH 세션은 클러스터 변수를 물려받지 않으므로 컨테이너 PID 1 에서 읽는다). 이어서 `results/` 를 받아 오고 클러스터를 지운다. 시간당 USD 40 을 넘는 것은 만들지 않는다. 수동 단계: `create`, `show`, `push`, `run <tag>`, `pull`, `delete`.
+`auto` 는 2분마다 재고를 확인하고, A100 SXM 이 나오면 위의 영어 절에 있는 `createCluster` 를 호출한다 (`type` 은 `TRAINING` 또는 `SLURM`). 그다음 무슨 일이 있어도 75분 뒤 `deleteCluster(input: {id})` 를 부르는 분리된 감시 프로세스를 띄우고, 두 노드의 SSH 를 기다려 `run.sh` 를 동시에 돌린다 (SSH 세션은 클러스터 변수를 물려받지 않으므로 컨테이너 PID 1 에서 읽는다). 이어서 `results/` 를 받아 오고 클러스터를 지운다. 시간당 USD 80 (계정의 지출 상한. H100 은 USD 76.61) 을 넘는 것은 만들지 않는다. 수동 단계: `create`, `show`, `push`, `run <tag>`, `pull`, `delete`.
 
 **`deployCost` 가 필요하다.** 빼면 `createCluster` 가 *"The requested price 0 is less than the current minimum price (14.32)"* 로 거절된다. 최소 가격은 Pod 당이고 `deployCost` 는 클러스터 전체 값이다. 14.32 를 넣으면 *"requested price 7.16"* 으로 나뉘어 돌아오므로, `cluster.py` 는 최소 가격 × `podCount` (28.64) 로 요청한다. 실제 청구는 요청 값이 아니라 정가, Pod 당 시간당 USD 17.184 (전체 USD 34.37) 였다.
 
