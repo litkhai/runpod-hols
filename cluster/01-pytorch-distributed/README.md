@@ -34,7 +34,7 @@ python3 lab.py delete
 python3 lab.py create --gpu "NVIDIA A100-SXM4-80GB"     # then the same with tag 2xA100SXM
 ```
 
-Image `runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404` (torch 2.9.1, NCCL 2.27.5).
+Image `runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404` (torch 2.9.1, NCCL 2.27.5). Stage 2 now uses the cluster image `runpod/pytorch:1.0.7-cu1300-torch291-ubuntu2404-cluster`.
 
 | | 2x RTX 4090 | 2x A100 SXM 80GB |
 |---|---|---|
@@ -110,7 +110,7 @@ Both nodes had eight NVLinked A100s (`NV12`), twelve Mellanox HCAs (`mlx5_0`–`
 
 - **The image has no RDMA user space.** `runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404` lacks `libibverbs`, so NCCL fell back to TCP sockets on `ens1`. Inside each node it still used NVLink (`P2P/CUMEM`); between the nodes every gradient went over sockets.
 - **Sixteen GPUs trained 21× slower than one.** About 400 MB of gradients per step over 0.3 GB/s is more than a second each way; a step took 3.7 s against 11 ms of compute.
-- **Installing the library from Ubuntu did not fix it.** After `apt-get install libibverbs1 ibverbs-providers` NCCL picked `IB` on all eight HCAs with GPU Direct RDMA, and then every HCA reported *"async fatal event: local catastrophic error"*; the all-reduce made no progress in ten minutes. The likely cause is a mismatch between Ubuntu's rdma-core and the host's driver; a cluster image built for RDMA (Runpod's [pytorch-cluster](https://github.com/runpod/containers/tree/main/official-templates/pytorch-cluster) template) is the next thing to try.
+- **Installing the library from Ubuntu did not fix it.** After `apt-get install libibverbs1 ibverbs-providers` NCCL picked `IB` on all eight HCAs with GPU Direct RDMA, and then every HCA reported *"async fatal event: local catastrophic error"*; the all-reduce made no progress in ten minutes. The likely cause is a mismatch between Ubuntu's rdma-core and the host's driver; the console's cluster templates use a separate image, `runpod/pytorch:1.0.7-cu1300-torch291-ubuntu2404-cluster` (template *Runpod Pytorch 2.9.0 for clusters*), and `cluster.py` now creates the next cluster with it.
 - Whatever image you use, check the NCCL log for `Using network IB` before you trust the numbers: the fallback to `Socket` is silent and the job still finishes.
 
 Raw files: [`results/2x8xA100SXM-socket/`](./results/2x8xA100SXM-socket/) (with `nccl-transport.txt`, `timeline.json`), [`results/2x8xA100SXM-ib/nccl-ib.txt`](./results/2x8xA100SXM-ib/nccl-ib.txt).
@@ -147,7 +147,7 @@ python3 lab.py delete
 python3 lab.py create --gpu "NVIDIA A100-SXM4-80GB"     # 이어서 태그 2xA100SXM 로 같은 순서
 ```
 
-이미지 `runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404` (torch 2.9.1, NCCL 2.27.5).
+이미지 `runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404` (torch 2.9.1, NCCL 2.27.5). 2단계는 이제 클러스터용 이미지 `runpod/pytorch:1.0.7-cu1300-torch291-ubuntu2404-cluster` 를 쓴다.
 
 | | RTX 4090 두 장 | A100 SXM 80GB 두 장 |
 |---|---|---|
@@ -215,7 +215,7 @@ python3 cluster.py auto 2x8xA100SXM --hours 48 # 재고를 기다렸다가 아�
 
 - **이미지에 RDMA 사용자 공간 라이브러리가 없다.** `runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404` 에는 `libibverbs` 가 없어서 NCCL 이 `ens1` 의 TCP 소켓으로 내려갔다. 노드 안에서는 여전히 NVLink (`P2P/CUMEM`) 를 썼지만, 노드 사이의 그래디언트는 모두 소켓으로 갔다.
 - **GPU 16장이 1장보다 21배 느렸다.** 스텝마다 약 400 MB 의 그래디언트를 0.3 GB/s 로 주고받으니 한 방향에만 1초가 넘는다. 계산 11 ms 에 스텝은 3.7초였다.
-- **Ubuntu 패키지로 라이브러리를 넣어도 해결되지 않았다.** `apt-get install libibverbs1 ibverbs-providers` 뒤 NCCL 은 HCA 8개 모두에서 GPU Direct RDMA 와 함께 `IB` 를 골랐지만, 곧 모든 HCA 가 *"async fatal event: local catastrophic error"* 를 냈고 all-reduce 는 10분 동안 진척이 없었다. Ubuntu 의 rdma-core 와 호스트 드라이버가 맞지 않는 것으로 보인다. 다음에는 RDMA 용으로 만든 클러스터 이미지 (Runpod 의 [pytorch-cluster](https://github.com/runpod/containers/tree/main/official-templates/pytorch-cluster) 템플릿) 로 시도한다.
+- **Ubuntu 패키지로 라이브러리를 넣어도 해결되지 않았다.** `apt-get install libibverbs1 ibverbs-providers` 뒤 NCCL 은 HCA 8개 모두에서 GPU Direct RDMA 와 함께 `IB` 를 골랐지만, 곧 모든 HCA 가 *"async fatal event: local catastrophic error"* 를 냈고 all-reduce 는 10분 동안 진척이 없었다. Ubuntu 의 rdma-core 와 호스트 드라이버가 맞지 않는 것으로 보인다. 콘솔의 클러스터 템플릿은 별도 이미지 `runpod/pytorch:1.0.7-cu1300-torch291-ubuntu2404-cluster` (*Runpod Pytorch 2.9.0 for clusters*) 를 쓰며, `cluster.py` 는 다음 클러스터를 이 이미지로 만든다.
 - 어떤 이미지를 쓰든, 수치를 믿기 전에 NCCL 로그에서 `Using network IB` 를 확인한다. `Socket` 으로 내려가도 경고 없이 작업은 끝난다.
 
 원본 파일: [`results/2x8xA100SXM-socket/`](./results/2x8xA100SXM-socket/) (`nccl-transport.txt`, `timeline.json` 포함), [`results/2x8xA100SXM-ib/nccl-ib.txt`](./results/2x8xA100SXM-ib/nccl-ib.txt).

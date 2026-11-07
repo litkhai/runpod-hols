@@ -30,7 +30,10 @@ from common import LAB_DIR, api_key, load_state, rest, save_state
 
 GPU = "NVIDIA A100-SXM4-80GB"
 PODS, PER_POD = 2, 8
-IMAGE = "runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404"  # same as stage 1 / 1단계와 같은 이미지
+# The console's "for clusters" template image; the plain image has no libibverbs, so NCCL fell back
+# to sockets on 2026-11-07. 콘솔의 "for clusters" 템플릿 이미지. 일반 이미지는 libibverbs 가 없어
+# 2026-11-07 실행에서 NCCL 이 소켓으로 내려갔다.
+IMAGE = "runpod/pytorch:1.0.7-cu1300-torch291-ubuntu2404-cluster"
 REMOTE = "/workspace/dist"
 FILES = ["run.sh", "nccl_bench.py", "ddp_train.py"]
 MAX_PER_HR = 40.0  # 16 x USD 2.148 = 34.37; anything above means a different price, so stop
