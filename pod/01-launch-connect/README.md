@@ -120,7 +120,7 @@ hol-pod-01  (uuv9df4dtk59gd)
 ssh      ssh root@157.157.221.29 -p 37495 -i ~/.ssh/id_ed25519
 ```
 
-Ports take a moment to appear after boot — rerun if the line says it is not ready. On 2026-11-05 the SSH line appeared about 4 minutes after `create_pod` returned, and SSH connected on the first try. The API reported `uptimeSeconds` 0 the whole time, so `status.py` cannot estimate spend; the console's billing page can. SSH needs your public key registered under [Settings → SSH Keys](https://console.runpod.io/user/settings); `runpod ssh add-key` does it for you. JupyterLab is exposed on 8888 and reachable from the Pod's page in the console.
+Ports take a moment to appear after boot — rerun if the line says it is not ready. On 2026-11-05 the SSH line appeared about 4 minutes after `create_pod` returned, and SSH connected on the first try. The API reported `uptimeSeconds` 0 the whole time, so `status.py` cannot estimate spend; the console's billing page can. SSH needs your public key registered under [Credentials → SSH Public Keys](https://console.runpod.io/user/credentials?tab=ssh-key); `runpod ssh add-key` does it for you. JupyterLab is exposed on 8888 and reachable from the Pod's page in the console.
 
 ### Step 5 — Tear down
 
@@ -283,7 +283,7 @@ hol-pod-01  (uuv9df4dtk59gd)
 ssh      ssh root@157.157.221.29 -p 37495 -i ~/.ssh/id_ed25519
 ```
 
-기동 직후에는 포트가 뜨기까지 잠깐 걸립니다. 준비되지 않았다고 나오면 다시 실행하세요. 2026-11-05 에는 `create_pod` 반환 후 약 4분 뒤에 SSH 줄이 나왔고, 첫 시도에 접속됐습니다. 그동안 API 의 `uptimeSeconds` 는 계속 0 이어서 `status.py` 로는 지출을 추정할 수 없습니다. 콘솔의 결제 화면에서 확인하세요. SSH 를 쓰려면 [Settings → SSH Keys](https://console.runpod.io/user/settings) 에 공개키가 등록돼 있어야 하며, `runpod ssh add-key` 가 대신 처리해 줍니다. JupyterLab 은 8888 로 노출되고 콘솔의 Pod 페이지에서 접근할 수 있습니다.
+기동 직후에는 포트가 뜨기까지 잠깐 걸립니다. 준비되지 않았다고 나오면 다시 실행하세요. 2026-11-05 에는 `create_pod` 반환 후 약 4분 뒤에 SSH 줄이 나왔고, 첫 시도에 접속됐습니다. 그동안 API 의 `uptimeSeconds` 는 계속 0 이어서 `status.py` 로는 지출을 추정할 수 없습니다. 콘솔의 결제 화면에서 확인하세요. SSH 를 쓰려면 [Credentials → SSH Public Keys](https://console.runpod.io/user/credentials?tab=ssh-key) 에 공개키가 등록돼 있어야 하며, `runpod ssh add-key` 가 대신 처리해 줍니다. JupyterLab 은 8888 로 노출되고 콘솔의 Pod 페이지에서 접근할 수 있습니다.
 
 ### 5단계 — 정리
 

@@ -37,6 +37,8 @@ Expected `run_pod.api_key` to be initialized. …
 An API key can be generated at https://console.runpod.io/user/settings
 ```
 
+The URL in the message is stale: keys now live under [Credentials → API Keys](https://console.runpod.io/user/credentials?tab=api-keys) (console, 2026-11-07).
+
 ### Calling an endpoint
 
 ```python
@@ -270,6 +272,8 @@ runpod.api_key = os.environ["RUNPOD_API_KEY"]
 Expected `run_pod.api_key` to be initialized. …
 An API key can be generated at https://console.runpod.io/user/settings
 ```
+
+메시지 속 URL 은 낡았습니다. 키는 이제 [Credentials → API Keys](https://console.runpod.io/user/credentials?tab=api-keys) 에 있습니다 (콘솔, 2026-11-07).
 
 ### 엔드포인트 호출
 

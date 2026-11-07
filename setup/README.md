@@ -27,7 +27,7 @@ python setup/verify-auth.py     # 3. does the key actually work?
 
 ### 1. API Key
 
-Create one at [Console → Settings → API Keys](https://console.runpod.io/user/settings), then:
+Create one at [Console → Credentials → API Keys](https://console.runpod.io/user/credentials?tab=api-keys), then:
 
 ```bash
 ./setup/init-env.sh
@@ -130,7 +130,7 @@ python setup/verify-auth.py     # 3. 키가 실제로 동작하는가
 
 ### 1. API 키
 
-[콘솔 → Settings → API Keys](https://console.runpod.io/user/settings) 에서 생성한 뒤:
+[콘솔 → Credentials → API Keys](https://console.runpod.io/user/credentials?tab=api-keys) 에서 생성한 뒤:
 
 ```bash
 ./setup/init-env.sh

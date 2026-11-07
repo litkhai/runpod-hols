@@ -66,6 +66,8 @@ ep.health()
 
 That `failed: 5, retried: 5` is a real record of the `{"input": {}}` requests that hung during these labs — the platform retried and failed them, which the HTTP call itself never reported. `purge_queue()` drops anything still queued.
 
+<figure class="shot"><a href="{{ '/assets/img/sdk-client/workers-tab.webp' | relative_url }}"><img src="{{ '/assets/img/sdk-client/workers-tab.webp' | relative_url }}" alt="Workers tab of 01-hello-world: two idle cpu5g-2-8 workers in EUR-IS-1" loading="lazy" width="1400" height="998"></a><figcaption>The console view behind <code>health()</code>'s <code>workers</code>: two idle workers, cpu5g-2-8 in EUR-IS-1, both on the latest release. The tab hides idle workers by default ("2 workers hidden by filters"); clear the filter to see them.</figcaption></figure>
+
 ### Job states
 
 ```python
@@ -216,6 +218,8 @@ ep.health()
 ```
 
 여기 `failed: 5, retried: 5` 는 이 실습 중 멈췄던 `{"input": {}}` 요청들의 실제 기록입니다. 플랫폼이 재시도하고 실패시켰지만 HTTP 호출 자체로는 알 수 없던 사실입니다. `purge_queue()` 는 대기 중인 작업을 비웁니다.
+
+<figure class="shot"><a href="{{ '/assets/img/sdk-client/workers-tab.webp' | relative_url }}"><img src="{{ '/assets/img/sdk-client/workers-tab.webp' | relative_url }}" alt="01-hello-world 의 Workers 탭: EUR-IS-1 의 유휴 cpu5g-2-8 워커 두 개" loading="lazy" width="1400" height="998"></a><figcaption><code>health()</code> 의 <code>workers</code> 에 해당하는 콘솔 화면: 유휴 워커 두 개, EUR-IS-1 의 cpu5g-2-8, 둘 다 최신 릴리스. 이 탭은 기본으로 유휴 워커를 숨긴다 ("2 workers hidden by filters"). 필터를 지워야 보인다.</figcaption></figure>
 
 ### 작업 상태
 
@@ -368,6 +372,8 @@ ep.health()
 
 其中的 `failed: 5, retried: 5` 真实记录了这些实验期间卡住的 `{"input": {}}` 请求——平台对它们进行了重试并判定失败，而 HTTP 调用本身从未报告这一点。`purge_queue()` 会丢弃仍在队列中的所有内容。
 
+<figure class="shot"><a href="{{ '/assets/img/sdk-client/workers-tab.webp' | relative_url }}"><img src="{{ '/assets/img/sdk-client/workers-tab.webp' | relative_url }}" alt="01-hello-world 的 Workers 标签页：EUR-IS-1 中两个空闲的 cpu5g-2-8 worker" loading="lazy" width="1400" height="998"></a><figcaption>对应 <code>health()</code> 中 <code>workers</code> 的控制台视图：两个空闲 worker，EUR-IS-1 的 cpu5g-2-8，都在最新 release 上。该标签页默认隐藏空闲 worker（"2 workers hidden by filters"），清除筛选后才能看到。</figcaption></figure>
+
 ### Job 状态
 
 ```python
@@ -518,6 +524,8 @@ ep.health()
 ```
 
 この `failed: 5, retried: 5` は、これらのラボの途中で固まった `{"input": {}}` リクエストの実際の記録です。プラットフォームはそれらをリトライして失敗としましたが、HTTP 呼び出し自体はそれを一切報告しませんでした。`purge_queue()` はキューに残っているものをすべて破棄します。
+
+<figure class="shot"><a href="{{ '/assets/img/sdk-client/workers-tab.webp' | relative_url }}"><img src="{{ '/assets/img/sdk-client/workers-tab.webp' | relative_url }}" alt="01-hello-world の Workers タブ：EUR-IS-1 のアイドルな cpu5g-2-8 ワーカー 2 つ" loading="lazy" width="1400" height="998"></a><figcaption><code>health()</code> の <code>workers</code> に当たるコンソール画面：アイドルなワーカー 2 つ、EUR-IS-1 の cpu5g-2-8、どちらも最新リリース。このタブは既定でアイドルなワーカーを隠します（"2 workers hidden by filters"）。フィルターを外すと見えます。</figcaption></figure>
 
 ### Job の状態
 
