@@ -16,6 +16,7 @@ Runpod Serverless runs your code as an **autoscaling HTTP endpoint**. Workers sp
 | [02-llm-chat](./02-llm-chat) | ✅ Ready | Small instruct model, deployed from GitHub, weights from Runpod's cached-model store |
 | [03-vllm-endpoint](./03-vllm-endpoint) | ✅ Run 2026-11-05 | Prebuilt `worker-vllm` image deployed from a script, OpenAI SDK client |
 | [04-load-balancer](./04-load-balancer) | ✅ Run 2026-11-07 | HTTP-server worker on a load-balancing endpoint, latency against a queue endpoint |
+| [05-bulk-requests](./05-bulk-requests) | ✅ Run 2026-11-07 | Bulk Requests: batches on a dedicated worker, checked against billing |
 
 ### Where the model lives
 
@@ -127,6 +128,7 @@ Runpod Serverless 는 코드를 **오토스케일 HTTP 엔드포인트**로 실�
 | [02-llm-chat](./02-llm-chat) | ✅ 준비됨 | 소형 instruct 모델, GitHub 연동 배포, 가중치는 Runpod 모델 캐시에서 |
 | [03-vllm-endpoint](./03-vllm-endpoint) | ✅ 2026-11-05 실행 | 미리 빌드된 `worker-vllm` 이미지를 스크립트로 배포, OpenAI SDK 클라이언트 |
 | [04-load-balancer](./04-load-balancer) | ✅ 2026-11-07 실행 | 로드밸런싱 엔드포인트의 HTTP 서버 워커, 큐 엔드포인트와 지연 비교 |
+| [05-bulk-requests](./05-bulk-requests) | ✅ 2026-11-07 실행 | Bulk Requests: 전용 워커의 배치, 청구 내역으로 확인 |
 
 ### 모델은 어디에 두는가
 
