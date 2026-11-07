@@ -22,6 +22,7 @@ Runpod Serverless runs your code as an autoscaling HTTP endpoint. Workers start 
 | [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | Run 2026-11-07 | HTTP-server worker on a load-balancing endpoint, latency against a queue endpoint |
 | [05-bulk-requests](https://github.com/litkhai/runpod-hols/tree/main/serverless/05-bulk-requests) | Run 2026-11-07 | Bulk Requests: batches on a dedicated worker, checked against billing |
 | [06-autoscaling](https://github.com/litkhai/runpod-hols/tree/main/serverless/06-autoscaling) | Run 2026-11-07 | Queue delay vs request count scalers, per-worker concurrency |
+| [08-job-lifecycle](https://github.com/litkhai/runpod-hols/tree/main/serverless/08-job-lifecycle) | Run 2026-11-07 | Every way a job ends: failed, cancelled, timed out, expired, purged, retried |
 
 ### Where the model lives
 
@@ -234,6 +235,21 @@ Fifty 2-second jobs sent at once to a CPU endpoint with at most five workers, un
 - **Concurrency is the cheaper scale-out** for I/O-bound handlers: the same two workers did the work almost four times faster.
 - A one-job-at-a-time worker lost about 1.3 s fetching each next job, and every worker's first job paid about 3 s of start-up even when `/health` called it *idle*. `/health` itself trailed by about 20 s.
 
+### Lab 08 — how jobs end
+
+| Case | What `/status` showed (2026-11-07) |
+|---|---|
+| Handler raises | `FAILED`; `error` holds the full traceback, hostname and worker id |
+| Handler returns `{"error": ...}` | `FAILED`; `error` is that string |
+| `policy.executionTimeout` 5 s | `FAILED`, `"executionTimeout exceeded"`, after 12.4 s |
+| `/cancel` while running / queued | `CANCELLED`; the call took ~21 s for a running job |
+| `/retry` | Same id runs again; `/health` counts `retried` |
+| `/purge-queue`, `policy.ttl` expiry | No final state — the job answers **404** |
+| Long `/runsync` | Returns `IN_PROGRESS` and the id after ~90 s |
+| Finished `/run` result | Readable ~30 min, then 404 |
+
+A client should read `error` to tell the three kinds of `FAILED` apart, treat a 404 after a successful submit as a lost job, and fall back from `/runsync` to `/status` for anything near 90 s. Catch exceptions in the handler if callers should not see your tracebacks.
+
 [Full lab in the repo →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
 </div>
@@ -254,6 +270,7 @@ Runpod Serverless 는 코드를 오토스케일 HTTP 엔드포인트로 실행�
 | [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | 2026-11-07 실행 | 로드밸런싱 엔드포인트의 HTTP 서버 워커, 큐 엔드포인트와 지연 비교 |
 | [05-bulk-requests](https://github.com/litkhai/runpod-hols/tree/main/serverless/05-bulk-requests) | 2026-11-07 실행 | Bulk Requests: 전용 워커의 배치, 청구 내역으로 확인 |
 | [06-autoscaling](https://github.com/litkhai/runpod-hols/tree/main/serverless/06-autoscaling) | 2026-11-07 실행 | Queue delay 와 Request count 스케일러, 워커당 동시성 |
+| [08-job-lifecycle](https://github.com/litkhai/runpod-hols/tree/main/serverless/08-job-lifecycle) | 2026-11-07 실행 | 작업이 끝나는 모든 방식: 실패, 취소, 시간 초과, 만료, purge, 재시도 |
 
 ### 모델은 어디에 두는가
 
@@ -466,6 +483,21 @@ Lab 03 은 Runpod 이 미리 빌드한 `runpod/worker-v1-vllm:v2.30.2` 에 `Qwen
 - I/O 위주 핸들러라면 **동시성이 더 싼 확장**입니다. 같은 워커 둘이 거의 네 배 빨리 끝냈습니다.
 - 한 번에 하나씩 처리하는 워커는 다음 작업을 가져올 때마다 약 1.3초를 잃었고, 모든 워커의 첫 작업은 `/health` 가 *idle* 이라고 보여 줄 때도 약 3초의 기동 시간을 냈습니다. `/health` 자체도 약 20초 늦었습니다.
 
+### 실습 08 — 작업이 끝나는 방식
+
+| 경우 | `/status` 가 보여 준 것 (2026-11-07) |
+|---|---|
+| 핸들러가 예외 발생 | `FAILED`; `error` 에 전체 트레이스백, 호스트 이름, 워커 id |
+| 핸들러가 `{"error": ...}` 반환 | `FAILED`; `error` 는 그 문자열 |
+| `policy.executionTimeout` 5초 | 12.4초 뒤 `FAILED`, `"executionTimeout exceeded"` |
+| 실행 중 / 대기 중 `/cancel` | `CANCELLED`; 실행 중인 작업은 호출이 약 21초 걸림 |
+| `/retry` | 같은 id 가 다시 실행; `/health` 가 `retried` 를 셈 |
+| `/purge-queue`, `policy.ttl` 만료 | 최종 상태 없음 — 작업이 **404** 로 답함 |
+| 긴 `/runsync` | 약 90초 뒤 `IN_PROGRESS` 와 id 반환 |
+| 끝난 `/run` 결과 | 약 30분 읽을 수 있고, 그 뒤 404 |
+
+클라이언트는 `error` 를 읽어 세 종류의 `FAILED` 를 구분하고, 제출에 성공한 뒤의 404 는 잃어버린 작업으로 처리하며, 90초에 가까운 작업은 `/runsync` 대신 `/status` 로 넘어가야 합니다. 호출자에게 트레이스백을 보이고 싶지 않다면 핸들러에서 예외를 잡으세요.
+
 [저장소에서 전체 실습 보기 →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
 </div>
@@ -486,6 +518,7 @@ Runpod Serverless 将你的代码作为自动扩缩的 HTTP 端点运行。请�
 | [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | 2026-11-07 已运行 | 负载均衡端点上的 HTTP 服务器 worker，与队列端点比较延迟 |
 | [05-bulk-requests](https://github.com/litkhai/runpod-hols/tree/main/serverless/05-bulk-requests) | 2026-11-07 已运行 | Bulk Requests：专用 worker 上的批处理，用账单核对 |
 | [06-autoscaling](https://github.com/litkhai/runpod-hols/tree/main/serverless/06-autoscaling) | 2026-11-07 已运行 | Queue delay 与 Request count 扩缩器、每个 worker 的并发 |
+| [08-job-lifecycle](https://github.com/litkhai/runpod-hols/tree/main/serverless/08-job-lifecycle) | 2026-11-07 已运行 | 任务结束的所有方式：失败、取消、超时、过期、清空、重试 |
 
 ### 模型放在哪里
 
@@ -698,6 +731,21 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 - 对 I/O 密集的 handler，**并发是更便宜的扩展方式**：同样两个 worker 快了将近四倍。
 - 每次只处理一个任务的 worker 每取一个新任务约损失 1.3 秒；即使 `/health` 显示为 *idle*，每个 worker 的第一个任务仍要付出约 3 秒的启动时间。`/health` 本身约滞后 20 秒。
 
+### 实验 08 — 任务如何结束
+
+| 情形 | `/status` 显示（2026-11-07） |
+|---|---|
+| handler 抛出异常 | `FAILED`；`error` 包含完整 traceback、主机名和 worker id |
+| handler 返回 `{"error": ...}` | `FAILED`；`error` 即该字符串 |
+| `policy.executionTimeout` 5 秒 | 12.4 秒后 `FAILED`，`"executionTimeout exceeded"` |
+| 运行中 / 排队中 `/cancel` | `CANCELLED`；运行中的任务调用耗时约 21 秒 |
+| `/retry` | 同一个 id 再次运行；`/health` 计入 `retried` |
+| `/purge-queue`、`policy.ttl` 过期 | 没有最终状态——任务返回 **404** |
+| 长 `/runsync` | 约 90 秒后返回 `IN_PROGRESS` 和 id |
+| 已完成的 `/run` 结果 | 约 30 分钟内可读，之后 404 |
+
+客户端应读取 `error` 来区分三种 `FAILED`，把提交成功后的 404 当作丢失的任务，接近 90 秒的任务应从 `/runsync` 退回到 `/status`。若不想让调用方看到 traceback，请在 handler 中捕获异常。
+
 [在仓库中查看完整实验 →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 
 </div>
@@ -718,6 +766,7 @@ Runpod Serverless は、コードをオートスケールする HTTP エンド�
 | [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | 2026-11-07 実行 | ロードバランシング・エンドポイント上の HTTP サーバーワーカー、キュー型エンドポイントと遅延を比較 |
 | [05-bulk-requests](https://github.com/litkhai/runpod-hols/tree/main/serverless/05-bulk-requests) | 2026-11-07 実行 | Bulk Requests：専用ワーカー上のバッチを請求で確認 |
 | [06-autoscaling](https://github.com/litkhai/runpod-hols/tree/main/serverless/06-autoscaling) | 2026-11-07 実行 | Queue delay と Request count のスケーラー、ワーカーあたりの同時実行数 |
+| [08-job-lifecycle](https://github.com/litkhai/runpod-hols/tree/main/serverless/08-job-lifecycle) | 2026-11-07 実行 | ジョブの終わり方すべて：失敗、キャンセル、タイムアウト、期限切れ、パージ、リトライ |
 
 ### モデルをどこに置くか
 
@@ -929,6 +978,21 @@ Lab 03 は Runpod のビルド済み `runpod/worker-v1-vllm:v2.30.2` と `Qwen/Q
 - **Queue delay** はリクエストが待ち始めるとすぐ上限まで増やします。**Request count** は待機リクエスト N 件ごとにワーカー 1 つを、増やすときだけでなく減らすときも守るため、長い裾野を 1 つのワーカーが処理します。
 - I/O 中心のハンドラーなら **同時実行の方が安い拡張** です。同じ 2 つのワーカーがほぼ 4 倍速く終えました。
 - 1 件ずつ処理するワーカーは次のジョブを取るたびに約 1.3 秒を失い、`/health` が *idle* と表示していても、各ワーカーの最初のジョブは約 3 秒の起動時間を払いました。`/health` 自体も約 20 秒遅れていました。
+
+### ラボ 08 — ジョブの終わり方
+
+| ケース | `/status` の表示（2026-11-07） |
+|---|---|
+| ハンドラーが例外を送出 | `FAILED`；`error` に完全なトレースバック、ホスト名、ワーカー id |
+| ハンドラーが `{"error": ...}` を返す | `FAILED`；`error` はその文字列 |
+| `policy.executionTimeout` 5 秒 | 12.4 秒後に `FAILED`、`"executionTimeout exceeded"` |
+| 実行中 / 待機中の `/cancel` | `CANCELLED`；実行中のジョブでは呼び出しに約 21 秒 |
+| `/retry` | 同じ id が再実行；`/health` が `retried` を数える |
+| `/purge-queue`、`policy.ttl` の期限切れ | 最終状態なし——ジョブは **404** を返す |
+| 長い `/runsync` | 約 90 秒後に `IN_PROGRESS` と id を返す |
+| 完了した `/run` の結果 | 約 30 分読めて、その後 404 |
+
+クライアントは `error` を読んで 3 種類の `FAILED` を区別し、送信成功後の 404 は失われたジョブとして扱い、90 秒に近いジョブは `/runsync` から `/status` に切り替えるべきです。呼び出し側にトレースバックを見せたくなければ、ハンドラーで例外を捕まえてください。
 
 [リポジトリでラボ全体を見る →](https://github.com/litkhai/runpod-hols/tree/main/serverless)
 

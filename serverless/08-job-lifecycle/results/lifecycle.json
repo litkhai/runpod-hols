@@ -1,0 +1,314 @@
+{
+ "runsync_short": {
+  "wall_s": 5.6,
+  "resp": {
+   "delayTime": 4083,
+   "executionTime": 1225,
+   "id": "sync-6f88c0ca-d508-43e4-8f7f-9c476c730d7c-e1",
+   "output": {
+    "concurrency": 4,
+    "running_at_start": 1,
+    "slept_s": 1.001,
+    "started_at": 1794034698.321,
+    "tag": null,
+    "worker_id": "bmzws99bxubtos",
+    "worker_uptime_s": 1.65
+   },
+   "status": "COMPLETED",
+   "workerId": "bmzws99bxubtos"
+  }
+ },
+ "error_output": [
+  {
+   "t": 6.27,
+   "status": "IN_PROGRESS",
+   "resp": {
+    "delayTime": 92,
+    "id": "a2bc9793-8b65-43a9-9c91-c53545509f8b-e1",
+    "status": "IN_PROGRESS",
+    "workerId": "bmzws99bxubtos"
+   }
+  },
+  {
+   "t": 7.56,
+   "status": "FAILED",
+   "resp": {
+    "delayTime": 92,
+    "error": "reported in the output, not raised",
+    "executionTime": 358,
+    "id": "a2bc9793-8b65-43a9-9c91-c53545509f8b-e1",
+    "status": "FAILED",
+    "workerId": "bmzws99bxubtos"
+   }
+  }
+ ],
+ "fail": [
+  {
+   "t": 8.21,
+   "status": "IN_PROGRESS",
+   "resp": {
+    "delayTime": 94,
+    "id": "6d9842a6-78d4-40d0-bc9e-0ae8a7c6753a-e1",
+    "status": "IN_PROGRESS",
+    "workerId": "bmzws99bxubtos"
+   }
+  },
+  {
+   "t": 9.48,
+   "status": "FAILED",
+   "resp": {
+    "delayTime": 94,
+    "error": "{\"error_type\": \"<class 'RuntimeError'>\", \"error_message\": \"asked to fail\", \"error_traceback\": \"Traceback (most recent call last):\\n  File \\\"/usr/local/lib/python3.11/site-packages/runpod/serverless/modules/rp_job.py\\\", line 259, in run_job\\n    await handler_return\\n  File \\\"/app/handler.py\\\", line 38, in plain\\n    raise RuntimeError(\\\"asked to fail\\\")\\nRuntimeError: asked to fail\\n\", \"hostname\": \"bmzws99bxubtos-64410ac0\", \"worker_id\": \"bmzws99bxubtos\", \"runpod_version\": \"1.12.0\"}",
+    "executionTime": 296,
+    "id": "6d9842a6-78d4-40d0-bc9e-0ae8a7c6753a-e1",
+    "status": "FAILED",
+    "workerId": "bmzws99bxubtos"
+   }
+  }
+ ],
+ "retry": {
+  "first": {
+   "t": 11.41,
+   "status": "FAILED",
+   "resp": {
+    "delayTime": 96,
+    "error": "{\"error_type\": \"<class 'RuntimeError'>\", \"error_message\": \"asked to fail\", \"error_traceback\": \"Traceback (most recent call last):\\n  File \\\"/usr/local/lib/python3.11/site-packages/runpod/serverless/modules/rp_job.py\\\", line 259, in run_job\\n    await handler_return\\n  File \\\"/app/handler.py\\\", line 38, in plain\\n    raise RuntimeError(\\\"asked to fail\\\")\\nRuntimeError: asked to fail\\n\", \"hostname\": \"bmzws99bxubtos-64410ac0\", \"worker_id\": \"bmzws99bxubtos\", \"runpod_version\": \"1.12.0\"}",
+    "executionTime": 411,
+    "id": "417b66fe-5765-44cf-b015-a62e4b3dc76a-e2",
+    "status": "FAILED",
+    "workerId": "bmzws99bxubtos"
+   }
+  },
+  "retry": {
+   "id": "417b66fe-5765-44cf-b015-a62e4b3dc76a-e2",
+   "status": "IN_QUEUE"
+  },
+  "after": [
+   {
+    "t": 12.06,
+    "status": "IN_PROGRESS",
+    "resp": {
+     "delayTime": 2028,
+     "id": "417b66fe-5765-44cf-b015-a62e4b3dc76a-e2",
+     "retries": 1,
+     "status": "IN_PROGRESS",
+     "workerId": "bmzws99bxubtos"
+    }
+   },
+   {
+    "t": 13.34,
+    "status": "FAILED",
+    "resp": {
+     "delayTime": 2028,
+     "error": "{\"error_type\": \"<class 'RuntimeError'>\", \"error_message\": \"asked to fail\", \"error_traceback\": \"Traceback (most recent call last):\\n  File \\\"/usr/local/lib/python3.11/site-packages/runpod/serverless/modules/rp_job.py\\\", line 259, in run_job\\n    await handler_return\\n  File \\\"/app/handler.py\\\", line 38, in plain\\n    raise RuntimeError(\\\"asked to fail\\\")\\nRuntimeError: asked to fail\\n\", \"hostname\": \"bmzws99bxubtos-64410ac0\", \"worker_id\": \"bmzws99bxubtos\", \"runpod_version\": \"1.12.0\"}",
+     "executionTime": 399,
+     "id": "417b66fe-5765-44cf-b015-a62e4b3dc76a-e2",
+     "retries": 1,
+     "status": "FAILED",
+     "workerId": "bmzws99bxubtos"
+    }
+   }
+  ]
+ },
+ "cancel_running": {
+  "before": [
+   {
+    "t": 13.99,
+    "status": "IN_PROGRESS",
+    "resp": {
+     "delayTime": 94,
+     "id": "2c3e4ead-d0f2-4968-b34a-75c670377f68-e1",
+     "status": "IN_PROGRESS",
+     "workerId": "bmzws99bxubtos"
+    }
+   }
+  ],
+  "cancel": {
+   "delayTime": 94,
+   "executionTime": 20745,
+   "id": "2c3e4ead-d0f2-4968-b34a-75c670377f68-e1",
+   "status": "CANCELLED",
+   "workerId": "bmzws99bxubtos"
+  },
+  "after": [
+   {
+    "t": 34.93,
+    "status": "CANCELLED",
+    "resp": {
+     "delayTime": 94,
+     "executionTime": 20745,
+     "id": "2c3e4ead-d0f2-4968-b34a-75c670377f68-e1",
+     "status": "CANCELLED",
+     "workerId": "bmzws99bxubtos"
+    }
+   }
+  ],
+  "later": {
+   "delayTime": 94,
+   "executionTime": 20745,
+   "id": "2c3e4ead-d0f2-4968-b34a-75c670377f68-e1",
+   "status": "CANCELLED",
+   "workerId": "bmzws99bxubtos"
+  }
+ },
+ "execution_timeout": [
+  {
+   "t": 35.95,
+   "status": "IN_QUEUE",
+   "resp": {
+    "id": "109bcab8-763b-4ac4-af65-12884dc66253-e1",
+    "status": "IN_QUEUE"
+   }
+  },
+  {
+   "t": 39.95,
+   "status": "IN_PROGRESS",
+   "resp": {
+    "delayTime": 4342,
+    "id": "109bcab8-763b-4ac4-af65-12884dc66253-e1",
+    "status": "IN_PROGRESS",
+    "workerId": "hvjax4dsl7rv8x"
+   }
+  },
+  {
+   "t": 52.75,
+   "status": "FAILED",
+   "resp": {
+    "delayTime": 4342,
+    "error": "executionTimeout exceeded",
+    "executionTime": 12378,
+    "id": "109bcab8-763b-4ac4-af65-12884dc66253-e1",
+    "status": "FAILED",
+    "workerId": "hvjax4dsl7rv8x"
+   }
+  }
+ ],
+ "cancel_queued_and_purge": {
+  "queued_before": {
+   "cacca3c0-ba31-4d2f-8cf8-ea813803217b-e1": "IN_QUEUE",
+   "62435188-d9e1-4fd1-824c-6ac2e1519721-e1": "IN_QUEUE",
+   "e4afa79e-3eee-46fe-9421-e95ba797137b-e1": "IN_QUEUE",
+   "186bcdb6-be86-41bb-9113-7f79ebc2ce6a-e1": "IN_QUEUE"
+  },
+  "cancel_first": {
+   "id": "cacca3c0-ba31-4d2f-8cf8-ea813803217b-e1",
+   "status": "CANCELLED"
+  },
+  "purge": {
+   "removed": 10,
+   "status": "completed"
+  },
+  "after": {
+   "cacca3c0-ba31-4d2f-8cf8-ea813803217b-e1": "CANCELLED",
+   "62435188-d9e1-4fd1-824c-6ac2e1519721-e1": null,
+   "e4afa79e-3eee-46fe-9421-e95ba797137b-e1": null,
+   "186bcdb6-be86-41bb-9113-7f79ebc2ce6a-e1": null
+  },
+  "health_after_purge": {
+   "jobs": {
+    "completed": 151,
+    "failed": 5,
+    "inProgress": 5,
+    "inQueue": 0,
+    "retried": 1
+   },
+   "workers": {
+    "idle": 4,
+    "initializing": 0,
+    "ready": 4,
+    "running": 1,
+    "throttled": 0,
+    "unhealthy": 0
+   }
+  },
+  "fill_final": {
+   "8b36404a-740c-47be-aab3-49ef7c4e02b3-e1": "COMPLETED",
+   "9b4d96ce-49d7-41b7-af56-1ca9d87de924-e1": "COMPLETED",
+   "c2115f6a-6f63-4095-b670-bf05b17556e6-e2": "COMPLETED",
+   "9174b9b8-e21a-47aa-9ad5-3b660164e20e-e2": "COMPLETED",
+   "58ee5729-414b-4077-a9cc-efc67875fb65-e2": "COMPLETED",
+   "4a33d48a-02c1-4639-a7f0-b72f831c8164-e1": null,
+   "51a6747a-c5be-4ee4-a331-5d1552be4e9e-e1": null,
+   "30f4df27-9401-438b-b1b0-a4c9971d16b5-e1": null,
+   "7e57fd2c-d732-45f4-a92c-afd771aba068-e2": null,
+   "5f41238d-c13b-4ab6-97b2-bc4cb91576ee-e2": null,
+   "9890da80-d234-43b2-8cd5-97c357f1ce91-e2": null,
+   "869ab8a8-f3cb-40e7-a28e-24ca035797a2-e1": null
+  }
+ },
+ "ttl": {
+  "ttl_job": [
+   {
+    "t": 152.65,
+    "status": "IN_QUEUE",
+    "resp": {
+     "id": "de77bc29-d39f-4572-8085-777cae22ad72-e2",
+     "status": "IN_QUEUE"
+    }
+   },
+   {
+    "t": 164.39,
+    "status": null,
+    "resp": {
+     "http_error": 404,
+     "body": "{\"status\":404,\"title\":\"Not Found\",\"detail\":\"job not found\"}"
+    }
+   }
+  ],
+  "fill_final": [
+   "COMPLETED",
+   "COMPLETED",
+   "COMPLETED",
+   "COMPLETED",
+   "COMPLETED",
+   "COMPLETED",
+   "COMPLETED",
+   "COMPLETED",
+   "COMPLETED",
+   "COMPLETED",
+   "COMPLETED",
+   "COMPLETED"
+  ]
+ },
+ "runsync_long": {
+  "wall_s": 90.5,
+  "resp": {
+   "delayTime": 3453,
+   "id": "sync-f9459d05-2161-4f86-84fb-cbbf5da399eb-e2",
+   "status": "IN_PROGRESS",
+   "workerId": "mn9h0r6r1q98gn"
+  },
+  "after": [
+   {
+    "t": 385.31,
+    "status": "IN_PROGRESS",
+    "resp": {
+     "delayTime": 3453,
+     "id": "sync-f9459d05-2161-4f86-84fb-cbbf5da399eb-e2",
+     "status": "IN_PROGRESS",
+     "workerId": "mn9h0r6r1q98gn"
+    }
+   },
+   {
+    "t": 398.89,
+    "status": "COMPLETED",
+    "resp": {
+     "delayTime": 3453,
+     "executionTime": 100227,
+     "id": "sync-f9459d05-2161-4f86-84fb-cbbf5da399eb-e2",
+     "output": {
+      "concurrency": 4,
+      "running_at_start": 1,
+      "slept_s": 100,
+      "started_at": 1794034992.31,
+      "tag": null,
+      "worker_id": "mn9h0r6r1q98gn",
+      "worker_uptime_s": 100.65
+     },
+     "status": "COMPLETED",
+     "workerId": "mn9h0r6r1q98gn"
+    }
+   }
+  ]
+ }
+}
