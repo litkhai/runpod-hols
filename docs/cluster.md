@@ -97,6 +97,18 @@ A100 SXM came back at 21:42 KST; `cluster.py` created the cluster at 21:48, SSH 
 
 Details and raw logs: [lab README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#stage-2-run--sockets-instead-of-infiniband).
 
+### InfiniBand fails on the cluster image
+
+`cluster.py` waited a day and ran again on 2026-11-08 with the cluster image (`…-ubuntu2404-cluster`, NCCL 2.27.7). The cluster was created at 22:28 KST and SSH was open 50 s later. This time NCCL found the eight 200 Gb/s InfiniBand HCAs, connected the queue pairs and logged `Using network IB` with GPU Direct RDMA through DMA-BUF. On the first all-reduce, at 22:30, every HCA on both nodes reported *"local catastrophic error"* within ten seconds. Nothing moved after that; the run hit its 40-minute timeout and the watchdog deleted the cluster at 75 minutes (about USD 43, about USD 63 for the two clusters).
+
+<figure class="shot"><a href="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}" alt="NCCL log: Using network IB and GDRDMA, then local catastrophic error on every HCA" loading="lazy" width="1400" height="480"></a><figcaption>NCCL log of the rerun (excerpt): IB and GPU Direct RDMA set up correctly, then the same fatal event on all eight HCAs of both nodes.</figcaption></figure>
+
+- **Not the image.** The first run with Ubuntu's `libibverbs` failed the same way.
+- **Likely the GPU Direct RDMA path on the hosts (not verified).** A fatal error on every HCA of two hosts at once, at the first RDMA write into GPU memory, points away from cables and switch ports. The container's `libmlx5` lacks `mlx5dv_reg_dmabuf_mr`, so GPU buffers went through the generic DMA-BUF registration; no `nvidia-peermem` path appears. The next test would be `NCCL_NET_GDR_LEVEL=LOC` (IB without GPU Direct RDMA) and `NCCL_DMABUF_ENABLE=0`. Runpod support is being asked with both cluster IDs.
+- **Recorded as a failure.** As of 2026-11-08 this site has no multi-node bandwidth figure for a Runpod Instant Cluster ([#52](https://github.com/litkhai/runpod-hols/issues/52)).
+
+Timeline and log excerpt: [lab README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#stage-2-rerun--the-cluster-image-infiniband-fails).
+
 ### Possible labs
 
 | Lab | Contents |
@@ -208,6 +220,18 @@ A100 SXM 이 한국 시간 21:42 에 다시 나왔다. `cluster.py` 가 21:48 �
 - 다중 노드 수치를 믿기 전에 NCCL 로그에서 `Using network IB` 를 확인한다. 콘솔의 클러스터 템플릿은 별도 이미지 `runpod/pytorch:1.0.7-cu1300-torch291-ubuntu2404-cluster` 를 쓰며, 다음 실행은 이 이미지로 한다.
 
 자세한 내용과 원본 로그: [실습 README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#2단계-실행--infiniband-대신-소켓).
+
+### 클러스터용 이미지에서도 InfiniBand 실패
+
+`cluster.py` 가 하루를 기다려 2026-11-08 에 클러스터용 이미지(`…-ubuntu2404-cluster`, NCCL 2.27.7)로 다시 돌았다. 한국 시간 22:28 에 클러스터가 만들어졌고 50초 뒤 SSH 가 열렸다. 이번에는 NCCL 이 200 Gb/s InfiniBand HCA 8개를 찾고 큐 페어를 연결했으며, DMA-BUF 를 통한 GPU Direct RDMA 와 함께 `Using network IB` 를 남겼다. 22:30 첫 all-reduce 에서 두 노드의 모든 HCA 가 10초 안에 *"local catastrophic error"* 를 냈다. 그 뒤로는 아무것도 진행되지 않아 40분 제한에 걸렸고, 감시 프로세스가 75분에 클러스터를 지웠다 (약 USD 43, 두 클러스터 합계 약 USD 63).
+
+<figure class="shot"><a href="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}" alt="NCCL 로그: Using network IB 와 GDRDMA 뒤 모든 HCA 에서 local catastrophic error" loading="lazy" width="1400" height="480"></a><figcaption>재실행의 NCCL 로그 (발췌): IB 와 GPU Direct RDMA 는 제대로 잡혔고, 이어서 두 노드의 HCA 8개 모두에서 같은 치명 이벤트가 났다.</figcaption></figure>
+
+- **이미지 탓이 아니다.** Ubuntu 의 `libibverbs` 를 쓴 첫 실행도 똑같이 실패했다.
+- **호스트의 GPU Direct RDMA 경로로 보인다 (검증 안 함).** 두 호스트의 모든 HCA 가 GPU 메모리로 가는 첫 RDMA 쓰기에서 동시에 치명 오류를 냈으니 케이블이나 스위치 포트 문제로 보기 어렵다. 컨테이너의 `libmlx5` 에 `mlx5dv_reg_dmabuf_mr` 가 없어 GPU 버퍼는 일반 DMA-BUF 등록을 거쳤고, `nvidia-peermem` 경로는 보이지 않는다. 다음 시험은 `NCCL_NET_GDR_LEVEL=LOC` (GPU Direct RDMA 없이 IB) 와 `NCCL_DMABUF_ENABLE=0` 이다. 두 클러스터 ID 로 Runpod 지원팀에 문의한다.
+- **실패로 기록한다.** 2026-11-08 기준 이 사이트에는 Runpod Instant Cluster 의 다중 노드 대역폭 수치가 없다 ([#52](https://github.com/litkhai/runpod-hols/issues/52)).
+
+시간표와 로그 발췌: [실습 README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#2단계-재실행--클러스터용-이미지-infiniband-실패).
 
 ### 검토 중인 실습
 
@@ -321,6 +345,18 @@ A100 SXM 在韩国时间 21:42 再次出现；`cluster.py` 在 21:48 创建集�
 
 详情与原始日志：[实验 README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#stage-2-run--sockets-instead-of-infiniband)。
 
+### 集群镜像上 InfiniBand 也失败
+
+`cluster.py` 等了一天，于 2026-11-08 用集群镜像（`…-ubuntu2404-cluster`，NCCL 2.27.7）再次运行。集群在韩国时间 22:28 创建，50 秒后 SSH 可用。这一次 NCCL 找到了 8 个 200 Gb/s InfiniBand HCA，建立了队列对，并记录了 `Using network IB`，通过 DMA-BUF 使用 GPU Direct RDMA。22:30 第一次 all-reduce 时，两个节点上的每个 HCA 都在十秒内报告 *"local catastrophic error"*。此后没有任何进展：运行触发 40 分钟超时，看门狗在第 75 分钟删除了集群（约 USD 43，两次集群合计约 USD 63）。
+
+<figure class="shot"><a href="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}" alt="NCCL 日志：Using network IB 和 GDRDMA 之后，每个 HCA 都出现 local catastrophic error" loading="lazy" width="1400" height="480"></a><figcaption>重跑的 NCCL 日志（节选）：IB 与 GPU Direct RDMA 均正确建立，随后两个节点的 8 个 HCA 全部出现同样的致命事件。</figcaption></figure>
+
+- **不是镜像的问题。** 使用 Ubuntu `libibverbs` 的第一次运行以同样的方式失败。
+- **可能是主机上的 GPU Direct RDMA 路径（未验证）。** 两台主机的所有 HCA 在第一次向 GPU 显存写入 RDMA 时同时出现致命错误，这不像是线缆或交换机端口的问题。容器里的 `libmlx5` 没有 `mlx5dv_reg_dmabuf_mr`，GPU 缓冲区走的是通用 DMA-BUF 注册；日志中看不到 `nvidia-peermem` 路径。下一步的测试是 `NCCL_NET_GDR_LEVEL=LOC`（不用 GPU Direct RDMA 的 IB）和 `NCCL_DMABUF_ENABLE=0`。将带着两个集群 ID 询问 Runpod 支持。
+- **记录为失败。** 截至 2026-11-08，本站没有 Runpod Instant Cluster 的多节点带宽数据（[#52](https://github.com/litkhai/runpod-hols/issues/52)）。
+
+时间线与日志节选：[实验 README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#stage-2-rerun--the-cluster-image-infiniband-fails)。
+
 ### 可能的实验
 
 | 实验 | 内容 |
@@ -432,6 +468,18 @@ A100 SXM は韓国時間 21:42 に再び出ました。`cluster.py` が 21:48 �
 - マルチノードの数値を信じる前に、NCCL のログで `Using network IB` を確認してください。コンソールのクラスタ用テンプレートは別のイメージ `runpod/pytorch:1.0.7-cu1300-torch291-ubuntu2404-cluster` を使っており、次回はこれで実行します。
 
 詳細と生ログ：[ラボの README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#stage-2-run--sockets-instead-of-infiniband)。
+
+### クラスタ用イメージでも InfiniBand が失敗
+
+`cluster.py` は 1 日待って、2026-11-08 にクラスタ用イメージ（`…-ubuntu2404-cluster`、NCCL 2.27.7）で再実行しました。クラスタは韓国時間 22:28 に作成され、50 秒後に SSH が開きました。今回は NCCL が 200 Gb/s の InfiniBand HCA を 8 個見つけてキューペアを接続し、DMA-BUF 経由の GPU Direct RDMA とともに `Using network IB` を記録しました。22:30 の最初の all-reduce で、両ノードのすべての HCA が 10 秒以内に *"local catastrophic error"* を出しました。その後は何も進まず、実行は 40 分のタイムアウトに達し、監視プロセスが 75 分でクラスタを削除しました（約 USD 43、2 回のクラスタで約 USD 63）。
+
+<figure class="shot"><a href="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}" alt="NCCL ログ：Using network IB と GDRDMA のあと、すべての HCA で local catastrophic error" loading="lazy" width="1400" height="480"></a><figcaption>再実行の NCCL ログ（抜粋）：IB と GPU Direct RDMA は正しく設定され、その直後に両ノードの 8 個の HCA すべてで同じ致命的イベントが起きました。</figcaption></figure>
+
+- **イメージのせいではありません。** Ubuntu の `libibverbs` を使った最初の実行も同じように失敗しました。
+- **ホスト側の GPU Direct RDMA 経路と考えられます（未検証）。** 2 台のホストのすべての HCA が、GPU メモリへの最初の RDMA 書き込みで同時に致命的エラーを出したので、ケーブルやスイッチのポートの問題とは考えにくいです。コンテナの `libmlx5` には `mlx5dv_reg_dmabuf_mr` がなく、GPU バッファは汎用の DMA-BUF 登録を通りました。`nvidia-peermem` の経路は見当たりません。次の試験は `NCCL_NET_GDR_LEVEL=LOC`（GPU Direct RDMA なしの IB）と `NCCL_DMABUF_ENABLE=0` です。2 つのクラスタ ID を添えて Runpod サポートに問い合わせます。
+- **失敗として記録します。** 2026-11-08 時点で、このサイトには Runpod Instant Cluster のマルチノード帯域の数値がありません（[#52](https://github.com/litkhai/runpod-hols/issues/52)）。
+
+タイムラインとログの抜粋：[ラボの README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#stage-2-rerun--the-cluster-image-infiniband-fails)。
 
 ### 候補のラボ
 
