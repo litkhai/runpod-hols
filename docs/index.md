@@ -35,7 +35,7 @@ Start with [Welcome to Runpod](https://docs.runpod.io/overview) and [Concepts](h
   <div class="card">
     <h3><a href="{{ '/serverless/' | relative_url }}">Serverless</a></h3>
     <p>Autoscaling inference endpoints. Billed per execution.</p>
-    <span class="badge ready">Labs 01–03 run</span>
+    <span class="badge ready">Labs 01–11 run</span>
   </div>
   <div class="card">
     <h3><a href="{{ '/pod/' | relative_url }}">Pod</a></h3>
@@ -45,7 +45,7 @@ Start with [Welcome to Runpod](https://docs.runpod.io/overview) and [Concepts](h
   <div class="card">
     <h3><a href="{{ '/cluster/' | relative_url }}">Cluster</a></h3>
     <p>Multi-node distributed training.</p>
-    <span class="badge tbd">TBD</span>
+    <span class="badge ready">Lab 01 run</span>
   </div>
   <div class="card">
     <h3><a href="{{ '/terraform/' | relative_url }}">Terraform</a></h3>
@@ -118,7 +118,7 @@ AI/ML 워크로드를 위한 GPU 클라우드 [Runpod](https://runpod.io) 의 �
   <div class="card">
     <h3><a href="{{ '/serverless/' | relative_url }}">Serverless</a></h3>
     <p>오토스케일 추론 엔드포인트. 실행 시간만큼 과금.</p>
-    <span class="badge ready">실습 01–03 실행</span>
+    <span class="badge ready">실습 01–11 실행</span>
   </div>
   <div class="card">
     <h3><a href="{{ '/pod/' | relative_url }}">Pod</a></h3>
@@ -128,7 +128,7 @@ AI/ML 워크로드를 위한 GPU 클라우드 [Runpod](https://runpod.io) 의 �
   <div class="card">
     <h3><a href="{{ '/cluster/' | relative_url }}">Cluster</a></h3>
     <p>다중 노드 분산 학습.</p>
-    <span class="badge tbd">TBD</span>
+    <span class="badge ready">실습 01 실행</span>
   </div>
   <div class="card">
     <h3><a href="{{ '/terraform/' | relative_url }}">Terraform</a></h3>
@@ -201,7 +201,7 @@ cd runpod-hols
   <div class="card">
     <h3><a href="{{ '/serverless/' | relative_url }}">Serverless</a></h3>
     <p>自动扩缩的推理端点。按执行计费。</p>
-    <span class="badge ready">实验 01–03 已运行</span>
+    <span class="badge ready">实验 01–11 已运行</span>
   </div>
   <div class="card">
     <h3><a href="{{ '/pod/' | relative_url }}">Pod</a></h3>
@@ -211,7 +211,7 @@ cd runpod-hols
   <div class="card">
     <h3><a href="{{ '/cluster/' | relative_url }}">Cluster</a></h3>
     <p>多节点分布式训练。</p>
-    <span class="badge tbd">待定</span>
+    <span class="badge ready">实验 01 已运行</span>
   </div>
   <div class="card">
     <h3><a href="{{ '/terraform/' | relative_url }}">Terraform</a></h3>
@@ -284,7 +284,7 @@ AI/ML ワークロード向けの GPU クラウド [Runpod](https://runpod.io) �
   <div class="card">
     <h3><a href="{{ '/serverless/' | relative_url }}">Serverless</a></h3>
     <p>オートスケールする推論エンドポイント。実行単位で課金。</p>
-    <span class="badge ready">ラボ 01–03 実行済み</span>
+    <span class="badge ready">ラボ 01–11 実行済み</span>
   </div>
   <div class="card">
     <h3><a href="{{ '/pod/' | relative_url }}">Pod</a></h3>
@@ -294,7 +294,7 @@ AI/ML ワークロード向けの GPU クラウド [Runpod](https://runpod.io) �
   <div class="card">
     <h3><a href="{{ '/cluster/' | relative_url }}">Cluster</a></h3>
     <p>マルチノードの分散学習。</p>
-    <span class="badge tbd">未定</span>
+    <span class="badge ready">ラボ 01 実行済み</span>
   </div>
   <div class="card">
     <h3><a href="{{ '/terraform/' | relative_url }}">Terraform</a></h3>
