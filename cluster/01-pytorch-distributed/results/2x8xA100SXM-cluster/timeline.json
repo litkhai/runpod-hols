@@ -1,0 +1,16 @@
+{
+ "cluster_id": "a203s9ftv1xzcp",
+ "pod_ids": ["440bh9cyzjbs42", "il36axbgejfook"],
+ "image": "runpod/pytorch:1.0.7-cu1300-torch291-ubuntu2404-cluster",
+ "stock_seen": "2026-11-08T22:28:37+0900",
+ "created": "2026-11-08T22:28:39+0900",
+ "ssh_ready": "2026-11-08T22:29:29+0900",
+ "cost_per_hr": 34.37,
+ "scripts_copied": "2026-11-08T22:29:51+0900",
+ "first_fatal_event": "2026-11-08T22:30:13+0900",
+ "last_fatal_event": "2026-11-08T22:30:23+0900",
+ "run_timeout": "2026-11-08T23:09:53+0900",
+ "exit_codes": [null, null],
+ "deleted_by_watchdog": "about 2026-11-08T23:43+0900 (+75 min); no clusters or pods at 23:46",
+ "note": "written by hand: the runner hung fetching results from the deleted nodes, so cluster.py did not write this file"
+}

@@ -1,0 +1,45 @@
+===== ssh-node0.log (excerpt) =====
+node-1:1323:1323 [2] NCCL INFO cudaDriverVersion 13020
+node-1:1323:1323 [2] NCCL INFO NCCL_SOCKET_IFNAME set to ens1
+node-1:1323:1323 [2] NCCL INFO NCCL version 2.27.7+cuda13.0
+node-1:1326:1366 [5] NCCL INFO dlvsym failed on mlx5dv_get_data_direct_sysfs_path - /lib/x86_64-linux-gnu/libmlx5.so.1: undefined symbol: mlx5dv_get_data_direct_sysfs_path, version MLX5_1.25 version MLX5_1.25
+node-1:1326:1366 [5] NCCL INFO dlvsym failed on mlx5dv_reg_dmabuf_mr - /lib/x86_64-linux-gnu/libmlx5.so.1: undefined symbol: mlx5dv_reg_dmabuf_mr, version MLX5_1.25 version MLX5_1.25
+node-1:1326:1366 [5] NCCL INFO NCCL_IB_HCA set to mlx5_0,mlx5_1,mlx5_2,mlx5_3,mlx5_6,mlx5_7,mlx5_8,mlx5_9
+node-1:1326:1366 [5] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB [1]mlx5_1:1/IB [2]mlx5_2:1/IB [3]mlx5_3:1/IB [4]mlx5_6:1/IB [5]mlx5_7:1/IB [6]mlx5_8:1/IB [7]mlx5_9:1/IB [RO]; OOB ens1:10.65.0.3<0>
+node-1:1326:1366 [5] NCCL INFO Using network IB
+node-1:1321:1383 [0] NCCL INFO DMA-BUF is available on GPU device 0
+node-1:1325:1370 [4] NCCL INFO NET/IB : GPU Direct RDMA Enabled for HCA 0 'mlx5_0'
+node-1:1321:1468 [0] NCCL INFO Channel 00/0 : 0[0] -> 8[0] [receive] via NET/IB/0/GDRDMA
+node-1:1321:1468 [0] NCCL INFO Channel 00/0 : 8[0] -> 0[0] [send] via NET/IB/0/GDRDMA
+[2026-11-08 13:30:13] node-1:1328:1395 [0] transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_0:1 async fatal event: local catastrophic error
+[2026-11-08 13:30:14] node-1:1323:1376 [0] transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_1:1 async fatal event: local catastrophic error
+[2026-11-08 13:30:14] node-1:1323:1386 [0] transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_6:1 async fatal event: local catastrophic error
+[2026-11-08 13:30:14] node-1:1321:1430 [0] transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_8:1 async fatal event: local catastrophic error
+[2026-11-08 13:30:14] node-1:1326:1389 [0] transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_7:1 async fatal event: local catastrophic error
+[2026-11-08 13:30:14] node-1:1326:1378 [0] transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_2:1 async fatal event: local catastrophic error
+[2026-11-08 13:30:14] node-1:1326:1382 [0] transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_3:1 async fatal event: local catastrophic error
+[2026-11-08 13:30:15] node-1:1327:1441 [0] transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_9:1 async fatal event: local catastrophic error
+===== ssh-node1.log (excerpt) =====
+node-0:592:592 [0] NCCL INFO NCCL_SOCKET_IFNAME set to ens1
+node-0:592:592 [0] NCCL INFO cudaDriverVersion 13020
+node-0:594:594 [2] NCCL INFO NCCL version 2.27.7+cuda13.0
+node-0:594:637 [2] NCCL INFO dlvsym failed on mlx5dv_get_data_direct_sysfs_path - /lib/x86_64-linux-gnu/libmlx5.so.1: undefined symbol: mlx5dv_get_data_direct_sysfs_path, version MLX5_1.25 version MLX5_1.25
+node-0:594:637 [2] NCCL INFO dlvsym failed on mlx5dv_reg_dmabuf_mr - /lib/x86_64-linux-gnu/libmlx5.so.1: undefined symbol: mlx5dv_reg_dmabuf_mr, version MLX5_1.25 version MLX5_1.25
+node-0:594:637 [2] NCCL INFO NCCL_IB_HCA set to mlx5_0,mlx5_1,mlx5_2,mlx5_3,mlx5_6,mlx5_7,mlx5_8,mlx5_9
+node-0:594:637 [2] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB [1]mlx5_1:1/IB [2]mlx5_2:1/IB [3]mlx5_3:1/IB [4]mlx5_6:1/IB [5]mlx5_7:1/IB [6]mlx5_8:1/IB [7]mlx5_9:1/IB [RO]; OOB ens1:10.65.0.2<0>
+node-0:594:637 [2] NCCL INFO Using network IB
+node-0:592:638 [0] NCCL INFO DMA-BUF is available on GPU device 0
+node-0:593:649 [1] NCCL INFO NET/IB : GPU Direct RDMA Enabled for HCA 0 'mlx5_0'
+node-0:592:741 [0] NCCL INFO Channel 00/0 : 8[0] -> 0[0] [receive] via NET/IB/0/GDRDMA
+node-0:592:741 [0] NCCL INFO Channel 00/0 : 0[0] -> 8[0] [send] via NET/IB/0/GDRDMA
+[2026-11-08 13:30:14] node-0:598:694 [0] transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_2:1 async fatal event: local catastrophic error
+[2026-11-08 13:30:14] node-0:594:669 [0] transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_8:1 async fatal event: local catastrophic error
+[2026-11-08 13:30:14] node-0:595:685 [0] transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_9:1 async fatal event: local catastrophic error
+[2026-11-08 13:30:14] node-0:594:653 [0] transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_1:1 async fatal event: local catastrophic error
+[2026-11-08 13:30:14] node-0:598:696 [0] transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_3:1 async fatal event: local catastrophic error
+[2026-11-08 13:30:14] node-0:594:650 [0] transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_0:1 async fatal event: local catastrophic error
+[2026-11-08 13:30:15] node-0:592:666 [0] transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_7:1 async fatal event: local catastrophic error
+[2026-11-08 13:30:15] node-0:599:663 [0] transport/net_ib.cc:168 NCCL WARN NET/IB : mlx5_6:1 async fatal event: local catastrophic error
+
+# every rank logged the fatal event for every HCA; lines above keep one per (node, HCA).
+# per (node, HCA) counts: node-0/mlx5_0=8, node-0/mlx5_1=8, node-0/mlx5_2=8, node-0/mlx5_3=8, node-0/mlx5_6=8, node-0/mlx5_7=8, node-0/mlx5_8=8, node-0/mlx5_9=8, node-1/mlx5_0=8, node-1/mlx5_1=8, node-1/mlx5_2=8, node-1/mlx5_3=8, node-1/mlx5_6=8, node-1/mlx5_7=8, node-1/mlx5_8=8, node-1/mlx5_9=8

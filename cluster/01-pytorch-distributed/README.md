@@ -8,7 +8,7 @@
 
 **Goal:** measure how fast GPUs exchange gradients, first inside one Pod, then across the nodes of an Instant Cluster, and see what that does to data-parallel training.
 
-**Time:** ~15 minutes per Pod · **Cost:** stage 1 about USD 0.40 on 2026-11-07 (two Pods, 7 and 3 minutes); stage 2 about USD 20 on 2026-11-07 (2 × 8 A100 SXM for 35 minutes; [#52](https://github.com/litkhai/runpod-hols/issues/52))
+**Time:** ~15 minutes per Pod · **Cost:** stage 1 about USD 0.40 on 2026-11-07 (two Pods, 7 and 3 minutes); stage 2 about USD 20 on 2026-11-07 (2 × 8 A100 SXM for 35 minutes) and about USD 43 on 2026-11-08 (rerun, 75 minutes; [#52](https://github.com/litkhai/runpod-hols/issues/52))
 
 ### Files
 
@@ -139,13 +139,34 @@ Both nodes had eight NVLinked A100s (`NV12`), twelve Mellanox HCAs (`mlx5_0`–`
 
 Raw files: [`results/2x8xA100SXM-socket/`](./results/2x8xA100SXM-socket/) (with `nccl-transport.txt`, `timeline.json`), [`results/2x8xA100SXM-ib/nccl-ib.txt`](./results/2x8xA100SXM-ib/nccl-ib.txt).
 
+### Stage 2 rerun — the cluster image, InfiniBand fails
+
+`cluster.py auto` waited a day for stock and ran again with the console's cluster image, `runpod/pytorch:1.0.7-cu1300-torch291-ubuntu2404-cluster` (NCCL 2.27.7, CUDA driver 13.2).
+
+| Step | Time (KST, 2026-11-08) |
+|---|---|
+| A100 SXM `Available`, `createCluster` accepted (`a203s9ftv1xzcp`) | 22:28:37 – 22:28:39 |
+| SSH open on both nodes | 22:29:29 (50 s) |
+| First all-reduce: every HCA reports *"local catastrophic error"* | 22:30:13 – 22:30:23 |
+| `run.sh` stopped by its 40-minute timeout, no progress | 23:09:53 |
+| Watchdog `deleteCluster` | about 23:43 (75 min, about USD 43) |
+
+![NCCL log: IB and GPU Direct RDMA set up, then local catastrophic error on every HCA](../../docs/assets/img/cluster/ib-catastrophic-error.webp)
+
+- **The RDMA setup itself worked.** NCCL found the eight HCAs (200 Gb/s InfiniBand each, LIDs assigned, queue pairs connected), logged `Using network IB` and chose GPU Direct RDMA through DMA-BUF (`via NET/IB/N/GDRDMA`).
+- **The first transfer killed every HCA.** All eight HCAs on both nodes raised *"async fatal event: local catastrophic error"* within ten seconds, as seen from every rank. There is no bandwidth figure and no DDP step. The first run with Ubuntu's `libibverbs` failed the same way, so the image was not the cause.
+- **What the logs point at (not verified).** A fatal error on every HCA of two hosts at once, at the first RDMA write into GPU memory, looks like a host-side failure of the GPU Direct RDMA path rather than a cable or a switch port. The container's `libmlx5` has no `mlx5dv_reg_dmabuf_mr` (NCCL logs *"dlvsym failed"*), so GPU buffers were registered through the generic DMA-BUF call, and no `nvidia-peermem` path appears. The next test would run once with `NCCL_NET_GDR_LEVEL=LOC` (InfiniBand without GPU Direct RDMA) and once with `NCCL_DMABUF_ENABLE=0`. It was not run; Runpod support is being asked with both cluster IDs.
+- **#52 closes as a recorded failure.** As of 2026-11-08 this lab has no multi-node bandwidth figure on a Runpod Instant Cluster. Two clusters cost about USD 63.
+
+Raw files: [`results/2x8xA100SXM-cluster/nccl-ib.txt`](./results/2x8xA100SXM-cluster/nccl-ib.txt) (excerpt of both nodes' NCCL logs), [`timeline.json`](./results/2x8xA100SXM-cluster/timeline.json).
+
 ---
 
 ## 한국어
 
 **목표:** GPU 끼리 기울기를 얼마나 빨리 주고받는지 Pod 한 대 안에서, 그다음 Instant Cluster 의 노드 사이에서 재고, 그것이 데이터 병렬 학습에 어떤 영향을 주는지 본다.
 
-**시간:** Pod 당 약 15분 · **비용:** 1단계는 2026-11-07 기준 약 USD 0.40 (Pod 두 대, 7분과 3분). 2단계는 2026-11-07 기준 약 USD 20 (A100 SXM 2 × 8장, 35분. [#52](https://github.com/litkhai/runpod-hols/issues/52))
+**시간:** Pod 당 약 15분 · **비용:** 1단계는 2026-11-07 기준 약 USD 0.40 (Pod 두 대, 7분과 3분). 2단계는 2026-11-07 기준 약 USD 20 (A100 SXM 2 × 8장, 35분), 2026-11-08 재실행 약 USD 43 (75분. [#52](https://github.com/litkhai/runpod-hols/issues/52))
 
 ### 파일
 
@@ -267,3 +288,24 @@ python3 cluster.py auto auto --hours 48 --gpus "NVIDIA A100-SXM4-80GB,NVIDIA H10
 - 어떤 이미지를 쓰든, 수치를 믿기 전에 NCCL 로그에서 `Using network IB` 를 확인한다. `Socket` 으로 내려가도 경고 없이 작업은 끝난다.
 
 원본 파일: [`results/2x8xA100SXM-socket/`](./results/2x8xA100SXM-socket/) (`nccl-transport.txt`, `timeline.json` 포함), [`results/2x8xA100SXM-ib/nccl-ib.txt`](./results/2x8xA100SXM-ib/nccl-ib.txt).
+
+### 2단계 재실행 — 클러스터용 이미지, InfiniBand 실패
+
+`cluster.py auto` 가 하루 동안 재고를 기다렸다가 콘솔의 클러스터용 이미지 `runpod/pytorch:1.0.7-cu1300-torch291-ubuntu2404-cluster` (NCCL 2.27.7, CUDA 드라이버 13.2) 로 다시 돌았다.
+
+| 단계 | 시각 (KST, 2026-11-08) |
+|---|---|
+| A100 SXM `Available`, `createCluster` 수락 (`a203s9ftv1xzcp`) | 22:28:37 – 22:28:39 |
+| 두 노드 SSH 열림 | 22:29:29 (50초) |
+| 첫 all-reduce: 모든 HCA 가 *"local catastrophic error"* | 22:30:13 – 22:30:23 |
+| `run.sh` 가 진척 없이 40분 제한에 걸려 중단 | 23:09:53 |
+| 감시 프로세스가 `deleteCluster` | 약 23:43 (75분, 약 USD 43) |
+
+![NCCL 로그: IB 와 GPU Direct RDMA 설정 후 모든 HCA 에서 local catastrophic error](../../docs/assets/img/cluster/ib-catastrophic-error.webp)
+
+- **RDMA 설정 자체는 됐다.** NCCL 은 HCA 8개(각 200 Gb/s InfiniBand, LID 할당, 큐 페어 연결)를 찾았고 `Using network IB` 를 남겼으며, DMA-BUF 를 통한 GPU Direct RDMA 를 골랐다 (`via NET/IB/N/GDRDMA`).
+- **첫 전송에서 모든 HCA 가 멈췄다.** 두 노드의 HCA 8개가 모두 10초 안에 *"async fatal event: local catastrophic error"* 를 냈고, 모든 rank 에서 같은 줄이 찍혔다. 대역폭 수치도 DDP 스텝도 없다. Ubuntu 의 `libibverbs` 를 쓴 첫 실행도 똑같이 실패했으므로 이미지가 원인은 아니었다.
+- **로그가 가리키는 것 (검증 안 함).** 두 호스트의 모든 HCA 가 GPU 메모리로 가는 첫 RDMA 쓰기에서 동시에 치명 오류를 냈다면, 케이블이나 스위치 포트보다는 호스트 쪽 GPU Direct RDMA 경로의 실패로 보인다. 컨테이너의 `libmlx5` 에 `mlx5dv_reg_dmabuf_mr` 가 없어 (NCCL 이 *"dlvsym failed"* 를 남김) GPU 버퍼는 일반 DMA-BUF 호출로 등록됐고, `nvidia-peermem` 경로는 보이지 않는다. 다음 시험은 `NCCL_NET_GDR_LEVEL=LOC` (GPU Direct RDMA 없이 InfiniBand) 와 `NCCL_DMABUF_ENABLE=0` 으로 한 번씩 돌리는 것이다. 돌리지 않았고, 두 클러스터 ID 로 Runpod 지원팀에 문의한다.
+- **#52 는 실패로 기록하고 닫는다.** 2026-11-08 기준 이 실습에는 Runpod Instant Cluster 의 다중 노드 대역폭 수치가 없다. 클러스터 두 번에 약 USD 63 이 들었다.
+
+원본 파일: [`results/2x8xA100SXM-cluster/nccl-ib.txt`](./results/2x8xA100SXM-cluster/nccl-ib.txt) (두 노드 NCCL 로그 발췌), [`timeline.json`](./results/2x8xA100SXM-cluster/timeline.json).
