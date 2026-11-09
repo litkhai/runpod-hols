@@ -104,7 +104,9 @@ Details and raw logs: [lab README](https://github.com/litkhai/runpod-hols/tree/m
 <figure class="shot"><a href="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}" alt="NCCL log: Using network IB and GDRDMA, then local catastrophic error on every HCA" loading="lazy" width="1400" height="480"></a><figcaption>NCCL log of the rerun (excerpt): IB and GPU Direct RDMA set up correctly, then the same fatal event on all eight HCAs of both nodes.</figcaption></figure>
 
 - **Not the image.** The first run with Ubuntu's `libibverbs` failed the same way.
-- **Likely the GPU Direct RDMA path on the hosts (not verified).** A fatal error on every HCA of two hosts at once, at the first RDMA write into GPU memory, points away from cables and switch ports. The container's `libmlx5` lacks `mlx5dv_reg_dmabuf_mr`, so GPU buffers went through the generic DMA-BUF registration; no `nvidia-peermem` path appears. The next test would be `NCCL_NET_GDR_LEVEL=LOC` (IB without GPU Direct RDMA) and `NCCL_DMABUF_ENABLE=0`. Runpod support is being asked with both cluster IDs.
+- **Cause: a host hardware fault (Runpod support, 2026-11-09).** At both times (2026-11-07 about 13:09 UTC, 2026-11-08 about 13:30 UTC) each host had a fatal PCIe error that disconnected all of its devices at once: GPUs, NVSwitches, storage and every InfiniBand card. The *"local catastrophic error"* lines are the HCAs dropping off. Not the NCCL configuration, the InfiniBand settings or the image; support advised against changing NCCL settings such as `NCCL_NET_GDR_LEVEL=LOC` because of it. The machines were taken out of service.
+- **The earlier guess was wrong.** The logs had been read as a GPU Direct RDMA failure (the container's `libmlx5` lacks `mlx5dv_reg_dmabuf_mr`). That message is real but unrelated.
+- **A host fault looks like a hang.** Nothing exits with an error and the cluster keeps billing. Put a timeout on every multi-node run and a watchdog on the cluster; here they capped the loss at 75 minutes.
 - **Recorded as a failure.** As of 2026-11-08 this site has no multi-node bandwidth figure for a Runpod Instant Cluster ([#52](https://github.com/litkhai/runpod-hols/issues/52)).
 
 Timeline and log excerpt: [lab README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#stage-2-rerun--the-cluster-image-infiniband-fails).
@@ -228,7 +230,9 @@ A100 SXM 이 한국 시간 21:42 에 다시 나왔다. `cluster.py` 가 21:48 �
 <figure class="shot"><a href="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}" alt="NCCL 로그: Using network IB 와 GDRDMA 뒤 모든 HCA 에서 local catastrophic error" loading="lazy" width="1400" height="480"></a><figcaption>재실행의 NCCL 로그 (발췌): IB 와 GPU Direct RDMA 는 제대로 잡혔고, 이어서 두 노드의 HCA 8개 모두에서 같은 치명 이벤트가 났다.</figcaption></figure>
 
 - **이미지 탓이 아니다.** Ubuntu 의 `libibverbs` 를 쓴 첫 실행도 똑같이 실패했다.
-- **호스트의 GPU Direct RDMA 경로로 보인다 (검증 안 함).** 두 호스트의 모든 HCA 가 GPU 메모리로 가는 첫 RDMA 쓰기에서 동시에 치명 오류를 냈으니 케이블이나 스위치 포트 문제로 보기 어렵다. 컨테이너의 `libmlx5` 에 `mlx5dv_reg_dmabuf_mr` 가 없어 GPU 버퍼는 일반 DMA-BUF 등록을 거쳤고, `nvidia-peermem` 경로는 보이지 않는다. 다음 시험은 `NCCL_NET_GDR_LEVEL=LOC` (GPU Direct RDMA 없이 IB) 와 `NCCL_DMABUF_ENABLE=0` 이다. 두 클러스터 ID 로 Runpod 지원팀에 문의한다.
+- **원인: 호스트 하드웨어 장애 (Runpod 지원팀, 2026-11-09).** 두 시각 (2026-11-07 약 13:09 UTC, 2026-11-08 약 13:30 UTC) 모두 각 호스트에서 치명적인 PCIe 오류가 나 GPU, NVSwitch, 스토리지, InfiniBand 카드 전부가 한꺼번에 끊겼다. *"local catastrophic error"* 는 그때 HCA 가 떨어져 나가며 남긴 줄이다. NCCL 설정, InfiniBand 설정, 이미지 탓이 아니며, 지원팀은 이 일 때문에 `NCCL_NET_GDR_LEVEL=LOC` 같은 NCCL 설정을 바꾸지 말라고 했다. 해당 머신은 서비스에서 빠졌다.
+- **앞서 한 추측은 틀렸다.** 로그를 GPU Direct RDMA 실패로 읽었었다 (컨테이너의 `libmlx5` 에 `mlx5dv_reg_dmabuf_mr` 가 없음). 그 메시지는 사실이지만 이번 실패와는 관계없다.
+- **호스트 장애는 멈춤처럼 보인다.** 아무것도 오류로 끝나지 않고 클러스터 요금은 계속 나간다. 다중 노드 실행마다 제한 시간을, 클러스터에는 감시 프로세스를 둔다. 이번에는 그 덕에 손실이 75분에서 멈췄다.
 - **실패로 기록한다.** 2026-11-08 기준 이 사이트에는 Runpod Instant Cluster 의 다중 노드 대역폭 수치가 없다 ([#52](https://github.com/litkhai/runpod-hols/issues/52)).
 
 시간표와 로그 발췌: [실습 README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#2단계-재실행--클러스터용-이미지-infiniband-실패).
@@ -352,7 +356,9 @@ A100 SXM 在韩国时间 21:42 再次出现；`cluster.py` 在 21:48 创建集�
 <figure class="shot"><a href="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}" alt="NCCL 日志：Using network IB 和 GDRDMA 之后，每个 HCA 都出现 local catastrophic error" loading="lazy" width="1400" height="480"></a><figcaption>重跑的 NCCL 日志（节选）：IB 与 GPU Direct RDMA 均正确建立，随后两个节点的 8 个 HCA 全部出现同样的致命事件。</figcaption></figure>
 
 - **不是镜像的问题。** 使用 Ubuntu `libibverbs` 的第一次运行以同样的方式失败。
-- **可能是主机上的 GPU Direct RDMA 路径（未验证）。** 两台主机的所有 HCA 在第一次向 GPU 显存写入 RDMA 时同时出现致命错误，这不像是线缆或交换机端口的问题。容器里的 `libmlx5` 没有 `mlx5dv_reg_dmabuf_mr`，GPU 缓冲区走的是通用 DMA-BUF 注册；日志中看不到 `nvidia-peermem` 路径。下一步的测试是 `NCCL_NET_GDR_LEVEL=LOC`（不用 GPU Direct RDMA 的 IB）和 `NCCL_DMABUF_ENABLE=0`。将带着两个集群 ID 询问 Runpod 支持。
+- **原因：主机硬件故障（Runpod 支持，2026-11-09）。** 在两个时间点（2026-11-07 约 13:09 UTC，2026-11-08 约 13:30 UTC），每台主机都发生了致命的 PCIe 错误，所有设备同时断开：GPU、NVSwitch、存储和全部 InfiniBand 卡。*"local catastrophic error"* 就是 HCA 在这次故障中掉线时留下的。与 NCCL 配置、InfiniBand 设置或镜像无关；支持人员建议不要因此修改 `NCCL_NET_GDR_LEVEL=LOC` 等 NCCL 设置。这些机器已停止服务。
+- **之前的推测是错的。** 日志曾被解读为 GPU Direct RDMA 失败（容器的 `libmlx5` 没有 `mlx5dv_reg_dmabuf_mr`）。该消息确实存在，但与这次失败无关。
+- **主机故障看起来像卡住。** 没有任何进程以错误退出，集群继续计费。每次多节点运行都要设超时，集群要有看门狗；这次正是它们把损失限制在 75 分钟。
 - **记录为失败。** 截至 2026-11-08，本站没有 Runpod Instant Cluster 的多节点带宽数据（[#52](https://github.com/litkhai/runpod-hols/issues/52)）。
 
 时间线与日志节选：[实验 README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#stage-2-rerun--the-cluster-image-infiniband-fails)。
@@ -476,7 +482,9 @@ A100 SXM は韓国時間 21:42 に再び出ました。`cluster.py` が 21:48 �
 <figure class="shot"><a href="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}" alt="NCCL ログ：Using network IB と GDRDMA のあと、すべての HCA で local catastrophic error" loading="lazy" width="1400" height="480"></a><figcaption>再実行の NCCL ログ（抜粋）：IB と GPU Direct RDMA は正しく設定され、その直後に両ノードの 8 個の HCA すべてで同じ致命的イベントが起きました。</figcaption></figure>
 
 - **イメージのせいではありません。** Ubuntu の `libibverbs` を使った最初の実行も同じように失敗しました。
-- **ホスト側の GPU Direct RDMA 経路と考えられます（未検証）。** 2 台のホストのすべての HCA が、GPU メモリへの最初の RDMA 書き込みで同時に致命的エラーを出したので、ケーブルやスイッチのポートの問題とは考えにくいです。コンテナの `libmlx5` には `mlx5dv_reg_dmabuf_mr` がなく、GPU バッファは汎用の DMA-BUF 登録を通りました。`nvidia-peermem` の経路は見当たりません。次の試験は `NCCL_NET_GDR_LEVEL=LOC`（GPU Direct RDMA なしの IB）と `NCCL_DMABUF_ENABLE=0` です。2 つのクラスタ ID を添えて Runpod サポートに問い合わせます。
+- **原因：ホストのハードウェア障害（Runpod サポート、2026-11-09）。** 2 つの時刻（2026-11-07 約 13:09 UTC、2026-11-08 約 13:30 UTC）のどちらでも、各ホストで致命的な PCIe エラーが起き、GPU、NVSwitch、ストレージ、すべての InfiniBand カードが一度に切断されました。*"local catastrophic error"* は、その障害で HCA が外れたときの記録です。NCCL の設定、InfiniBand の設定、イメージのせいではなく、サポートはこの件を理由に `NCCL_NET_GDR_LEVEL=LOC` などの NCCL 設定を変えないよう勧めています。該当マシンはサービスから外されました。
+- **以前の推測は誤りでした。** ログを GPU Direct RDMA の失敗と読んでいました（コンテナの `libmlx5` に `mlx5dv_reg_dmabuf_mr` がない）。このメッセージ自体は本当ですが、今回の失敗とは無関係です。
+- **ホスト障害は停止のように見えます。** どのプロセスもエラーで終了せず、クラスタの課金は続きます。マルチノードの実行には必ずタイムアウトを、クラスタには監視プロセスを付けてください。今回はそれで損失が 75 分で止まりました。
 - **失敗として記録します。** 2026-11-08 時点で、このサイトには Runpod Instant Cluster のマルチノード帯域の数値がありません（[#52](https://github.com/litkhai/runpod-hols/issues/52)）。
 
 タイムラインとログの抜粋：[ラボの README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#stage-2-rerun--the-cluster-image-infiniband-fails)。
