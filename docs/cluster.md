@@ -83,7 +83,7 @@ Clusters are created in the console (**Clusters → Create cluster**) or over Gr
 
 ### Sockets instead of InfiniBand
 
-A100 SXM came back at 21:42 KST; `cluster.py` created the cluster at 21:48, SSH was open on both nodes 114 s later, `run.sh` ran 21:50–22:09, and the cluster was deleted at 22:23: 35 minutes at USD 34.37/hr, about USD 20. `createCluster` needs `deployCost` (the whole cluster's hourly offer; the API checks it per Pod against a minimum of USD 14.32), and the Pods were billed at the list price whatever the offer.
+A100 SXM came back at 21:42 KST; `cluster.py` created the cluster at 21:48, SSH was open on both nodes 114 s later, `run.sh` ran 21:50–22:09, and the cluster was deleted at 22:23: Runpod charged USD 13.86: billing stopped at 22:15, when the faulty hosts were taken out of service (see below). `createCluster` needs `deployCost` (the whole cluster's hourly offer; the API checks it per Pod against a minimum of USD 14.32), and the Pods were billed at the list price whatever the offer.
 
 | 16 GPUs, `runpod/pytorch` image as is | Result |
 |---|---|
@@ -99,14 +99,16 @@ Details and raw logs: [lab README](https://github.com/litkhai/runpod-hols/tree/m
 
 ### InfiniBand fails on the cluster image
 
-`cluster.py` waited a day and ran again on 2026-11-08 with the cluster image (`…-ubuntu2404-cluster`, NCCL 2.27.7). The cluster was created at 22:28 KST and SSH was open 50 s later. This time NCCL found the eight 200 Gb/s InfiniBand HCAs, connected the queue pairs and logged `Using network IB` with GPU Direct RDMA through DMA-BUF. On the first all-reduce, at 22:30, every HCA on both nodes reported *"local catastrophic error"* within ten seconds. Nothing moved after that; the run hit its 40-minute timeout and the watchdog deleted the cluster at 75 minutes (about USD 43, about USD 63 for the two clusters).
+`cluster.py` waited a day and ran again on 2026-11-08 with the cluster image (`…-ubuntu2404-cluster`, NCCL 2.27.7). The cluster was created at 22:28 KST and SSH was open 50 s later. This time NCCL found the eight 200 Gb/s InfiniBand HCAs, connected the queue pairs and logged `Using network IB` with GPU Direct RDMA through DMA-BUF. On the first all-reduce, at 22:30, every HCA on both nodes reported *"local catastrophic error"* within ten seconds. Nothing moved after that; the run hit its 40-minute timeout and the watchdog deleted the cluster at 75 minutes (billing had already stopped at about 22:33: USD 2.06, USD 15.91 for the two clusters).
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}" alt="NCCL log: Using network IB and GDRDMA, then local catastrophic error on every HCA" loading="lazy" width="1400" height="480"></a><figcaption>NCCL log of the rerun (excerpt): IB and GPU Direct RDMA set up correctly, then the same fatal event on all eight HCAs of both nodes.</figcaption></figure>
 
 - **Not the image.** The first run with Ubuntu's `libibverbs` failed the same way.
 - **Cause: a host hardware fault (Runpod support, 2026-11-09).** At both times (2026-11-07 about 13:09 UTC, 2026-11-08 about 13:30 UTC) each host had a fatal PCIe error that disconnected all of its devices at once: GPUs, NVSwitches, storage and every InfiniBand card. The *"local catastrophic error"* lines are the HCAs dropping off. Not the NCCL configuration, the InfiniBand settings or the image; support advised against changing NCCL settings such as `NCCL_NET_GDR_LEVEL=LOC` because of it. The machines were taken out of service.
 - **The earlier guess was wrong.** The logs had been read as a GPU Direct RDMA failure (the container's `libmlx5` lacks `mlx5dv_reg_dmabuf_mr`). That message is real but unrelated.
-- **A host fault looks like a hang.** Nothing exits with an error and the cluster keeps billing. Put a timeout on every multi-node run and a watchdog on the cluster; here they capped the loss at 75 minutes.
+- **A host fault looks like a hang.** Nothing exits with an error. Runpod detects the fault, takes the machines out of service within minutes and stops billing then (about USD 4.92 of the two clusters fell after the faults), but sends no notification.
+- **Same group of hosts.** The two clusters used different pairs of machines from one group of A100 SXM hosts; all four had the same fault and are out of service.
+- **Checks Runpod recommends.** After start: `nvidia-smi` (8 GPUs) and `ibv_devinfo` (every port `PORT_ACTIVE`) on each node, then a short cross-node `all_reduce_perf` with small messages. During the run: `timeout=timedelta(minutes=5)` in `init_process_group`. The timeout matters most, because a fault can come later: here after 1.5 minutes and after 16 minutes.
 - **Recorded as a failure.** As of 2026-11-08 this site has no multi-node bandwidth figure for a Runpod Instant Cluster ([#52](https://github.com/litkhai/runpod-hols/issues/52)).
 
 Timeline and log excerpt: [lab README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#stage-2-rerun--the-cluster-image-infiniband-fails).
@@ -209,7 +211,7 @@ python3 lab.py delete
 
 ### InfiniBand 대신 소켓
 
-A100 SXM 이 한국 시간 21:42 에 다시 나왔다. `cluster.py` 가 21:48 에 클러스터를 만들었고, 114초 뒤 두 노드에 SSH 가 열렸으며, `run.sh` 가 21:50–22:09 에 돌고 22:23 에 클러스터를 지웠다. 시간당 USD 34.37 로 35분, 약 USD 20 이다. `createCluster` 에는 `deployCost` (클러스터 전체의 시간당 제시 가격. API 는 이를 Pod 당으로 나눠 최소 USD 14.32 와 비교한다) 가 필요하고, 제시 가격과 관계없이 Pod 는 정가로 청구됐다.
+A100 SXM 이 한국 시간 21:42 에 다시 나왔다. `cluster.py` 가 21:48 에 클러스터를 만들었고, 114초 뒤 두 노드에 SSH 가 열렸으며, `run.sh` 가 21:50–22:09 에 돌고 22:23 에 클러스터를 지웠다. Runpod 청구액은 USD 13.86 이다. 장애 난 호스트가 서비스에서 빠진 22:15 에 과금이 멈췄다 (아래 참고). `createCluster` 에는 `deployCost` (클러스터 전체의 시간당 제시 가격. API 는 이를 Pod 당으로 나눠 최소 USD 14.32 와 비교한다) 가 필요하고, 제시 가격과 관계없이 Pod 는 정가로 청구됐다.
 
 | GPU 16장, `runpod/pytorch` 이미지 그대로 | 결과 |
 |---|---|
@@ -225,14 +227,16 @@ A100 SXM 이 한국 시간 21:42 에 다시 나왔다. `cluster.py` 가 21:48 �
 
 ### 클러스터용 이미지에서도 InfiniBand 실패
 
-`cluster.py` 가 하루를 기다려 2026-11-08 에 클러스터용 이미지(`…-ubuntu2404-cluster`, NCCL 2.27.7)로 다시 돌았다. 한국 시간 22:28 에 클러스터가 만들어졌고 50초 뒤 SSH 가 열렸다. 이번에는 NCCL 이 200 Gb/s InfiniBand HCA 8개를 찾고 큐 페어를 연결했으며, DMA-BUF 를 통한 GPU Direct RDMA 와 함께 `Using network IB` 를 남겼다. 22:30 첫 all-reduce 에서 두 노드의 모든 HCA 가 10초 안에 *"local catastrophic error"* 를 냈다. 그 뒤로는 아무것도 진행되지 않아 40분 제한에 걸렸고, 감시 프로세스가 75분에 클러스터를 지웠다 (약 USD 43, 두 클러스터 합계 약 USD 63).
+`cluster.py` 가 하루를 기다려 2026-11-08 에 클러스터용 이미지(`…-ubuntu2404-cluster`, NCCL 2.27.7)로 다시 돌았다. 한국 시간 22:28 에 클러스터가 만들어졌고 50초 뒤 SSH 가 열렸다. 이번에는 NCCL 이 200 Gb/s InfiniBand HCA 8개를 찾고 큐 페어를 연결했으며, DMA-BUF 를 통한 GPU Direct RDMA 와 함께 `Using network IB` 를 남겼다. 22:30 첫 all-reduce 에서 두 노드의 모든 HCA 가 10초 안에 *"local catastrophic error"* 를 냈다. 그 뒤로는 아무것도 진행되지 않아 40분 제한에 걸렸고, 감시 프로세스가 75분에 클러스터를 지웠다 (과금은 약 22:33 에 이미 멈춰 USD 2.06, 두 클러스터 합계 USD 15.91).
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}" alt="NCCL 로그: Using network IB 와 GDRDMA 뒤 모든 HCA 에서 local catastrophic error" loading="lazy" width="1400" height="480"></a><figcaption>재실행의 NCCL 로그 (발췌): IB 와 GPU Direct RDMA 는 제대로 잡혔고, 이어서 두 노드의 HCA 8개 모두에서 같은 치명 이벤트가 났다.</figcaption></figure>
 
 - **이미지 탓이 아니다.** Ubuntu 의 `libibverbs` 를 쓴 첫 실행도 똑같이 실패했다.
 - **원인: 호스트 하드웨어 장애 (Runpod 지원팀, 2026-11-09).** 두 시각 (2026-11-07 약 13:09 UTC, 2026-11-08 약 13:30 UTC) 모두 각 호스트에서 치명적인 PCIe 오류가 나 GPU, NVSwitch, 스토리지, InfiniBand 카드 전부가 한꺼번에 끊겼다. *"local catastrophic error"* 는 그때 HCA 가 떨어져 나가며 남긴 줄이다. NCCL 설정, InfiniBand 설정, 이미지 탓이 아니며, 지원팀은 이 일 때문에 `NCCL_NET_GDR_LEVEL=LOC` 같은 NCCL 설정을 바꾸지 말라고 했다. 해당 머신은 서비스에서 빠졌다.
 - **앞서 한 추측은 틀렸다.** 로그를 GPU Direct RDMA 실패로 읽었었다 (컨테이너의 `libmlx5` 에 `mlx5dv_reg_dmabuf_mr` 가 없음). 그 메시지는 사실이지만 이번 실패와는 관계없다.
-- **호스트 장애는 멈춤처럼 보인다.** 아무것도 오류로 끝나지 않고 클러스터 요금은 계속 나간다. 다중 노드 실행마다 제한 시간을, 클러스터에는 감시 프로세스를 둔다. 이번에는 그 덕에 손실이 75분에서 멈췄다.
+- **호스트 장애는 멈춤처럼 보인다.** 아무것도 오류로 끝나지 않는다. Runpod 은 장애를 감지해 몇 분 안에 머신을 서비스에서 빼고 그때 과금을 멈추지만 (두 클러스터에서 장애 뒤 몫은 약 USD 4.92), 알림은 보내지 않는다.
+- **같은 호스트 그룹.** 두 클러스터는 한 A100 SXM 호스트 그룹의 서로 다른 머신 쌍을 썼고, 네 대 모두 같은 장애를 내 서비스에서 빠졌다.
+- **Runpod 이 권하는 점검.** 시작 직후 노드마다 `nvidia-smi` (GPU 8장) 와 `ibv_devinfo` (모든 포트 `PORT_ACTIVE`), 이어서 작은 메시지로 두 노드에 걸친 `all_reduce_perf` 를 짧게. 실행 중에는 `init_process_group` 에 `timeout=timedelta(minutes=5)`. 장애는 나중에도 나므로 (이번에는 1.5분 뒤와 16분 뒤) 이 제한이 가장 중요하다.
 - **실패로 기록한다.** 2026-11-08 기준 이 사이트에는 Runpod Instant Cluster 의 다중 노드 대역폭 수치가 없다 ([#52](https://github.com/litkhai/runpod-hols/issues/52)).
 
 시간표와 로그 발췌: [실습 README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#2단계-재실행--클러스터용-이미지-infiniband-실패).
@@ -335,7 +339,7 @@ python3 lab.py delete
 
 ### 走 Socket 而不是 InfiniBand
 
-A100 SXM 在韩国时间 21:42 再次出现；`cluster.py` 在 21:48 创建集群，114 秒后两个节点都能 SSH，`run.sh` 在 21:50–22:09 运行，22:23 删除集群：按每小时 USD 34.37 运行 35 分钟，约 USD 20。`createCluster` 需要 `deployCost`（整个集群每小时的出价；API 按 Pod 拆分后与最低价 USD 14.32 比较），而无论出价多少，Pod 都按标价计费。
+A100 SXM 在韩国时间 21:42 再次出现；`cluster.py` 在 21:48 创建集群，114 秒后两个节点都能 SSH，`run.sh` 在 21:50–22:09 运行，22:23 删除集群：Runpod 实际收费 USD 13.86：故障主机在 22:15 停止服务时计费就停止了（见下文）。`createCluster` 需要 `deployCost`（整个集群每小时的出价；API 按 Pod 拆分后与最低价 USD 14.32 比较），而无论出价多少，Pod 都按标价计费。
 
 | 16 块 GPU，`runpod/pytorch` 镜像原样 | 结果 |
 |---|---|
@@ -351,14 +355,16 @@ A100 SXM 在韩国时间 21:42 再次出现；`cluster.py` 在 21:48 创建集�
 
 ### 集群镜像上 InfiniBand 也失败
 
-`cluster.py` 等了一天，于 2026-11-08 用集群镜像（`…-ubuntu2404-cluster`，NCCL 2.27.7）再次运行。集群在韩国时间 22:28 创建，50 秒后 SSH 可用。这一次 NCCL 找到了 8 个 200 Gb/s InfiniBand HCA，建立了队列对，并记录了 `Using network IB`，通过 DMA-BUF 使用 GPU Direct RDMA。22:30 第一次 all-reduce 时，两个节点上的每个 HCA 都在十秒内报告 *"local catastrophic error"*。此后没有任何进展：运行触发 40 分钟超时，看门狗在第 75 分钟删除了集群（约 USD 43，两次集群合计约 USD 63）。
+`cluster.py` 等了一天，于 2026-11-08 用集群镜像（`…-ubuntu2404-cluster`，NCCL 2.27.7）再次运行。集群在韩国时间 22:28 创建，50 秒后 SSH 可用。这一次 NCCL 找到了 8 个 200 Gb/s InfiniBand HCA，建立了队列对，并记录了 `Using network IB`，通过 DMA-BUF 使用 GPU Direct RDMA。22:30 第一次 all-reduce 时，两个节点上的每个 HCA 都在十秒内报告 *"local catastrophic error"*。此后没有任何进展：运行触发 40 分钟超时，看门狗在第 75 分钟删除了集群（计费已在约 22:33 停止：USD 2.06，两次集群合计 USD 15.91）。
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}" alt="NCCL 日志：Using network IB 和 GDRDMA 之后，每个 HCA 都出现 local catastrophic error" loading="lazy" width="1400" height="480"></a><figcaption>重跑的 NCCL 日志（节选）：IB 与 GPU Direct RDMA 均正确建立，随后两个节点的 8 个 HCA 全部出现同样的致命事件。</figcaption></figure>
 
 - **不是镜像的问题。** 使用 Ubuntu `libibverbs` 的第一次运行以同样的方式失败。
 - **原因：主机硬件故障（Runpod 支持，2026-11-09）。** 在两个时间点（2026-11-07 约 13:09 UTC，2026-11-08 约 13:30 UTC），每台主机都发生了致命的 PCIe 错误，所有设备同时断开：GPU、NVSwitch、存储和全部 InfiniBand 卡。*"local catastrophic error"* 就是 HCA 在这次故障中掉线时留下的。与 NCCL 配置、InfiniBand 设置或镜像无关；支持人员建议不要因此修改 `NCCL_NET_GDR_LEVEL=LOC` 等 NCCL 设置。这些机器已停止服务。
 - **之前的推测是错的。** 日志曾被解读为 GPU Direct RDMA 失败（容器的 `libmlx5` 没有 `mlx5dv_reg_dmabuf_mr`）。该消息确实存在，但与这次失败无关。
-- **主机故障看起来像卡住。** 没有任何进程以错误退出，集群继续计费。每次多节点运行都要设超时，集群要有看门狗；这次正是它们把损失限制在 75 分钟。
+- **主机故障看起来像卡住。** 没有任何进程以错误退出。Runpod 会检测到故障，在几分钟内让机器停止服务并同时停止计费（两次集群在故障之后的费用约 USD 4.92），但不会通知用户。
+- **同一组主机。** 两次集群使用同一组 A100 SXM 主机中不同的两对机器；四台都出现同样的故障，已全部停止服务。
+- **Runpod 建议的检查。** 启动后在每个节点运行 `nvidia-smi`（8 张 GPU）和 `ibv_devinfo`（每个端口 `PORT_ACTIVE`），再用小消息跨节点短跑一次 `all_reduce_perf`。运行中在 `init_process_group` 里设置 `timeout=timedelta(minutes=5)`。故障也可能稍后才出现（这次分别在 1.5 分钟和 16 分钟后），所以这个超时最重要。
 - **记录为失败。** 截至 2026-11-08，本站没有 Runpod Instant Cluster 的多节点带宽数据（[#52](https://github.com/litkhai/runpod-hols/issues/52)）。
 
 时间线与日志节选：[实验 README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#stage-2-rerun--the-cluster-image-infiniband-fails)。
@@ -461,7 +467,7 @@ python3 lab.py delete
 
 ### InfiniBand ではなくソケット
 
-A100 SXM は韓国時間 21:42 に再び出ました。`cluster.py` が 21:48 にクラスタを作成し、114 秒後に両ノードで SSH が開き、`run.sh` が 21:50〜22:09 に実行され、22:23 にクラスタを削除しました。時間あたり USD 34.37 で 35 分、約 USD 20 です。`createCluster` には `deployCost`（クラスタ全体の時間あたりの提示価格。API は Pod ごとに割って最低価格 USD 14.32 と比較）が必要で、提示価格にかかわらず Pod は定価で請求されました。
+A100 SXM は韓国時間 21:42 に再び出ました。`cluster.py` が 21:48 にクラスタを作成し、114 秒後に両ノードで SSH が開き、`run.sh` が 21:50〜22:09 に実行され、22:23 にクラスタを削除しました。Runpod の請求額は USD 13.86 です。障害のあったホストが 22:15 にサービスから外された時点で課金が止まりました（後述）。`createCluster` には `deployCost`（クラスタ全体の時間あたりの提示価格。API は Pod ごとに割って最低価格 USD 14.32 と比較）が必要で、提示価格にかかわらず Pod は定価で請求されました。
 
 | GPU 16 基、`runpod/pytorch` イメージそのまま | 結果 |
 |---|---|
@@ -477,14 +483,16 @@ A100 SXM は韓国時間 21:42 に再び出ました。`cluster.py` が 21:48 �
 
 ### クラスタ用イメージでも InfiniBand が失敗
 
-`cluster.py` は 1 日待って、2026-11-08 にクラスタ用イメージ（`…-ubuntu2404-cluster`、NCCL 2.27.7）で再実行しました。クラスタは韓国時間 22:28 に作成され、50 秒後に SSH が開きました。今回は NCCL が 200 Gb/s の InfiniBand HCA を 8 個見つけてキューペアを接続し、DMA-BUF 経由の GPU Direct RDMA とともに `Using network IB` を記録しました。22:30 の最初の all-reduce で、両ノードのすべての HCA が 10 秒以内に *"local catastrophic error"* を出しました。その後は何も進まず、実行は 40 分のタイムアウトに達し、監視プロセスが 75 分でクラスタを削除しました（約 USD 43、2 回のクラスタで約 USD 63）。
+`cluster.py` は 1 日待って、2026-11-08 にクラスタ用イメージ（`…-ubuntu2404-cluster`、NCCL 2.27.7）で再実行しました。クラスタは韓国時間 22:28 に作成され、50 秒後に SSH が開きました。今回は NCCL が 200 Gb/s の InfiniBand HCA を 8 個見つけてキューペアを接続し、DMA-BUF 経由の GPU Direct RDMA とともに `Using network IB` を記録しました。22:30 の最初の all-reduce で、両ノードのすべての HCA が 10 秒以内に *"local catastrophic error"* を出しました。その後は何も進まず、実行は 40 分のタイムアウトに達し、監視プロセスが 75 分でクラスタを削除しました（課金は約 22:33 に既に止まっており USD 2.06、2 回のクラスタで USD 15.91）。
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}" alt="NCCL ログ：Using network IB と GDRDMA のあと、すべての HCA で local catastrophic error" loading="lazy" width="1400" height="480"></a><figcaption>再実行の NCCL ログ（抜粋）：IB と GPU Direct RDMA は正しく設定され、その直後に両ノードの 8 個の HCA すべてで同じ致命的イベントが起きました。</figcaption></figure>
 
 - **イメージのせいではありません。** Ubuntu の `libibverbs` を使った最初の実行も同じように失敗しました。
 - **原因：ホストのハードウェア障害（Runpod サポート、2026-11-09）。** 2 つの時刻（2026-11-07 約 13:09 UTC、2026-11-08 約 13:30 UTC）のどちらでも、各ホストで致命的な PCIe エラーが起き、GPU、NVSwitch、ストレージ、すべての InfiniBand カードが一度に切断されました。*"local catastrophic error"* は、その障害で HCA が外れたときの記録です。NCCL の設定、InfiniBand の設定、イメージのせいではなく、サポートはこの件を理由に `NCCL_NET_GDR_LEVEL=LOC` などの NCCL 設定を変えないよう勧めています。該当マシンはサービスから外されました。
 - **以前の推測は誤りでした。** ログを GPU Direct RDMA の失敗と読んでいました（コンテナの `libmlx5` に `mlx5dv_reg_dmabuf_mr` がない）。このメッセージ自体は本当ですが、今回の失敗とは無関係です。
-- **ホスト障害は停止のように見えます。** どのプロセスもエラーで終了せず、クラスタの課金は続きます。マルチノードの実行には必ずタイムアウトを、クラスタには監視プロセスを付けてください。今回はそれで損失が 75 分で止まりました。
+- **ホスト障害は停止のように見えます。** どのプロセスもエラーで終了しません。Runpod は障害を検知して数分以内にマシンをサービスから外し、その時点で課金も止めます（2 回のクラスタで障害後の分は約 USD 4.92）。ただし通知は届きません。
+- **同じホストグループ。** 2 回のクラスタは、同じ A100 SXM ホストグループの別々のマシン 2 台ずつを使いました。4 台とも同じ障害を起こし、サービスから外されています。
+- **Runpod が勧めるチェック。** 起動直後に各ノードで `nvidia-smi`（GPU 8 枚）と `ibv_devinfo`（すべてのポートが `PORT_ACTIVE`）、続いて小さなメッセージでノード間の `all_reduce_perf` を短く実行します。実行中は `init_process_group` に `timeout=timedelta(minutes=5)` を指定します。障害は後から起きることもあるため（今回は 1.5 分後と 16 分後）、このタイムアウトが最も重要です。
 - **失敗として記録します。** 2026-11-08 時点で、このサイトには Runpod Instant Cluster のマルチノード帯域の数値がありません（[#52](https://github.com/litkhai/runpod-hols/issues/52)）。
 
 タイムラインとログの抜粋：[ラボの README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#stage-2-rerun--the-cluster-image-infiniband-fails)。
