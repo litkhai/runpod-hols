@@ -99,7 +99,7 @@ Details and raw logs: [lab README](https://github.com/litkhai/runpod-hols/tree/m
 
 ### InfiniBand fails on the cluster image
 
-`cluster.py` waited a day and ran again on 2026-11-08 with the cluster image (`…-ubuntu2404-cluster`, NCCL 2.27.7). The cluster was created at 22:28 KST and SSH was open 50 s later. This time NCCL found the eight 200 Gb/s InfiniBand HCAs, connected the queue pairs and logged `Using network IB` with GPU Direct RDMA through DMA-BUF. On the first all-reduce, at 22:30, every HCA on both nodes reported *"local catastrophic error"* within ten seconds. Nothing moved after that; the run hit its 40-minute timeout and the watchdog deleted the cluster at 75 minutes (billing had already stopped at about 22:33: USD 2.06, USD 15.91 for the two clusters).
+`cluster.py` waited a day and ran again on 2026-11-08 with the cluster image (`…-ubuntu2404-cluster`, NCCL 2.27.7). The cluster was created at 22:28 KST and SSH was open 50 s later. This time NCCL found the eight 200 Gb/s InfiniBand HCAs, connected the queue pairs and logged `Using network IB` with GPU Direct RDMA through DMA-BUF. On the first all-reduce, at 22:30, every HCA on both nodes reported *"local catastrophic error"* within ten seconds. Nothing moved after that; the run hit its 40-minute timeout and the watchdog deleted the cluster at 75 minutes (billing had already stopped at about 22:33: USD 2.06, USD 15.91 for the two clusters; Runpod credited the full amount back as USD 16 because the fault was on its hosts).
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}" alt="NCCL log: Using network IB and GDRDMA, then local catastrophic error on every HCA" loading="lazy" width="1400" height="480"></a><figcaption>NCCL log of the rerun (excerpt): IB and GPU Direct RDMA set up correctly, then the same fatal event on all eight HCAs of both nodes.</figcaption></figure>
 
@@ -227,7 +227,7 @@ A100 SXM 이 한국 시간 21:42 에 다시 나왔다. `cluster.py` 가 21:48 �
 
 ### 클러스터용 이미지에서도 InfiniBand 실패
 
-`cluster.py` 가 하루를 기다려 2026-11-08 에 클러스터용 이미지(`…-ubuntu2404-cluster`, NCCL 2.27.7)로 다시 돌았다. 한국 시간 22:28 에 클러스터가 만들어졌고 50초 뒤 SSH 가 열렸다. 이번에는 NCCL 이 200 Gb/s InfiniBand HCA 8개를 찾고 큐 페어를 연결했으며, DMA-BUF 를 통한 GPU Direct RDMA 와 함께 `Using network IB` 를 남겼다. 22:30 첫 all-reduce 에서 두 노드의 모든 HCA 가 10초 안에 *"local catastrophic error"* 를 냈다. 그 뒤로는 아무것도 진행되지 않아 40분 제한에 걸렸고, 감시 프로세스가 75분에 클러스터를 지웠다 (과금은 약 22:33 에 이미 멈춰 USD 2.06, 두 클러스터 합계 USD 15.91).
+`cluster.py` 가 하루를 기다려 2026-11-08 에 클러스터용 이미지(`…-ubuntu2404-cluster`, NCCL 2.27.7)로 다시 돌았다. 한국 시간 22:28 에 클러스터가 만들어졌고 50초 뒤 SSH 가 열렸다. 이번에는 NCCL 이 200 Gb/s InfiniBand HCA 8개를 찾고 큐 페어를 연결했으며, DMA-BUF 를 통한 GPU Direct RDMA 와 함께 `Using network IB` 를 남겼다. 22:30 첫 all-reduce 에서 두 노드의 모든 HCA 가 10초 안에 *"local catastrophic error"* 를 냈다. 그 뒤로는 아무것도 진행되지 않아 40분 제한에 걸렸고, 감시 프로세스가 75분에 클러스터를 지웠다 (과금은 약 22:33 에 이미 멈춰 USD 2.06, 두 클러스터 합계 USD 15.91. 장애가 Runpod 호스트 쪽이라 전액을 USD 16 크레딧으로 돌려받았다).
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}" alt="NCCL 로그: Using network IB 와 GDRDMA 뒤 모든 HCA 에서 local catastrophic error" loading="lazy" width="1400" height="480"></a><figcaption>재실행의 NCCL 로그 (발췌): IB 와 GPU Direct RDMA 는 제대로 잡혔고, 이어서 두 노드의 HCA 8개 모두에서 같은 치명 이벤트가 났다.</figcaption></figure>
 
@@ -355,7 +355,7 @@ A100 SXM 在韩国时间 21:42 再次出现；`cluster.py` 在 21:48 创建集�
 
 ### 集群镜像上 InfiniBand 也失败
 
-`cluster.py` 等了一天，于 2026-11-08 用集群镜像（`…-ubuntu2404-cluster`，NCCL 2.27.7）再次运行。集群在韩国时间 22:28 创建，50 秒后 SSH 可用。这一次 NCCL 找到了 8 个 200 Gb/s InfiniBand HCA，建立了队列对，并记录了 `Using network IB`，通过 DMA-BUF 使用 GPU Direct RDMA。22:30 第一次 all-reduce 时，两个节点上的每个 HCA 都在十秒内报告 *"local catastrophic error"*。此后没有任何进展：运行触发 40 分钟超时，看门狗在第 75 分钟删除了集群（计费已在约 22:33 停止：USD 2.06，两次集群合计 USD 15.91）。
+`cluster.py` 等了一天，于 2026-11-08 用集群镜像（`…-ubuntu2404-cluster`，NCCL 2.27.7）再次运行。集群在韩国时间 22:28 创建，50 秒后 SSH 可用。这一次 NCCL 找到了 8 个 200 Gb/s InfiniBand HCA，建立了队列对，并记录了 `Using network IB`，通过 DMA-BUF 使用 GPU Direct RDMA。22:30 第一次 all-reduce 时，两个节点上的每个 HCA 都在十秒内报告 *"local catastrophic error"*。此后没有任何进展：运行触发 40 分钟超时，看门狗在第 75 分钟删除了集群（计费已在约 22:33 停止：USD 2.06，两次集群合计 USD 15.91；由于故障出在 Runpod 的主机上，Runpod 以 USD 16 额度全额退还）。
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}" alt="NCCL 日志：Using network IB 和 GDRDMA 之后，每个 HCA 都出现 local catastrophic error" loading="lazy" width="1400" height="480"></a><figcaption>重跑的 NCCL 日志（节选）：IB 与 GPU Direct RDMA 均正确建立，随后两个节点的 8 个 HCA 全部出现同样的致命事件。</figcaption></figure>
 
@@ -483,7 +483,7 @@ A100 SXM は韓国時間 21:42 に再び出ました。`cluster.py` が 21:48 �
 
 ### クラスタ用イメージでも InfiniBand が失敗
 
-`cluster.py` は 1 日待って、2026-11-08 にクラスタ用イメージ（`…-ubuntu2404-cluster`、NCCL 2.27.7）で再実行しました。クラスタは韓国時間 22:28 に作成され、50 秒後に SSH が開きました。今回は NCCL が 200 Gb/s の InfiniBand HCA を 8 個見つけてキューペアを接続し、DMA-BUF 経由の GPU Direct RDMA とともに `Using network IB` を記録しました。22:30 の最初の all-reduce で、両ノードのすべての HCA が 10 秒以内に *"local catastrophic error"* を出しました。その後は何も進まず、実行は 40 分のタイムアウトに達し、監視プロセスが 75 分でクラスタを削除しました（課金は約 22:33 に既に止まっており USD 2.06、2 回のクラスタで USD 15.91）。
+`cluster.py` は 1 日待って、2026-11-08 にクラスタ用イメージ（`…-ubuntu2404-cluster`、NCCL 2.27.7）で再実行しました。クラスタは韓国時間 22:28 に作成され、50 秒後に SSH が開きました。今回は NCCL が 200 Gb/s の InfiniBand HCA を 8 個見つけてキューペアを接続し、DMA-BUF 経由の GPU Direct RDMA とともに `Using network IB` を記録しました。22:30 の最初の all-reduce で、両ノードのすべての HCA が 10 秒以内に *"local catastrophic error"* を出しました。その後は何も進まず、実行は 40 分のタイムアウトに達し、監視プロセスが 75 分でクラスタを削除しました（課金は約 22:33 に既に止まっており USD 2.06、2 回のクラスタで USD 15.91。障害は Runpod 側のホストだったため、全額が USD 16 のクレジットで返金されました）。
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/ib-catastrophic-error.webp' | relative_url }}" alt="NCCL ログ：Using network IB と GDRDMA のあと、すべての HCA で local catastrophic error" loading="lazy" width="1400" height="480"></a><figcaption>再実行の NCCL ログ（抜粋）：IB と GPU Direct RDMA は正しく設定され、その直後に両ノードの 8 個の HCA すべてで同じ致命的イベントが起きました。</figcaption></figure>
 

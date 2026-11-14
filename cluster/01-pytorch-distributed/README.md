@@ -8,7 +8,7 @@
 
 **Goal:** measure how fast GPUs exchange gradients, first inside one Pod, then across the nodes of an Instant Cluster, and see what that does to data-parallel training.
 
-**Time:** ~15 minutes per Pod · **Cost:** stage 1 about USD 0.40 on 2026-11-07 (two Pods, 7 and 3 minutes); stage 2 USD 13.86 on 2026-11-07 (2 × 8 A100 SXM, billed 27 minutes) and USD 2.06 on 2026-11-08 (rerun, billed about 4 minutes), per Runpod's billing records ([#52](https://github.com/litkhai/runpod-hols/issues/52))
+**Time:** ~15 minutes per Pod · **Cost:** stage 1 about USD 0.40 on 2026-11-07 (two Pods, 7 and 3 minutes); stage 2 USD 13.86 on 2026-11-07 (2 × 8 A100 SXM, billed 27 minutes) and USD 2.06 on 2026-11-08 (rerun, billed about 4 minutes), per Runpod's billing records, both credited back as USD 16 ([#52](https://github.com/litkhai/runpod-hols/issues/52))
 
 ### Files
 
@@ -160,7 +160,7 @@ Raw files: [`results/2x8xA100SXM-socket/`](./results/2x8xA100SXM-socket/) (with 
 - **A host fault shows up as a hang.** Inside the container nothing exits with an error; the collective just stops. Runpod detects the fault and takes the machines out of service within a few minutes, and billing stops then, not when the cluster is deleted: the two clusters were charged USD 13.86 (until 13:15 UTC) and USD 2.06 (until 13:33 UTC), about USD 4.92 of it after the faults. No notification is sent, so the run itself has to notice. If this repeats on a new cluster, Runpod asks for the cluster ID and the UTC time.
 - **Same group of hosts.** The two clusters ran on different pairs of machines, but all four were in one group of A100 SXM hosts with the same PCIe fault. All four were taken out of service.
 - **Checks Runpod recommends.** Right after start: `nvidia-smi` on each node (8 GPUs), `ibv_devinfo` on each node (every HCA port `PORT_ACTIVE`), and a short cross-node `all_reduce_perf` from nccl-tests with small messages and `NCCL_DEBUG=WARN`. During the run: a short process-group timeout, e.g. `timeout=timedelta(minutes=5)` in `init_process_group`, so a hung collective fails in minutes instead of at the 40-minute limit. The timeout matters most: one fault came 1.5 minutes after start, the other after about 16 minutes of normal use.
-- **#52 closes as a recorded failure.** As of 2026-11-08 this lab has no multi-node bandwidth figure on a Runpod Instant Cluster. Two clusters were charged USD 15.91 (Runpod's figures).
+- **#52 closes as a recorded failure.** As of 2026-11-08 this lab has no multi-node bandwidth figure on a Runpod Instant Cluster. Two clusters were charged USD 15.91 (Runpod's figures). Because the fault was on Runpod's hosts, support credited the full amount as USD 16 in Runpod credit (code redeemed 2026-11-14); support says such credits are reviewed case by case.
 
 Raw files: [`results/2x8xA100SXM-cluster/nccl-ib.txt`](./results/2x8xA100SXM-cluster/nccl-ib.txt) (excerpt of both nodes' NCCL logs), [`timeline.json`](./results/2x8xA100SXM-cluster/timeline.json).
 
@@ -170,7 +170,7 @@ Raw files: [`results/2x8xA100SXM-cluster/nccl-ib.txt`](./results/2x8xA100SXM-clu
 
 **목표:** GPU 끼리 기울기를 얼마나 빨리 주고받는지 Pod 한 대 안에서, 그다음 Instant Cluster 의 노드 사이에서 재고, 그것이 데이터 병렬 학습에 어떤 영향을 주는지 본다.
 
-**시간:** Pod 당 약 15분 · **비용:** 1단계는 2026-11-07 기준 약 USD 0.40 (Pod 두 대, 7분과 3분). 2단계는 Runpod 청구 기록 기준 2026-11-07 USD 13.86 (A100 SXM 2 × 8장, 27분 과금), 2026-11-08 재실행 USD 2.06 (약 4분 과금. [#52](https://github.com/litkhai/runpod-hols/issues/52))
+**시간:** Pod 당 약 15분 · **비용:** 1단계는 2026-11-07 기준 약 USD 0.40 (Pod 두 대, 7분과 3분). 2단계는 Runpod 청구 기록 기준 2026-11-07 USD 13.86 (A100 SXM 2 × 8장, 27분 과금), 2026-11-08 재실행 USD 2.06 (약 4분 과금). 두 건 모두 USD 16 크레딧으로 돌려받음 ([#52](https://github.com/litkhai/runpod-hols/issues/52))
 
 ### 파일
 
@@ -314,6 +314,6 @@ python3 cluster.py auto auto --hours 48 --gpus "NVIDIA A100-SXM4-80GB,NVIDIA H10
 - **호스트 장애는 멈춤으로 나타난다.** 컨테이너 안에서는 아무것도 오류로 끝나지 않고 집합 통신만 멈춘다. Runpod 은 장애를 감지해 몇 분 안에 머신을 서비스에서 빼며, 과금도 클러스터를 지울 때가 아니라 그때 멈춘다. 두 클러스터의 청구액은 USD 13.86 (13:15 UTC 까지) 과 USD 2.06 (13:33 UTC 까지) 이었고, 그중 장애 뒤 몫은 약 USD 4.92 다. 사용자에게 알림은 가지 않으므로 실행 스스로 알아채야 한다. 새 클러스터에서 같은 일이 생기면 Runpod 은 클러스터 ID 와 UTC 시각을 보내 달라고 한다.
 - **같은 호스트 그룹.** 두 클러스터는 서로 다른 머신 쌍에서 돌았지만, 네 대 모두 같은 A100 SXM 호스트 그룹에 속했고 같은 PCIe 장애를 냈다. 네 대 모두 서비스에서 빠졌다.
 - **Runpod 이 권하는 점검.** 시작 직후: 노드마다 `nvidia-smi` (GPU 8장), `ibv_devinfo` (모든 HCA 포트 `PORT_ACTIVE`), 그리고 작은 메시지와 `NCCL_DEBUG=WARN` 으로 두 노드에 걸친 nccl-tests `all_reduce_perf` 짧게 한 번. 실행 중: `init_process_group` 에 `timeout=timedelta(minutes=5)` 같은 짧은 제한을 둬서, 멈춘 집합 통신이 40분이 아니라 몇 분 만에 실패하게 한다. 가장 중요한 것은 이 제한이다. 장애 하나는 시작 1.5분 뒤, 다른 하나는 정상으로 16분쯤 쓴 뒤에 났다.
-- **#52 는 실패로 기록하고 닫는다.** 2026-11-08 기준 이 실습에는 Runpod Instant Cluster 의 다중 노드 대역폭 수치가 없다. 클러스터 두 번의 청구액은 USD 15.91 다 (Runpod 수치).
+- **#52 는 실패로 기록하고 닫는다.** 2026-11-08 기준 이 실습에는 Runpod Instant Cluster 의 다중 노드 대역폭 수치가 없다. 클러스터 두 번의 청구액은 USD 15.91 다 (Runpod 수치). 장애가 Runpod 호스트 쪽이었으므로 지원팀이 전액을 USD 16 Runpod 크레딧으로 돌려줬다 (2026-11-14 코드 등록). 지원팀에 따르면 이런 크레딧은 건마다 검토한다.
 
 원본 파일: [`results/2x8xA100SXM-cluster/nccl-ib.txt`](./results/2x8xA100SXM-cluster/nccl-ib.txt) (두 노드 NCCL 로그 발췌), [`timeline.json`](./results/2x8xA100SXM-cluster/timeline.json).
