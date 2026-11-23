@@ -149,6 +149,31 @@ Lab 01 deployed from GitHub, CPU workers, `workers_min = 0`:
 **`/runsync` can return `IN_PROGRESS`.** It is not guaranteed to return `COMPLETED` with an `output`; be ready to poll `/status/{id}`.
 </div>
 
+### Endpoint metrics over the API
+
+REST v2 returns the series behind the console's **Metrics** tab, and each endpoint's workers, builds and releases. Every call needs only `serverless:read`. Read on 2026-11-24 for `01-hello-world` and `02-llm-chat` ([#104](https://github.com/litkhai/runpod-hols/issues/104)).
+
+| Call | Returns |
+|---|---|
+| `GET /v2/serverless/{id}/metrics/requests` | Per bucket: requests, completed, failed, retries, and `delayTimeMs` / `executionTimeMs` as min, max, p70–p98 and total |
+| `…/metrics/cold-starts` | Per bucket: count and `durationMs` percentiles |
+| `…/metrics/workers` | Per bucket: idle, initializing, running, throttled, unhealthy |
+| `GET /v2/serverless/{id}/workers` | Current workers with data center, GPU type, image and endpoint version, plus a count by status |
+| `…/builds`, `…/builds/{buildId}` | GitHub builds: commit, branch, image, timestamps |
+| `…/releases` | Each endpoint version with a field-by-field `diff` and the build behind it |
+
+`interval` is one of `1m`, `5m`, `15m`, `30m`, `1h`, `6h`, `12h`, `1d` (`day` is a 422). The window defaults to the last 24 hours and reaches back 90 days.
+
+**The numbers match the console.** For `01-hello-world` on 2026-11-07 the API gave 77 requests, 77 completed, 17,044 ms total execution, and 11 cold starts totalling 29,146 ms. The Metrics tab over the same days shows 77 / 77, 17.04 s, 11 and 29.15 s.
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/metrics-tab-api-compare.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/metrics-tab-api-compare.webp' | relative_url }}" alt="Metrics tab of 01-hello-world, Nov 6 to Nov 9: 77 requests, 77 completed, execution time 17.04 s, cold start count 11" loading="lazy" width="1400" height="729"></a><figcaption>01-hello-world, Metrics tab, 2026-11-06 to 11-09. The same totals as <code>metrics/requests</code> and <code>metrics/cold-starts</code>.</figcaption></figure>
+
+What did not work:
+
+- **Worker logs.** `GET …/workers/{workerId}/logs` (Server-Sent Events) answered 403 *Access to the requested resource was denied* for idle workers on both endpoints. That is not the scope message other refusals carry; a worker running a job was not tried.
+- **Build logs.** The builds description points to `…/builds/{buildId}/logs`; the path is not in the spec and returns 404.
+- **Worker counts differ.** `/workers` listed five (four idle, one initializing) where the console's Workers tab showed two.
+
 ### Lab 02 — LLM chat deployed from GitHub
 
 Lab 02 deploys `Qwen/Qwen2.5-1.5B-Instruct` from GitHub, with the weights in the endpoint's **Model** field. Everything below was run on 2026-10-11; [the lab README](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat#what-was-run) has the full record.
@@ -463,6 +488,31 @@ GitHub 연동으로 배포한 실습 01, CPU 워커, `workers_min = 0` 기준입
 
 **`/runsync` 가 `IN_PROGRESS` 를 반환할 수 있습니다.** 항상 `output` 이 담긴 `COMPLETED` 가 오는 것은 아니므로 `/status/{id}` 폴링을 대비하세요.
 </div>
+
+### API 로 보는 엔드포인트 지표
+
+REST v2 는 콘솔 **Metrics** 탭의 시계열과 엔드포인트별 워커·빌드·릴리스를 돌려줍니다. 모두 `serverless:read` 만 있으면 됩니다. 2026-11-24 에 `01-hello-world` 와 `02-llm-chat` 으로 조회했습니다 ([#104](https://github.com/litkhai/runpod-hols/issues/104)).
+
+| 호출 | 돌려주는 것 |
+|---|---|
+| `GET /v2/serverless/{id}/metrics/requests` | 구간별 요청·완료·실패·재시도 수, `delayTimeMs`·`executionTimeMs` 의 min, max, p70–p98, 합계 |
+| `…/metrics/cold-starts` | 구간별 횟수와 `durationMs` 백분위 |
+| `…/metrics/workers` | 구간별 idle, initializing, running, throttled, unhealthy |
+| `GET /v2/serverless/{id}/workers` | 현재 워커의 데이터센터, GPU 종류, 이미지, 엔드포인트 버전과 상태별 개수 |
+| `…/builds`, `…/builds/{buildId}` | GitHub 빌드: 커밋, 브랜치, 이미지, 시각 |
+| `…/releases` | 엔드포인트 버전마다 필드별 `diff` 와 원인이 된 빌드 |
+
+`interval` 은 `1m`, `5m`, `15m`, `30m`, `1h`, `6h`, `12h`, `1d` 중 하나입니다 (`day` 는 422). 기본 구간은 최근 24시간이고 90일까지 거슬러 올라갑니다.
+
+**수치가 콘솔과 같습니다.** `01-hello-world` 의 2026-11-07 은 API 로 요청 77, 완료 77, 실행 시간 합계 17,044 ms, 콜드 스타트 11회 합계 29,146 ms 였고, 같은 기간 Metrics 탭은 77 / 77, 17.04 s, 11, 29.15 s 입니다.
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/metrics-tab-api-compare.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/metrics-tab-api-compare.webp' | relative_url }}" alt="01-hello-world 의 Metrics 탭, 11월 6일–9일: 요청 77, 완료 77, 실행 시간 17.04 s, 콜드 스타트 11" loading="lazy" width="1400" height="729"></a><figcaption>01-hello-world, Metrics 탭, 2026-11-06–11-09. <code>metrics/requests</code>, <code>metrics/cold-starts</code> 와 합계가 같다.</figcaption></figure>
+
+안 된 것:
+
+- **워커 로그.** `GET …/workers/{workerId}/logs` (Server-Sent Events) 는 두 엔드포인트의 idle 워커에 대해 403 *Access to the requested resource was denied* 를 돌려줬습니다. 다른 거부와 달리 범위 메시지가 아닙니다. 작업을 실행 중인 워커로는 시도하지 않았습니다.
+- **빌드 로그.** builds 설명은 `…/builds/{buildId}/logs` 를 가리키지만, 그 경로는 스펙에 없고 404 를 돌려줍니다.
+- **워커 수가 다릅니다.** `/workers` 는 다섯 (idle 넷, initializing 하나) 을, 콘솔 Workers 탭은 둘을 보여줬습니다.
 
 ### 실습 02 — GitHub 로 배포한 LLM 채팅
 
@@ -779,6 +829,31 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 **`/runsync` 可能返回 `IN_PROGRESS`。** 它并不保证返回带有 `output` 的 `COMPLETED`；请准备好轮询 `/status/{id}`。
 </div>
 
+### 通过 API 查看 endpoint 指标
+
+REST v2 返回控制台 **Metrics** 标签页背后的时间序列，以及每个 endpoint 的 worker、构建和发布。所有调用只需要 `serverless:read`。2026-11-24 对 `01-hello-world` 和 `02-llm-chat` 读取（[#104](https://github.com/litkhai/runpod-hols/issues/104)）。
+
+| 调用 | 返回内容 |
+|---|---|
+| `GET /v2/serverless/{id}/metrics/requests` | 每个时间桶的请求、完成、失败、重试数，以及 `delayTimeMs` / `executionTimeMs` 的 min、max、p70–p98 和总计 |
+| `…/metrics/cold-starts` | 每个时间桶的次数和 `durationMs` 百分位 |
+| `…/metrics/workers` | 每个时间桶的 idle、initializing、running、throttled、unhealthy |
+| `GET /v2/serverless/{id}/workers` | 当前 worker 的数据中心、GPU 类型、镜像和 endpoint 版本，以及按状态的计数 |
+| `…/builds`、`…/builds/{buildId}` | GitHub 构建：提交、分支、镜像、时间戳 |
+| `…/releases` | 每个 endpoint 版本的逐字段 `diff` 以及对应的构建 |
+
+`interval` 取 `1m`、`5m`、`15m`、`30m`、`1h`、`6h`、`12h`、`1d` 之一（`day` 返回 422）。默认窗口为最近 24 小时，最多回溯 90 天。
+
+**数值与控制台一致。** `01-hello-world` 在 2026-11-07：API 给出 77 个请求、77 个完成、执行总时长 17,044 ms、11 次冷启动共 29,146 ms；同一时段的 Metrics 标签页显示 77 / 77、17.04 s、11 和 29.15 s。
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/metrics-tab-api-compare.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/metrics-tab-api-compare.webp' | relative_url }}" alt="01-hello-world 的 Metrics 标签页，11 月 6 日至 9 日：77 个请求、77 个完成、执行时间 17.04 s、冷启动 11 次" loading="lazy" width="1400" height="729"></a><figcaption>01-hello-world，Metrics 标签页，2026-11-06 至 11-09。合计与 <code>metrics/requests</code> 和 <code>metrics/cold-starts</code> 相同。</figcaption></figure>
+
+未成功的部分：
+
+- **Worker 日志。** `GET …/workers/{workerId}/logs`（Server-Sent Events）对两个 endpoint 的 idle worker 返回 403 *Access to the requested resource was denied*。这不是其他拒绝所带的范围信息；没有尝试正在运行任务的 worker。
+- **构建日志。** builds 的说明指向 `…/builds/{buildId}/logs`，但该路径不在规范中，返回 404。
+- **Worker 数量不一致。** `/workers` 列出五个（四个 idle、一个 initializing），控制台的 Workers 标签页只显示两个。
+
 ### 实验 02 — 从 GitHub 部署的 LLM 聊天
 
 实验 02 从 GitHub 部署 `Qwen/Qwen2.5-1.5B-Instruct`，权重通过端点的 **Model** 字段提供。以下全部在 2026-10-11 运行；完整记录见[实验 README](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat#what-was-run)。
@@ -1093,6 +1168,31 @@ GitHub からデプロイした ラボ 01、CPU worker、`workers_min = 0`：
 
 **`/runsync` は `IN_PROGRESS` を返すことがあります。** `output` 付きの `COMPLETED` が返る保証はないので、`/status/{id}` をポーリングできるようにしておいてください。
 </div>
+
+### API で見る endpoint の指標
+
+REST v2 は、コンソールの **Metrics** タブの時系列と、endpoint ごとのワーカー・ビルド・リリースを返します。どの呼び出しも `serverless:read` だけで足ります。2026-11-24 に `01-hello-world` と `02-llm-chat` で読み取りました（[#104](https://github.com/litkhai/runpod-hols/issues/104)）。
+
+| 呼び出し | 返すもの |
+|---|---|
+| `GET /v2/serverless/{id}/metrics/requests` | バケットごとのリクエスト・完了・失敗・リトライ数と、`delayTimeMs` / `executionTimeMs` の min、max、p70–p98、合計 |
+| `…/metrics/cold-starts` | バケットごとの回数と `durationMs` のパーセンタイル |
+| `…/metrics/workers` | バケットごとの idle、initializing、running、throttled、unhealthy |
+| `GET /v2/serverless/{id}/workers` | 現在のワーカーのデータセンター、GPU タイプ、イメージ、endpoint バージョンと、状態別の数 |
+| `…/builds`、`…/builds/{buildId}` | GitHub ビルド：コミット、ブランチ、イメージ、時刻 |
+| `…/releases` | endpoint のバージョンごとのフィールド単位の `diff` と、その元になったビルド |
+
+`interval` は `1m`、`5m`、`15m`、`30m`、`1h`、`6h`、`12h`、`1d` のいずれかです（`day` は 422）。既定の期間は直近 24 時間で、90 日前までさかのぼれます。
+
+**数値はコンソールと一致します。** `01-hello-world` の 2026-11-07 は、API ではリクエスト 77、完了 77、実行時間の合計 17,044 ms、コールドスタート 11 回で合計 29,146 ms でした。同じ期間の Metrics タブは 77 / 77、17.04 s、11、29.15 s です。
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/metrics-tab-api-compare.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/metrics-tab-api-compare.webp' | relative_url }}" alt="01-hello-world の Metrics タブ、11 月 6 日〜9 日：リクエスト 77、完了 77、実行時間 17.04 s、コールドスタート 11 回" loading="lazy" width="1400" height="729"></a><figcaption>01-hello-world、Metrics タブ、2026-11-06〜11-09。<code>metrics/requests</code> と <code>metrics/cold-starts</code> と合計が同じ。</figcaption></figure>
+
+うまくいかなかったこと：
+
+- **ワーカーのログ。** `GET …/workers/{workerId}/logs`（Server-Sent Events）は、両方の endpoint の idle ワーカーに対して 403 *Access to the requested resource was denied* を返しました。ほかの拒否と違い、スコープのメッセージではありません。ジョブを実行中のワーカーでは試していません。
+- **ビルドのログ。** builds の説明は `…/builds/{buildId}/logs` を指していますが、このパスは仕様になく 404 を返します。
+- **ワーカー数が食い違います。** `/workers` は 5 つ（idle 4、initializing 1）を返し、コンソールの Workers タブは 2 つを表示しました。
 
 ### ラボ 02 — GitHub からデプロイした LLM チャット
 
