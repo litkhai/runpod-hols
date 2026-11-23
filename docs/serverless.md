@@ -170,7 +170,7 @@ REST v2 returns the series behind the console's **Metrics** tab, and each endpoi
 
 What did not work:
 
-- **Worker logs.** `GET …/workers/{workerId}/logs` (Server-Sent Events) answered 403 *Access to the requested resource was denied* for idle workers on both endpoints. That is not the scope message other refusals carry; a worker running a job was not tried.
+- **Worker logs need GraphQL access on the key.** `GET …/workers/{workerId}/logs` (Server-Sent Events) answered 403 *Access to the requested resource was denied* — not the scope message other refusals carry — for idle workers, for the worker running a job (one `01-hello-world` job, 2026-11-24) and for it again after the job completed. The same call with a temporary key holding REST *All resources* plus GraphQL Read / Write and `api.runpod.ai` returned 200 and streamed `system` lines (container create, image pull, `worker is ready`); with REST *All resources* alone it was 403 again. The spec lists only `serverless:read`. GraphQL Read only was not tried. `source=container` sent nothing within 12 s.
 - **Build logs.** The builds description points to `…/builds/{buildId}/logs`; the path is not in the spec and returns 404.
 - **Worker counts differ.** `/workers` listed five (four idle, one initializing) where the console's Workers tab showed two.
 
@@ -510,7 +510,7 @@ REST v2 는 콘솔 **Metrics** 탭의 시계열과 엔드포인트별 워커·�
 
 안 된 것:
 
-- **워커 로그.** `GET …/workers/{workerId}/logs` (Server-Sent Events) 는 두 엔드포인트의 idle 워커에 대해 403 *Access to the requested resource was denied* 를 돌려줬습니다. 다른 거부와 달리 범위 메시지가 아닙니다. 작업을 실행 중인 워커로는 시도하지 않았습니다.
+- **워커 로그는 키에 GraphQL 권한이 있어야 합니다.** `GET …/workers/{workerId}/logs` (Server-Sent Events) 는 idle 워커, 작업을 실행 중인 워커 (2026-11-24 `01-hello-world` 작업 1건), 작업이 끝난 직후의 같은 워커 모두에 403 *Access to the requested resource was denied* 를 돌려줬습니다. 다른 거부와 달리 범위 메시지가 아닙니다. REST *All resources* 에 GraphQL Read / Write 와 `api.runpod.ai` 까지 준 임시 키로는 200 과 함께 `system` 줄 (컨테이너 생성, 이미지 pull, `worker is ready`) 이 흘러나왔고, REST *All resources* 만 준 키로는 다시 403 이었습니다. 스펙에는 `serverless:read` 만 적혀 있습니다. GraphQL Read only 는 시도하지 않았습니다. `source=container` 는 12초 안에 아무것도 보내지 않았습니다.
 - **빌드 로그.** builds 설명은 `…/builds/{buildId}/logs` 를 가리키지만, 그 경로는 스펙에 없고 404 를 돌려줍니다.
 - **워커 수가 다릅니다.** `/workers` 는 다섯 (idle 넷, initializing 하나) 을, 콘솔 Workers 탭은 둘을 보여줬습니다.
 
@@ -850,7 +850,7 @@ REST v2 返回控制台 **Metrics** 标签页背后的时间序列，以及每�
 
 未成功的部分：
 
-- **Worker 日志。** `GET …/workers/{workerId}/logs`（Server-Sent Events）对两个 endpoint 的 idle worker 返回 403 *Access to the requested resource was denied*。这不是其他拒绝所带的范围信息；没有尝试正在运行任务的 worker。
+- **Worker 日志要求密钥具有 GraphQL 权限。** `GET …/workers/{workerId}/logs`（Server-Sent Events）对 idle worker、正在运行任务的 worker（2026-11-24 的一个 `01-hello-world` 任务）以及任务完成后的同一 worker 都返回 403 *Access to the requested resource was denied*——不是其他拒绝所带的范围信息。改用一个临时密钥（REST *All resources* 加上 GraphQL Read / Write 和 `api.runpod.ai`）后返回 200，并流出 `system` 行（创建容器、拉取镜像、`worker is ready`）；只给 REST *All resources* 时又是 403。规范中只列出 `serverless:read`。没有尝试 GraphQL Read only。`source=container` 在 12 秒内没有发送任何内容。
 - **构建日志。** builds 的说明指向 `…/builds/{buildId}/logs`，但该路径不在规范中，返回 404。
 - **Worker 数量不一致。** `/workers` 列出五个（四个 idle、一个 initializing），控制台的 Workers 标签页只显示两个。
 
@@ -1190,7 +1190,7 @@ REST v2 は、コンソールの **Metrics** タブの時系列と、endpoint �
 
 うまくいかなかったこと：
 
-- **ワーカーのログ。** `GET …/workers/{workerId}/logs`（Server-Sent Events）は、両方の endpoint の idle ワーカーに対して 403 *Access to the requested resource was denied* を返しました。ほかの拒否と違い、スコープのメッセージではありません。ジョブを実行中のワーカーでは試していません。
+- **ワーカーのログにはキーの GraphQL 権限が必要です。** `GET …/workers/{workerId}/logs`（Server-Sent Events）は、idle ワーカー、ジョブを実行中のワーカー（2026-11-24 の `01-hello-world` ジョブ 1 件）、ジョブ完了直後の同じワーカーのいずれにも 403 *Access to the requested resource was denied* を返しました。ほかの拒否と違い、スコープのメッセージではありません。REST *All resources* に GraphQL Read / Write と `api.runpod.ai` を加えた一時キーでは 200 になり、`system` の行（コンテナ作成、イメージの pull、`worker is ready`）が流れてきました。REST *All resources* だけのキーでは再び 403 でした。仕様には `serverless:read` しか書かれていません。GraphQL Read only は試していません。`source=container` は 12 秒以内に何も送りませんでした。
 - **ビルドのログ。** builds の説明は `…/builds/{buildId}/logs` を指していますが、このパスは仕様になく 404 を返します。
 - **ワーカー数が食い違います。** `/workers` は 5 つ（idle 4、initializing 1）を返し、コンソールの Workers タブは 2 つを表示しました。
 

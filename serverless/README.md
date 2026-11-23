@@ -78,7 +78,7 @@ REST v2 returns the series behind the console's **Metrics** tab, and each endpoi
 
 What did not work:
 
-- **Worker logs.** `GET …/workers/{workerId}/logs` (Server-Sent Events) answered 403 *Access to the requested resource was denied* for idle workers on both endpoints. That is not the scope message other refusals carry; a worker running a job was not tried.
+- **Worker logs need GraphQL access on the key.** `GET …/workers/{workerId}/logs` (Server-Sent Events) answered 403 *Access to the requested resource was denied* — not the scope message other refusals carry — for idle workers, for the worker running a job (one `01-hello-world` job, 2026-11-24) and for it again after the job completed. The same call with a temporary key holding REST *All resources* plus GraphQL Read / Write and `api.runpod.ai` returned 200 and streamed `system` lines (container create, image pull, `worker is ready`); with REST *All resources* alone it was 403 again. The spec lists only `serverless:read`. GraphQL Read only was not tried. `source=container` sent nothing within 12 s.
 - **Build logs.** The builds description points to `…/builds/{buildId}/logs`; the path is not in the spec and returns 404.
 - **Worker counts differ.** `/workers` listed five (four idle, one initializing) where the console's Workers tab showed two.
 
@@ -219,7 +219,7 @@ REST v2 는 콘솔 **Metrics** 탭의 시계열과 엔드포인트별 워커·�
 
 안 된 것:
 
-- **워커 로그.** `GET …/workers/{workerId}/logs` (Server-Sent Events) 는 두 엔드포인트의 idle 워커에 대해 403 *Access to the requested resource was denied* 를 돌려줬습니다. 다른 거부와 달리 범위 메시지가 아닙니다. 작업을 실행 중인 워커로는 시도하지 않았습니다.
+- **워커 로그는 키에 GraphQL 권한이 있어야 합니다.** `GET …/workers/{workerId}/logs` (Server-Sent Events) 는 idle 워커, 작업을 실행 중인 워커 (2026-11-24 `01-hello-world` 작업 1건), 작업이 끝난 직후의 같은 워커 모두에 403 *Access to the requested resource was denied* 를 돌려줬습니다. 다른 거부와 달리 범위 메시지가 아닙니다. REST *All resources* 에 GraphQL Read / Write 와 `api.runpod.ai` 까지 준 임시 키로는 200 과 함께 `system` 줄 (컨테이너 생성, 이미지 pull, `worker is ready`) 이 흘러나왔고, REST *All resources* 만 준 키로는 다시 403 이었습니다. 스펙에는 `serverless:read` 만 적혀 있습니다. GraphQL Read only 는 시도하지 않았습니다. `source=container` 는 12초 안에 아무것도 보내지 않았습니다.
 - **빌드 로그.** builds 설명은 `…/builds/{buildId}/logs` 를 가리키지만, 그 경로는 스펙에 없고 404 를 돌려줍니다.
 - **워커 수가 다릅니다.** `/workers` 는 다섯 (idle 넷, initializing 하나) 을, 콘솔 Workers 탭은 둘을 보여줬습니다.
 
