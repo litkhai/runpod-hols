@@ -124,6 +124,30 @@ Good for iterating; for production, bake the code into an image as Serverless La
 
 Lab 01 pins `runpod~=1.12.0`. On 2.x its scripts would also misread Pods: the REST objects say `status`, not `desiredStatus`, so the running-Pod check would find nothing. [What else changed in 2.x]({{ '/sdk/client/' | relative_url }}). Instance ids look like `cpu3c-2-4` — flavor, vCPU, memory in GB.
 
+### Without SSH — exec and logs
+
+REST v2 runs a command in a Pod and streams its logs over HTTPS, with no SSH key, port or public IP. Run on 2026-11-24 on a `cpu3c` 2-vCPU CPU Pod created without `startSsh` or ports ([#112](https://github.com/litkhai/runpod-hols/issues/112)).
+
+```bash
+curl -X POST https://api.runpod.io/v2/pods/$POD_ID/exec -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{"command": ["sh", "-c", "nproc; df -h / | tail -1"]}'
+# Server-Sent Events: the stream stays open, so always bound it with -m
+curl -sN -m 15 -H "Authorization: Bearer $RUNPOD_API_KEY" "https://api.runpod.io/v2/pods/$POD_ID/logs?tail=20"
+```
+
+| Call | Result |
+|---|---|
+| exec right after the create | `409 Pod container is starting, retry shortly`; the first 200 came about 25 s after the Pod read `RUNNING` |
+| `["sh", "-c", "echo out; echo err >&2; exit 3"]` | 200 with `exitCode` 3, `stdout` and `stderr` — a non-zero exit is a result, not an error |
+| `["sleep", "30"]` with `timeoutSeconds` 2 | 200 after 2 s, `timedOut: true`, `exitCode` null |
+| `env` and `cwd` | `{"GREETING": "hi"}` in `/tmp` printed `hi from /tmp` |
+| `echo marker > /proc/1/fd/1` | The line appeared in the log stream as `source: container` |
+| `logs?tail=20` | `system` lines (image pull, container start) and `container` lines (the image's start script); `source=` picks one |
+
+**The key needs GraphQL access.** With the lab key (GraphQL None) exec answered `403 This API key cannot run commands on pods` and logs `403 Access to the requested resource was denied`. A key with REST *All resources* and GraphQL Read only got logs but still not exec; GraphQL Read / Write unlocked both. The spec names only `pods:write` and `pods:read`. Serverless worker logs behave the same way ([#104](https://github.com/litkhai/runpod-hols/issues/104)).
+
+Three CPU Pods of about two minutes each, about USD 0.01 in all.
+
 ### Billing
 
 Per minute, for as long as the Pod is running, idle or not. Stopping releases the GPU but still bills volume storage. Terminating removes everything.
@@ -268,6 +292,30 @@ Pod 는 직접 빌려서 제어하는 GPU 또는 CPU 컨테이너입니다. Serv
 | 네트워크 볼륨 없이 `volume_mount_path` 를 준 CPU Pod | 전송됨. 볼륨은 빠짐 | SDK 에서 거부 |
 
 실습 01 은 `runpod~=1.12.0` 으로 고정합니다. 2.x 에서는 스크립트가 Pod 도 잘못 읽습니다. REST 객체에는 `desiredStatus` 가 아니라 `status` 가 있어 실행 중 Pod 확인이 아무것도 찾지 못합니다. [2.x 의 다른 변경점]({{ '/sdk/client/' | relative_url }}). 인스턴스 ID 는 `cpu3c-2-4` 처럼 flavor, vCPU, 메모리(GB) 순입니다.
+
+### SSH 없이 — exec 와 로그
+
+REST v2 는 SSH 키·포트·공인 IP 없이 HTTPS 로 Pod 안에서 명령을 실행하고 로그를 스트리밍합니다. 2026-11-24 에 `startSsh` 와 포트 없이 만든 `cpu3c` 2 vCPU CPU Pod 에서 실행했습니다 ([#112](https://github.com/litkhai/runpod-hols/issues/112)).
+
+```bash
+curl -X POST https://api.runpod.io/v2/pods/$POD_ID/exec -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{"command": ["sh", "-c", "nproc; df -h / | tail -1"]}'
+# Server-Sent Events: the stream stays open, so always bound it with -m
+curl -sN -m 15 -H "Authorization: Bearer $RUNPOD_API_KEY" "https://api.runpod.io/v2/pods/$POD_ID/logs?tail=20"
+```
+
+| 호출 | 결과 |
+|---|---|
+| 생성 직후 exec | `409 Pod container is starting, retry shortly`. Pod 이 `RUNNING` 이 된 지 약 25초 뒤 처음 200 |
+| `["sh", "-c", "echo out; echo err >&2; exit 3"]` | `exitCode` 3, `stdout`, `stderr` 를 담은 200 — 0 이 아닌 종료도 오류가 아니라 결과 |
+| `timeoutSeconds` 2 로 `["sleep", "30"]` | 2초 뒤 200, `timedOut: true`, `exitCode` null |
+| `env` 와 `cwd` | `/tmp` 에서 `{"GREETING": "hi"}` 로 `hi from /tmp` 출력 |
+| `echo marker > /proc/1/fd/1` | 그 줄이 로그 스트림에 `source: container` 로 나타남 |
+| `logs?tail=20` | `system` 줄 (이미지 pull, 컨테이너 시작) 과 `container` 줄 (이미지 시작 스크립트). `source=` 로 하나만 고를 수 있음 |
+
+**키에 GraphQL 권한이 필요합니다.** 실습용 키 (GraphQL None) 로는 exec 가 `403 This API key cannot run commands on pods`, 로그가 `403 Access to the requested resource was denied` 였습니다. REST *All resources* 에 GraphQL Read only 를 준 키는 로그는 됐지만 exec 는 여전히 안 됐고, GraphQL Read / Write 를 주자 둘 다 됐습니다. 스펙에는 `pods:write` 와 `pods:read` 만 적혀 있습니다. Serverless 워커 로그도 같습니다 ([#104](https://github.com/litkhai/runpod-hols/issues/104)).
+
+약 2분짜리 CPU Pod 세 개, 합계 약 USD 0.01.
 
 ### 과금
 
@@ -414,6 +462,30 @@ template 的 `env` 中可以写 {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %
 
 实验 01 固定使用 `runpod~=1.12.0`。在 2.x 上，它的脚本还会误读 Pod：REST 对象中的字段是 `status` 而不是 `desiredStatus`，所以检查运行中 Pod 的逻辑将什么也找不到。[2.x 中的其他变化]({{ '/sdk/client/' | relative_url }})。instance id 形如 `cpu3c-2-4`——规格类型、vCPU、以 GB 计的内存。
 
+### 不用 SSH——exec 与日志
+
+REST v2 通过 HTTPS 在 Pod 内运行命令并流式获取日志，无需 SSH 密钥、端口或公网 IP。2026-11-24 在一个不带 `startSsh` 和端口创建的 `cpu3c` 2 vCPU CPU Pod 上运行（[#112](https://github.com/litkhai/runpod-hols/issues/112)）。
+
+```bash
+curl -X POST https://api.runpod.io/v2/pods/$POD_ID/exec -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{"command": ["sh", "-c", "nproc; df -h / | tail -1"]}'
+# Server-Sent Events: the stream stays open, so always bound it with -m
+curl -sN -m 15 -H "Authorization: Bearer $RUNPOD_API_KEY" "https://api.runpod.io/v2/pods/$POD_ID/logs?tail=20"
+```
+
+| 调用 | 结果 |
+|---|---|
+| 创建后立即 exec | `409 Pod container is starting, retry shortly`；Pod 显示 `RUNNING` 约 25 秒后首次返回 200 |
+| `["sh", "-c", "echo out; echo err >&2; exit 3"]` | 200，含 `exitCode` 3、`stdout` 和 `stderr`——非零退出是结果而不是错误 |
+| `["sleep", "30"]` 配 `timeoutSeconds` 2 | 2 秒后返回 200，`timedOut: true`，`exitCode` 为 null |
+| `env` 和 `cwd` | 在 `/tmp` 中以 `{"GREETING": "hi"}` 打印出 `hi from /tmp` |
+| `echo marker > /proc/1/fd/1` | 该行以 `source: container` 出现在日志流中 |
+| `logs?tail=20` | `system` 行（拉取镜像、启动容器）和 `container` 行（镜像的启动脚本）；可用 `source=` 只选一种 |
+
+**密钥需要 GraphQL 权限。** 用实验密钥（GraphQL 为 None）时，exec 返回 `403 This API key cannot run commands on pods`，日志返回 `403 Access to the requested resource was denied`。REST *All resources* 加 GraphQL Read only 的密钥能读日志，但 exec 仍不行；GraphQL Read / Write 后两者都可用。规范只写了 `pods:write` 和 `pods:read`。Serverless worker 日志也一样（[#104](https://github.com/litkhai/runpod-hols/issues/104)）。
+
+三个约 2 分钟的 CPU Pod，合计约 USD 0.01。
+
 ### 计费
 
 按分钟计费，只要 Pod 在运行就计费，无论是否空闲。stop 会释放 GPU，但 volume 存储仍会计费。terminate 会删除一切。
@@ -558,6 +630,30 @@ template の `env` には {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %} を�
 | `volume_mount_path` ありで network volume なしの CPU Pod | 送信される。volume は落とされる | SDK で拒否 |
 
 ラボ 01 は `runpod~=1.12.0` に固定しています。2.x ではスクリプトが Pod を読み違えることもあります。REST のオブジェクトは `desiredStatus` ではなく `status` なので、稼働中の Pod のチェックが何も見つけられません。[2.x でのその他の変更]({{ '/sdk/client/' | relative_url }})。instance id は `cpu3c-2-4` のような形式で、フレーバー、vCPU、GB 単位のメモリを表します。
+
+### SSH なしで：exec とログ
+
+REST v2 は、SSH キー・ポート・パブリック IP なしに、HTTPS で Pod 内でコマンドを実行し、ログをストリーミングします。2026-11-24 に、`startSsh` とポートなしで作成した `cpu3c` 2 vCPU の CPU Pod で実行しました（[#112](https://github.com/litkhai/runpod-hols/issues/112)）。
+
+```bash
+curl -X POST https://api.runpod.io/v2/pods/$POD_ID/exec -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{"command": ["sh", "-c", "nproc; df -h / | tail -1"]}'
+# Server-Sent Events: the stream stays open, so always bound it with -m
+curl -sN -m 15 -H "Authorization: Bearer $RUNPOD_API_KEY" "https://api.runpod.io/v2/pods/$POD_ID/logs?tail=20"
+```
+
+| 呼び出し | 結果 |
+|---|---|
+| 作成直後の exec | `409 Pod container is starting, retry shortly`。Pod が `RUNNING` になって約 25 秒後に最初の 200 |
+| `["sh", "-c", "echo out; echo err >&2; exit 3"]` | `exitCode` 3、`stdout`、`stderr` を含む 200——0 以外の終了もエラーではなく結果 |
+| `timeoutSeconds` 2 で `["sleep", "30"]` | 2 秒後に 200、`timedOut: true`、`exitCode` は null |
+| `env` と `cwd` | `/tmp` で `{"GREETING": "hi"}` により `hi from /tmp` を出力 |
+| `echo marker > /proc/1/fd/1` | その行がログストリームに `source: container` として現れた |
+| `logs?tail=20` | `system` の行（イメージの pull、コンテナ起動）と `container` の行（イメージの起動スクリプト）。`source=` で一方だけ選べる |
+
+**キーに GraphQL の権限が必要です。** ラボ用キー（GraphQL None）では、exec は `403 This API key cannot run commands on pods`、ログは `403 Access to the requested resource was denied` でした。REST *All resources* に GraphQL Read only を付けたキーではログは取れましたが exec は不可で、GraphQL Read / Write で両方とも使えました。仕様には `pods:write` と `pods:read` しか書かれていません。Serverless のワーカーログも同じです（[#104](https://github.com/litkhai/runpod-hols/issues/104)）。
+
+約 2 分の CPU Pod 3 つで、合計約 USD 0.01。
 
 ### 課金
 
