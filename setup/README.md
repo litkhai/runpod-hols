@@ -22,7 +22,7 @@ python setup/verify-auth.py     # 3. does the key actually work?
 |---|---|
 | `check-setup.sh` | Checks python / docker / uv / terraform / runpodctl / node, `.env`, and warns about Apple Silicon |
 | `init-env.sh` | Prompts for secrets and writes `.env`. Input is hidden, so the key never reaches your screen or shell history |
-| `verify-auth.py` | Read-only API calls proving the key works: `get_user`, `get_gpus`, `get_pods`. Creates nothing, costs nothing |
+| `verify-auth.py` | Read-only REST v2 calls proving the key works: `/account`, `/catalog/gpus`, `/pods`, `/serverless`. Standard library only; creates nothing, costs nothing |
 | `mcp.md` | Connecting Runpod to Claude Code and other agents via the official MCP server |
 
 ### 1. API Key
@@ -39,31 +39,32 @@ If you would rather do it by hand, `cp .env.example .env` and edit. Either way `
 
 > **Runpod shows the key once and does not store it.** Copy it into a password manager at creation time. If you lose it you cannot recover it — you can only create a new one.
 
-Keys carry a permission level, set at creation:
+Each key carries scopes per API, set at creation and editable later from the key's menu (**Edit**):
 
-| Level | Meaning |
+| API | Choices |
 |---|---|
-| **All** | Full access |
-| **Restricted** | Per-API access you configure — `None`, `Restricted`, `Read/Write`, or `Read Only` |
-| **Read Only** | Read access, no writes |
+| REST (`api.runpod.io/v2`) | Read and Write per resource — Pods, Serverless, Instant clusters, Volumes, Templates, Secrets, Authentication, Billing, Tags; Read only for Audit logs, Catalog, Account. *All resources* ticks every row |
+| GraphQL (`api.runpod.io/graphql`) | None, Read / Write, Read only |
+| Serverless endpoints (`api.runpod.ai`) | Read, Write, optionally limited to chosen endpoints |
 
-What each track needs:
+**Out-of-scope calls are refused.** On 2026-11-24 a key holding only REST Serverless Read got 200 from `GET /v2/serverless` and 403 with the missing scope named — *this API key does not grant pods:read* — from `GET /v2/pods`, the catalog, billing, audit-log and account reads, `PATCH /v2/serverless/{id}` (`serverless:write`) and `POST /v2/tags`. GraphQL answered 401 and `api.runpod.ai/v2/<id>/health` 403.
 
-| Task | Level |
+What the labs need:
+
+| Task | Scopes |
 |---|---|
-| `verify-auth.py`, browsing GPU types and existing resources | **Read Only** |
+| `verify-auth.py` | REST Account, Catalog, Pods, Serverless — Read |
 | Deploying Lab 01 through the console | No key needed |
-| Calling a deployed endpoint | Access to that endpoint |
-| `terraform/01-endpoint` — creating a template and endpoint | Write access |
-| `terraform/02-pod` — creating a Pod and volume | **All** |
+| Calling a deployed endpoint | Serverless endpoints Read and Write, or only that endpoint |
+| Pod, Serverless, storage and cluster labs on REST | REST Write on Pods, Serverless, Instant clusters, Volumes, Templates, Secrets; Read on Audit logs, Billing, Catalog, Tags, Account; Serverless endpoints Read and Write — the key above |
+| `pod/01` (SDK 1.12), cluster stage 2, the stock snapshots in `inference-characterization` | Add GraphQL Read / Write; these still call GraphQL |
+| `terraform/` | Not yet checked with a scoped key |
 
-That last row is deliberately blunt: the documented `Restricted` mode customises access *per Serverless endpoint*, and does not clearly describe Pod or Network Volume scope. `All` is the reliable choice there.
-
-You can **edit a key's permissions later** with the pencil icon on the Settings page — no need to issue a second key. So starting Read Only and raising it when you reach the Terraform labs works fine.
+The lab key leaves GraphQL at None on purpose: a GraphQL grant has no per-resource split. Two 403s are not about the key — `GET /v2/tags` answered *Resource tagging is not enabled for this user* with Tags Read granted, and `GET /v2/organization` needs `membership:read`, which this personal account's dialog does not list.
 
 > **Rotate a key the moment it lands anywhere public** — a commit, a screenshot, a paste in chat. Deleting the commit is not enough; the key must be revoked in the console.
 
-> Keys created before **11 November 2024** are legacy: they have Read/Write or Read Only on GraphQL, but **full access to the AI API** regardless. Replace them with a `Restricted` key scoped to what you actually need.
+> Keys created before **11 November 2024** are legacy: they have Read/Write or Read Only on GraphQL, but **full access to the AI API** regardless. Replace them with a key scoped to what you actually need.
 
 ### 2. Verify
 
@@ -71,15 +72,7 @@ You can **edit a key's permissions later** with the pencil icon on the Settings 
 python setup/verify-auth.py
 ```
 
-Expected output: your account identity, a count of visible GPU types with a sample, and a list of any Pods you already have running. That last section matters — a Pod left running from an earlier session is billing you right now.
-
-The script needs the `runpod` SDK. If you have not created a virtualenv yet:
-
-```bash
-uv venv --python 3.11 .venv
-uv pip install --python .venv/bin/python runpod
-.venv/bin/python setup/verify-auth.py
-```
+Expected output: your account id, a count of visible GPU types with a sample, any Pods already running and any endpoint holding active workers. Those last two matter — something left running from an earlier session is billing you right now. Standard library only, no virtualenv needed; a call outside the key's scopes prints the 403 reason and the script carries on.
 
 ### 3. Tooling by Track
 
@@ -125,7 +118,7 @@ python setup/verify-auth.py     # 3. 키가 실제로 동작하는가
 |---|---|
 | `check-setup.sh` | python / docker / uv / terraform / runpodctl / node 와 `.env` 를 검사하고 Apple Silicon 주의사항을 안내 |
 | `init-env.sh` | 비밀값을 입력받아 `.env` 를 생성. 입력이 화면에 표시되지 않아 키가 화면에도 셸 히스토리에도 남지 않음 |
-| `verify-auth.py` | 키 동작을 확인하는 읽기 전용 호출: `get_user`, `get_gpus`, `get_pods`. 생성하는 것이 없어 과금되지 않음 |
+| `verify-auth.py` | 키 동작을 확인하는 REST v2 읽기 호출: `/account`, `/catalog/gpus`, `/pods`, `/serverless`. 표준 라이브러리만 사용. 생성하는 것이 없어 과금되지 않음 |
 | `mcp.md` | 공식 MCP 서버로 Runpod 을 Claude Code 등 에이전트에 연결하는 방법 |
 
 ### 1. API 키
@@ -142,31 +135,32 @@ python setup/verify-auth.py     # 3. 키가 실제로 동작하는가
 
 > **Runpod 은 키를 한 번만 보여주고 저장하지 않습니다.** 생성 시점에 비밀번호 관리자에 복사해 두세요. 분실하면 복구할 수 없고 새로 만드는 수밖에 없습니다.
 
-키에는 생성 시 지정하는 권한 등급이 있습니다.
+키에는 API 별 범위(scope)가 있으며, 생성할 때 정하고 나중에 키 메뉴의 **Edit** 에서 바꿀 수 있습니다.
 
-| 등급 | 내용 |
+| API | 선택지 |
 |---|---|
-| **All** | 전체 접근 |
-| **Restricted** | API 별로 직접 설정 — `None`, `Restricted`, `Read/Write`, `Read Only` |
-| **Read Only** | 읽기만, 쓰기 불가 |
+| REST (`api.runpod.io/v2`) | 리소스별 Read·Write — Pods, Serverless, Instant clusters, Volumes, Templates, Secrets, Authentication, Billing, Tags. Audit logs, Catalog, Account 는 Read 만. *All resources* 는 모든 행을 체크 |
+| GraphQL (`api.runpod.io/graphql`) | None, Read / Write, Read only |
+| Serverless endpoints (`api.runpod.ai`) | Read, Write. 특정 엔드포인트로 제한 가능 |
 
-트랙별로 필요한 수준입니다.
+**범위 밖 호출은 거부됩니다.** 2026-11-24 에 REST Serverless Read 만 가진 키로 `GET /v2/serverless` 는 200, `GET /v2/pods` 와 카탈로그·과금·감사 로그·계정 조회, `PATCH /v2/serverless/{id}` (`serverless:write`), `POST /v2/tags` 는 빠진 범위를 밝힌 403 — *this API key does not grant pods:read* — 이었습니다. GraphQL 은 401, `api.runpod.ai/v2/<id>/health` 는 403 이었습니다.
 
-| 작업 | 등급 |
+실습별로 필요한 범위입니다.
+
+| 작업 | 범위 |
 |---|---|
-| `verify-auth.py`, GPU 타입·기존 리소스 조회 | **Read Only** |
+| `verify-auth.py` | REST Account, Catalog, Pods, Serverless — Read |
 | 콘솔에서 Lab 01 배포 | 키 불필요 |
-| 배포한 엔드포인트 호출 | 해당 엔드포인트 접근 권한 |
-| `terraform/01-endpoint` — 템플릿·엔드포인트 생성 | 쓰기 권한 |
-| `terraform/02-pod` — Pod·볼륨 생성 | **All** |
+| 배포한 엔드포인트 호출 | Serverless endpoints Read·Write, 또는 그 엔드포인트만 |
+| REST 를 쓰는 Pod·Serverless·스토리지·클러스터 실습 | REST 의 Pods, Serverless, Instant clusters, Volumes, Templates, Secrets 에 Write, Audit logs, Billing, Catalog, Tags, Account 에 Read, Serverless endpoints Read·Write — 위 화면의 키 |
+| `pod/01` (SDK 1.12), 클러스터 2단계, `inference-characterization` 의 재고 스냅샷 | GraphQL Read / Write 추가. 아직 GraphQL 을 부름 |
+| `terraform/` | scoped 키로는 아직 확인하지 않음 |
 
-마지막 행은 일부러 단정적으로 적었습니다. 문서화된 `Restricted` 모드는 *Serverless 엔드포인트 단위*로 접근을 설정하며, Pod 나 Network Volume 범위에 대해서는 명확히 기술하지 않습니다. 이 경우 `All` 이 확실한 선택입니다.
-
-**권한은 나중에 수정할 수 있습니다.** Settings 페이지의 연필 아이콘으로 편집하면 되고 두 번째 키를 발급할 필요가 없습니다. Read Only 로 시작해 Terraform 실습에 도달했을 때 올리는 방식이 잘 동작합니다.
+실습용 키는 GraphQL 을 일부러 None 으로 둡니다. GraphQL 권한은 리소스별로 나뉘지 않습니다. 키와 무관한 403 이 두 가지 있었습니다. `GET /v2/tags` 는 Tags Read 가 있어도 *Resource tagging is not enabled for this user* 였고, `GET /v2/organization` 은 `membership:read` 가 필요한데 이 개인 계정의 대화상자에는 그 항목이 없습니다.
 
 > **키가 공개된 곳에 노출되는 즉시 폐기하세요** — 커밋, 스크린샷, 채팅 붙여넣기 모두 해당됩니다. 커밋을 지우는 것만으로는 부족하고 콘솔에서 revoke 해야 합니다.
 
-> **2024년 11월 11일 이전**에 만든 키는 레거시입니다. GraphQL 에는 Read/Write 또는 Read Only 가 적용되지만 **AI API 에는 무조건 전체 접근** 권한을 가집니다. 실제로 필요한 범위로 좁힌 `Restricted` 키로 교체하세요.
+> **2024년 11월 11일 이전**에 만든 키는 레거시입니다. GraphQL 에는 Read/Write 또는 Read Only 가 적용되지만 **AI API 에는 무조건 전체 접근** 권한을 가집니다. 실제로 필요한 범위로 좁힌 키로 교체하세요.
 
 ### 2. 확인
 
@@ -174,15 +168,7 @@ python setup/verify-auth.py     # 3. 키가 실제로 동작하는가
 python setup/verify-auth.py
 ```
 
-계정 정보, 조회 가능한 GPU 타입 개수와 샘플, 그리고 **현재 실행 중인 Pod 목록**이 출력됩니다. 마지막 항목이 중요합니다. 이전 세션에서 끄지 않고 남겨둔 Pod 가 있다면 지금도 과금되고 있습니다.
-
-이 스크립트는 `runpod` SDK 를 필요로 합니다. 가상환경을 아직 만들지 않았다면:
-
-```bash
-uv venv --python 3.11 .venv
-uv pip install --python .venv/bin/python runpod
-.venv/bin/python setup/verify-auth.py
-```
+계정 id, 조회 가능한 GPU 타입 개수와 샘플, **실행 중인 Pod** 와 **활성 워커를 둔 엔드포인트**가 출력됩니다. 마지막 두 항목이 중요합니다. 이전 세션에서 남겨둔 것이 있다면 지금도 과금되고 있습니다. 표준 라이브러리만 쓰므로 가상환경이 필요 없고, 키 범위 밖의 호출은 403 사유를 출력한 뒤 계속 진행합니다.
 
 ### 3. 트랙별 필요 도구
 

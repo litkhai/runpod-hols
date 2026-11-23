@@ -41,6 +41,12 @@ on staged files in `.githooks/pre-commit` — enable it once per clone with
 All three scale to zero; `currentSpendPerHr` was `0` on 2026-10-11. `vLLM v2.22.5`
 has `workersMax` 0 on that date, so it serves nothing until raised.
 
+API keys (2026-11-24): `runpod-hols-lab-2026-11-24` is scoped — REST Write on Pods,
+Serverless, Instant clusters, Volumes, Templates, Secrets; Read on Audit logs, Billing,
+Catalog, Tags, Account; `api.runpod.ai` Read/Write; GraphQL None
+([#103](https://github.com/litkhai/runpod-hols/issues/103)). The full-access
+`runpod-hols-2026-11-07` key is still enabled until its owner revokes it.
+
 > `Endpoint.health()` reports worker slots even when nothing is billing. It is
 > not a spend signal — query `myself { currentSpendPerHr }` for that.
 
