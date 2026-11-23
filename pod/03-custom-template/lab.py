@@ -23,10 +23,11 @@ import json
 import secrets
 import sys
 
-from common import REST_V2, load_state, rest, save_state
+from common import load_state, rest, save_state
 
 SECRET_NAME = "hol_pod_03_demo"
 IMAGE = "runpod/base:1.0.2-ubuntu2404"
+CPU = "cpu3c"  # CPU flavor id, GET /v2/catalog/cpus
 
 
 def sha(value: str) -> str:
@@ -41,9 +42,11 @@ def new_value(st: dict) -> str:
 
 
 def pod_line(p: dict) -> str:
-    ip, ports = p.get("publicIp"), p.get("portMappings") or {}
-    ssh = f"ssh root@{ip} -p {ports['22']} -i ~/.ssh/id_ed25519" if ip and "22" in ports else "not ready yet"
-    return f"{p['id']}  {p.get('desiredStatus')}  ${p.get('costPerHr')}/hr  template {p.get('templateId')}\n    ssh  {ssh}"
+    # v2 returns a ready-made command; `direct` is null until 22/tcp is published and the Pod runs.
+    # v2 는 실행 가능한 명령을 돌려준다. 22/tcp 가 열리고 Pod 가 실행 중이어야 `direct` 가 채워진다.
+    d = (p.get("ssh") or {}).get("direct")
+    ssh = d["command"] + " -i ~/.ssh/id_ed25519" if d else "not ready yet"
+    return f"{p['id']}  {p.get('status')}  ${p.get('cost')}/hr  template {p.get('template')}\n    ssh  {ssh}"
 
 
 def main() -> int:
@@ -54,22 +57,22 @@ def main() -> int:
     st = load_state()
 
     if a.what == "status":
-        print("secrets  ", [s["name"] for s in rest("GET", "/account/secrets", base=REST_V2)["secrets"]])
-        print("templates", [(t["id"], t["name"]) for t in rest("GET", "/templates") if t.get("name", "").startswith("hol-pod-03")])
-        print("pods     ", [(p["id"], p.get("desiredStatus")) for p in rest("GET", "/pods")])
+        print("secrets  ", [s["name"] for s in rest("GET", "/account/secrets")["secrets"]])
+        print("templates", [(t["id"], t["name"]) for t in rest("GET", "/templates")["templates"] if t.get("name", "").startswith("hol-pod-03")])
+        print("pods     ", [(p["id"], p.get("status")) for p in rest("GET", "/pods")["pods"]])
         return 0
 
     if a.what == "secret":
         if a.action == "create":
             s = rest("POST", "/account/secrets", {"name": SECRET_NAME, "value": new_value(st),
-                                                  "description": "runpod-hols pod/03 demo, not a credential"}, base=REST_V2)
+                                                  "description": "runpod-hols pod/03 demo, not a credential"})
             st["secret_id"] = s["id"]
             print(json.dumps(s, indent=2))
         elif a.action == "rotate":
-            s = rest("PATCH", f"/account/secrets/{st['secret_id']}", {"value": new_value(st)}, base=REST_V2)
+            s = rest("PATCH", f"/account/secrets/{st['secret_id']}", {"value": new_value(st)})
             print(json.dumps(s, indent=2))
         elif a.action == "delete":
-            rest("DELETE", f"/account/secrets/{st.pop('secret_id')}", base=REST_V2)
+            rest("DELETE", f"/account/secrets/{st.pop('secret_id')}")
             print("deleted secret", SECRET_NAME)
         save_state(st)
         return 0
@@ -78,20 +81,20 @@ def main() -> int:
         if a.action == "create":
             t = rest("POST", "/templates", {
                 "name": "hol-pod-03",
-                "imageName": IMAGE,
+                "image": IMAGE,
                 "category": "CPU",
-                "isServerless": False,
-                "containerDiskInGb": 10,
-                "volumeInGb": 0,
+                "serverless": False,
+                "disk": 10,
                 "ports": ["22/tcp"],
+                "startSsh": True,
+                "startJupyter": False,
                 "env": {
                     "GREETING": "hello from the template",
                     "DEMO_SECRET": "{{ RUNPOD_SECRET_%s }}" % SECRET_NAME,
                 },
-                "readme": "runpod-hols pod/03-custom-template",
             })
             st["template_id"] = t["id"]
-            print(json.dumps({k: t.get(k) for k in ("id", "name", "imageName", "env", "category")}, indent=2))
+            print(json.dumps({k: t.get(k) for k in ("id", "name", "image", "env", "category")}, indent=2))
         elif a.action == "show":
             print(json.dumps(rest("GET", f"/templates/{st['template_id']}"), indent=2))
         elif a.action == "delete":
@@ -104,10 +107,8 @@ def main() -> int:
         p = rest("POST", "/pods", {
             "name": "hol-pod-03",
             "templateId": st["template_id"],
-            "computeType": "CPU",
-            "cpuFlavorIds": ["cpu3c"],
-            "vcpuCount": 2,
-            "cloudType": "SECURE",
+            "cpu": {"id": CPU, "vcpuCount": 2},
+            "cloud": "SECURE",
         })
         st["pod_id"] = p["id"]
         save_state(st)
@@ -118,7 +119,7 @@ def main() -> int:
         print(pod_line(p))
         print("    env (GET /pods)", json.dumps(p.get("env")))
     elif a.action == "restart":
-        rest("POST", f"/pods/{st['pod_id']}/restart")
+        rest("POST", f"/pods/{st['pod_id']}/action", {"action": "restart"})
         print("restarted", st["pod_id"])
     elif a.action == "delete":
         rest("DELETE", f"/pods/{st.pop('pod_id')}")

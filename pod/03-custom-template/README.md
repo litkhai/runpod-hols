@@ -12,16 +12,18 @@
 
 ### What a template holds
 
-A template is the reusable half of a Pod: image, disks, ports, environment. The Pod adds compute and location. Here the template is created over the REST API:
+A template is the reusable half of a Pod: image, disks, ports, environment. The Pod adds compute and location. Here the template is created over REST v2 (`POST /v2/templates`; field names changed from v1, [#101](https://github.com/litkhai/runpod-hols/issues/101) — the run below used v1):
 
 ```json
 {
   "name": "hol-pod-03",
-  "imageName": "runpod/base:1.0.2-ubuntu2404",
+  "image": "runpod/base:1.0.2-ubuntu2404",
   "category": "CPU",
-  "isServerless": false,
-  "containerDiskInGb": 10,
+  "serverless": false,
+  "disk": 10,
   "ports": ["22/tcp"],
+  "startSsh": true,
+  "startJupyter": false,
   "env": {
     "GREETING": "hello from the template",
     "DEMO_SECRET": "{{ RUNPOD_SECRET_hol_pod_03_demo }}"
@@ -134,16 +136,18 @@ Not run: building a custom image (the template reuses `runpod/base`), `dockerSta
 
 ### 템플릿에 담기는 것
 
-템플릿은 Pod 의 재사용 가능한 절반입니다. 이미지, 디스크, 포트, 환경변수. Pod 은 여기에 컴퓨트와 위치를 더합니다. 여기서는 REST API 로 템플릿을 만듭니다.
+템플릿은 Pod 의 재사용 가능한 절반입니다. 이미지, 디스크, 포트, 환경변수. Pod 은 여기에 컴퓨트와 위치를 더합니다. 여기서는 REST v2 (`POST /v2/templates`) 로 템플릿을 만듭니다. 필드 이름이 v1 에서 바뀌었고 ([#101](https://github.com/litkhai/runpod-hols/issues/101)), 아래 실행은 v1 로 했습니다.
 
 ```json
 {
   "name": "hol-pod-03",
-  "imageName": "runpod/base:1.0.2-ubuntu2404",
+  "image": "runpod/base:1.0.2-ubuntu2404",
   "category": "CPU",
-  "isServerless": false,
-  "containerDiskInGb": 10,
+  "serverless": false,
+  "disk": 10,
   "ports": ["22/tcp"],
+  "startSsh": true,
+  "startJupyter": false,
   "env": {
     "GREETING": "hello from the template",
     "DEMO_SECRET": "{{ RUNPOD_SECRET_hol_pod_03_demo }}"

@@ -33,7 +33,7 @@
 
 ### Deploy
 
-The REST API cannot create one: `POST /endpoints` has no endpoint-type field. Create it in the console:
+REST v1, current when this lab ran, could not create one: `POST /endpoints` had no endpoint-type field. REST v2's `POST /v2/serverless` takes `type: LOAD_BALANCER` (spec read 2026-11-24, not tried here — [#101](https://github.com/litkhai/runpod-hols/issues/101)). The lab was built in the console:
 
 1. **Serverless → New endpoint → Deploy from a GitHub repository**, pick this repository.
 2. **Branch** `main`, **Dockerfile path** `/serverless/04-load-balancer/Dockerfile`, **Advanced settings → Build context** `/serverless/04-load-balancer`.
@@ -98,7 +98,7 @@ The two endpoints ran on different CPU instances, and the load-balancing form ca
 
 ### 배포
 
-REST API 로는 만들 수 없다. `POST /endpoints` 에 엔드포인트 유형 필드가 없다. 콘솔에서 만든다:
+이 실습 당시의 REST v1 로는 만들 수 없었다. `POST /endpoints` 에 엔드포인트 유형 필드가 없었다. REST v2 의 `POST /v2/serverless` 는 `type: LOAD_BALANCER` 를 받는다 (2026-11-24 스펙 확인, 여기서 시도하지 않음 — [#101](https://github.com/litkhai/runpod-hols/issues/101)). 실습은 콘솔에서 만들었다:
 
 1. **Serverless → New endpoint → Deploy from a GitHub repository**, 이 저장소 선택.
 2. **Branch** `main`, **Dockerfile path** `/serverless/04-load-balancer/Dockerfile`, **Advanced settings → Build context** `/serverless/04-load-balancer`.

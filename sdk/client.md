@@ -162,9 +162,39 @@ These wrap Runpod's GraphQL API, so responses come back shaped by GraphQL rather
 **Code written for 1.x can fail silently on 2.x.** A Pod no longer has `desiredStatus`, so a filter such as `p.get("desiredStatus") == "RUNNING"` returns nothing — and a guard built on it stops guarding. The Pod lab is pinned to `runpod~=1.12.0` for that reason.
 </div>
 
-The base REST path is not the published OpenAPI spec's `https://rest.runpod.io/v1`. Both hosts answer; the SDK uses the `/v2` paths on `api.runpod.io`.
+The SDK uses the `/v2` paths on `api.runpod.io` — REST v2, [spec](https://api.runpod.io/v2/openapi.json). REST v1 at `https://rest.runpod.io/v1` was retired on 2026-11-15 and its host no longer resolves (checked 2026-11-24, [#101](https://github.com/litkhai/runpod-hols/issues/101)).
 
 The upstream `CHANGELOG.md` labels the 2.0.0 notes as a second `2.1.0` section dated 2026-10-28. The GitHub release `v2.0.0` carries those notes under `2.0.0`, and PyPI and the tags agree on 2.0.0 for 2026-10-30.
+
+### REST v1 to v2
+
+The labs that call the REST API directly moved to REST v2 on 2026-11-24 ([#101](https://github.com/litkhai/runpod-hols/issues/101)). REST v1 at `rest.runpod.io` was retired on 2026-11-15; its host no longer resolves. Field names below are from the [v2 spec](https://api.runpod.io/v2/openapi.json) (75 paths, read 2026-11-24).
+
+| What | REST v1 | REST v2 |
+|---|---|---|
+| Base | `https://rest.runpod.io/v1` | `https://api.runpod.io/v2` |
+| Serverless | `/endpoints` | `/serverless` |
+| Network volumes | `/networkvolumes`, `dataCenterId` | `/network-volumes`, `dataCenter` |
+| Start, stop, restart | `POST /pods/{id}/start` … | `POST /pods/{id}/action` with `{"action": …}` |
+| Lists | a JSON array | `{"pods": […], "pagination": …}`, up to 1000 per page |
+| Pod compute | `gpuTypeIds` list, `gpuCount`, `cpuFlavorIds`, `vcpuCount` | `gpu: {id, count}` — one type — or `cpu: {id, vcpuCount}` |
+| Pod disks | `containerDiskInGb`, `volumeInGb`, `networkVolumeId` | `disk`, `mounts.persistent`, `mounts.network[]`; `persistent` is refused on CPU Pods and together with `network` |
+| SSH | always set up | only with `startSsh: true`; the Pod returns `ssh.direct.command` |
+| Serverless GPUs | `gpuTypeIds`, tried in order | `gpu.pools` (e.g. `ADA_24`) plus `gpu.excludedTypes`, no order |
+| Serverless workers | `workersMin`, `workersMax`, `idleTimeout` | `workers: {min, max, idleTimeout}`; `type` and `scaling` are required |
+| FlashBoot | `true` / `false` | `OFF`, `FLASHBOOT`, `PRIORITY_FLASHBOOT`; default `OFF` |
+| Endpoint billing | `/billing/endpoints?endpointId=` | `/billing/serverless?serverlessId=` |
+
+**Verified, free reads only:** every list and `GET /serverless/{id}`, `GET /billing/serverless`, the GPU and CPU catalogs, and `status` in `pod/02`–`04` plus `deploy.py --dry-run` in `serverless/03`, with a read-only scoped key. A write with that key came back `403 this API key does not grant tags:write`. Creates, starts and deletes were not re-run, so each lab's "Verified" line still names the v1 run.
+
+**Compared with the Runpod plugin.** The Runpod Claude Code plugin 2.2.1 ships `/runpod:migrate`. The `claude` CLI on this machine was not logged in, so a separate agent followed the plugin's `runpod-migrate` skill on a clean worktree, with no API access. The two migrations agreed on paths, bodies, the list envelope and `startSsh`.
+
+- **The plugin found more call sites.** `flashboot_alternate.py` and `stock_create_probe.py` reuse another script's API helper and were missed by hand; `active.py` now resends `workers.max` and `idleTimeout` with `min`. Both changes were taken from its run.
+- **Its scanner missed two f-string paths** (`/pods/{id}/{action}`); both migrations found them by reading the code.
+- **It kept two scripts on v1** where v2 lacks a field (`supportPublicIp`, machine id). That cannot run any more; here they moved to v2 and record what v2 lacks.
+- **It resolves pools at run time** from the catalog, with exclusions that keep the exact v1 GPU set; here the pools are fixed from one catalog read, which admits the other cards in each pool.
+- **It set `timeout: 600000` from memory**; here `timeout` is left at the spec default (300000 ms).
+- **It edited no prose** — its scanner leaves Markdown out. The docs were changed by hand.
 
 ### Pointing the SDK somewhere else
 
@@ -398,9 +428,39 @@ runpod.terminate_pod(pod_id)
 **1.x 용 코드가 2.x 에서 조용히 틀릴 수 있습니다.** Pod 에 더는 `desiredStatus` 가 없으므로 `p.get("desiredStatus") == "RUNNING"` 같은 필터는 아무것도 돌려주지 않고, 그 위에 세운 안전장치는 작동을 멈춥니다. 그래서 Pod 실습은 `runpod~=1.12.0` 으로 고정합니다.
 </div>
 
-REST 기본 경로는 발행된 OpenAPI 스펙의 `https://rest.runpod.io/v1` 가 아닙니다. 두 호스트 모두 응답하며, SDK 는 `api.runpod.io` 의 `/v2` 경로를 씁니다.
+SDK 는 `api.runpod.io` 의 `/v2` 경로, 즉 REST v2 를 씁니다 ([스펙](https://api.runpod.io/v2/openapi.json)). `https://rest.runpod.io/v1` 의 REST v1 은 2026-11-15 에 폐기됐고 호스트가 더는 조회되지 않습니다 (2026-11-24 확인, [#101](https://github.com/litkhai/runpod-hols/issues/101)).
 
 상류 `CHANGELOG.md` 는 2.0.0 의 노트를 2026-10-28 날짜의 두 번째 `2.1.0` 섹션으로 표기합니다. GitHub 릴리스 `v2.0.0` 에는 같은 노트가 `2.0.0` 으로 올라 있고, PyPI 와 태그도 2026-10-30 의 2.0.0 으로 일치합니다.
+
+### REST v1 에서 v2 로
+
+REST API 를 직접 부르는 실습은 2026-11-24 에 REST v2 로 옮겼습니다 ([#101](https://github.com/litkhai/runpod-hols/issues/101)). `rest.runpod.io` 의 REST v1 은 2026-11-15 에 폐기됐고 호스트가 더는 조회되지 않습니다. 아래 필드 이름은 [v2 스펙](https://api.runpod.io/v2/openapi.json) (경로 75개, 2026-11-24 확인) 기준입니다.
+
+| 항목 | REST v1 | REST v2 |
+|---|---|---|
+| 기본 주소 | `https://rest.runpod.io/v1` | `https://api.runpod.io/v2` |
+| Serverless | `/endpoints` | `/serverless` |
+| 네트워크 볼륨 | `/networkvolumes`, `dataCenterId` | `/network-volumes`, `dataCenter` |
+| 시작·중지·재시작 | `POST /pods/{id}/start` … | `POST /pods/{id}/action` 에 `{"action": …}` |
+| 목록 | JSON 배열 | `{"pods": […], "pagination": …}`, 페이지당 최대 1000 |
+| Pod 컴퓨트 | `gpuTypeIds` 목록, `gpuCount`, `cpuFlavorIds`, `vcpuCount` | `gpu: {id, count}` (종류 하나) 또는 `cpu: {id, vcpuCount}` |
+| Pod 디스크 | `containerDiskInGb`, `volumeInGb`, `networkVolumeId` | `disk`, `mounts.persistent`, `mounts.network[]`. `persistent` 는 CPU Pod 에서, 그리고 `network` 와 함께 쓰면 거부 |
+| SSH | 항상 설정 | `startSsh: true` 일 때만. Pod 이 `ssh.direct.command` 를 돌려줌 |
+| Serverless GPU | `gpuTypeIds`, 순서대로 시도 | `gpu.pools` (예: `ADA_24`) 와 `gpu.excludedTypes`, 순서 없음 |
+| Serverless 워커 | `workersMin`, `workersMax`, `idleTimeout` | `workers: {min, max, idleTimeout}`. `type` 과 `scaling` 필수 |
+| FlashBoot | `true` / `false` | `OFF`, `FLASHBOOT`, `PRIORITY_FLASHBOOT`. 기본값 `OFF` |
+| 엔드포인트 과금 | `/billing/endpoints?endpointId=` | `/billing/serverless?serverlessId=` |
+
+**확인한 것 (무료 조회만):** 모든 목록과 `GET /serverless/{id}`, `GET /billing/serverless`, GPU·CPU 카탈로그, `pod/02`–`04` 의 `status` 와 `serverless/03` 의 `deploy.py --dry-run` 을 읽기 전용 scoped 키로 실행했습니다. 그 키로 쓰기를 시도하면 `403 this API key does not grant tags:write` 가 돌아왔습니다. 생성·시작·삭제는 다시 실행하지 않았으므로 각 실습의 "검증" 줄은 v1 실행을 그대로 가리킵니다.
+
+**Runpod 플러그인과 비교.** Runpod Claude Code 플러그인 2.2.1 에는 `/runpod:migrate` 가 있습니다. 이 머신의 `claude` CLI 가 로그인되어 있지 않아, 별도 에이전트가 플러그인의 `runpod-migrate` 스킬을 깨끗한 worktree 에서 API 접근 없이 따라 했습니다. 경로, 요청 본문, 목록 형태, `startSsh` 는 두 결과가 같았습니다.
+
+- **플러그인이 호출 지점을 더 찾았습니다.** `flashboot_alternate.py` 와 `stock_create_probe.py` 는 다른 스크립트의 API 헬퍼를 가져다 써서 손으로 할 때 빠졌고, `active.py` 는 이제 `min` 과 함께 `workers.max`, `idleTimeout` 을 다시 보냅니다. 둘 다 플러그인 결과에서 가져왔습니다.
+- **스캐너는 f-string 경로 두 곳** (`/pods/{id}/{action}`) 을 놓쳤고, 두 쪽 모두 코드를 읽어 찾았습니다.
+- **v2 에 필드가 없는 두 스크립트** (`supportPublicIp`, 머신 id) 를 v1 에 남겼습니다. 이제는 실행할 수 없으므로 여기서는 v2 로 옮기고 v2 에 없는 값을 기록합니다.
+- **풀을 실행 시점에 카탈로그에서 정하고** 제외 목록으로 v1 의 GPU 집합을 정확히 유지합니다. 여기서는 카탈로그를 한 번 읽어 풀을 고정했으므로 각 풀의 다른 카드도 허용됩니다.
+- **`timeout: 600000` 을 기억에 의존해 넣었습니다.** 여기서는 스펙 기본값 (300000 ms) 그대로 둡니다.
+- **문서는 고치지 않았습니다.** 스캐너가 Markdown 을 제외합니다. 문서는 손으로 고쳤습니다.
 
 ### SDK 를 다른 곳으로 향하게 하기
 

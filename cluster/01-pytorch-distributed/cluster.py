@@ -139,12 +139,13 @@ def pods() -> list:
 
 
 def ssh_args(p: dict) -> list | None:
-    ip, ports = p.get("publicIp"), p.get("portMappings") or {}
-    if not ip or "22" not in ports:
+    # REST v2 Pod: ssh.direct is null until 22/tcp is published and the Pod runs.
+    d = (p.get("ssh") or {}).get("direct")
+    if not d:
         return None
-    return ["-p", str(ports["22"]), "-i", str(pathlib.Path.home() / ".ssh/id_ed25519"), "-o",
+    return ["-p", str(d["port"]), "-i", str(pathlib.Path.home() / ".ssh/id_ed25519"), "-o",
             "StrictHostKeyChecking=accept-new", "-o", "ConnectTimeout=15", "-o", "ServerAliveInterval=30",
-            f"root@{ip}"]
+            f"{d['username']}@{d['host']}"]
 
 
 def wait_ssh(timeout_s: int) -> list:
@@ -155,7 +156,7 @@ def wait_ssh(timeout_s: int) -> list:
         if ts and all(ts) and all(subprocess.run(["ssh", *t, "true"], capture_output=True).returncode == 0
                                   for t in ts):
             log("ssh ready on", len(ts), "nodes after", round(time.time() - t0), "s;",
-                ", ".join(f"{p['id']} ${p.get('costPerHr')}/hr" for p in ps))
+                ", ".join(f"{p['id']} ${p.get('cost')}/hr" for p in ps))
             return ts
         time.sleep(20)
     raise RuntimeError(f"ssh not ready after {timeout_s} s")
@@ -230,7 +231,7 @@ def auto(a) -> int:
     try:
         ts = wait_ssh(20 * 60)
         tl["ssh_ready"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
-        cost = sum(float(p.get("costPerHr") or 0) for p in pods())
+        cost = sum(float(p.get("cost") or 0) for p in pods())
         tl["cost_per_hr"] = cost
         log(f"cluster cost ${cost:.2f}/hr")
         if cost > MAX_PER_HR:
@@ -274,7 +275,7 @@ def main() -> int:
         watchdog(a.stop)
     elif a.action == "show":
         for p in pods():
-            print(p["id"], p.get("desiredStatus"), p.get("costPerHr"), " ".join(ssh_args(p) or ["ssh not ready"]))
+            print(p["id"], p.get("status"), p.get("cost"), " ".join(ssh_args(p) or ["ssh not ready"]))
     elif a.action == "push":
         push(wait_ssh(60))
     elif a.action == "run":

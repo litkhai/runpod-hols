@@ -27,7 +27,7 @@ def main() -> int:
         print("Nothing recorded in .endpoint.json. / .endpoint.json 에 기록된 것이 없습니다.")
         return 0
     if state.get("endpoint_id"):
-        rest("DELETE", f"/endpoints/{state['endpoint_id']}")
+        rest("DELETE", f"/serverless/{state['endpoint_id']}")
         print(f"deleted endpoint  {state['endpoint_id']}")
         state.pop("endpoint_id")
         save_state(state)
@@ -35,7 +35,8 @@ def main() -> int:
         try:
             rest("DELETE", f"/templates/{state['template_id']}")
         except RestError as e:
-            if "still held by deleted endpoint" not in e.text:
+            # The message is REST v1's (2026-11-05); v2's wording is unverified, so also accept 400/409 (#101).
+            if "still held by deleted endpoint" not in e.text and e.status not in (400, 409):
                 raise
             print(f"template {state['template_id']} is still held by the deleted endpoint.")
             print("No cost. Rerun teardown.py later — it took 92 to 116 minutes on 2026-11-05.")
