@@ -60,6 +60,24 @@ Keys created before **11 November 2024** are legacy: Read/Write or Read Only on 
 
 Three read-only calls: `get_user`, `get_gpus`, `get_pods`. Nothing is created, so nothing is billed. The last one matters most — it lists Pods you already have running, which is how you find one left over from a previous session that is still charging you.
 
+### Checking the account from the API
+
+These REST v2 reads answer "is anything billing, and what is the account allowed to do" without the console or GraphQL. Read on 2026-11-24 with the lab key ([#105](https://github.com/litkhai/runpod-hols/issues/105)).
+
+| Call | Scope | Returns |
+|---|---|---|
+| `GET /v2/account/limits` | `account:read` | `spendRate: {current, limit}` in USD per hour, and `serverlessWorkers.limit` (here: spend limit 80, worker limit 30). `spendRate.current` is the REST form of GraphQL `currentSpendPerHr` — 0 means nothing is billing |
+| `GET /v2/billing/balance` | `billing:read` | `balanceAmount` and `billingMode` (`PREPAID` here) |
+| `GET /v2/audit-logs` | `audit:read` | Who did what to which resource, newest first: `actorId`, `email`, `action`, `resourceType`, `resourceId`, `timestamp`, `value`. Filter with `actions`, `actorIds`, `startTime`, `endTime`, `search`; `limit` is at most 200 (1000 is a 422). This account had 349 entries back to 2026-09-28, mostly API key, Pod, endpoint and template create/delete. Creating a key logs its scopes and policy |
+| `GET /v2/cost-centers` | `billing:read` | Cost centers (none here) |
+| `GET /v2/tags` | `tags:read` | 403 *Resource tagging is not enabled for this user* — gated per account, not by the key |
+| `GET /v2/catalog/gpus?include=AVAILABILITY&product=POD` | `catalog:read` | 46 GPU types with community, secure and serverless prices and stock (`NONE`, `LOW`, `MEDIUM`, `HIGH`). `include=AVAILABILITY` without `product` is a 400: stock differs between `POD` and `SERVERLESS` (31 vs 22 types at `NONE`) |
+| `GET /v2/catalog/cpus` | `catalog:read` | CPU flavors (`cpu3c`, `cpu5g`, …) with vCPU range, RAM per vCPU and per-vCPU price |
+| `GET /v2/catalog/datacenters` | `catalog:read` | 35 data centers with region, compliance, volume tiers and global networking; `include=GPU_AVAILABILITY` adds stock per GPU |
+| `GET /v2/catalog/templates?source=` | `catalog:read` | Public templates: `official` (14), `verified` (3), `community` (100 on the first page); `…/{id}/readme` returns the README as text |
+
+Stock is a snapshot, not a promise; the Pod labs record what create calls actually got.
+
 ### Tooling by track
 
 | Tool | Needed for | Install |
@@ -154,6 +172,24 @@ python setup/verify-auth.py     # 3. 키가 실제로 동작하는가
 ### `verify-auth.py` 가 하는 일
 
 읽기 전용 호출 세 건입니다: `get_user`, `get_gpus`, `get_pods`. 생성하는 것이 없어 과금되지 않습니다. 마지막 항목이 가장 중요한데, 현재 실행 중인 Pod 를 나열해 줍니다. 이전 세션에서 끄지 않고 남겨둔, 지금도 과금되고 있는 Pod 를 찾는 방법입니다.
+
+### API 로 계정 상태 확인하기
+
+"지금 과금되는 것이 있는가, 계정이 무엇을 할 수 있는가" 를 콘솔이나 GraphQL 없이 REST v2 조회로 확인합니다. 2026-11-24 에 실습용 키로 조회했습니다 ([#105](https://github.com/litkhai/runpod-hols/issues/105)).
+
+| 호출 | 범위 | 돌려주는 것 |
+|---|---|---|
+| `GET /v2/account/limits` | `account:read` | 시간당 USD 기준 `spendRate: {current, limit}` 와 `serverlessWorkers.limit` (여기서는 지출 한도 80, 워커 한도 30). `spendRate.current` 는 GraphQL `currentSpendPerHr` 의 REST 판이며, 0 이면 과금 중인 것이 없음 |
+| `GET /v2/billing/balance` | `billing:read` | `balanceAmount` 와 `billingMode` (여기서는 `PREPAID`) |
+| `GET /v2/audit-logs` | `audit:read` | 누가 어떤 리소스에 무엇을 했는지, 최신순: `actorId`, `email`, `action`, `resourceType`, `resourceId`, `timestamp`, `value`. `actions`, `actorIds`, `startTime`, `endTime`, `search` 로 거를 수 있고 `limit` 은 최대 200 (1000 은 422). 이 계정은 2026-09-28 부터 349건이었고 대부분 API 키·Pod·엔드포인트·템플릿의 생성·삭제. 키를 만들면 그 범위와 정책이 기록됨 |
+| `GET /v2/cost-centers` | `billing:read` | 비용 센터 (여기서는 없음) |
+| `GET /v2/tags` | `tags:read` | 403 *Resource tagging is not enabled for this user*. 키가 아니라 계정 단위로 막혀 있음 |
+| `GET /v2/catalog/gpus?include=AVAILABILITY&product=POD` | `catalog:read` | GPU 46종의 community·secure·serverless 가격과 재고 (`NONE`, `LOW`, `MEDIUM`, `HIGH`). `product` 없이 `include=AVAILABILITY` 는 400. 재고는 `POD` 와 `SERVERLESS` 가 다름 (`NONE` 이 31 대 22) |
+| `GET /v2/catalog/cpus` | `catalog:read` | CPU 종류 (`cpu3c`, `cpu5g`, …) 의 vCPU 범위, vCPU 당 RAM, vCPU 당 가격 |
+| `GET /v2/catalog/datacenters` | `catalog:read` | 데이터센터 35곳의 지역, 컴플라이언스, 볼륨 계층, 글로벌 네트워킹. `include=GPU_AVAILABILITY` 를 주면 GPU 별 재고 추가 |
+| `GET /v2/catalog/templates?source=` | `catalog:read` | 공개 템플릿: `official` (14), `verified` (3), `community` (첫 페이지 100). `…/{id}/readme` 는 README 를 텍스트로 돌려줌 |
+
+재고는 그 순간의 값이지 보장이 아닙니다. 생성 호출이 실제로 무엇을 받았는지는 Pod 실습에 기록합니다.
 
 ### 트랙별 필요 도구
 
@@ -250,6 +286,24 @@ python setup/verify-auth.py     # 3. does the key actually work?
 
 三个只读调用：`get_user`、`get_gpus`、`get_pods`。不创建任何东西，所以不产生任何费用。最后一个最重要——它列出你已经在运行的 Pod，你就是靠它找到上一次会话遗留下来、仍在计费的 Pod。
 
+### 通过 API 检查账号
+
+这些 REST v2 读取无需控制台或 GraphQL，就能回答“有没有东西在计费、账号能做什么”。2026-11-24 用实验密钥读取（[#105](https://github.com/litkhai/runpod-hols/issues/105)）。
+
+| 调用 | 范围 | 返回内容 |
+|---|---|---|
+| `GET /v2/account/limits` | `account:read` | 以每小时 USD 计的 `spendRate: {current, limit}` 和 `serverlessWorkers.limit`（此处支出上限 80、worker 上限 30）。`spendRate.current` 是 GraphQL `currentSpendPerHr` 的 REST 形式——为 0 表示没有任何计费 |
+| `GET /v2/billing/balance` | `billing:read` | `balanceAmount` 和 `billingMode`（此处为 `PREPAID`） |
+| `GET /v2/audit-logs` | `audit:read` | 谁对哪个资源做了什么，按时间倒序：`actorId`、`email`、`action`、`resourceType`、`resourceId`、`timestamp`、`value`。可用 `actions`、`actorIds`、`startTime`、`endTime`、`search` 过滤；`limit` 最大 200（1000 返回 422）。该账号自 2026-09-28 起有 349 条，多为 API 密钥、Pod、endpoint、模板的创建和删除。创建密钥时会记录其范围和策略 |
+| `GET /v2/cost-centers` | `billing:read` | 成本中心（此处没有） |
+| `GET /v2/tags` | `tags:read` | 403 *Resource tagging is not enabled for this user*——按账号开放，与密钥无关 |
+| `GET /v2/catalog/gpus?include=AVAILABILITY&product=POD` | `catalog:read` | 46 种 GPU 的 community、secure、serverless 价格和库存（`NONE`、`LOW`、`MEDIUM`、`HIGH`）。不带 `product` 的 `include=AVAILABILITY` 返回 400：`POD` 与 `SERVERLESS` 的库存不同（`NONE` 分别为 31 和 22 种） |
+| `GET /v2/catalog/cpus` | `catalog:read` | CPU 规格（`cpu3c`、`cpu5g` 等）的 vCPU 范围、每 vCPU 内存和每 vCPU 价格 |
+| `GET /v2/catalog/datacenters` | `catalog:read` | 35 个数据中心的区域、合规认证、卷类型和全局网络；`include=GPU_AVAILABILITY` 会附上每种 GPU 的库存 |
+| `GET /v2/catalog/templates?source=` | `catalog:read` | 公共模板：`official`（14）、`verified`（3）、`community`（首页 100）；`…/{id}/readme` 以文本返回 README |
+
+库存只是快照，不是承诺；Pod 实验记录的是创建调用实际拿到的结果。
+
 ### 各路线所需工具
 
 | 工具 | 用于 | 安装 |
@@ -344,6 +398,24 @@ python setup/verify-auth.py     # 3. does the key actually work?
 ### `verify-auth.py` がすること
 
 読み取り専用の呼び出し 3 つ：`get_user`、`get_gpus`、`get_pods`。何も作成しないので、何も課金されません。最も重要なのは最後のもので、すでに稼働中の Pod を一覧表示します。前のセッションから残っていて、今も課金されている Pod はこれで見つけます。
+
+### API でアカウントを確認する
+
+これらの REST v2 の読み取りで、コンソールや GraphQL なしに「何か課金されているか、アカウントに何ができるか」を確認できます。2026-11-24 にラボ用キーで読み取りました（[#105](https://github.com/litkhai/runpod-hols/issues/105)）。
+
+| 呼び出し | スコープ | 返すもの |
+|---|---|---|
+| `GET /v2/account/limits` | `account:read` | 1 時間あたり USD の `spendRate: {current, limit}` と `serverlessWorkers.limit`（ここでは支出上限 80、ワーカー上限 30）。`spendRate.current` は GraphQL `currentSpendPerHr` の REST 版で、0 なら何も課金されていない |
+| `GET /v2/billing/balance` | `billing:read` | `balanceAmount` と `billingMode`（ここでは `PREPAID`） |
+| `GET /v2/audit-logs` | `audit:read` | 誰がどのリソースに何をしたか、新しい順：`actorId`、`email`、`action`、`resourceType`、`resourceId`、`timestamp`、`value`。`actions`、`actorIds`、`startTime`、`endTime`、`search` で絞り込め、`limit` は最大 200（1000 は 422）。このアカウントは 2026-09-28 以降 349 件で、大半は API キー・Pod・endpoint・テンプレートの作成と削除。キーを作るとそのスコープとポリシーが記録される |
+| `GET /v2/cost-centers` | `billing:read` | コストセンター（ここではなし） |
+| `GET /v2/tags` | `tags:read` | 403 *Resource tagging is not enabled for this user*。キーではなくアカウント単位で制限されている |
+| `GET /v2/catalog/gpus?include=AVAILABILITY&product=POD` | `catalog:read` | GPU 46 種の community・secure・serverless の価格と在庫（`NONE`、`LOW`、`MEDIUM`、`HIGH`）。`product` なしの `include=AVAILABILITY` は 400。在庫は `POD` と `SERVERLESS` で異なる（`NONE` が 31 対 22） |
+| `GET /v2/catalog/cpus` | `catalog:read` | CPU フレーバー（`cpu3c`、`cpu5g` など）の vCPU の範囲、vCPU あたりの RAM と価格 |
+| `GET /v2/catalog/datacenters` | `catalog:read` | 35 か所のデータセンターのリージョン、コンプライアンス、ボリュームの種類、グローバルネットワーク。`include=GPU_AVAILABILITY` で GPU ごとの在庫を追加 |
+| `GET /v2/catalog/templates?source=` | `catalog:read` | 公開テンプレート：`official`（14）、`verified`（3）、`community`（最初のページで 100）。`…/{id}/readme` は README をテキストで返す |
+
+在庫はその時点のスナップショットで、保証ではありません。作成呼び出しが実際に何を得たかは Pod のラボに記録しています。
 
 ### トラック別のツール
 

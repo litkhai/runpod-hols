@@ -42,7 +42,8 @@ All three scale to zero; `currentSpendPerHr` was `0` on 2026-10-11. `vLLM v2.22.
 has `workersMax` 0 on that date, so it serves nothing until raised.
 
 > `Endpoint.health()` reports worker slots even when nothing is billing. It is
-> not a spend signal — query `myself { currentSpendPerHr }` for that.
+> not a spend signal — read `spendRate.current` from `GET /v2/account/limits`
+> (or GraphQL `myself { currentSpendPerHr }`) for that.
 
 ## Open work
 
