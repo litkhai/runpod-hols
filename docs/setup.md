@@ -55,6 +55,12 @@ What the labs need:
 
 The lab key leaves GraphQL at None on purpose: a GraphQL grant has no per-resource split. Two 403s are not about the key — `GET /v2/tags` answered *Resource tagging is not enabled for this user* with Tags Read granted, and `GET /v2/organization` needs `membership:read`, which this personal account's dialog does not list.
 
+**Exec and logs need GraphQL.** `POST /v2/pods/{id}/exec` needs GraphQL Read / Write on the key; Pod and worker logs need GraphQL Read only ([#112](https://github.com/litkhai/runpod-hols/issues/112), [#104](https://github.com/litkhai/runpod-hols/issues/104)). The lab key keeps GraphQL at None: create a short-lived key for those calls and delete it after.
+
+**Keys now expire.** Since about 2026-11-24 the dialog has an **Expires** date, 30 days ahead by default, and a *Never expire* box; the lab key above stops working on 2026-12-24. Keys made earlier show *Never*.
+
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}" alt="Create API key dialog with the Expires date set to Dec 24, 2026 and a Never expire checkbox" loading="lazy" width="1400" height="648"></a><figcaption>Create API key, 2026-11-24: a new key expires after 30 days unless <em>Never expire</em> is ticked.</figcaption></figure>
+
 <div class="warn" markdown="1">
 Rotate a key the moment it lands anywhere public — a commit, a screenshot, a paste in chat. Deleting the commit is not enough; the key must be revoked in the console.
 
@@ -154,6 +160,12 @@ python setup/verify-auth.py     # 3. 키가 실제로 동작하는가
 | `terraform/` | scoped 키로는 아직 확인하지 않음 |
 
 실습용 키는 GraphQL 을 일부러 None 으로 둡니다. GraphQL 권한은 리소스별로 나뉘지 않습니다. 키와 무관한 403 이 두 가지 있었습니다. `GET /v2/tags` 는 Tags Read 가 있어도 *Resource tagging is not enabled for this user* 였고, `GET /v2/organization` 은 `membership:read` 가 필요한데 이 개인 계정의 대화상자에는 그 항목이 없습니다.
+
+**exec 와 로그에는 GraphQL 이 필요합니다.** `POST /v2/pods/{id}/exec` 는 키에 GraphQL Read / Write 가, Pod·워커 로그는 GraphQL Read only 가 있어야 합니다 ([#112](https://github.com/litkhai/runpod-hols/issues/112), [#104](https://github.com/litkhai/runpod-hols/issues/104)). 실습용 키는 GraphQL 을 None 으로 유지하고, 이 호출이 필요할 때만 단기 키를 만들어 쓰고 지웁니다.
+
+**키에 만료가 생겼습니다.** 2026-11-24 무렵부터 대화상자에 **Expires** 날짜 (기본 30일 뒤) 와 *Never expire* 체크박스가 있습니다. 위의 실습용 키는 2026-12-24 에 만료됩니다. 그 전에 만든 키는 *Never* 로 표시됩니다.
+
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}" alt="Expires 날짜가 2026년 12월 24일이고 Never expire 체크박스가 있는 Create API key 대화상자" loading="lazy" width="1400" height="648"></a><figcaption>Create API key, 2026-11-24: <em>Never expire</em> 를 체크하지 않으면 새 키는 30일 뒤 만료된다.</figcaption></figure>
 
 <div class="warn" markdown="1">
 키가 공개된 곳에 노출되는 즉시 폐기하세요. 커밋, 스크린샷, 채팅 붙여넣기 모두 해당됩니다. 커밋을 지우는 것만으로는 부족하고 콘솔에서 revoke 해야 합니다.
@@ -255,6 +267,12 @@ python setup/verify-auth.py     # 3. does the key actually work?
 
 实验密钥有意把 GraphQL 设为 None：GraphQL 权限不按资源细分。有两个 403 与密钥无关——即使授予了 Tags Read，`GET /v2/tags` 仍返回 *Resource tagging is not enabled for this user*；`GET /v2/organization` 需要 `membership:read`，而这个个人账号的对话框中没有该项。
 
+**exec 和日志需要 GraphQL。** `POST /v2/pods/{id}/exec` 要求密钥具有 GraphQL Read / Write；Pod 和 worker 日志需要 GraphQL Read only（[#112](https://github.com/litkhai/runpod-hols/issues/112)、[#104](https://github.com/litkhai/runpod-hols/issues/104)）。实验密钥保持 GraphQL 为 None：需要这些调用时创建一个短期密钥，用完删除。
+
+**密钥现在会过期。** 大约从 2026-11-24 起，对话框中有 **Expires** 日期（默认 30 天后）和 *Never expire* 复选框；上面的实验密钥将于 2026-12-24 失效。此前创建的密钥显示为 *Never*。
+
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}" alt="Create API key 对话框，Expires 日期为 2026 年 12 月 24 日，并有 Never expire 复选框" loading="lazy" width="1400" height="648"></a><figcaption>Create API key，2026-11-24：除非勾选 <em>Never expire</em>，新密钥 30 天后过期。</figcaption></figure>
+
 <div class="warn" markdown="1">
 密钥一旦出现在任何公开场所——一次提交、一张截图、一次聊天粘贴——就立即轮换。删除提交是不够的；必须在控制台中吊销该密钥。
 
@@ -354,6 +372,12 @@ python setup/verify-auth.py     # 3. does the key actually work?
 | `terraform/` | scoped キーではまだ確認していません |
 
 ラボ用キーは GraphQL を意図的に None にしています。GraphQL の権限はリソースごとに分かれません。キーとは関係のない 403 が 2 つありました。`GET /v2/tags` は Tags Read を付けても *Resource tagging is not enabled for this user* で、`GET /v2/organization` には `membership:read` が必要ですが、この個人アカウントのダイアログにはその項目がありません。
+
+**exec とログには GraphQL が必要です。** `POST /v2/pods/{id}/exec` にはキーの GraphQL Read / Write が、Pod とワーカーのログには GraphQL Read only が必要です（[#112](https://github.com/litkhai/runpod-hols/issues/112)、[#104](https://github.com/litkhai/runpod-hols/issues/104)）。ラボ用キーは GraphQL を None のままにし、これらの呼び出しが必要なときだけ短期キーを作り、使い終わったら削除します。
+
+**キーに有効期限ができました。** 2026-11-24 ごろから、ダイアログに **Expires** の日付（既定は 30 日後）と *Never expire* のチェックボックスがあります。上のラボ用キーは 2026-12-24 に失効します。それ以前に作ったキーは *Never* と表示されます。
+
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}" alt="Expires が 2026 年 12 月 24 日で、Never expire のチェックボックスがある Create API key ダイアログ" loading="lazy" width="1400" height="648"></a><figcaption>Create API key、2026-11-24：<em>Never expire</em> にチェックしない限り、新しいキーは 30 日後に失効する。</figcaption></figure>
 
 <div class="warn" markdown="1">
 キーが公開の場所に出たら、その瞬間にローテーションしてください。コミット、スクリーンショット、チャットへの貼り付けも含みます。コミットを削除するだけでは不十分で、コンソールでキーを失効させる必要があります。

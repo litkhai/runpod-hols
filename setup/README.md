@@ -62,6 +62,10 @@ What the labs need:
 
 The lab key leaves GraphQL at None on purpose: a GraphQL grant has no per-resource split. Two 403s are not about the key — `GET /v2/tags` answered *Resource tagging is not enabled for this user* with Tags Read granted, and `GET /v2/organization` needs `membership:read`, which this personal account's dialog does not list.
 
+**Exec and logs need GraphQL.** `POST /v2/pods/{id}/exec` needs GraphQL Read / Write on the key; Pod and worker logs need GraphQL Read only ([#112](https://github.com/litkhai/runpod-hols/issues/112), [#104](https://github.com/litkhai/runpod-hols/issues/104)). The lab key keeps GraphQL at None: create a short-lived key for those calls and delete it after.
+
+**Keys now expire.** Since about 2026-11-24 the dialog has an **Expires** date, 30 days ahead by default, and a *Never expire* box; the lab key above stops working on 2026-12-24. Keys made earlier show *Never*.
+
 > **Rotate a key the moment it lands anywhere public** — a commit, a screenshot, a paste in chat. Deleting the commit is not enough; the key must be revoked in the console.
 
 > Keys created before **11 November 2024** are legacy: they have Read/Write or Read Only on GraphQL, but **full access to the AI API** regardless. Replace them with a key scoped to what you actually need.
@@ -157,6 +161,10 @@ python setup/verify-auth.py     # 3. 키가 실제로 동작하는가
 | `terraform/` | scoped 키로는 아직 확인하지 않음 |
 
 실습용 키는 GraphQL 을 일부러 None 으로 둡니다. GraphQL 권한은 리소스별로 나뉘지 않습니다. 키와 무관한 403 이 두 가지 있었습니다. `GET /v2/tags` 는 Tags Read 가 있어도 *Resource tagging is not enabled for this user* 였고, `GET /v2/organization` 은 `membership:read` 가 필요한데 이 개인 계정의 대화상자에는 그 항목이 없습니다.
+
+**exec 와 로그에는 GraphQL 이 필요합니다.** `POST /v2/pods/{id}/exec` 는 키에 GraphQL Read / Write 가, Pod·워커 로그는 GraphQL Read only 가 있어야 합니다 ([#112](https://github.com/litkhai/runpod-hols/issues/112), [#104](https://github.com/litkhai/runpod-hols/issues/104)). 실습용 키는 GraphQL 을 None 으로 유지하고, 이 호출이 필요할 때만 단기 키를 만들어 쓰고 지웁니다.
+
+**키에 만료가 생겼습니다.** 2026-11-24 무렵부터 대화상자에 **Expires** 날짜 (기본 30일 뒤) 와 *Never expire* 체크박스가 있습니다. 위의 실습용 키는 2026-12-24 에 만료됩니다. 그 전에 만든 키는 *Never* 로 표시됩니다.
 
 > **키가 공개된 곳에 노출되는 즉시 폐기하세요** — 커밋, 스크린샷, 채팅 붙여넣기 모두 해당됩니다. 커밋을 지우는 것만으로는 부족하고 콘솔에서 revoke 해야 합니다.
 
