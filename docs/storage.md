@@ -83,6 +83,26 @@ Same vLLM worker (`worker-v1-vllm` v2.28.0, Qwen2.5-7B-Instruct, 14.29 GiB), RTX
 
 The network volume saved the download and then spent as long reading from MooseFS, and the cold starts came out slower overall. For a model of this size, set the endpoint's Model field ([Serverless]({{ '/serverless/' | relative_url }})) and leave the network volume for data that must persist and be shared — outputs, checkpoints, datasets that several Pods read. The global volume was not tried for weights: its measured cold read across regions (39 MiB/s) rules it out.
 
+## A global volume on Serverless
+
+An endpoint can mount one global volume over REST v2. Create the volume with `POST /v2/global-volumes` and only a `name`, then pass it under `mounts.global`. Workers always see it at `/runpod-volume` — no custom path, no data-center constraint. Run on 2026-11-24 with a CPU endpoint (`cpu3c`, 2 vCPU) and an inline handler ([#117](https://github.com/litkhai/runpod-hols/issues/117)):
+
+```bash
+curl -X POST https://api.runpod.io/v2/global-volumes -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{"name": "hol-gv-serverless"}'
+# then, in POST /v2/serverless:
+#   "mounts": {"global": [{"volumeId": "<id>"}]}
+```
+
+| Check | Result |
+|---|---|
+| Inside the worker | `/runpod-volume` is `fuse.geesefs`, the same object store as on Pods; the worker's system log says *Global volume … mounted at /runpod-volume (read-write)* |
+| Another data center | A file written by a worker in US-CA-2 was listed by a fresh worker in US-NC-1 a minute later |
+| Network and global together | `400 an endpoint cannot have both a network volume and a global volume` |
+| Clean-up | Endpoint and volume deleted at once (204), with no wait |
+
+Not settled: in both runs, a job sent to a worker whose container had been stopped after the idle timeout and started again never reached the handler — the container stopped 7 s after the SDK started — and failed with *job timed out after 1 retries*. Fresh workers in either data center served their first job. No control run without the volume was made, so this is not pinned on the volume. Both runs together cost under USD 0.05.
+
 ## Getting data in without a Pod — the S3 API
 {: #s3 }
 
@@ -190,6 +210,26 @@ Runpod 의 모든 제품은 같은 몇 가지 스토리지 계층 위에 놓여 
 | 네트워크 볼륨 (`/runpod-volume`) | 137.9–195.2 s | 첫 회 이후 다운로드 없음, ~0.5 GB/s 로 27.8–31.1 s 로드 |
 
 네트워크 볼륨은 다운로드를 아꼈지만 그만큼을 MooseFS 에서 읽는 데 썼고, 콜드 스타트는 전체적으로 더 느렸습니다. 이 크기의 모델이라면 엔드포인트의 Model 필드를 설정하고([Serverless]({{ '/serverless/' | relative_url }})), 네트워크 볼륨은 유지·공유되어야 하는 데이터 — 출력물, 체크포인트, 여러 Pod 가 읽는 데이터셋 — 에 남겨두세요. 글로벌 볼륨은 가중치용으로 시험하지 않았습니다. 측정된 리전 간 콜드 리드(39 MiB/s)만으로 제외됩니다.
+
+## Serverless 의 글로벌 볼륨
+
+REST v2 로 엔드포인트에 글로벌 볼륨 하나를 붙일 수 있습니다. `POST /v2/global-volumes` 에 `name` 만 주어 볼륨을 만들고 `mounts.global` 에 넣습니다. 워커는 항상 `/runpod-volume` 에서 봅니다 — 경로 지정도, 데이터센터 제약도 없습니다. 2026-11-24 에 CPU 엔드포인트 (`cpu3c`, 2 vCPU) 와 인라인 핸들러로 실행했습니다 ([#117](https://github.com/litkhai/runpod-hols/issues/117)).
+
+```bash
+curl -X POST https://api.runpod.io/v2/global-volumes -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{"name": "hol-gv-serverless"}'
+# then, in POST /v2/serverless:
+#   "mounts": {"global": [{"volumeId": "<id>"}]}
+```
+
+| 확인 | 결과 |
+|---|---|
+| 워커 안 | `/runpod-volume` 은 Pod 에서와 같은 오브젝트 스토어 `fuse.geesefs`. 워커 시스템 로그에 *Global volume … mounted at /runpod-volume (read-write)* |
+| 다른 데이터센터 | US-CA-2 워커가 쓴 파일을 1분 뒤 US-NC-1 의 새 워커가 목록에서 봄 |
+| 네트워크와 글로벌 함께 | `400 an endpoint cannot have both a network volume and a global volume` |
+| 정리 | 엔드포인트와 볼륨이 기다림 없이 바로 삭제됨 (204) |
+
+정리되지 않은 것: 두 번의 실행 모두, 유휴 타임아웃으로 컨테이너가 내려갔다가 다시 뜬 워커로 간 작업은 핸들러에 닿지 못했습니다 — SDK 가 시작하고 7초 뒤 컨테이너가 멈췄고 — *job timed out after 1 retries* 로 실패했습니다. 두 데이터센터 모두 새 워커는 첫 작업을 처리했습니다. 볼륨 없는 대조 실행은 하지 않았으므로 원인을 볼륨으로 단정하지 않습니다. 두 실행 합계 USD 0.05 미만.
 
 ## Pod 없이 데이터 넣기 — S3 API
 {: #s3-ko }
@@ -299,6 +339,26 @@ Network volume 表现得像一个共享文件系统。Global volume 则不然：
 
 Network volume 省掉了下载，却又花了同样长的时间从 MooseFS 读取，冷启动总体反而更慢。对于这个规模的模型，请设置 endpoint 的 Model 字段（[Serverless]({{ '/serverless/' | relative_url }})），把 network volume 留给需要持久保存并共享的数据——输出、checkpoint、多个 Pod 共同读取的数据集。Global volume 没有用来测试权重：实测的跨区域冷读速度（39 MiB/s）已经将其排除。
 
+## Serverless 上的 global volume
+
+通过 REST v2，endpoint 可以挂载一个 global volume。用 `POST /v2/global-volumes` 只带 `name` 创建卷，再放进 `mounts.global`。Worker 总是在 `/runpod-volume` 看到它——不能自定义路径，也没有数据中心限制。2026-11-24 用一个 CPU endpoint（`cpu3c`，2 vCPU）和内联 handler 运行（[#117](https://github.com/litkhai/runpod-hols/issues/117)）：
+
+```bash
+curl -X POST https://api.runpod.io/v2/global-volumes -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{"name": "hol-gv-serverless"}'
+# then, in POST /v2/serverless:
+#   "mounts": {"global": [{"volumeId": "<id>"}]}
+```
+
+| 检查 | 结果 |
+|---|---|
+| Worker 内部 | `/runpod-volume` 是 `fuse.geesefs`，与 Pod 上相同的对象存储；worker 的系统日志显示 *Global volume … mounted at /runpod-volume (read-write)* |
+| 另一个数据中心 | US-CA-2 的 worker 写入的文件，一分钟后被 US-NC-1 的新 worker 列出 |
+| Network 与 global 同时使用 | `400 an endpoint cannot have both a network volume and a global volume` |
+| 清理 | Endpoint 和卷立即删除（204），无需等待 |
+
+未查明：两次运行中，发往一个因空闲超时被停掉后又重新启动容器的 worker 的任务都没有到达 handler——SDK 启动 7 秒后容器就停止了——并以 *job timed out after 1 retries* 失败。两个数据中心的新 worker 都处理了它们的第一个任务。没有做不带卷的对照运行，因此不能归因于卷。两次运行合计低于 USD 0.05。
+
 ## 不用 Pod 也能放入数据——S3 API
 {: #s3-zh }
 
@@ -406,6 +466,26 @@ network volume は 1 つの共有ファイルシステムとして振る舞い�
 | network volume（`/runpod-volume`） | 137.9–195.2 s | 初回以降ダウンロードなし。ロードは ~0.5 GB/s で 27.8–31.1 s |
 
 network volume はダウンロードを省きましたが、その分だけ MooseFS からの読み込みに時間がかかり、コールドスタートは全体として遅くなりました。このサイズのモデルなら、エンドポイントの Model フィールド（[Serverless]({{ '/serverless/' | relative_url }})）を設定し、network volume は永続化と共有が必要なデータ、つまり出力、チェックポイント、複数の Pod が読むデータセットのために残しておいてください。グローバルボリュームは重みには試していません。測定したリージョン間のコールド読み込み（39 MiB/s）で候補から外れます。
+
+## Serverless のグローバルボリューム
+
+REST v2 では endpoint にグローバルボリュームを 1 つマウントできます。`POST /v2/global-volumes` に `name` だけを渡してボリュームを作り、`mounts.global` に入れます。ワーカーからは常に `/runpod-volume` に見え、パスの指定もデータセンターの制約もありません。2026-11-24 に CPU endpoint（`cpu3c`、2 vCPU）とインラインのハンドラーで実行しました（[#117](https://github.com/litkhai/runpod-hols/issues/117)）。
+
+```bash
+curl -X POST https://api.runpod.io/v2/global-volumes -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{"name": "hol-gv-serverless"}'
+# then, in POST /v2/serverless:
+#   "mounts": {"global": [{"volumeId": "<id>"}]}
+```
+
+| 確認 | 結果 |
+|---|---|
+| ワーカー内 | `/runpod-volume` は Pod と同じオブジェクトストアの `fuse.geesefs`。ワーカーのシステムログに *Global volume … mounted at /runpod-volume (read-write)* |
+| 別のデータセンター | US-CA-2 のワーカーが書いたファイルを、1 分後に US-NC-1 の新しいワーカーが一覧で確認 |
+| network と global を同時に | `400 an endpoint cannot have both a network volume and a global volume` |
+| 後片付け | endpoint とボリュームは待たずにすぐ削除（204） |
+
+未解決：2 回の実行とも、アイドルタイムアウトでコンテナが止まり再起動したワーカーに送られたジョブはハンドラーに届かず——SDK の起動 7 秒後にコンテナが停止し——*job timed out after 1 retries* で失敗しました。どちらのデータセンターでも新しいワーカーは最初のジョブを処理しました。ボリュームなしの対照実行はしていないため、原因をボリュームとは断定しません。2 回の実行の合計は USD 0.05 未満です。
 
 ## Pod なしでデータを入れる — S3 API
 {: #s3-ja }
