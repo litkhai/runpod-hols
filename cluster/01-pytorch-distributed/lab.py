@@ -31,19 +31,21 @@ FILES = ["run.sh", "nccl_bench.py", "ddp_train.py"]
 
 
 def ssh_target(p: dict) -> list:
-    ip, ports = p.get("publicIp"), p.get("portMappings") or {}
-    if not ip or "22" not in ports:
+    # v2: ssh.direct is null until 22/tcp is published and the Pod runs.
+    # v2: 22/tcp 가 열리고 Pod 가 실행 중이어야 ssh.direct 가 채워진다.
+    d = (p.get("ssh") or {}).get("direct")
+    if not d:
         sys.exit("SSH not ready yet; try `lab.py show` again in a minute")
-    return ["-p", str(ports["22"]), "-i", str(__import__("pathlib").Path.home() / ".ssh/id_ed25519"),
-            "-o", "StrictHostKeyChecking=accept-new", "-o", "ConnectTimeout=15", f"root@{ip}"]
+    return ["-p", str(d["port"]), "-i", str(__import__("pathlib").Path.home() / ".ssh/id_ed25519"),
+            "-o", "StrictHostKeyChecking=accept-new", "-o", "ConnectTimeout=15", f"{d['username']}@{d['host']}"]
 
 
 def pod_line(p: dict) -> str:
-    ip, ports = p.get("publicIp"), p.get("portMappings") or {}
-    ssh = f"ssh root@{ip} -p {ports['22']}" if ip and "22" in ports else "not ready yet"
-    m = p.get("machine") or {}
-    return (f"{p['id']}  {p.get('desiredStatus')}  {p.get('gpuCount')}x {(p.get('gpu') or {}).get('id', '?')}  "
-            f"${p.get('costPerHr')}/hr  {m.get('dataCenterId', '')}\n    ssh  {ssh}")
+    d = (p.get("ssh") or {}).get("direct")
+    ssh = d["command"] if d else "not ready yet"
+    g = p.get("gpu") or {}
+    return (f"{p['id']}  {p.get('status')}  {g.get('count')}x {g.get('id', '?')}  "
+            f"${p.get('cost')}/hr  {p.get('dataCenterId') or ''}\n    ssh  {ssh}")
 
 
 def main() -> int:
@@ -62,14 +64,12 @@ def main() -> int:
             sys.exit(f"pod {st['pod_id']} already recorded; delete it first")
         body = {
             "name": f"hol-cluster-01-{a.count}gpu",
-            "imageName": IMAGE,
-            "computeType": "GPU",
-            "gpuTypeIds": [a.gpu],
-            "gpuCount": a.count,
-            "cloudType": a.cloud,
-            "containerDiskInGb": 30,
-            "volumeInGb": 0,
+            "image": IMAGE,
+            "gpu": {"id": a.gpu, "count": a.count},
+            "cloud": a.cloud,
+            "disk": 30,
             "ports": ["22/tcp"],
+            "startSsh": True,
         }
         if a.dc:
             body["dataCenterIds"] = [a.dc]

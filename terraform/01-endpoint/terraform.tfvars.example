@@ -14,12 +14,12 @@ image_name = "docker.io/YOUR_DOCKERHUB_USERNAME/hello-worker:v1.0.0"
 
 # Optional overrides / 선택적 재정의
 
-# template_name = "hol-hello-worker-template"
+# template_name = "hol-hello-worker-v2"
 # endpoint_name = "hol-hello-worker"
 
-# Priority-ordered list — Runpod takes the first type with capacity.
-# 우선순위 목록 — Runpod 이 용량이 있는 첫 타입을 사용한다.
-# gpu_type_ids = ["NVIDIA GeForce RTX 4090", "NVIDIA RTX A4000"]
+# Serverless GPU pools, no order — workers go to whichever has capacity.
+# Serverless GPU 풀, 순서 없음 — 워커는 여유가 있는 풀에 놓인다.
+# gpu_pools = ["ADA_24", "AMPERE_16"]
 
 # container_disk_in_gb = 5
 # workers_max          = 2

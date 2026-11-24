@@ -18,7 +18,7 @@
 | `ddp_train.py` | 101 M-parameter MLP on synthetic data under `DistributedDataParallel`; about 400 MB of fp32 gradients to all-reduce per step |
 | `run.sh` | Runs inside a Pod or on every cluster node: topology (`nvidia-smi topo -m`, interfaces), then `nccl_bench.py`, then `ddp_train.py` on 1 GPU and on all GPUs |
 | `lab.py` | Stage 1 over the REST API: create a multi-GPU Pod, copy the scripts, run, fetch `results/`, delete |
-| `cluster.py` | Stage 2 over GraphQL: wait for stock, create the cluster, watchdog delete at 75 min, run both nodes, fetch, delete |
+| `cluster.py` | Stage 2 over REST v2: wait for stock, create the cluster, watchdog delete at 75 min, run both nodes, fetch, delete |
 | `results/<tag>/` | What each run produced |
 
 On a cluster, Runpod sets `NUM_NODES`, `NUM_TRAINERS`, `NODE_RANK`, `PRIMARY_ADDR` and `PRIMARY_PORT`; `run.sh` passes them to `torchrun` and sets `NCCL_SOCKET_IFNAME=ens1`, because `eth0` (172.x) is for internet traffic only ([configuration](https://docs.runpod.io/instant-clusters/configuration)). On a single Pod those variables are absent and it runs one node.
@@ -57,6 +57,8 @@ What the numbers say:
 
 Raw files: [`results/2x4090/`](./results/2x4090/), [`results/2xA100SXM/`](./results/2xA100SXM/).
 
+**Re-run on REST v2, 2026-11-24** ([#123](https://github.com/litkhai/runpod-hols/issues/123)): the same 2× RTX 4090 run on another host, after four minutes of capacity retries. `topo -m` showed `NODE` (both GPUs on NUMA node 0) instead of `SYS`, NCCL again used `SHM/direct` with P2P disabled — and all-reduce reached only **3.58 GB/s** at 1 GiB (15.6 in November). One GPU trained at 38,418 samples/s (6.7 ms/step), two at 4,281 (119.6 ms/step): scaling **0.06**. The conclusion stands and sharpens: a GeForce pair depends on the host's PCIe path, which the API does not let you choose. Raw files: [`results/2x4090-2026-11-24/`](./results/2x4090-2026-11-24/).
+
 ### Four H100 SXM in one Pod
 
 While no cluster was in stock, a single Pod with four H100 SXM was (stock "Low"; the first 19 create attempts over ten minutes got *"no instances currently available"*):
@@ -85,31 +87,34 @@ The Pod ran 11.5 minutes, about USD 3. Raw files: [`results/4xH100SXM/`](./resul
 
 ### Stage 2 — Instant Cluster, 2 nodes × 8 GPUs
 
-Created in the console (**Clusters → Create cluster**) or over GraphQL: the REST API has no cluster endpoints, but `createCluster` and `deleteCluster` exist (found 2026-11-07; introspection is off, so the input fields below were read from validation errors). Pricing read from the form on 2026-11-07: A100 SXM USD 2.15 per GPU-hour, USD 34.37/hr for the smallest cluster (2 Pods × 8 GPUs, 1600 Gbps between nodes); H100 SXM USD 4.79 (USD 76.61/hr); H200 USD 6.35; B200 USD 9.59; B300 USD 10.79.
+Created in the console (**Clusters → Create cluster**) or over REST v2: `POST /v2/clusters`, `GET /v2/clusters/{id}/pods`, `DELETE /v2/clusters/{id}` (read from the spec on 2026-11-24, [#126](https://github.com/litkhai/runpod-hols/issues/126)). The November runs below used GraphQL `createCluster` / `deleteCluster`, found on 2026-11-07 before REST had cluster endpoints. Pricing read from the form on 2026-11-07: A100 SXM USD 2.15 per GPU-hour, USD 34.37/hr for the smallest cluster (2 Pods × 8 GPUs, 1600 Gbps between nodes); H100 SXM USD 4.79 (USD 76.61/hr); H200 USD 6.35; B200 USD 9.59; B300 USD 10.79.
 
-**On 2026-11-07 every type was Unavailable**, while single A100 SXM and H100 SXM Pods could be deployed. The console reads availability from GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }`; `stockStatus` is `null` when the form says Unavailable. That evening A100 SXM showed `Available` from about 19:29 to 19:36 KST and was gone again by 19:46: stock comes and goes within minutes, so waiting for it is a job for a script.
+**On 2026-11-07 every type was Unavailable**, while single A100 SXM and H100 SXM Pods could be deployed. The console reads availability from GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }`; `stockStatus` is `null` when the form says Unavailable. The REST form is `GET /v2/catalog/gpus/{id}?include=AVAILABILITY&product=CLUSTER&count=8`, which `cluster.py stock` reads. That evening A100 SXM showed `Available` from about 19:29 to 19:36 KST and was gone again by 19:46: stock comes and goes within minutes, so waiting for it is a job for a script.
 
 ![Create cluster form: every GPU type Unavailable](../../docs/assets/img/cluster/instant-cluster-unavailable.webp)
 
 `cluster.py` does the whole stage unattended:
 
 ```bash
-python3 cluster.py stock                      # stockStatus and price per GPU-hour
+python3 cluster.py stock                      # availability and price per GPU-hour
 python3 cluster.py auto auto --hours 48 --gpus "NVIDIA A100-SXM4-80GB,NVIDIA H100 80GB HBM3"
 #   wait for whichever type comes first, then everything below; tag auto -> 2x8x<GPU>-cluster
 ```
 
-`auto` checks stock every 2 minutes; when A100 SXM is available it calls
+`auto` checks stock every 2 minutes; when A100 SXM is available it sends `POST /v2/clusters` with
 
-```graphql
-createCluster(input: {clusterName: "hol-cluster-01", gpuTypeId: "NVIDIA A100-SXM4-80GB", podCount: 2,
-  gpuCountPerPod: 8, type: TRAINING, imageName: "runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404",
-  containerDiskInGb: 50, volumeInGb: 0, ports: "22/tcp", startSsh: true}) { id pods { id } }
+```json
+{"name": "hol-cluster-01", "type": "TRAINING",
+ "compute": {"gpuTypeId": "NVIDIA A100-SXM4-80GB", "podCount": 2, "gpuCountPerPod": 8},
+ "image": "runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404", "disk": 50,
+ "ports": ["22/tcp"], "startSsh": true}
 ```
 
-(`type` takes `TRAINING` or `SLURM`), starts a detached watchdog that runs `deleteCluster(input: {id})` 75 minutes later whatever happens, waits for SSH on both nodes, runs `run.sh` on both at once (the cluster variables are read from the container's PID 1, since an SSH session does not inherit them), fetches `results/`, and deletes the cluster. It refuses to create anything above USD 80/hr, the account's spend limit (H100: USD 76.61/hr). Manual steps: `create`, `show`, `push`, `run <tag>`, `pull`, `delete`.
+(`type` takes `TRAINING` or `SLURM`), starts a detached watchdog that runs `DELETE /v2/clusters/{id}` 75 minutes later whatever happens, waits for SSH on both nodes, runs `run.sh` on both at once (the cluster variables are read from the container's PID 1, since an SSH session does not inherit them), fetches `results/`, and deletes the cluster. It refuses to create anything above USD 80/hr, the account's spend limit (H100: USD 76.61/hr). Manual steps: `create`, `show`, `push`, `run <tag>`, `pull`, `delete`.
 
-**`deployCost` is required.** Without it `createCluster` fails with *"The requested price 0 is less than the current minimum price (14.32)"*. The minimum is per Pod, and `deployCost` is for the whole cluster: 14.32 came back as *"requested price 7.16"*, so `cluster.py` offers the minimum × `podCount` (28.64). The Pods were then billed at the list price, USD 17.184/hr each (USD 34.37/hr), not at the offer.
+**GraphQL needed `deployCost`.** The REST body has no price field; the REST create has not been run yet ([#126](https://github.com/litkhai/runpod-hols/issues/126)). Without it `createCluster` failed with *"The requested price 0 is less than the current minimum price (14.32)"*. The minimum is per Pod, and `deployCost` is for the whole cluster: 14.32 came back as *"requested price 7.16"*, so the November `cluster.py` offered the minimum × `podCount` (28.64). The Pods were then billed at the list price, USD 17.184/hr each (USD 34.37/hr), not at the offer.
+
+**REST v2 create, 2026-11-24: catalog stock without capacity** ([#130](https://github.com/litkhai/runpod-hols/issues/130)). From 23:15 to 01:15 KST the stock was read every 2 minutes (48 reads) with a create on each hit. The catalog showed A100 SXM cluster stock `LOW` six times between 23:33 and 23:45; every `POST /v2/clusters` answered `400 Insufficient resources`, never a validation error. No cluster was created, nothing was billed, and `spendRate.current` was 0 afterwards. Catalog availability is not a placement guarantee — the create is the real check, so a waiting script has to keep trying after a refusal. The REST create path is still unrun.
 
 ### Stage 2 run — sockets instead of InfiniBand
 
@@ -180,7 +185,7 @@ Raw files: [`results/2x8xA100SXM-cluster/nccl-ib.txt`](./results/2x8xA100SXM-clu
 | `ddp_train.py` | 합성 데이터로 도는 1억 1백만 파라미터 MLP, `DistributedDataParallel`. 스텝마다 fp32 기울기 약 400 MB 를 all-reduce |
 | `run.sh` | Pod 안 또는 클러스터의 모든 노드에서 실행: 토폴로지(`nvidia-smi topo -m`, 인터페이스), `nccl_bench.py`, `ddp_train.py` 1 GPU 와 전체 GPU |
 | `lab.py` | REST API 로 하는 1단계: 멀티 GPU Pod 생성, 스크립트 복사, 실행, `results/` 회수, 삭제 |
-| `cluster.py` | GraphQL 로 2단계: 재고 대기, 클러스터 생성, 75분 감시 삭제, 두 노드 실행, 회수, 삭제 |
+| `cluster.py` | REST v2 로 2단계: 재고 대기, 클러스터 생성, 75분 감시 삭제, 두 노드 실행, 회수, 삭제 |
 | `results/<tag>/` | 실행마다 나온 결과 |
 
 클러스터에서는 Runpod 이 `NUM_NODES`, `NUM_TRAINERS`, `NODE_RANK`, `PRIMARY_ADDR`, `PRIMARY_PORT` 를 넣어 준다. `run.sh` 는 이를 `torchrun` 에 넘기고 `NCCL_SOCKET_IFNAME=ens1` 을 설정한다. `eth0`(172.x) 는 인터넷용이기 때문이다 ([configuration](https://docs.runpod.io/instant-clusters/configuration)). 단일 Pod 에서는 이 변수가 없으므로 노드 1개로 돈다.
@@ -219,6 +224,8 @@ python3 lab.py create --gpu "NVIDIA A100-SXM4-80GB"     # 이어서 태그 2xA10
 
 원본: [`results/2x4090/`](./results/2x4090/), [`results/2xA100SXM/`](./results/2xA100SXM/).
 
+**REST v2 로 재실행, 2026-11-24** ([#123](https://github.com/litkhai/runpod-hols/issues/123)): 같은 2× RTX 4090 실행을 4분간 재고를 재시도한 뒤 다른 호스트에서 했습니다. `topo -m` 은 `SYS` 대신 `NODE` (두 GPU 모두 NUMA 노드 0), NCCL 은 이번에도 P2P 없이 `SHM/direct` — 그런데 1 GiB all-reduce 가 **3.58 GB/s** 에 그쳤습니다 (11월에는 15.6). GPU 1장 38,418 samples/s (6.7 ms/step), 2장 4,281 (119.6 ms/step): 확장 효율 **0.06**. 결론은 그대로이고 더 뚜렷해졌습니다. GeForce 두 장은 호스트의 PCIe 경로에 달려 있고, API 로는 그 경로를 고를 수 없습니다. 원본: [`results/2x4090-2026-11-24/`](./results/2x4090-2026-11-24/).
+
 ### Pod 한 대에 H100 SXM 4장
 
 클러스터 재고가 없을 때도 H100 SXM 4장짜리 Pod 한 대는 재고가 있었다 (재고 "Low". 처음 10분 동안 19번의 생성 시도는 *"no instances currently available"* 로 거절됐다):
@@ -247,23 +254,25 @@ Pod 는 11.5분, 약 USD 3. 원본: [`results/4xH100SXM/`](./results/4xH100SXM/)
 
 ### 2단계 — Instant Cluster, 노드 2개 × GPU 8장
 
-콘솔 (**Clusters → Create cluster**) 이나 GraphQL 로 만든다. REST API 에는 클러스터 엔드포인트가 없지만 `createCluster`, `deleteCluster` 가 있다 (2026-11-07 확인. 인트로스펙션이 꺼져 있어 아래 입력 필드는 검증 오류 메시지로 알아냈다). 2026-11-07 화면의 가격: A100 SXM GPU 시간당 USD 2.15, 가장 작은 클러스터(Pod 2개 × GPU 8장, 노드 간 1600 Gbps) 시간당 USD 34.37. H100 SXM USD 4.79 (시간당 USD 76.61), H200 USD 6.35, B200 USD 9.59, B300 USD 10.79.
+콘솔 (**Clusters → Create cluster**) 이나 REST v2 로 만든다. `POST /v2/clusters`, `GET /v2/clusters/{id}/pods`, `DELETE /v2/clusters/{id}` (2026-11-24 스펙에서 확인, [#126](https://github.com/litkhai/runpod-hols/issues/126)). 아래 11월 실행은 REST 에 클러스터 엔드포인트가 없던 2026-11-07 에 찾은 GraphQL `createCluster` / `deleteCluster` 를 썼다. 2026-11-07 화면의 가격: A100 SXM GPU 시간당 USD 2.15, 가장 작은 클러스터(Pod 2개 × GPU 8장, 노드 간 1600 Gbps) 시간당 USD 34.37. H100 SXM USD 4.79 (시간당 USD 76.61), H200 USD 6.35, B200 USD 9.59, B300 USD 10.79.
 
-**2026-11-07 에는 모든 종류가 Unavailable 이었다.** 같은 시각 A100 SXM, H100 SXM 단일 Pod 는 배포할 수 있었다. 콘솔은 가용 여부를 GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }` 로 읽고, 화면이 Unavailable 일 때 `stockStatus` 는 `null` 이다. 같은 날 저녁 A100 SXM 이 한국 시간 약 19:29–19:36 에 `Available` 이었다가 19:46 에는 다시 사라졌다. 재고는 몇 분 단위로 나고 빠지므로, 기다리는 일은 스크립트에 맡긴다.
+**2026-11-07 에는 모든 종류가 Unavailable 이었다.** 같은 시각 A100 SXM, H100 SXM 단일 Pod 는 배포할 수 있었다. 콘솔은 가용 여부를 GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }` 로 읽고, 화면이 Unavailable 일 때 `stockStatus` 는 `null` 이다. REST 로는 `GET /v2/catalog/gpus/{id}?include=AVAILABILITY&product=CLUSTER&count=8` 이고, `cluster.py stock` 이 이것을 읽는다. 같은 날 저녁 A100 SXM 이 한국 시간 약 19:29–19:36 에 `Available` 이었다가 19:46 에는 다시 사라졌다. 재고는 몇 분 단위로 나고 빠지므로, 기다리는 일은 스크립트에 맡긴다.
 
 ![Create cluster 화면: 모든 GPU 종류가 Unavailable](../../docs/assets/img/cluster/instant-cluster-unavailable.webp)
 
 `cluster.py` 가 이 단계를 사람 없이 끝까지 진행한다:
 
 ```bash
-python3 cluster.py stock                      # stockStatus 와 GPU 시간당 가격
+python3 cluster.py stock                      # 재고와 GPU 시간당 가격
 python3 cluster.py auto auto --hours 48 --gpus "NVIDIA A100-SXM4-80GB,NVIDIA H100 80GB HBM3"
 #   먼저 재고가 나온 종류로 아래를 모두 진행. 태그 auto -> 2x8x<GPU>-cluster
 ```
 
-`auto` 는 2분마다 재고를 확인하고, A100 SXM 이 나오면 위의 영어 절에 있는 `createCluster` 를 호출한다 (`type` 은 `TRAINING` 또는 `SLURM`). 그다음 무슨 일이 있어도 75분 뒤 `deleteCluster(input: {id})` 를 부르는 분리된 감시 프로세스를 띄우고, 두 노드의 SSH 를 기다려 `run.sh` 를 동시에 돌린다 (SSH 세션은 클러스터 변수를 물려받지 않으므로 컨테이너 PID 1 에서 읽는다). 이어서 `results/` 를 받아 오고 클러스터를 지운다. 시간당 USD 80 (계정의 지출 상한. H100 은 USD 76.61) 을 넘는 것은 만들지 않는다. 수동 단계: `create`, `show`, `push`, `run <tag>`, `pull`, `delete`.
+`auto` 는 2분마다 재고를 확인하고, A100 SXM 이 나오면 위의 영어 절에 있는 본문으로 `POST /v2/clusters` 를 보낸다 (`type` 은 `TRAINING` 또는 `SLURM`). 그다음 무슨 일이 있어도 75분 뒤 `DELETE /v2/clusters/{id}` 를 부르는 분리된 감시 프로세스를 띄우고, 두 노드의 SSH 를 기다려 `run.sh` 를 동시에 돌린다 (SSH 세션은 클러스터 변수를 물려받지 않으므로 컨테이너 PID 1 에서 읽는다). 이어서 `results/` 를 받아 오고 클러스터를 지운다. 시간당 USD 80 (계정의 지출 상한. H100 은 USD 76.61) 을 넘는 것은 만들지 않는다. 수동 단계: `create`, `show`, `push`, `run <tag>`, `pull`, `delete`.
 
-**`deployCost` 가 필요하다.** 빼면 `createCluster` 가 *"The requested price 0 is less than the current minimum price (14.32)"* 로 거절된다. 최소 가격은 Pod 당이고 `deployCost` 는 클러스터 전체 값이다. 14.32 를 넣으면 *"requested price 7.16"* 으로 나뉘어 돌아오므로, `cluster.py` 는 최소 가격 × `podCount` (28.64) 로 요청한다. 실제 청구는 요청 값이 아니라 정가, Pod 당 시간당 USD 17.184 (전체 USD 34.37) 였다.
+**GraphQL 에는 `deployCost` 가 필요했다.** REST 본문에는 가격 필드가 없고, REST 생성은 아직 실행하지 않았다 ([#126](https://github.com/litkhai/runpod-hols/issues/126)). 빼면 `createCluster` 가 *"The requested price 0 is less than the current minimum price (14.32)"* 로 거절된다. 최소 가격은 Pod 당이고 `deployCost` 는 클러스터 전체 값이다. 14.32 를 넣으면 *"requested price 7.16"* 으로 나뉘어 돌아오므로, 11월의 `cluster.py` 는 최소 가격 × `podCount` (28.64) 로 요청했다. 실제 청구는 요청 값이 아니라 정가, Pod 당 시간당 USD 17.184 (전체 USD 34.37) 였다.
+
+**REST v2 생성, 2026-11-24: 카탈로그에는 재고, 자리는 없음** ([#130](https://github.com/litkhai/runpod-hols/issues/130)). 한국 시간 23:15 부터 01:15 까지 2분마다 재고를 읽고 (48회), 재고가 보일 때마다 생성을 시도했다. 카탈로그는 23:33–23:45 사이 A100 SXM 클러스터 재고를 `LOW` 로 여섯 번 보였지만, `POST /v2/clusters` 는 모두 `400 Insufficient resources` 였다. 검증 오류는 한 번도 없었다. 클러스터는 만들어지지 않았고 과금도 없었으며, 끝난 뒤 `spendRate.current` 는 0 이었다. 카탈로그 재고는 배치를 보장하지 않는다. 실제 확인은 생성 요청이므로, 기다리는 스크립트는 거절 뒤에도 계속 시도해야 한다. REST 생성 경로는 아직 실행되지 않았다.
 
 ### 2단계 실행 — InfiniBand 대신 소켓
 

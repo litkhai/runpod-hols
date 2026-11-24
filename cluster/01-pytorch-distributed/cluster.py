@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
-"""Stage 2: an Instant Cluster (2 nodes x 8 GPUs) over GraphQL — wait for stock, create, run, fetch, delete.
+"""Stage 2: an Instant Cluster (2 nodes x 8 GPUs) over REST v2 — wait for stock, create, run, fetch, delete.
 
-2단계: GraphQL 로 Instant Cluster (노드 2 x GPU 8) — 재고 대기, 생성, 실행, 회수, 삭제.
+2단계: REST v2 로 Instant Cluster (노드 2 x GPU 8) — 재고 대기, 생성, 실행, 회수, 삭제.
 
-    python3 cluster.py stock                 # stockStatus of the cluster type
+    python3 cluster.py stock                 # cluster availability and per-GPU price
     python3 cluster.py auto --hours 48       # wait for stock, then everything below, unattended
     python3 cluster.py create | show | push | run <tag> | pull | delete
 
-The console is not needed: the GraphQL API has createCluster / deleteCluster
-(found 2026-11-07; introspection is off, the input fields were read from
-validation errors). `auto` starts a separate watchdog that deletes the cluster
+The console is not needed: REST v2 has POST/GET/DELETE /v2/clusters and
+cluster stock in the catalog (#126; the November runs used GraphQL createCluster /
+deleteCluster). `auto` starts a separate watchdog that deletes the cluster
 --stop minutes after creation whatever happens to this process.
-콘솔 없이 GraphQL 의 createCluster / deleteCluster 로 만든다. `auto` 는 생성 직후
-별도 감시 프로세스를 띄워, 이 프로세스가 어떻게 되든 --stop 분 뒤 클러스터를 지운다.
+콘솔 없이 REST v2 의 /v2/clusters 와 카탈로그의 클러스터 재고로 만든다 (11월 실행은
+GraphQL createCluster / deleteCluster). `auto` 는 생성 직후 별도 감시 프로세스를 띄워,
+이 프로세스가 어떻게 되든 --stop 분 뒤 클러스터를 지운다.
 """
 
 from __future__ import annotations
@@ -20,13 +21,12 @@ from __future__ import annotations
 import argparse
 import json
 import pathlib
-import re
 import subprocess
 import sys
 import time
-import urllib.request
+import urllib.parse
 
-from common import LAB_DIR, api_key, load_state, rest, save_state
+from common import LAB_DIR, load_state, rest, save_state
 
 GPU = "NVIDIA A100-SXM4-80GB"
 PODS, PER_POD = 2, 8
@@ -51,56 +51,34 @@ def log(*a) -> None:
     print(time.strftime("%H:%M:%S"), *a, flush=True)
 
 
-def gql(query: str, variables: dict | None = None) -> dict:
-    req = urllib.request.Request(
-        "https://api.runpod.io/graphql",
-        data=json.dumps({"query": query, "variables": variables or {}}).encode(),
-        headers={"Authorization": "Bearer " + api_key(), "Content-Type": "application/json",
-                 "User-Agent": "runpod-hols-cluster-dist/1.0"})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        d = json.loads(r.read())
-    if d.get("errors"):
-        raise RuntimeError(d["errors"][0].get("message", str(d["errors"]))[:300])
-    return d["data"]
-
-
 def stock() -> tuple:
-    q = ("query($l: GpuLowestPriceInput, $g: GpuTypeFilter){ gpuTypes(input:$g){ clusterPrice "
-         "lowestPrice(input:$l){ stockStatus } } }")
-    v = {"g": {"id": GPU}, "l": {"gpuCount": PER_POD, "minDisk": 0, "minMemoryInGb": 8, "minVcpuCount": 2,
-                                 "secureCloud": True, "compliance": [], "dataCenterId": "", "isCluster": True,
-                                 "podCount": PODS, "throughput": 1600}}
-    g = gql(q, v)["gpuTypes"][0]
-    return (g["lowestPrice"] or {}).get("stockStatus"), g["clusterPrice"]
+    """Cluster stock and the per-GPU Secure price, from the REST v2 catalog.
+
+    product=CLUSTER with count=PER_POD is the REST form of GraphQL's isCluster stock read
+    (spec read 2026-11-24, #126). The catalog has no cluster price; the Secure Pod price is
+    the cap check, and the members' `cost` is read again after create.
+    product=CLUSTER, count=PER_POD 가 GraphQL isCluster 재고 조회의 REST 판이다. 카탈로그에는
+    클러스터 가격이 없으므로 상한 검사는 Secure Pod 가격으로 하고, 생성 뒤 멤버의 cost 를 다시 읽는다.
+    """
+    g = rest("GET", f"/catalog/gpus/{urllib.parse.quote(GPU)}?include=AVAILABILITY&product=CLUSTER&count={PER_POD}")
+    a = g.get("availability")
+    return (a if a and a != "NONE" else None), (g.get("price") or {}).get("secure")
 
 
 def clusters() -> list:
-    return gql("{ myself { clusters { id name gpuTypeId podCount gpuCountPerPod createdAt pods { id } } } }")[
-        "myself"]["clusters"]
+    return rest("GET", "/clusters")["clusters"]
 
 
 def create() -> dict:
     st = load_state()
     if st.get("cluster_id"):
         sys.exit(f"cluster {st['cluster_id']} already recorded; delete it first")
-    inp = {"clusterName": "hol-cluster-01", "gpuTypeId": GPU, "podCount": PODS, "gpuCountPerPod": PER_POD,
-           "type": "TRAINING", "imageName": IMAGE, "containerDiskInGb": 50, "volumeInGb": 0,
-           "ports": "22/tcp", "startSsh": True}
-    q = "mutation($i: CreateClusterInput!){ createCluster(input:$i){ id name pods { id } } }"
-    try:
-        c = gql(q, {"i": inp})["createCluster"]
-    except RuntimeError as e:
-        # Without deployCost the API asks for price 0 and names the per-pod minimum; deployCost is
-        # for the whole cluster (it is divided by podCount), so offer minimum x podCount.
-        # deployCost 가 없으면 가격 0 으로 거절되고 오류에 노드당 최소 가격이 나온다. deployCost 는
-        # 클러스터 전체 값 (podCount 로 나눠 비교) 이므로 최소 가격 x podCount 로 다시 요청한다.
-        m = re.search(r"minimum price \(([\d.]+)\)", str(e))
-        if not m or float(m.group(1)) * PODS > MAX_PER_HR:
-            raise
-        inp["deployCost"] = round(float(m.group(1)) * PODS, 2)
-        log("retry with deployCost", inp["deployCost"])
-        c = gql(q, {"i": inp})["createCluster"]
-    st.update(cluster_id=c["id"], pod_ids=[p["id"] for p in c["pods"]], created=time.time())
+    body = {"name": "hol-cluster-01", "type": "TRAINING",
+            "compute": {"gpuTypeId": GPU, "podCount": PODS, "gpuCountPerPod": PER_POD},
+            "image": IMAGE, "disk": 50, "ports": ["22/tcp"], "startSsh": True}
+    c = rest("POST", "/clusters", body)
+    members = rest("GET", f"/clusters/{c['id']}/pods").get("pods", [])
+    st.update(cluster_id=c["id"], pod_ids=[p["id"] for p in members], created=time.time())
     save_state(st)
     log("created cluster", c["id"], "pods", st["pod_ids"])
     return st
@@ -112,9 +90,9 @@ def delete() -> None:
     ids = [cid] if cid else [c["id"] for c in clusters() if c["name"] == "hol-cluster-01"]
     for i in ids:
         try:
-            gql("mutation($i: DeleteClusterInput!){ deleteCluster(input:$i) }", {"i": {"id": i}})
+            rest("DELETE", f"/clusters/{i}")
             log("deleted cluster", i)
-        except Exception as e:  # already gone, or retry below
+        except SystemExit as e:  # already gone, or retry below
             log("delete", i, "->", e)
     left = [c["id"] for c in clusters()]
     log("clusters left:", left or "none")
@@ -139,12 +117,13 @@ def pods() -> list:
 
 
 def ssh_args(p: dict) -> list | None:
-    ip, ports = p.get("publicIp"), p.get("portMappings") or {}
-    if not ip or "22" not in ports:
+    # REST v2 Pod: ssh.direct is null until 22/tcp is published and the Pod runs.
+    d = (p.get("ssh") or {}).get("direct")
+    if not d:
         return None
-    return ["-p", str(ports["22"]), "-i", str(pathlib.Path.home() / ".ssh/id_ed25519"), "-o",
+    return ["-p", str(d["port"]), "-i", str(pathlib.Path.home() / ".ssh/id_ed25519"), "-o",
             "StrictHostKeyChecking=accept-new", "-o", "ConnectTimeout=15", "-o", "ServerAliveInterval=30",
-            f"root@{ip}"]
+            f"{d['username']}@{d['host']}"]
 
 
 def wait_ssh(timeout_s: int) -> list:
@@ -155,7 +134,7 @@ def wait_ssh(timeout_s: int) -> list:
         if ts and all(ts) and all(subprocess.run(["ssh", *t, "true"], capture_output=True).returncode == 0
                                   for t in ts):
             log("ssh ready on", len(ts), "nodes after", round(time.time() - t0), "s;",
-                ", ".join(f"{p['id']} ${p.get('costPerHr')}/hr" for p in ps))
+                ", ".join(f"{p['id']} ${p.get('cost')}/hr" for p in ps))
             return ts
         time.sleep(20)
     raise RuntimeError(f"ssh not ready after {timeout_s} s")
@@ -230,7 +209,7 @@ def auto(a) -> int:
     try:
         ts = wait_ssh(20 * 60)
         tl["ssh_ready"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
-        cost = sum(float(p.get("costPerHr") or 0) for p in pods())
+        cost = sum(float(p.get("cost") or 0) for p in pods())
         tl["cost_per_hr"] = cost
         log(f"cluster cost ${cost:.2f}/hr")
         if cost > MAX_PER_HR:
@@ -274,7 +253,7 @@ def main() -> int:
         watchdog(a.stop)
     elif a.action == "show":
         for p in pods():
-            print(p["id"], p.get("desiredStatus"), p.get("costPerHr"), " ".join(ssh_args(p) or ["ssh not ready"]))
+            print(p["id"], p.get("status"), p.get("cost"), " ".join(ssh_args(p) or ["ssh not ready"]))
     elif a.action == "push":
         push(wait_ssh(60))
     elif a.action == "run":

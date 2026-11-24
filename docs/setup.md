@@ -28,27 +28,37 @@ Create one at [Console → Credentials → API Keys](https://console.runpod.io/u
 **Runpod shows the key once and does not store it.** Copy it into a password manager at creation time. If you lose it you cannot recover it — only create a new one.
 </div>
 
-Keys carry a permission level, set at creation:
+Each key carries scopes per API, set at creation and editable later from the key's menu (**Edit**):
 
-| Level | Meaning |
+| API | Choices |
 |---|---|
-| **All** | Full access |
-| **Restricted** | Per-API access you configure — `None`, `Restricted`, `Read/Write`, `Read Only` |
-| **Read Only** | Read access, no writes |
+| REST (`api.runpod.io/v2`) | Read and Write per resource — Pods, Serverless, Instant clusters, Volumes, Templates, Secrets, Authentication, Billing, Tags; Read only for Audit logs, Catalog, Account. *All resources* ticks every row |
+| GraphQL (`api.runpod.io/graphql`) | None, Read / Write, Read only |
+| Serverless endpoints (`api.runpod.ai`) | Read, Write, optionally limited to chosen endpoints |
 
-<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}" alt="Create API key dialog: the All, Restricted and Read only levels from the table above" loading="lazy" width="1400" height="998"></a><figcaption>Create API key, 2026-11-07. The console now keeps keys under <strong>Credentials → API Keys</strong> rather than Settings.</figcaption></figure>
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-scopes.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-scopes.webp' | relative_url }}" alt="Create API key, REST API section: Write on Pods, Serverless, Instant clusters, Volumes, Templates and Secrets; Authentication off; Audit logs read" loading="lazy" width="1400" height="729"></a><figcaption>Create API key, 2026-11-24: the lab key below. Write on what the labs create, Authentication left off.</figcaption></figure>
 
-| Task | Level |
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-graphql-endpoints.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-graphql-endpoints.webp' | relative_url }}" alt="Lower half of the dialog: Billing, Catalog, Tags and Account read; GraphQL API collapsed at None; api.runpod.ai Read and Write" loading="lazy" width="1400" height="729"></a><figcaption>The rest of the same key: Billing, Catalog, Tags and Account read-only, GraphQL None, <code>api.runpod.ai</code> Read and Write.</figcaption></figure>
+
+**Out-of-scope calls are refused.** On 2026-11-24 a key holding only REST Serverless Read got 200 from `GET /v2/serverless` and 403 with the missing scope named — *this API key does not grant pods:read* — from `GET /v2/pods`, the catalog, billing, audit-log and account reads, `PATCH /v2/serverless/{id}` (`serverless:write`) and `POST /v2/tags`. GraphQL answered 401 and `api.runpod.ai/v2/<id>/health` 403.
+
+What the labs need:
+
+| Task | Scopes |
 |---|---|
-| `verify-auth.py`, browsing GPU types and resources | **Read Only** |
+| `verify-auth.py` | REST Account, Catalog, Pods, Serverless — Read |
 | Deploying Lab 01 through the console | No key needed |
-| Calling a deployed endpoint | Access to that endpoint |
-| `terraform/01-endpoint` | Write access |
-| `terraform/02-pod` | **All** |
+| Calling a deployed endpoint | Serverless endpoints Read and Write, or only that endpoint |
+| Pod, Serverless, storage and cluster labs on REST | REST Write on Pods, Serverless, Instant clusters, Volumes, Templates, Secrets; Read on Audit logs, Billing, Catalog, Tags, Account; Serverless endpoints Read and Write — the key above |
+| `terraform/` | The key above; checked 2026-11-24 [#115](https://github.com/litkhai/runpod-hols/issues/115). The provider's GraphQL reads of a few deprecated attributes answer 401, shown as warnings |
 
-The documented `Restricted` mode customises access *per Serverless endpoint* and does not clearly cover Pod or Network Volume scope, so `All` is the reliable choice for the Pod lab.
+The lab key leaves GraphQL at None on purpose: a GraphQL grant has no per-resource split. Two 403s are not about the key — `GET /v2/tags` answered *Resource tagging is not enabled for this user* with Tags Read granted, and `GET /v2/organization` needs `membership:read`, which this personal account's dialog does not list.
 
-Permissions can be **edited later** from the Settings page — no need to issue a second key. Start Read Only and raise it when you reach the Terraform labs.
+**Exec and logs need GraphQL.** `POST /v2/pods/{id}/exec` needs GraphQL Read / Write on the key; Pod and worker logs need GraphQL Read only ([#112](https://github.com/litkhai/runpod-hols/issues/112), [#104](https://github.com/litkhai/runpod-hols/issues/104)). The lab key keeps GraphQL at None: create a short-lived key for those calls and delete it after.
+
+**Keys now expire.** Since about 2026-11-24 the dialog has an **Expires** date, 30 days ahead by default, and a *Never expire* box; the lab key above stops working on 2026-12-24. Keys made earlier show *Never*.
+
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}" alt="Create API key dialog with the Expires date set to Dec 24, 2026 and a Never expire checkbox" loading="lazy" width="1400" height="648"></a><figcaption>Create API key, 2026-11-24: a new key expires after 30 days unless <em>Never expire</em> is ticked.</figcaption></figure>
 
 <div class="warn" markdown="1">
 Rotate a key the moment it lands anywhere public — a commit, a screenshot, a paste in chat. Deleting the commit is not enough; the key must be revoked in the console.
@@ -58,7 +68,25 @@ Keys created before **11 November 2024** are legacy: Read/Write or Read Only on 
 
 ### What `verify-auth.py` does
 
-Three read-only calls: `get_user`, `get_gpus`, `get_pods`. Nothing is created, so nothing is billed. The last one matters most — it lists Pods you already have running, which is how you find one left over from a previous session that is still charging you.
+Read-only REST v2 calls: `/account`, `/catalog/gpus`, `/pods`, `/serverless`. Nothing is created, so nothing is billed, and no SDK is needed. The last two matter most — they list Pods already running and endpoints holding active workers, which is how you find something left over from a previous session that is still charging you. A call outside the key's scopes prints the 403 reason and the script carries on.
+
+### Checking the account from the API
+
+These REST v2 reads answer "is anything billing, and what is the account allowed to do" without the console or GraphQL. Read on 2026-11-24 with the lab key ([#105](https://github.com/litkhai/runpod-hols/issues/105)).
+
+| Call | Scope | Returns |
+|---|---|---|
+| `GET /v2/account/limits` | `account:read` | `spendRate: {current, limit}` in USD per hour, and `serverlessWorkers.limit` (here: spend limit 80, worker limit 30). `spendRate.current` is the REST form of GraphQL `currentSpendPerHr` — 0 means nothing is billing |
+| `GET /v2/billing/balance` | `billing:read` | `balanceAmount` and `billingMode` (`PREPAID` here) |
+| `GET /v2/audit-logs` | `audit:read` | Who did what to which resource, newest first: `actorId`, `email`, `action`, `resourceType`, `resourceId`, `timestamp`, `value`. Filter with `actions`, `actorIds`, `startTime`, `endTime`, `search`; `limit` is at most 200 (1000 is a 422). This account had 349 entries back to 2026-09-28, mostly API key, Pod, endpoint and template create/delete. Creating a key logs its scopes and policy |
+| `GET /v2/cost-centers` | `billing:read` | Cost centers (none here) |
+| `GET /v2/tags` | `tags:read` | 403 *Resource tagging is not enabled for this user* — gated per account, not by the key |
+| `GET /v2/catalog/gpus?include=AVAILABILITY&product=POD` | `catalog:read` | 46 GPU types with community, secure and serverless prices and stock (`NONE`, `LOW`, `MEDIUM`, `HIGH`). `include=AVAILABILITY` without `product` is a 400: stock differs between `POD` and `SERVERLESS` (31 vs 22 types at `NONE`) |
+| `GET /v2/catalog/cpus` | `catalog:read` | CPU flavors (`cpu3c`, `cpu5g`, …) with vCPU range, RAM per vCPU and per-vCPU price |
+| `GET /v2/catalog/datacenters` | `catalog:read` | 35 data centers with region, compliance, volume tiers and global networking; `include=GPU_AVAILABILITY` adds stock per GPU |
+| `GET /v2/catalog/templates?source=` | `catalog:read` | Public templates: `official` (14), `verified` (3), `community` (100 on the first page); `…/{id}/readme` returns the README as text |
+
+Stock is a snapshot, not a promise; the Pod labs record what create calls actually got.
 
 ### Tooling by track
 
@@ -90,8 +118,10 @@ The official [MCP server](https://github.com/runpod/runpod-mcp) is the most acti
 <figure class="shot"><a href="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}"><img src="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}" alt="Console home with the Onboard your agent to Runpod card" loading="lazy" width="1400" height="998"></a><figcaption>The console home, 2026-11-07: Runpod now offers the agent setup itself — one line to paste into a coding agent installs its skills and the MCP server.</figcaption></figure>
 
 ```bash
-claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/
+claude mcp add --transport http runpod -s user https://mcp.runpod.io/
 ```
+
+Version 5.0.0 (2026-11-23) has 138 tools, read from its source on 2026-11-24 ([#106](https://github.com/litkhai/runpod-hols/issues/106)): Pods including `exec-pod`, `stream-pod-logs` and queued Pods; Serverless endpoints, jobs, workers, builds, releases and metrics; network and global volumes; templates, registries and secrets; clusters; organizations; account, billing, tags and the audit log; the GPU/CPU catalog and Hub; a knowledge base (`search-docs`, `list-guides`, `read-guide`); and `report_feedback`, which sends an observation to Runpod. Every list now returns one page (`limit` up to 100, `cursor`), and the hosted server accepts a scoped key whose GraphQL access is None. The address moved from `mcp.getrunpod.io` to `mcp.runpod.io`; both answer.
 
 <div class="warn" markdown="1">
 An agent with a read/write MCP connection can create Pods, and a Pod bills from the moment it starts. Use a read-only key unless the task genuinely needs to provision something.
@@ -123,27 +153,37 @@ python setup/verify-auth.py     # 3. 키가 실제로 동작하는가
 **Runpod 은 키를 한 번만 보여주고 저장하지 않습니다.** 생성 시점에 비밀번호 관리자에 복사해 두세요. 분실하면 복구할 수 없고 새로 만드는 수밖에 없습니다.
 </div>
 
-키에는 생성 시 지정하는 권한 등급이 있습니다.
+키에는 API 별 범위(scope)가 있으며, 생성할 때 정하고 나중에 키 메뉴의 **Edit** 에서 바꿀 수 있습니다.
 
-| 등급 | 내용 |
+| API | 선택지 |
 |---|---|
-| **All** | 전체 접근 |
-| **Restricted** | API 별로 직접 설정 — `None`, `Restricted`, `Read/Write`, `Read Only` |
-| **Read Only** | 읽기만, 쓰기 불가 |
+| REST (`api.runpod.io/v2`) | 리소스별 Read·Write — Pods, Serverless, Instant clusters, Volumes, Templates, Secrets, Authentication, Billing, Tags. Audit logs, Catalog, Account 는 Read 만. *All resources* 는 모든 행을 체크 |
+| GraphQL (`api.runpod.io/graphql`) | None, Read / Write, Read only |
+| Serverless endpoints (`api.runpod.ai`) | Read, Write. 특정 엔드포인트로 제한 가능 |
 
-<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}" alt="Create API key 화면: 위 표의 All, Restricted, Read only 권한" loading="lazy" width="1400" height="998"></a><figcaption>Create API key, 2026-11-07. 콘솔은 이제 키를 Settings 가 아니라 <strong>Credentials → API Keys</strong> 에 둔다.</figcaption></figure>
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-scopes.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-scopes.webp' | relative_url }}" alt="Create API key 의 REST API 영역: Pods, Serverless, Instant clusters, Volumes, Templates, Secrets 에 Write, Authentication 은 끔, Audit logs 는 Read" loading="lazy" width="1400" height="729"></a><figcaption>Create API key, 2026-11-24: 아래의 실습용 키. 실습이 만드는 리소스에 Write, Authentication 은 끔.</figcaption></figure>
 
-| 작업 | 등급 |
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-graphql-endpoints.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-graphql-endpoints.webp' | relative_url }}" alt="대화상자 아래쪽: Billing, Catalog, Tags, Account 는 Read, GraphQL API 는 None 으로 접힘, api.runpod.ai 는 Read 와 Write" loading="lazy" width="1400" height="729"></a><figcaption>같은 키의 나머지: Billing, Catalog, Tags, Account 는 읽기만, GraphQL 은 None, <code>api.runpod.ai</code> 는 Read 와 Write.</figcaption></figure>
+
+**범위 밖 호출은 거부됩니다.** 2026-11-24 에 REST Serverless Read 만 가진 키로 `GET /v2/serverless` 는 200, `GET /v2/pods` 와 카탈로그·과금·감사 로그·계정 조회, `PATCH /v2/serverless/{id}` (`serverless:write`), `POST /v2/tags` 는 빠진 범위를 밝힌 403 — *this API key does not grant pods:read* — 이었습니다. GraphQL 은 401, `api.runpod.ai/v2/<id>/health` 는 403 이었습니다.
+
+실습별로 필요한 범위입니다.
+
+| 작업 | 범위 |
 |---|---|
-| `verify-auth.py`, GPU 타입·리소스 조회 | **Read Only** |
+| `verify-auth.py` | REST Account, Catalog, Pods, Serverless — Read |
 | 콘솔에서 Lab 01 배포 | 키 불필요 |
-| 배포한 엔드포인트 호출 | 해당 엔드포인트 접근 권한 |
-| `terraform/01-endpoint` | 쓰기 권한 |
-| `terraform/02-pod` | **All** |
+| 배포한 엔드포인트 호출 | Serverless endpoints Read·Write, 또는 그 엔드포인트만 |
+| REST 를 쓰는 Pod·Serverless·스토리지·클러스터 실습 | REST 의 Pods, Serverless, Instant clusters, Volumes, Templates, Secrets 에 Write, Audit logs, Billing, Catalog, Tags, Account 에 Read, Serverless endpoints Read·Write — 위 화면의 키 |
+| `terraform/` | 위의 키. 2026-11-24 확인 [#115](https://github.com/litkhai/runpod-hols/issues/115). 프로바이더가 일부 폐기 예정 속성을 GraphQL 로 읽다가 401 을 받고 경고로만 표시 |
 
-문서화된 `Restricted` 모드는 *Serverless 엔드포인트 단위*로 접근을 설정하며 Pod 나 Network Volume 범위는 명확히 다루지 않으므로, Pod 실습에는 `All` 이 확실합니다.
+실습용 키는 GraphQL 을 일부러 None 으로 둡니다. GraphQL 권한은 리소스별로 나뉘지 않습니다. 키와 무관한 403 이 두 가지 있었습니다. `GET /v2/tags` 는 Tags Read 가 있어도 *Resource tagging is not enabled for this user* 였고, `GET /v2/organization` 은 `membership:read` 가 필요한데 이 개인 계정의 대화상자에는 그 항목이 없습니다.
 
-권한은 **나중에 수정할 수 있습니다.** Settings 페이지에서 편집하면 되고 두 번째 키를 발급할 필요가 없습니다. Read Only 로 시작해 Terraform 실습에서 올리세요.
+**exec 와 로그에는 GraphQL 이 필요합니다.** `POST /v2/pods/{id}/exec` 는 키에 GraphQL Read / Write 가, Pod·워커 로그는 GraphQL Read only 가 있어야 합니다 ([#112](https://github.com/litkhai/runpod-hols/issues/112), [#104](https://github.com/litkhai/runpod-hols/issues/104)). 실습용 키는 GraphQL 을 None 으로 유지하고, 이 호출이 필요할 때만 단기 키를 만들어 쓰고 지웁니다.
+
+**키에 만료가 생겼습니다.** 2026-11-24 무렵부터 대화상자에 **Expires** 날짜 (기본 30일 뒤) 와 *Never expire* 체크박스가 있습니다. 위의 실습용 키는 2026-12-24 에 만료됩니다. 그 전에 만든 키는 *Never* 로 표시됩니다.
+
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}" alt="Expires 날짜가 2026년 12월 24일이고 Never expire 체크박스가 있는 Create API key 대화상자" loading="lazy" width="1400" height="648"></a><figcaption>Create API key, 2026-11-24: <em>Never expire</em> 를 체크하지 않으면 새 키는 30일 뒤 만료된다.</figcaption></figure>
 
 <div class="warn" markdown="1">
 키가 공개된 곳에 노출되는 즉시 폐기하세요. 커밋, 스크린샷, 채팅 붙여넣기 모두 해당됩니다. 커밋을 지우는 것만으로는 부족하고 콘솔에서 revoke 해야 합니다.
@@ -153,7 +193,25 @@ python setup/verify-auth.py     # 3. 키가 실제로 동작하는가
 
 ### `verify-auth.py` 가 하는 일
 
-읽기 전용 호출 세 건입니다: `get_user`, `get_gpus`, `get_pods`. 생성하는 것이 없어 과금되지 않습니다. 마지막 항목이 가장 중요한데, 현재 실행 중인 Pod 를 나열해 줍니다. 이전 세션에서 끄지 않고 남겨둔, 지금도 과금되고 있는 Pod 를 찾는 방법입니다.
+REST v2 읽기 호출입니다: `/account`, `/catalog/gpus`, `/pods`, `/serverless`. 생성하는 것이 없어 과금되지 않고 SDK 도 필요 없습니다. 마지막 두 항목이 가장 중요한데, 실행 중인 Pod 와 활성 워커를 둔 엔드포인트를 나열해 줍니다. 이전 세션에서 남겨둔, 지금도 과금되고 있는 것을 찾는 방법입니다. 키 범위 밖의 호출은 403 사유를 출력하고 계속 진행합니다.
+
+### API 로 계정 상태 확인하기
+
+"지금 과금되는 것이 있는가, 계정이 무엇을 할 수 있는가" 를 콘솔이나 GraphQL 없이 REST v2 조회로 확인합니다. 2026-11-24 에 실습용 키로 조회했습니다 ([#105](https://github.com/litkhai/runpod-hols/issues/105)).
+
+| 호출 | 범위 | 돌려주는 것 |
+|---|---|---|
+| `GET /v2/account/limits` | `account:read` | 시간당 USD 기준 `spendRate: {current, limit}` 와 `serverlessWorkers.limit` (여기서는 지출 한도 80, 워커 한도 30). `spendRate.current` 는 GraphQL `currentSpendPerHr` 의 REST 판이며, 0 이면 과금 중인 것이 없음 |
+| `GET /v2/billing/balance` | `billing:read` | `balanceAmount` 와 `billingMode` (여기서는 `PREPAID`) |
+| `GET /v2/audit-logs` | `audit:read` | 누가 어떤 리소스에 무엇을 했는지, 최신순: `actorId`, `email`, `action`, `resourceType`, `resourceId`, `timestamp`, `value`. `actions`, `actorIds`, `startTime`, `endTime`, `search` 로 거를 수 있고 `limit` 은 최대 200 (1000 은 422). 이 계정은 2026-09-28 부터 349건이었고 대부분 API 키·Pod·엔드포인트·템플릿의 생성·삭제. 키를 만들면 그 범위와 정책이 기록됨 |
+| `GET /v2/cost-centers` | `billing:read` | 비용 센터 (여기서는 없음) |
+| `GET /v2/tags` | `tags:read` | 403 *Resource tagging is not enabled for this user*. 키가 아니라 계정 단위로 막혀 있음 |
+| `GET /v2/catalog/gpus?include=AVAILABILITY&product=POD` | `catalog:read` | GPU 46종의 community·secure·serverless 가격과 재고 (`NONE`, `LOW`, `MEDIUM`, `HIGH`). `product` 없이 `include=AVAILABILITY` 는 400. 재고는 `POD` 와 `SERVERLESS` 가 다름 (`NONE` 이 31 대 22) |
+| `GET /v2/catalog/cpus` | `catalog:read` | CPU 종류 (`cpu3c`, `cpu5g`, …) 의 vCPU 범위, vCPU 당 RAM, vCPU 당 가격 |
+| `GET /v2/catalog/datacenters` | `catalog:read` | 데이터센터 35곳의 지역, 컴플라이언스, 볼륨 계층, 글로벌 네트워킹. `include=GPU_AVAILABILITY` 를 주면 GPU 별 재고 추가 |
+| `GET /v2/catalog/templates?source=` | `catalog:read` | 공개 템플릿: `official` (14), `verified` (3), `community` (첫 페이지 100). `…/{id}/readme` 는 README 를 텍스트로 돌려줌 |
+
+재고는 그 순간의 값이지 보장이 아닙니다. 생성 호출이 실제로 무엇을 받았는지는 Pod 실습에 기록합니다.
 
 ### 트랙별 필요 도구
 
@@ -185,8 +243,10 @@ python setup/verify-auth.py     # 3. 키가 실제로 동작하는가
 <figure class="shot"><a href="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}"><img src="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}" alt="콘솔 홈의 Onboard your agent to Runpod 카드" loading="lazy" width="1400" height="998"></a><figcaption>콘솔 홈, 2026-11-07: Runpod 이 에이전트 설정을 직접 안내한다. 코딩 에이전트에 한 줄을 붙여 넣으면 스킬과 MCP 서버가 설치된다.</figcaption></figure>
 
 ```bash
-claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/
+claude mcp add --transport http runpod -s user https://mcp.runpod.io/
 ```
+
+5.0.0 (2026-11-23) 의 도구는 138개이며 2026-11-24 에 소스에서 읽었습니다 ([#106](https://github.com/litkhai/runpod-hols/issues/106)). `exec-pod`, `stream-pod-logs`, 대기 Pod 를 포함한 Pod, Serverless 엔드포인트·작업·워커·빌드·릴리스·지표, 네트워크·글로벌 볼륨, 템플릿·레지스트리·시크릿, 클러스터, 조직, 계정·과금·태그·감사 로그, GPU/CPU 카탈로그와 Hub, 지식 베이스 (`search-docs`, `list-guides`, `read-guide`), 그리고 관찰을 Runpod 에 보내는 `report_feedback` 이 있습니다. 모든 목록은 이제 한 페이지씩 돌려주고 (`limit` 최대 100, `cursor`), hosted 서버는 GraphQL 을 None 으로 둔 scoped 키도 받습니다. 주소는 `mcp.getrunpod.io` 에서 `mcp.runpod.io` 로 바뀌었고 둘 다 응답합니다.
 
 <div class="warn" markdown="1">
 읽기/쓰기 권한으로 MCP 가 연결된 에이전트는 Pod 를 생성할 수 있고, Pod 는 기동 시점부터 과금됩니다. 실제로 리소스를 만들어야 하는 작업이 아니라면 읽기 전용 키를 사용하세요.
@@ -218,27 +278,37 @@ python setup/verify-auth.py     # 3. does the key actually work?
 **Runpod 只显示一次密钥，并且不保存它。** 创建时就把它复制到密码管理器中。一旦丢失就无法找回——只能新建一个。
 </div>
 
-密钥带有在创建时设定的权限级别：
+每个密钥按 API 设置权限范围（scope），在创建时指定，之后可在密钥菜单的 **Edit** 中修改：
 
-| 级别 | 含义 |
+| API | 选项 |
 |---|---|
-| **All** | 完全访问 |
-| **Restricted** | 由你按 API 配置访问——`None`、`Restricted`、`Read/Write`、`Read Only` |
-| **Read Only** | 只读，不可写入 |
+| REST（`api.runpod.io/v2`） | 按资源分 Read 和 Write——Pods、Serverless、Instant clusters、Volumes、Templates、Secrets、Authentication、Billing、Tags；Audit logs、Catalog、Account 仅 Read。*All resources* 勾选所有行 |
+| GraphQL（`api.runpod.io/graphql`） | None、Read / Write、Read only |
+| Serverless endpoints（`api.runpod.ai`） | Read、Write，可限定到指定 endpoint |
 
-<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}" alt="Create API key 对话框：上表中的 All、Restricted、Read only 三种权限" loading="lazy" width="1400" height="998"></a><figcaption>Create API key，2026-11-07。控制台现在把密钥放在 <strong>Credentials → API Keys</strong>，而不是 Settings。</figcaption></figure>
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-scopes.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-scopes.webp' | relative_url }}" alt="Create API key 的 REST API 区域：Pods、Serverless、Instant clusters、Volumes、Templates、Secrets 勾选 Write，Authentication 未勾选，Audit logs 为 Read" loading="lazy" width="1400" height="729"></a><figcaption>Create API key，2026-11-24：下文的实验密钥。对实验会创建的资源授予 Write，不授予 Authentication。</figcaption></figure>
 
-| 任务 | 级别 |
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-graphql-endpoints.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-graphql-endpoints.webp' | relative_url }}" alt="对话框下半部分：Billing、Catalog、Tags、Account 为 Read，GraphQL API 折叠且为 None，api.runpod.ai 为 Read 和 Write" loading="lazy" width="1400" height="729"></a><figcaption>同一密钥的其余部分：Billing、Catalog、Tags、Account 只读，GraphQL 为 None，<code>api.runpod.ai</code> 为 Read 和 Write。</figcaption></figure>
+
+**超出范围的调用会被拒绝。** 2026-11-24，用只有 REST Serverless Read 的密钥：`GET /v2/serverless` 返回 200；`GET /v2/pods`、目录、计费、审计日志和账号读取、`PATCH /v2/serverless/{id}`（`serverless:write`）以及 `POST /v2/tags` 均返回 403，并指出缺少的范围——*this API key does not grant pods:read*。GraphQL 返回 401，`api.runpod.ai/v2/<id>/health` 返回 403。
+
+各实验所需范围：
+
+| 任务 | 范围 |
 |---|---|
-| `verify-auth.py`，浏览 GPU 类型和资源 | **Read Only** |
-| 通过控制台部署实验 01 | 无需密钥 |
-| 调用已部署的端点 | 对该端点的访问权限 |
-| `terraform/01-endpoint` | 写入权限 |
-| `terraform/02-pod` | **All** |
+| `verify-auth.py` | REST Account、Catalog、Pods、Serverless——Read |
+| 通过控制台部署 Lab 01 | 不需要密钥 |
+| 调用已部署的 endpoint | Serverless endpoints Read 和 Write，或仅限该 endpoint |
+| 使用 REST 的 Pod、Serverless、存储和集群实验 | REST 的 Pods、Serverless、Instant clusters、Volumes、Templates、Secrets 授予 Write；Audit logs、Billing、Catalog、Tags、Account 授予 Read；Serverless endpoints Read 和 Write——即上图中的密钥 |
+| `terraform/` | 上面的密钥；2026-11-24 已检查 [#115](https://github.com/litkhai/runpod-hols/issues/115)。提供程序用 GraphQL 读取几个已弃用属性时返回 401，仅显示为警告 |
 
-文档中的 `Restricted` 模式是*按 Serverless 端点*定制访问，并未明确涵盖 Pod 或 Network Volume 的范围，因此对 Pod 实验来说，`All` 是可靠的选择。
+实验密钥有意把 GraphQL 设为 None：GraphQL 权限不按资源细分。有两个 403 与密钥无关——即使授予了 Tags Read，`GET /v2/tags` 仍返回 *Resource tagging is not enabled for this user*；`GET /v2/organization` 需要 `membership:read`，而这个个人账号的对话框中没有该项。
 
-权限可以之后在 Settings 页面**修改**——无需再签发第二个密钥。先从 Read Only 开始，到了 Terraform 实验再提升。
+**exec 和日志需要 GraphQL。** `POST /v2/pods/{id}/exec` 要求密钥具有 GraphQL Read / Write；Pod 和 worker 日志需要 GraphQL Read only（[#112](https://github.com/litkhai/runpod-hols/issues/112)、[#104](https://github.com/litkhai/runpod-hols/issues/104)）。实验密钥保持 GraphQL 为 None：需要这些调用时创建一个短期密钥，用完删除。
+
+**密钥现在会过期。** 大约从 2026-11-24 起，对话框中有 **Expires** 日期（默认 30 天后）和 *Never expire* 复选框；上面的实验密钥将于 2026-12-24 失效。此前创建的密钥显示为 *Never*。
+
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}" alt="Create API key 对话框，Expires 日期为 2026 年 12 月 24 日，并有 Never expire 复选框" loading="lazy" width="1400" height="648"></a><figcaption>Create API key，2026-11-24：除非勾选 <em>Never expire</em>，新密钥 30 天后过期。</figcaption></figure>
 
 <div class="warn" markdown="1">
 密钥一旦出现在任何公开场所——一次提交、一张截图、一次聊天粘贴——就立即轮换。删除提交是不够的；必须在控制台中吊销该密钥。
@@ -248,7 +318,25 @@ python setup/verify-auth.py     # 3. does the key actually work?
 
 ### `verify-auth.py` 做了什么
 
-三个只读调用：`get_user`、`get_gpus`、`get_pods`。不创建任何东西，所以不产生任何费用。最后一个最重要——它列出你已经在运行的 Pod，你就是靠它找到上一次会话遗留下来、仍在计费的 Pod。
+REST v2 只读调用：`/account`、`/catalog/gpus`、`/pods`、`/serverless`。不创建任何东西，所以不产生任何费用，也不需要 SDK。最后两个最重要——它们列出已经在运行的 Pod 和保留了 active worker 的 endpoint，你就是靠它们找到上一次会话遗留下来、仍在计费的资源。超出密钥范围的调用会打印 403 原因，脚本继续执行。
+
+### 通过 API 检查账号
+
+这些 REST v2 读取无需控制台或 GraphQL，就能回答“有没有东西在计费、账号能做什么”。2026-11-24 用实验密钥读取（[#105](https://github.com/litkhai/runpod-hols/issues/105)）。
+
+| 调用 | 范围 | 返回内容 |
+|---|---|---|
+| `GET /v2/account/limits` | `account:read` | 以每小时 USD 计的 `spendRate: {current, limit}` 和 `serverlessWorkers.limit`（此处支出上限 80、worker 上限 30）。`spendRate.current` 是 GraphQL `currentSpendPerHr` 的 REST 形式——为 0 表示没有任何计费 |
+| `GET /v2/billing/balance` | `billing:read` | `balanceAmount` 和 `billingMode`（此处为 `PREPAID`） |
+| `GET /v2/audit-logs` | `audit:read` | 谁对哪个资源做了什么，按时间倒序：`actorId`、`email`、`action`、`resourceType`、`resourceId`、`timestamp`、`value`。可用 `actions`、`actorIds`、`startTime`、`endTime`、`search` 过滤；`limit` 最大 200（1000 返回 422）。该账号自 2026-09-28 起有 349 条，多为 API 密钥、Pod、endpoint、模板的创建和删除。创建密钥时会记录其范围和策略 |
+| `GET /v2/cost-centers` | `billing:read` | 成本中心（此处没有） |
+| `GET /v2/tags` | `tags:read` | 403 *Resource tagging is not enabled for this user*——按账号开放，与密钥无关 |
+| `GET /v2/catalog/gpus?include=AVAILABILITY&product=POD` | `catalog:read` | 46 种 GPU 的 community、secure、serverless 价格和库存（`NONE`、`LOW`、`MEDIUM`、`HIGH`）。不带 `product` 的 `include=AVAILABILITY` 返回 400：`POD` 与 `SERVERLESS` 的库存不同（`NONE` 分别为 31 和 22 种） |
+| `GET /v2/catalog/cpus` | `catalog:read` | CPU 规格（`cpu3c`、`cpu5g` 等）的 vCPU 范围、每 vCPU 内存和每 vCPU 价格 |
+| `GET /v2/catalog/datacenters` | `catalog:read` | 35 个数据中心的区域、合规认证、卷类型和全局网络；`include=GPU_AVAILABILITY` 会附上每种 GPU 的库存 |
+| `GET /v2/catalog/templates?source=` | `catalog:read` | 公共模板：`official`（14）、`verified`（3）、`community`（首页 100）；`…/{id}/readme` 以文本返回 README |
+
+库存只是快照，不是承诺；Pod 实验记录的是创建调用实际拿到的结果。
 
 ### 各路线所需工具
 
@@ -280,8 +368,10 @@ python setup/verify-auth.py     # 3. does the key actually work?
 <figure class="shot"><a href="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}"><img src="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}" alt="控制台首页的 Onboard your agent to Runpod 卡片" loading="lazy" width="1400" height="998"></a><figcaption>控制台首页，2026-11-07：Runpod 现在直接提供 agent 配置——把一行文字粘贴到编码 agent 中，就会安装其 skills 和 MCP 服务器。</figcaption></figure>
 
 ```bash
-claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/
+claude mcp add --transport http runpod -s user https://mcp.runpod.io/
 ```
+
+5.0.0 版（2026-11-23）共有 138 个工具，于 2026-11-24 从源码读取（[#106](https://github.com/litkhai/runpod-hols/issues/106)）：Pod（含 `exec-pod`、`stream-pod-logs` 和排队 Pod）；Serverless endpoint、任务、worker、构建、发布和指标；network volume 与 global volume；模板、镜像仓库和 secret；集群；组织；账号、计费、标签和审计日志；GPU/CPU 目录与 Hub；知识库（`search-docs`、`list-guides`、`read-guide`）；以及向 Runpod 发送观察的 `report_feedback`。所有列表现在每次返回一页（`limit` 最多 100，`cursor`），托管服务器也接受 GraphQL 权限为 None 的 scoped 密钥。地址从 `mcp.getrunpod.io` 改为 `mcp.runpod.io`，两者都可响应。
 
 <div class="warn" markdown="1">
 拥有读写 MCP 连接的智能体可以创建 Pod，而 Pod 从启动那一刻起就开始计费。除非任务确实需要创建资源，否则请使用只读密钥。
@@ -313,27 +403,37 @@ python setup/verify-auth.py     # 3. does the key actually work?
 **Runpod はキーを一度しか表示せず、保存もしません。** 作成時にパスワードマネージャーにコピーしてください。紛失すると復元できず、新しく作るしかありません。
 </div>
 
-キーには作成時に設定する権限レベルがあります。
+キーには API ごとのスコープがあり、作成時に設定し、あとからキーのメニューの **Edit** で変更できます。
 
-| レベル | 意味 |
+| API | 選択肢 |
 |---|---|
-| **All** | フルアクセス |
-| **Restricted** | API ごとに自分で設定するアクセス：`None`、`Restricted`、`Read/Write`、`Read Only` |
-| **Read Only** | 読み取りのみ、書き込み不可 |
+| REST（`api.runpod.io/v2`） | リソースごとの Read と Write——Pods、Serverless、Instant clusters、Volumes、Templates、Secrets、Authentication、Billing、Tags。Audit logs、Catalog、Account は Read のみ。*All resources* はすべての行にチェック |
+| GraphQL（`api.runpod.io/graphql`） | None、Read / Write、Read only |
+| Serverless endpoints（`api.runpod.ai`） | Read、Write。特定の endpoint に限定可能 |
 
-<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}" alt="Create API key ダイアログ：上の表の All、Restricted、Read only の 3 レベル" loading="lazy" width="1400" height="998"></a><figcaption>Create API key、2026-11-07。コンソールはキーを Settings ではなく <strong>Credentials → API Keys</strong> に置くようになりました。</figcaption></figure>
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-scopes.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-scopes.webp' | relative_url }}" alt="Create API key の REST API 部分：Pods、Serverless、Instant clusters、Volumes、Templates、Secrets に Write、Authentication はオフ、Audit logs は Read" loading="lazy" width="1400" height="729"></a><figcaption>Create API key、2026-11-24：下のラボ用キー。ラボが作るリソースに Write、Authentication はオフ。</figcaption></figure>
 
-| 作業 | レベル |
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-graphql-endpoints.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-graphql-endpoints.webp' | relative_url }}" alt="ダイアログの下半分：Billing、Catalog、Tags、Account は Read、GraphQL API は None のまま折りたたみ、api.runpod.ai は Read と Write" loading="lazy" width="1400" height="729"></a><figcaption>同じキーの残り：Billing、Catalog、Tags、Account は読み取りのみ、GraphQL は None、<code>api.runpod.ai</code> は Read と Write。</figcaption></figure>
+
+**スコープ外の呼び出しは拒否されます。** 2026-11-24、REST の Serverless Read だけを持つキーでは、`GET /v2/serverless` が 200、`GET /v2/pods` とカタログ・課金・監査ログ・アカウントの読み取り、`PATCH /v2/serverless/{id}`（`serverless:write`）、`POST /v2/tags` は、足りないスコープを示す 403——*this API key does not grant pods:read*——でした。GraphQL は 401、`api.runpod.ai/v2/<id>/health` は 403 でした。
+
+ラボごとに必要なスコープ：
+
+| 作業 | スコープ |
 |---|---|
-| `verify-auth.py`、GPU タイプとリソースの参照 | **Read Only** |
-| コンソールからのラボ 01 のデプロイ | キー不要 |
-| デプロイ済みエンドポイントの呼び出し | そのエンドポイントへのアクセス |
-| `terraform/01-endpoint` | 書き込みアクセス |
-| `terraform/02-pod` | **All** |
+| `verify-auth.py` | REST の Account、Catalog、Pods、Serverless——Read |
+| コンソールから Lab 01 をデプロイ | キー不要 |
+| デプロイした endpoint の呼び出し | Serverless endpoints の Read と Write、またはその endpoint のみ |
+| REST を使う Pod・Serverless・ストレージ・クラスターのラボ | REST の Pods、Serverless、Instant clusters、Volumes、Templates、Secrets に Write、Audit logs、Billing、Catalog、Tags、Account に Read、Serverless endpoints の Read と Write——上の画面のキー |
+| `terraform/` | 上のキー。2026-11-24 に確認 [#115](https://github.com/litkhai/runpod-hols/issues/115)。プロバイダーが一部の非推奨属性を GraphQL で読むと 401 になり、警告として表示されるだけです |
 
-ドキュメントにある `Restricted` モードは *Serverless エンドポイント単位*でアクセスをカスタマイズするもので、Pod や Network Volume の範囲を明確にはカバーしていません。そのため Pod ラボでは `All` が確実な選択です。
+ラボ用キーは GraphQL を意図的に None にしています。GraphQL の権限はリソースごとに分かれません。キーとは関係のない 403 が 2 つありました。`GET /v2/tags` は Tags Read を付けても *Resource tagging is not enabled for this user* で、`GET /v2/organization` には `membership:read` が必要ですが、この個人アカウントのダイアログにはその項目がありません。
 
-権限は Settings ページから**後で編集できます。** 2 つ目のキーを発行する必要はありません。Read Only で始め、Terraform ラボに進んだら引き上げてください。
+**exec とログには GraphQL が必要です。** `POST /v2/pods/{id}/exec` にはキーの GraphQL Read / Write が、Pod とワーカーのログには GraphQL Read only が必要です（[#112](https://github.com/litkhai/runpod-hols/issues/112)、[#104](https://github.com/litkhai/runpod-hols/issues/104)）。ラボ用キーは GraphQL を None のままにし、これらの呼び出しが必要なときだけ短期キーを作り、使い終わったら削除します。
+
+**キーに有効期限ができました。** 2026-11-24 ごろから、ダイアログに **Expires** の日付（既定は 30 日後）と *Never expire* のチェックボックスがあります。上のラボ用キーは 2026-12-24 に失効します。それ以前に作ったキーは *Never* と表示されます。
+
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}" alt="Expires が 2026 年 12 月 24 日で、Never expire のチェックボックスがある Create API key ダイアログ" loading="lazy" width="1400" height="648"></a><figcaption>Create API key、2026-11-24：<em>Never expire</em> にチェックしない限り、新しいキーは 30 日後に失効する。</figcaption></figure>
 
 <div class="warn" markdown="1">
 キーが公開の場所に出たら、その瞬間にローテーションしてください。コミット、スクリーンショット、チャットへの貼り付けも含みます。コミットを削除するだけでは不十分で、コンソールでキーを失効させる必要があります。
@@ -343,7 +443,25 @@ python setup/verify-auth.py     # 3. does the key actually work?
 
 ### `verify-auth.py` がすること
 
-読み取り専用の呼び出し 3 つ：`get_user`、`get_gpus`、`get_pods`。何も作成しないので、何も課金されません。最も重要なのは最後のもので、すでに稼働中の Pod を一覧表示します。前のセッションから残っていて、今も課金されている Pod はこれで見つけます。
+REST v2 の読み取り専用呼び出し：`/account`、`/catalog/gpus`、`/pods`、`/serverless`。何も作成しないので何も課金されず、SDK も不要です。最も重要なのは最後の 2 つで、稼働中の Pod とアクティブワーカーを持つ endpoint を一覧表示します。前のセッションから残っていて、今も課金されているものはこれで見つけます。キーのスコープ外の呼び出しは 403 の理由を表示し、スクリプトはそのまま続行します。
+
+### API でアカウントを確認する
+
+これらの REST v2 の読み取りで、コンソールや GraphQL なしに「何か課金されているか、アカウントに何ができるか」を確認できます。2026-11-24 にラボ用キーで読み取りました（[#105](https://github.com/litkhai/runpod-hols/issues/105)）。
+
+| 呼び出し | スコープ | 返すもの |
+|---|---|---|
+| `GET /v2/account/limits` | `account:read` | 1 時間あたり USD の `spendRate: {current, limit}` と `serverlessWorkers.limit`（ここでは支出上限 80、ワーカー上限 30）。`spendRate.current` は GraphQL `currentSpendPerHr` の REST 版で、0 なら何も課金されていない |
+| `GET /v2/billing/balance` | `billing:read` | `balanceAmount` と `billingMode`（ここでは `PREPAID`） |
+| `GET /v2/audit-logs` | `audit:read` | 誰がどのリソースに何をしたか、新しい順：`actorId`、`email`、`action`、`resourceType`、`resourceId`、`timestamp`、`value`。`actions`、`actorIds`、`startTime`、`endTime`、`search` で絞り込め、`limit` は最大 200（1000 は 422）。このアカウントは 2026-09-28 以降 349 件で、大半は API キー・Pod・endpoint・テンプレートの作成と削除。キーを作るとそのスコープとポリシーが記録される |
+| `GET /v2/cost-centers` | `billing:read` | コストセンター（ここではなし） |
+| `GET /v2/tags` | `tags:read` | 403 *Resource tagging is not enabled for this user*。キーではなくアカウント単位で制限されている |
+| `GET /v2/catalog/gpus?include=AVAILABILITY&product=POD` | `catalog:read` | GPU 46 種の community・secure・serverless の価格と在庫（`NONE`、`LOW`、`MEDIUM`、`HIGH`）。`product` なしの `include=AVAILABILITY` は 400。在庫は `POD` と `SERVERLESS` で異なる（`NONE` が 31 対 22） |
+| `GET /v2/catalog/cpus` | `catalog:read` | CPU フレーバー（`cpu3c`、`cpu5g` など）の vCPU の範囲、vCPU あたりの RAM と価格 |
+| `GET /v2/catalog/datacenters` | `catalog:read` | 35 か所のデータセンターのリージョン、コンプライアンス、ボリュームの種類、グローバルネットワーク。`include=GPU_AVAILABILITY` で GPU ごとの在庫を追加 |
+| `GET /v2/catalog/templates?source=` | `catalog:read` | 公開テンプレート：`official`（14）、`verified`（3）、`community`（最初のページで 100）。`…/{id}/readme` は README をテキストで返す |
+
+在庫はその時点のスナップショットで、保証ではありません。作成呼び出しが実際に何を得たかは Pod のラボに記録しています。
 
 ### トラック別のツール
 
@@ -375,8 +493,10 @@ python setup/verify-auth.py     # 3. does the key actually work?
 <figure class="shot"><a href="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}"><img src="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}" alt="コンソールのホームにある Onboard your agent to Runpod カード" loading="lazy" width="1400" height="998"></a><figcaption>コンソールのホーム、2026-11-07：Runpod がエージェントの設定を自ら案内しています。コーディングエージェントに 1 行貼り付けると、スキルと MCP サーバーが入ります。</figcaption></figure>
 
 ```bash
-claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/
+claude mcp add --transport http runpod -s user https://mcp.runpod.io/
 ```
+
+5.0.0（2026-11-23）のツールは 138 個で、2026-11-24 にソースから読み取りました（[#106](https://github.com/litkhai/runpod-hols/issues/106)）。`exec-pod`、`stream-pod-logs`、待機中の Pod を含む Pod、Serverless の endpoint・ジョブ・ワーカー・ビルド・リリース・指標、network volume とグローバルボリューム、テンプレート・レジストリ・シークレット、クラスター、組織、アカウント・課金・タグ・監査ログ、GPU/CPU カタログと Hub、ナレッジベース（`search-docs`、`list-guides`、`read-guide`）、そして観察を Runpod に送る `report_feedback` があります。すべての一覧は 1 ページずつ返すようになり（`limit` は最大 100、`cursor`）、ホスト版サーバーは GraphQL を None にした scoped キーも受け付けます。アドレスは `mcp.getrunpod.io` から `mcp.runpod.io` に変わり、どちらも応答します。
 
 <div class="warn" markdown="1">
 読み書き可能な MCP 接続を持つエージェントは Pod を作成でき、Pod は起動した瞬間から課金されます。タスクが本当に何かをプロビジョニングする必要がない限り、読み取り専用のキーを使ってください。

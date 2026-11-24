@@ -18,7 +18,7 @@
 | Network volume mounted at | `/workspace` | `/runpod-volume` |
 | Your code | `/workspace/app/handler.py` | `/runpod-volume/app/handler.py` — the same file |
 | Python packages | `pip install --target /workspace/app/deps` | `PYTHONPATH=/runpod-volume/app/deps` |
-| Start | You, over SSH | Template `dockerStartCmd: ["python3", "-u", "/runpod-volume/app/handler.py"]` |
+| Start | You, over SSH | Template `cmd: ["python3", "-u", "/runpod-volume/app/handler.py"]` (v1: `dockerStartCmd`) |
 
 The usual way to ship a worker is to bake the code into an image, as [Serverless Lab 01](../../serverless/01-hello-worker) does. Sharing a volume skips the build, so you can edit on the Pod and the next cold worker runs the edit. The price is paid at every cold start: the worker imports from a network filesystem.
 
@@ -63,7 +63,7 @@ INFO   | Job result: {'output': {'device': 'NVIDIA GeForce RTX 4090', 'loaded_fr
 
 ```bash
 python3 lab.py pod delete
-python3 lab.py endpoint create      # template with dockerStartCmd + PYTHONPATH, endpoint on the volume
+python3 lab.py endpoint create      # template with cmd + PYTHONPATH, endpoint on the volume
 python3 lab.py run                  # one job, polls until done
 ```
 
@@ -108,6 +108,18 @@ The endpoint and the volume deleted at once. The template did not: *"Template is
 
 The volume ties the endpoint to its data center, every cold start imports over the network, and whoever can write the volume changes what the endpoint runs.
 
+### Re-run on REST v2 (2026-11-24)
+
+The same steps through REST v2 ([#123](https://github.com/litkhai/runpod-hols/issues/123)), EU-RO-1:
+
+| Step | Result |
+|---|---|
+| Development Pod | RTX 4090 after five minutes of capacity retries; SSH after 99 s |
+| `pip install --target` onto the network volume | 219 s for 9,297 files (about ten minutes on 2026-11-05); 161 MB of data, `du` 2,035 MB |
+| Test on the Pod | `matmul_s` 0.063 for n = 2048 |
+| Endpoint with `mounts.network` | First job: `runsync` returned `IN_QUEUE` at 91 s, done with `delayTime` 92.8 s, `loaded_from` `/runpod-volume/app/handler.py`. Second job on the same worker: 25.6 s |
+| Clean up | Endpoint, template and volume deleted at once — no template hold this time |
+
 ### What was run
 
 2026-11-05, Secure Cloud EU-RO-1, RTX 4090, `runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404`, runpod SDK 1.12.0 on the volume, REST v1.
@@ -140,7 +152,7 @@ Not run: editing the handler on the Pod while the endpoint is live, a volume sha
 | 네트워크 볼륨 마운트 위치 | `/workspace` | `/runpod-volume` |
 | 코드 | `/workspace/app/handler.py` | `/runpod-volume/app/handler.py` — 같은 파일 |
 | Python 패키지 | `pip install --target /workspace/app/deps` | `PYTHONPATH=/runpod-volume/app/deps` |
-| 시작 | SSH 로 직접 | 템플릿 `dockerStartCmd: ["python3", "-u", "/runpod-volume/app/handler.py"]` |
+| 시작 | SSH 로 직접 | 템플릿 `cmd: ["python3", "-u", "/runpod-volume/app/handler.py"]` (v1: `dockerStartCmd`) |
 
 워커를 배포하는 일반적인 방법은 [Serverless Lab 01](../../serverless/01-hello-worker) 처럼 코드를 이미지에 굽는 것입니다. 볼륨을 공유하면 빌드를 건너뛰므로, Pod 에서 고친 것을 다음 콜드 워커가 바로 실행합니다. 대가는 콜드 스타트마다 치릅니다. 워커가 네트워크 파일시스템에서 import 합니다.
 
@@ -185,7 +197,7 @@ INFO   | Job result: {'output': {'device': 'NVIDIA GeForce RTX 4090', 'loaded_fr
 
 ```bash
 python3 lab.py pod delete
-python3 lab.py endpoint create      # dockerStartCmd + PYTHONPATH 템플릿, 볼륨을 붙인 엔드포인트
+python3 lab.py endpoint create      # cmd + PYTHONPATH 템플릿, 볼륨을 붙인 엔드포인트
 python3 lab.py run                  # 작업 하나, 끝날 때까지 폴링
 ```
 
@@ -229,6 +241,18 @@ python3 lab.py status
 | 데이터센터 하나로 충분 | 어느 데이터센터의 워커든 |
 
 볼륨은 엔드포인트를 그 데이터센터에 묶고, 콜드 스타트마다 네트워크 너머로 import 하며, 볼륨에 쓸 수 있는 사람이 엔드포인트가 실행할 코드를 바꿀 수 있습니다.
+
+### REST v2 로 재실행 (2026-11-24)
+
+같은 단계를 REST v2 로, EU-RO-1 에서 실행했습니다 ([#123](https://github.com/litkhai/runpod-hols/issues/123)).
+
+| 단계 | 결과 |
+|---|---|
+| 개발용 Pod | 5분 동안 재고 재시도 후 RTX 4090. 99초 뒤 SSH |
+| 네트워크 볼륨에 `pip install --target` | 파일 9,297개에 219초 (2026-11-05 에는 약 10분). 데이터 161 MB, `du` 2,035 MB |
+| Pod 에서 테스트 | n = 2048 에 `matmul_s` 0.063 |
+| `mounts.network` 를 쓴 엔드포인트 | 첫 작업: `runsync` 가 91초에 `IN_QUEUE`, `delayTime` 92.8초로 완료, `loaded_from` `/runpod-volume/app/handler.py`. 같은 워커의 두 번째 작업: 25.6초 |
+| 정리 | 엔드포인트, 템플릿, 볼륨이 바로 삭제됨 — 이번에는 템플릿 대기 없음 |
 
 ### 실행 내역
 

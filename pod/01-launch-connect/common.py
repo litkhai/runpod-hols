@@ -8,6 +8,7 @@ these run in the same virtualenv as the Serverless labs.
 Serverless 실습과 같은 가상환경에서 실행된다.
 """
 
+import datetime as dt
 import os
 import pathlib
 import sys
@@ -58,7 +59,7 @@ def client():
             "The runpod SDK is not installed.\n"
             "runpod SDK 가 설치되지 않았습니다.\n"
             "  uv venv --python 3.11 .venv && "
-            "uv pip install --python .venv/bin/python runpod"
+            "uv pip install --python .venv/bin/python -r requirements.txt"
         )
     runpod.api_key = key
     return runpod
@@ -81,9 +82,32 @@ def confirm(question: str) -> bool:
     return input("  type 'yes' to continue / 계속하려면 'yes' 입력: ").strip() == "yes"
 
 
+# runpod 2.x returns REST v2 Pods: `status` (PROVISIONING, STARTING, RUNNING, EXITED,
+# ERROR), `cost`, `gpu`/`cpu`, `mounts`, `ssh`, `startedAt` — not 1.x's desiredStatus,
+# costPerHr, volumeInGb or uptimeSeconds (read in runpod 2.4.0, api/ctl_commands.py).
+# runpod 2.x 는 REST v2 Pod 객체를 돌려준다. 1.x 의 desiredStatus·costPerHr·volumeInGb·
+# uptimeSeconds 가 아니라 status·cost·gpu/cpu·mounts·ssh·startedAt 이다.
+BILLING = ("PROVISIONING", "STARTING", "RUNNING")
+
+
 def running_pods(runpod) -> list:
-    """Pods currently costing money. / 지금 비용이 발생 중인 Pod."""
-    return [p for p in runpod.get_pods() if p.get("desiredStatus") == "RUNNING"]
+    """Pods currently costing compute. / 지금 컴퓨트 비용이 발생 중인 Pod."""
+    return [p for p in runpod.get_pods() if p.get("status") in BILLING]
+
+
+def uptime_s(pod: dict) -> int:
+    """Seconds since start, from startedAt.
+
+    Not runtime.uptime: GET /v2/pods leaves runtime null in lists, and on 2026-11-24 a
+    single-Pod GET kept reporting runtime.uptime 4 for minutes (#126).
+    runtime.uptime 을 쓰지 않는다. 목록에서는 null 이고, 2026-11-24 단건 조회에서는 몇 분
+    동안 4 에 머물렀다.
+    """
+    started = pod.get("startedAt")
+    if not started or pod.get("status") != "RUNNING":
+        return int((pod.get("runtime") or {}).get("uptime") or 0)
+    t = dt.datetime.fromisoformat(started.replace("Z", "+00:00"))
+    return max(0, int((dt.datetime.now(dt.timezone.utc) - t).total_seconds()))
 
 
 def describe(pod: dict) -> str:
@@ -91,36 +115,31 @@ def describe(pod: dict) -> str:
 
     Pod 하나를 한 줄로. 중요한 수치만.
     """
-    cost = pod.get("costPerHr") or 0
-    up = pod.get("uptimeSeconds") or 0
-    gpus = pod.get("gpuCount") or 0
-    # A CPU Pod reports gpuDisplayName "unknown" with gpuCount 0.
-    # CPU Pod 는 gpuDisplayName 을 "unknown", gpuCount 를 0 으로 돌려준다.
-    gpu = f"{(pod.get('machine') or {}).get('gpuDisplayName')} x{gpus}" if gpus else "CPU only"
+    cost = pod.get("cost") or 0
+    up = uptime_s(pod)
+    g, c = pod.get("gpu") or {}, pod.get("cpu") or {}
+    kind = f"{g.get('id')} x{g.get('count')}" if g else f"CPU {c.get('id')} {c.get('vcpuCount')} vCPU"
     if up:
         spent = float(cost) * (up / 3600)
         uptime = f"up {up // 60}m {up % 60}s   ≈ ${spent:.4f} so far / 현재까지"
     else:
-        # SDK 1.12 reads the top-level uptimeSeconds, which stayed 0 on a Pod
-        # that had been running (and reachable over SSH) for minutes.
-        # SDK 1.12 는 최상위 uptimeSeconds 를 읽는데, 몇 분째 실행 중이고 SSH 로
-        # 접속되는 Pod 에서도 0 이었다.
-        uptime = "uptime not reported — check the console / 가동 시간 미보고, 콘솔 확인"
+        uptime = "not running / 실행 중 아님"
+    m = pod.get("mounts") or {}
+    vol = m.get("persistent") or (m.get("network") or [None])[0]
+    volume = (f"{vol.get('size', 'network')}{'GB' if vol.get('size') else ' volume ' + vol.get('volumeId', '')}"
+              f" at {vol.get('path')}") if vol else "none — /workspace is on the container disk / 없음"
     return (
         f"{pod.get('name')}  ({pod.get('id')})\n"
-        f"    status   {pod.get('desiredStatus')}   {gpu}\n"
+        f"    status   {pod.get('status')}   {kind}   {pod.get('dataCenterId') or ''}\n"
         f"    cost     ${cost}/hr   {uptime}\n"
-        f"    volume   {pod.get('volumeInGb')}GB at {pod.get('volumeMountPath')}"
+        f"    volume   {volume}"
     )
 
 
 def ssh_target(pod: dict):
-    """Extract a public SSH endpoint from the Pod's runtime ports, if any.
+    """The public SSH endpoint (ssh.direct), once 22/tcp is published and the Pod runs.
 
-    Pod 의 런타임 포트에서 공개 SSH 접속 지점을 찾는다. 없으면 None.
+    공개 SSH 접속 지점 (ssh.direct). 22/tcp 가 열리고 Pod 가 실행 중일 때만 있다.
     """
-    runtime = pod.get("runtime") or {}
-    for port in runtime.get("ports") or []:
-        if port.get("privatePort") == 22 and port.get("isIpPublic"):
-            return port.get("ip"), port.get("publicPort")
-    return None
+    d = (pod.get("ssh") or {}).get("direct")
+    return (d["host"], d["port"]) if d else None

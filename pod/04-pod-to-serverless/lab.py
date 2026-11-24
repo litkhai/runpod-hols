@@ -25,15 +25,20 @@ from common import api_key, load_state, rest, save_state
 
 DC = "EU-RO-1"
 GPU = "NVIDIA GeForce RTX 4090"
+# Serverless selects GPU pools, not types; RTX 4090 is in this pool (GET /v2/catalog/gpus, `pool`).
+# Serverless 는 GPU 종류가 아니라 풀을 고른다. RTX 4090 이 속한 풀.
+GPU_POOL = "ADA_24"
 # Has CUDA, torch and python3.12; the Pod and the workers run the same image.
 # CUDA, torch, python3.12 포함. Pod 과 워커가 같은 이미지를 쓴다.
 IMAGE = "runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404"
 
 
 def pod_line(p: dict) -> str:
-    ip, ports = p.get("publicIp"), p.get("portMappings") or {}
-    ssh = f"ssh root@{ip} -p {ports['22']} -i ~/.ssh/id_ed25519" if ip and "22" in ports else "not ready yet"
-    return f"{p['id']}  {p.get('desiredStatus')}  ${p.get('costPerHr')}/hr\n    ssh  {ssh}"
+    # v2 returns a ready-made command; `direct` is null until 22/tcp is published and the Pod runs.
+    # v2 는 실행 가능한 명령을 돌려준다. 22/tcp 가 열리고 Pod 가 실행 중이어야 `direct` 가 채워진다.
+    d = (p.get("ssh") or {}).get("direct")
+    ssh = d["command"] + " -i ~/.ssh/id_ed25519" if d else "not ready yet"
+    return f"{p['id']}  {p.get('status')}  ${p.get('cost')}/hr\n    ssh  {ssh}"
 
 
 def main() -> int:
@@ -45,19 +50,19 @@ def main() -> int:
     st = load_state()
 
     if a.what == "status":
-        print("pods     ", [(p["id"], p.get("desiredStatus")) for p in rest("GET", "/pods")])
-        print("endpoints", [(e["id"], e.get("name")) for e in rest("GET", "/endpoints")])
-        print("volumes  ", [(v["id"], v.get("name")) for v in rest("GET", "/networkvolumes")])
-        print("templates", [(t["id"], t["name"]) for t in rest("GET", "/templates") if t.get("name", "").startswith("hol-pod-04")])
+        print("pods     ", [(p["id"], p.get("status")) for p in rest("GET", "/pods")["pods"]])
+        print("endpoints", [(e["id"], e.get("name")) for e in rest("GET", "/serverless")["endpoints"]])
+        print("volumes  ", [(v["id"], v.get("name")) for v in rest("GET", "/network-volumes")["networkVolumes"]])
+        print("templates", [(t["id"], t["name"]) for t in rest("GET", "/templates")["templates"] if t.get("name", "").startswith("hol-pod-04")])
         return 0
 
     if a.what == "volume":
         if a.action == "create":
-            v = rest("POST", "/networkvolumes", {"name": "hol-pod-04", "size": 10, "dataCenterId": DC})
+            v = rest("POST", "/network-volumes", {"name": "hol-pod-04", "size": 10, "dataCenter": DC})
             st["volume_id"] = v["id"]
             print(json.dumps(v))
         elif a.action == "delete":
-            rest("DELETE", f"/networkvolumes/{st.pop('volume_id')}")
+            rest("DELETE", f"/network-volumes/{st.pop('volume_id')}")
             print("deleted volume")
         save_state(st)
         return 0
@@ -65,10 +70,10 @@ def main() -> int:
     if a.what == "pod":
         if a.action == "create":
             p = rest("POST", "/pods", {
-                "name": "hol-pod-04-dev", "imageName": IMAGE, "cloudType": "SECURE",
-                "computeType": "GPU", "gpuTypeIds": [GPU], "gpuCount": 1,
-                "dataCenterIds": [DC], "networkVolumeId": st["volume_id"],
-                "volumeMountPath": "/workspace", "containerDiskInGb": 20, "ports": ["22/tcp"],
+                "name": "hol-pod-04-dev", "image": IMAGE, "cloud": "SECURE",
+                "gpu": {"id": GPU, "count": 1}, "dataCenterIds": [DC],
+                "mounts": {"network": [{"volumeId": st["volume_id"], "path": "/workspace"}]},
+                "disk": 20, "ports": ["22/tcp"], "startSsh": True,
             })
             st["pod_id"] = p["id"]
             print("created " + pod_line(p))
@@ -83,26 +88,28 @@ def main() -> int:
     if a.what == "endpoint":
         if a.action == "create":
             t = rest("POST", "/templates", {
-                "name": "hol-pod-04-worker", "imageName": IMAGE, "isServerless": True,
-                "containerDiskInGb": 20, "volumeInGb": 0,
+                "name": "hol-pod-04-worker", "image": IMAGE, "serverless": True, "disk": 20,
                 # The worker runs the file the Pod wrote. Serverless mounts the
                 # network volume at /runpod-volume, not /workspace.
                 # 워커는 Pod 이 쓴 파일을 실행한다. Serverless 는 네트워크 볼륨을
                 # /workspace 가 아니라 /runpod-volume 에 마운트한다.
-                "dockerStartCmd": ["python3", "-u", "/runpod-volume/app/handler.py"],
+                "cmd": ["python3", "-u", "/runpod-volume/app/handler.py"],
                 "env": {"PYTHONPATH": "/runpod-volume/app/deps"},
             })
             st["template_id"] = t["id"]
             save_state(st)
-            e = rest("POST", "/endpoints", {
-                "name": "hol-pod-04", "templateId": t["id"], "computeType": "GPU",
-                "gpuTypeIds": [GPU], "gpuCount": 1, "workersMin": 0, "workersMax": 1,
-                "idleTimeout": 5, "networkVolumeId": st["volume_id"],
+            e = rest("POST", "/serverless", {
+                "name": "hol-pod-04", "templateId": t["id"], "type": "QUEUE",
+                "scaling": {"type": "QUEUE_DELAY", "queueDelay": 4},
+                "gpu": {"pools": [GPU_POOL], "count": 1},
+                "workers": {"min": 0, "max": 1, "idleTimeout": 5},
+                "mounts": {"network": [{"volumeId": st["volume_id"]}]},
+                # flashboot is left out, as in the v1 run; v2's default is OFF (spec, 2026-11-24).
             })
             st["endpoint_id"] = e["id"]
             print(f"template {t['id']}, endpoint {e['id']}")
         elif a.action == "delete":
-            rest("DELETE", f"/endpoints/{st.pop('endpoint_id')}")
+            rest("DELETE", f"/serverless/{st.pop('endpoint_id')}")
             print("deleted endpoint")
             try:
                 rest("DELETE", f"/templates/{st['template_id']}")

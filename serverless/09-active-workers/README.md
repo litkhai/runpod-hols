@@ -14,7 +14,7 @@
 
 | File | Role |
 |---|---|
-| `active.py` | At `--start` PATCHes `workersMin` 1, sends a 1 s job with `/runsync` every `--every` minutes, PATCHes `workersMin` 0 at the end, then sends one more job two minutes later |
+| `active.py` | At `--start` PATCHes `workers.min` 1 (REST v2; the runs below used v1 `workersMin`), sends a 1 s job with `/runsync` every `--every` minutes, PATCHes it back to 0 at the end, then sends one more job two minutes later |
 | `results/active.json` | Each PATCH and each job: `delayTime`, `executionTime`, `workerId`, the worker's uptime |
 | `results/gpu_flex.json`, `results/gpu_active.json` | The GPU run below: `--flex 6` reference jobs, then the active hour |
 
@@ -24,7 +24,7 @@ Worker: the probe from [`../06-autoscaling`](../06-autoscaling), on that lab's e
 python3 active.py <endpoint_id> --start 17:00 --minutes 60 --every 10 --out results/active.json
 # about an hour after the end
 curl -s -H "Authorization: Bearer $RUNPOD_API_KEY" \
-  "https://rest.runpod.io/v1/billing/endpoints?endpointId=<endpoint_id>&bucketSize=hour&startTime=2026-11-07T00:00:00Z"
+  "https://api.runpod.io/v2/billing/serverless?serverlessId=<endpoint_id>&bucketSize=hour&startTime=2026-11-07T00:00:00Z"
 ```
 
 Start on the hour: billing comes only in hourly buckets, so the active hour should share its bucket with nothing else.
@@ -92,7 +92,7 @@ python3 active.py 3xiuyqtrh6r0zl --start 21:00 --minutes 55 --every 10 --input "
 
 | 파일 | 역할 |
 |---|---|
-| `active.py` | `--start` 에 `workersMin` 1 로 PATCH, `--every` 분마다 1초짜리 작업을 `/runsync` 로 보내고, 끝나면 `workersMin` 0 으로 PATCH 한 뒤 2분 뒤에 작업을 한 번 더 보낸다 |
+| `active.py` | `--start` 에 `workers.min` 1 로 PATCH (REST v2. 아래 실행은 v1 `workersMin` 사용), `--every` 분마다 1초짜리 작업을 `/runsync` 로 보내고, 끝나면 0 으로 되돌린 뒤 2분 뒤에 작업을 한 번 더 보낸다 |
 | `results/active.json` | PATCH 와 작업마다 `delayTime`, `executionTime`, `workerId`, 워커 가동 시간 |
 | `results/gpu_flex.json`, `results/gpu_active.json` | 아래 GPU 실행: `--flex 6` 기준 작업, 이어서 활성 시간대 |
 
@@ -102,7 +102,7 @@ python3 active.py 3xiuyqtrh6r0zl --start 21:00 --minutes 55 --every 10 --input "
 python3 active.py <엔드포인트_id> --start 17:00 --minutes 60 --every 10 --out results/active.json
 # 끝나고 약 1시간 뒤
 curl -s -H "Authorization: Bearer $RUNPOD_API_KEY" \
-  "https://rest.runpod.io/v1/billing/endpoints?endpointId=<엔드포인트_id>&bucketSize=hour&startTime=2026-11-07T00:00:00Z"
+  "https://api.runpod.io/v2/billing/serverless?serverlessId=<엔드포인트_id>&bucketSize=hour&startTime=2026-11-07T00:00:00Z"
 ```
 
 정각에 시작한다. 청구는 시간 단위로만 나오므로 활성 시간대가 다른 사용과 한 칸에 섞이지 않아야 한다.

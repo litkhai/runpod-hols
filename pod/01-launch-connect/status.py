@@ -11,7 +11,7 @@ Read-only. Safe to run as often as you like.
 
 import sys
 
-from common import client, describe, ssh_target
+from common import BILLING, client, describe, ssh_target
 
 
 def main() -> int:
@@ -23,12 +23,15 @@ def main() -> int:
         print("Pod 가 없습니다. 과금되는 것이 없습니다.")
         return 0
 
-    running = [p for p in pods if p.get("desiredStatus") == "RUNNING"]
-    stopped = [p for p in pods if p.get("desiredStatus") != "RUNNING"]
+    running = [p for p in pods if p.get("status") in BILLING]
+    stopped = [p for p in pods if p.get("status") not in BILLING]
 
     if running:
         print(f"RUNNING — billing now / 과금 중  ({len(running)})\n")
         for p in running:
+            # The list leaves runtime and ssh empty; one GET per Pod fills them.
+            # 목록은 runtime·ssh 가 비어 있으므로 Pod 마다 한 번 더 조회한다.
+            p = runpod.get_pod(p["id"]) or p
             print("  " + describe(p).replace("\n", "\n  "))
             target = ssh_target(p)
             if target:
@@ -47,7 +50,7 @@ def main() -> int:
         for p in stopped:
             print("  " + describe(p).replace("\n", "\n  ") + "\n")
 
-    total = sum(float(p.get("costPerHr") or 0) for p in running)
+    total = sum(float(p.get("cost") or 0) for p in running)
     if total:
         print(f"Combined rate / 합계 요율: ${total:.4f}/hr  "
               f"= ${total * 24:.2f}/day if left running / 그대로 두면 하루")

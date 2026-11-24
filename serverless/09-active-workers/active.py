@@ -5,10 +5,11 @@
 
     python3 active.py <endpoint_id> --start 17:00 --minutes 60 --every 10 --out results/active.json
 
-At --start: PATCH workersMin 1. Every --every minutes: one 1 s job with /runsync,
+At --start: PATCH workers.min 1. Every --every minutes: one 1 s job with /runsync,
 recording delayTime, executionTime, workerId and the worker's uptime. After
---minutes: PATCH workersMin 0. Then compare /billing/endpoints for that hour with
-an hour of flex-only use. Uses the probe worker from ../06-autoscaling.
+--minutes: PATCH workers.min 0. Then compare GET /v2/billing/serverless?serverlessId=…
+for that hour with an hour of flex-only use. Uses the probe worker from ../06-autoscaling.
+Control-plane calls use REST v2, api.runpod.io/v2 (v1 retired 2026-11-15, #101).
 """
 from __future__ import annotations
 
@@ -24,14 +25,22 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "06-autosca
 from burst import call, key  # noqa: E402
 
 
-def patch(endpoint: str, body: dict) -> dict:
-    req = urllib.request.Request(f"https://rest.runpod.io/v1/endpoints/{endpoint}", data=json.dumps(body).encode(),
-                                 method="PATCH", headers={"Authorization": "Bearer " + key(),
-                                                          "Content-Type": "application/json",
-                                                          "User-Agent": "runpod-hols-serverless-09/1.0"})
+def v2(method: str, endpoint: str, body: dict | None = None) -> dict:
+    req = urllib.request.Request(f"https://api.runpod.io/v2/serverless/{endpoint}",
+                                 data=json.dumps(body).encode() if body is not None else None,
+                                 method=method, headers={"Authorization": "Bearer " + key(),
+                                                         "Content-Type": "application/json",
+                                                         "User-Agent": "runpod-hols-serverless-09/1.0"})
     with urllib.request.urlopen(req, timeout=60) as r:
-        d = json.loads(r.read())
-    return {k: d.get(k) for k in ("workersMin", "workersMax", "idleTimeout")}
+        return json.loads(r.read())
+
+
+def set_min_workers(endpoint: str, n: int) -> dict:
+    # Resend the current workers object with only `min` changed, so max and idleTimeout cannot be reset.
+    # 현재 workers 를 읽어 min 만 바꿔 보낸다. max 와 idleTimeout 이 초기화되지 않도록.
+    w = {k: v for k, v in (v2("GET", endpoint).get("workers") or {}).items() if k in ("min", "max", "idleTimeout")}
+    w["min"] = n
+    return v2("PATCH", endpoint, {"workers": w}).get("workers") or {}
 
 
 def probe(endpoint: str, label: str, inp: dict | None = None) -> dict:
@@ -73,7 +82,7 @@ def main() -> None:
             if n < a.flex - 1:
                 time.sleep(a.every * 60)
         return
-    save({"at": dt.datetime.now().isoformat(timespec="seconds"), "patch": patch(a.endpoint, {"workersMin": 1})})
+    save({"at": dt.datetime.now().isoformat(timespec="seconds"), "patch": set_min_workers(a.endpoint, 1)})
     end = start + dt.timedelta(minutes=a.minutes)
     n = 0
     while dt.datetime.now() < end - dt.timedelta(seconds=30):
@@ -84,7 +93,7 @@ def main() -> None:
         save(probe(a.endpoint, f"active_{n}", inp))
         n += 1
     time.sleep(max(0, (end - dt.datetime.now()).total_seconds()))
-    save({"at": dt.datetime.now().isoformat(timespec="seconds"), "patch": patch(a.endpoint, {"workersMin": 0})})
+    save({"at": dt.datetime.now().isoformat(timespec="seconds"), "patch": set_min_workers(a.endpoint, 0)})
     time.sleep(120)
     save(probe(a.endpoint, "after_flex", inp))
 

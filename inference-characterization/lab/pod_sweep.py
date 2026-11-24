@@ -19,7 +19,9 @@ REPO = os.path.dirname(os.path.dirname(LAB))
 RESULTS = os.path.join(LAB, "results")
 LEDGER = os.path.join(RESULTS, "ledger.json")
 PRICES = os.path.join(RESULTS, "prices.json")
-API = "https://rest.runpod.io/v1"
+# REST v2 (api.runpod.io/v2/openapi.json, read 2026-11-24); v1 was retired 2026-11-15 (#101).
+API = "https://api.runpod.io/v2"
+NO_CAPACITY = ("no instances currently available", "no longer any instances available")
 # The PyTorch template image already used by pod/01-launch-connect. vLLM brings its own torch.
 IMAGE = "runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404"
 # vLLM 0.31.0 pins torch 2.13.0 with CUDA 13 dependencies, so the host driver must support CUDA 13.
@@ -115,12 +117,12 @@ def main():
         ap.error("--label and --gpu are required")
 
     key = os.path.expanduser(os.environ.get("SSH_KEY", "~/.ssh/id_ed25519"))
-    body = {"name": "ic-" + a.label.lower().replace("_", "-"), "imageName": IMAGE, "computeType": "GPU",
-            "gpuTypeIds": [a.gpu], "gpuCount": 1, "cloudType": a.cloud, "allowedCudaVersions": CUDA,
-            "containerDiskInGb": 80, "volumeInGb": 0, "ports": ["22/tcp"],
+    body = {"name": "ic-" + a.label.lower().replace("_", "-"), "image": IMAGE,
+            "gpu": {"id": a.gpu, "count": 1, "allowedCudaVersions": CUDA}, "cloud": a.cloud,
+            "disk": 80, "ports": ["22/tcp"],
             "env": {"PUBLIC_KEY": open(key + ".pub").read().strip()}}
-    if a.cloud == "COMMUNITY":
-        body["supportPublicIp"] = True
+    # v1's supportPublicIp has no v2 field; a Community Pod without a public IP gets no ssh.direct.
+    # v1 의 supportPublicIp 는 v2 에 없다. 공인 IP 가 없는 Community Pod 는 ssh.direct 가 비어 있다.
     if a.dc:
         body["dataCenterIds"] = [a.dc]
     print(json.dumps({k: v for k, v in body.items() if k != "env"}, indent=2))
@@ -141,16 +143,19 @@ def main():
             except RuntimeError as e:
                 # A failed create bills nothing; stock flips between Low and none from minute to minute.
                 # "unexpected end of JSON input" is a transient 500 from the create call; retry it too.
-                transient = "no instances currently available" in str(e) or "unexpected end of JSON" in str(e)
+                # REST v1 said "no instances currently available"; REST v2 says "There are no
+                # longer any instances available with the requested specifications" (2026-11-24, #123).
+                no_cap = any(m in str(e) for m in NO_CAPACITY)
+                transient = no_cap or "unexpected end of JSON" in str(e)
                 if not transient or time.time() > deadline:
-                    status = "no-capacity" if "no instances" in str(e) else "create-failed"
+                    status = "no-capacity" if no_cap else "create-failed"
                     raise
-                log("no capacity for %s (%s), retrying in 60s" % (a.gpu, a.cloud) if "no instances" in str(e)
+                log("no capacity for %s (%s), retrying in 60s" % (a.gpu, a.cloud) if no_cap
                     else "create returned %s, retrying in 60s" % str(e)[-80:])
                 time.sleep(60)
         pod_id, started = pod["id"], time.time()
-        rate = pod.get("adjustedCostPerHr") or pod.get("costPerHr")
-        log("created %s at %s USD/h on machine %s" % (pod_id, rate, (pod.get("machine") or {}).get("dataCenterId", "?")))
+        rate = pod.get("cost")
+        log("created %s at %s USD/h in %s" % (pod_id, rate, pod.get("dataCenterId") or "?"))
         if rate and spent() + rate * a.max_hours > budget:
             status = "refused-budget"
             raise RuntimeError("ledger %.2f + %.2f/h x %.1fh exceeds budget %.2f" % (spent(), rate, a.max_hours, budget))
@@ -159,7 +164,8 @@ def main():
         ip = port = None
         while time.time() - started < 900:
             p = api("GET", "/pods/" + pod_id)
-            ip, port = p.get("publicIp"), (p.get("portMappings") or {}).get("22")
+            d = (p.get("ssh") or {}).get("direct") or {}
+            ip, port = d.get("host"), d.get("port")
             if ip and port:
                 break
             time.sleep(10)

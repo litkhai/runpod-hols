@@ -25,10 +25,10 @@ Endpoint `06-autoscaling`, deployed from this folder through the console's GitHu
 
 ```bash
 # scaler: PATCH the endpoint
-curl -X PATCH https://rest.runpod.io/v1/endpoints/<id> -H "Authorization: Bearer $RUNPOD_API_KEY" \
-     -H 'Content-Type: application/json' -d '{"scalerType":"REQUEST_COUNT","scalerValue":25}'
+curl -X PATCH https://api.runpod.io/v2/serverless/<id> -H "Authorization: Bearer $RUNPOD_API_KEY" \
+     -H 'Content-Type: application/json' -d '{"scaling":{"type":"REQUEST_COUNT","requestCount":25}}'
 # concurrency: PATCH the template env; the workers are replaced with new ones
-curl -X PATCH https://rest.runpod.io/v1/templates/<template_id> ... -d '{"env":{"CONCURRENCY":"4"}}'
+curl -X PATCH https://api.runpod.io/v2/templates/<template_id> ... -d '{"env":{"CONCURRENCY":"4"}}'
 python3 burst.py <id> --jobs 50 --seconds 2 --label request_count25_c4 --out results/request_count25_c4.json
 ```
 
@@ -54,7 +54,7 @@ Things noticed on the way:
 
 - After the build, `/health` showed **five idle workers** — as many as the max — and kept showing `idle: 5` for ~20 s after jobs started running. Treat `/health` as late by tens of seconds.
 - Changing the template env replaced all workers (new worker ids) without a new build.
-- `GET /v1/templates/<id>` returned 404 for this GitHub-built template, while `PATCH` on the same id worked.
+- `GET /v1/templates/<id>` returned 404 for this GitHub-built template, while `PATCH` on the same id worked (REST v1; the curl lines above are the REST v2 form, not re-run — [#101](https://github.com/litkhai/runpod-hols/issues/101)).
 
 ---
 
@@ -79,10 +79,10 @@ Things noticed on the way:
 
 ```bash
 # 스케일러: 엔드포인트를 PATCH
-curl -X PATCH https://rest.runpod.io/v1/endpoints/<id> -H "Authorization: Bearer $RUNPOD_API_KEY" \
-     -H 'Content-Type: application/json' -d '{"scalerType":"REQUEST_COUNT","scalerValue":25}'
+curl -X PATCH https://api.runpod.io/v2/serverless/<id> -H "Authorization: Bearer $RUNPOD_API_KEY" \
+     -H 'Content-Type: application/json' -d '{"scaling":{"type":"REQUEST_COUNT","requestCount":25}}'
 # 동시성: 템플릿 env 를 PATCH; 워커가 새 워커로 교체된다
-curl -X PATCH https://rest.runpod.io/v1/templates/<template_id> ... -d '{"env":{"CONCURRENCY":"4"}}'
+curl -X PATCH https://api.runpod.io/v2/templates/<template_id> ... -d '{"env":{"CONCURRENCY":"4"}}'
 python3 burst.py <id> --jobs 50 --seconds 2 --label request_count25_c4 --out results/request_count25_c4.json
 ```
 
@@ -108,4 +108,4 @@ python3 burst.py <id> --jobs 50 --seconds 2 --label request_count25_c4 --out res
 
 - 빌드 뒤 `/health` 는 **idle 워커 5개** — 최대치만큼 — 를 보였고, 작업이 돌기 시작한 뒤에도 약 20초 동안 `idle: 5` 를 유지했다. `/health` 는 수십 초 늦는다고 보자.
 - 템플릿 env 를 바꾸자 새 빌드 없이 워커가 모두 교체됐다 (새 워커 id).
-- 이 GitHub 빌드 템플릿에 `GET /v1/templates/<id>` 는 404 를 돌려줬지만, 같은 id 로 `PATCH` 는 됐다.
+- 이 GitHub 빌드 템플릿에 `GET /v1/templates/<id>` 는 404 를 돌려줬지만, 같은 id 로 `PATCH` 는 됐다 (REST v1. 위 curl 은 REST v2 형태이며 다시 실행하지 않음 — [#101](https://github.com/litkhai/runpod-hols/issues/101)).

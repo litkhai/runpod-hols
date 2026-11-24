@@ -73,9 +73,13 @@ Stage 1 cost about USD 0.40 (7 and 3 minutes of Pod time).
 
 The link is 1.8× the A100 pair's and one H100 is 2.4× one A100 here, but efficiency fell to 0.82: with 4.7 ms of compute against about 1 ms of all-reduce, the faster the GPU, the more the link decides. This is the in-node ceiling to compare a cluster against — stage 2's socket run moved 0.32 GB/s between nodes. About USD 3 for 11.5 minutes.
 
+**Re-run on REST v2, 2026-11-24** ([#123](https://github.com/litkhai/runpod-hols/issues/123)): 2× RTX 4090 on another host showed `NODE` instead of `SYS`, yet all-reduce fell to 3.58 GB/s at 1 GiB and two GPUs trained at 4,281 samples/s against 38,418 on one — scaling 0.06. The pair's result depends on the host, which the API does not let you pick.
+
 ### Stage 2 — Instant Cluster
 
-Clusters are created in the console (**Clusters → Create cluster**) or over GraphQL with `createCluster` / `deleteCluster`; the REST API has no cluster endpoints. The form prices the whole cluster per hour and marks each type Available or Unavailable. On 2026-11-07 every type was **Unavailable**, while single A100 SXM and H100 SXM Pods could be deployed at the same time. The form reads this from GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }`, which returns `null` for Unavailable. That evening A100 SXM showed Available from about 19:29 to 19:36 KST and was gone by 19:46, so this lab waits for stock with a script that creates the cluster through GraphQL, runs both nodes and deletes it after at most 75 minutes ([`cluster.py`](https://github.com/litkhai/runpod-hols/blob/main/cluster/01-pytorch-distributed/cluster.py)).
+Clusters are created in the console (**Clusters → Create cluster**) or over REST v2 with `POST /v2/clusters` / `DELETE /v2/clusters/{id}` (spec read 2026-11-24, [#126](https://github.com/litkhai/runpod-hols/issues/126)); the November runs used GraphQL `createCluster` / `deleteCluster`, from before REST had cluster endpoints. The form prices the whole cluster per hour and marks each type Available or Unavailable. On 2026-11-07 every type was **Unavailable**, while single A100 SXM and H100 SXM Pods could be deployed at the same time. The form reads this from GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }`, which returns `null` for Unavailable. That evening A100 SXM showed Available from about 19:29 to 19:36 KST and was gone by 19:46, so this lab waits for stock with a script that creates the cluster (now through REST v2, `product=CLUSTER` in the catalog for stock), runs both nodes and deletes it after at most 75 minutes ([`cluster.py`](https://github.com/litkhai/runpod-hols/blob/main/cluster/01-pytorch-distributed/cluster.py)).
+
+On 2026-11-24 (23:15–01:15 KST) the REST v2 create was tried on every stock hit: the catalog showed A100 SXM cluster stock `LOW` six times, and each `POST /v2/clusters` answered `400 Insufficient resources`. Nothing was created or billed. Catalog stock is not a placement guarantee; the create is the real check ([#130](https://github.com/litkhai/runpod-hols/issues/130)).
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}" alt="Deploy Instant Cluster form: B300, B200, H200 SXM and H100 SXM all Unavailable" loading="lazy" width="1400" height="998"></a><figcaption>Deploy Instant Cluster, 2026-11-07: 8 GPUs per Pod, price per GPU-hour and per cluster-hour, every type Unavailable.</figcaption></figure>
 
@@ -201,9 +205,13 @@ python3 lab.py delete
 
 연결은 A100 두 장의 1.8배, H100 한 장은 A100 한 장의 2.4배였지만 효율은 0.82 로 떨어졌다. 계산 4.7 ms 에 all-reduce 약 1 ms 라, GPU 가 빠를수록 연결이 성능을 좌우한다. 클러스터와 비교할 노드 안의 천장이 이것이다. 2단계 소켓 실행은 노드 사이 0.32 GB/s 였다. 11.5분에 약 USD 3.
 
+**REST v2 로 재실행, 2026-11-24** ([#123](https://github.com/litkhai/runpod-hols/issues/123)): 다른 호스트의 2× RTX 4090 은 `SYS` 대신 `NODE` 였는데도 1 GiB all-reduce 가 3.58 GB/s 로 떨어졌고, GPU 2장이 4,281 samples/s 로 1장의 38,418 에 못 미쳤습니다 — 확장 효율 0.06. 두 장의 결과는 호스트에 달려 있고, API 로는 호스트를 고를 수 없습니다.
+
 ### 2단계 — Instant Cluster
 
-클러스터는 콘솔 (**Clusters → Create cluster**) 이나 GraphQL 의 `createCluster` / `deleteCluster` 로 만든다. REST API 에는 클러스터 엔드포인트가 없다. 화면은 클러스터 전체의 시간당 가격과 종류별 Available/Unavailable 을 보여준다. 2026-11-07 에는 모든 종류가 **Unavailable** 이었고, 같은 시각 A100 SXM, H100 SXM 단일 Pod 는 배포할 수 있었다. 화면은 이 값을 GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }` 로 읽으며, Unavailable 이면 `null` 이다. 같은 날 저녁 A100 SXM 이 한국 시간 약 19:29–19:36 에 Available 이었다가 19:46 에는 사라졌다. 그래서 이 실습은 스크립트로 재고를 기다려, GraphQL 로 클러스터를 만들고 두 노드에서 돌린 뒤 늦어도 75분 안에 지운다 ([`cluster.py`](https://github.com/litkhai/runpod-hols/blob/main/cluster/01-pytorch-distributed/cluster.py)).
+클러스터는 콘솔 (**Clusters → Create cluster**) 이나 REST v2 의 `POST /v2/clusters` / `DELETE /v2/clusters/{id}` 로 만든다 (2026-11-24 스펙 확인, [#126](https://github.com/litkhai/runpod-hols/issues/126)). 11월 실행은 REST 에 클러스터 엔드포인트가 없던 때라 GraphQL `createCluster` / `deleteCluster` 를 썼다. 화면은 클러스터 전체의 시간당 가격과 종류별 Available/Unavailable 을 보여준다. 2026-11-07 에는 모든 종류가 **Unavailable** 이었고, 같은 시각 A100 SXM, H100 SXM 단일 Pod 는 배포할 수 있었다. 화면은 이 값을 GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }` 로 읽으며, Unavailable 이면 `null` 이다. 같은 날 저녁 A100 SXM 이 한국 시간 약 19:29–19:36 에 Available 이었다가 19:46 에는 사라졌다. 그래서 이 실습은 스크립트로 재고를 기다려 (지금은 카탈로그의 `product=CLUSTER` 로) REST v2 로 클러스터를 만들고 두 노드에서 돌린 뒤 늦어도 75분 안에 지운다 ([`cluster.py`](https://github.com/litkhai/runpod-hols/blob/main/cluster/01-pytorch-distributed/cluster.py)).
+
+2026-11-24 (한국 시간 23:15–01:15) 에 재고가 보일 때마다 REST v2 생성을 시도했다. 카탈로그는 A100 SXM 클러스터 재고를 `LOW` 로 여섯 번 보였지만, `POST /v2/clusters` 는 모두 `400 Insufficient resources` 였다. 만들어진 것도, 과금도 없었다. 카탈로그 재고는 배치를 보장하지 않고, 실제 확인은 생성 요청이다 ([#130](https://github.com/litkhai/runpod-hols/issues/130)).
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}" alt="Deploy Instant Cluster 화면: B300, B200, H200 SXM, H100 SXM 모두 Unavailable" loading="lazy" width="1400" height="998"></a><figcaption>Deploy Instant Cluster, 2026-11-07: Pod 당 GPU 8장, GPU 시간당과 클러스터 시간당 가격, 모든 종류 Unavailable.</figcaption></figure>
 
@@ -329,9 +337,13 @@ python3 lab.py delete
 
 连接是两块 A100 的 1.8 倍，单块 H100 在这里是单块 A100 的 2.4 倍，但扩展效率降到 0.82：计算 4.7 ms 对 all-reduce 约 1 ms，GPU 越快，连接越起决定作用。这是与集群比较的节点内上限——第 2 阶段的 Socket 运行在节点间只有 0.32 GB/s。11.5 分钟约 USD 3。
 
+**在 REST v2 上重跑，2026-11-24**（[#123](https://github.com/litkhai/runpod-hols/issues/123)）：另一台主机上的 2× RTX 4090 显示 `NODE` 而不是 `SYS`，但 1 GiB all-reduce 降到 3.58 GB/s，两块 GPU 训练 4,281 samples/s，而一块为 38,418——扩展效率 0.06。这对 GPU 的结果取决于主机，而 API 不允许选择主机。
+
 ### 第 2 阶段 — Instant Cluster
 
-集群可以在控制台创建（**Clusters → Create cluster**），也可以用 GraphQL 的 `createCluster` / `deleteCluster`；REST API 没有集群端点。表单按小时显示整个集群的价格，并把每种类型标为 Available 或 Unavailable。2026-11-07 所有类型都是 **Unavailable**，而同一时间单台 A100 SXM 和 H100 SXM Pod 可以部署。表单从 GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }` 读取，Unavailable 时返回 `null`。当天晚上 A100 SXM 在韩国时间约 19:29–19:36 显示 Available，到 19:46 又消失了；因此本实验用脚本等待库存，通过 GraphQL 创建集群，在两个节点上运行，最迟 75 分钟后删除（[`cluster.py`](https://github.com/litkhai/runpod-hols/blob/main/cluster/01-pytorch-distributed/cluster.py)）。
+集群可以在控制台创建（**Clusters → Create cluster**），也可以用 REST v2 的 `POST /v2/clusters` / `DELETE /v2/clusters/{id}`（2026-11-24 读取规范，[#126](https://github.com/litkhai/runpod-hols/issues/126)）；11 月的运行在 REST 还没有集群端点时使用了 GraphQL `createCluster` / `deleteCluster`。表单按小时显示整个集群的价格，并把每种类型标为 Available 或 Unavailable。2026-11-07 所有类型都是 **Unavailable**，而同一时间单台 A100 SXM 和 H100 SXM Pod 可以部署。表单从 GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }` 读取，Unavailable 时返回 `null`。当天晚上 A100 SXM 在韩国时间约 19:29–19:36 显示 Available，到 19:46 又消失了；因此本实验用脚本等待库存，（现在通过目录的 `product=CLUSTER` 读库存）通过 REST v2 创建集群，在两个节点上运行，最迟 75 分钟后删除（[`cluster.py`](https://github.com/litkhai/runpod-hols/blob/main/cluster/01-pytorch-distributed/cluster.py)）。
+
+2026-11-24（韩国时间 23:15–01:15）每次看到库存都尝试了 REST v2 创建：目录六次显示 A100 SXM 集群库存为 `LOW`，但每次 `POST /v2/clusters` 都返回 `400 Insufficient resources`。没有创建任何资源，也没有计费。目录库存不保证能放置；真正的检查是创建请求（[#130](https://github.com/litkhai/runpod-hols/issues/130)）。
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}" alt="Deploy Instant Cluster 表单：B300、B200、H200 SXM、H100 SXM 均为 Unavailable" loading="lazy" width="1400" height="998"></a><figcaption>Deploy Instant Cluster，2026-11-07：每个 Pod 8 块 GPU，按 GPU 小时和集群小时计价，所有类型 Unavailable。</figcaption></figure>
 
@@ -457,9 +469,13 @@ python3 lab.py delete
 
 接続は A100 2 基の 1.8 倍、H100 1 基はここで A100 1 基の 2.4 倍でしたが、効率は 0.82 に下がりました。計算 4.7 ms に対し all-reduce 約 1 ms で、GPU が速いほど接続が性能を左右します。これがクラスタと比べるべきノード内の上限です。ステージ 2 のソケット実行はノード間 0.32 GB/s でした。11.5 分で約 USD 3。
 
+**REST v2 で再実行、2026-11-24**（[#123](https://github.com/litkhai/runpod-hols/issues/123)）：別ホストの 2× RTX 4090 は `SYS` ではなく `NODE` でしたが、1 GiB の all-reduce は 3.58 GB/s に下がり、GPU 2 基で 4,281 samples/s と 1 基の 38,418 を下回りました——スケーリング効率 0.06。2 基の結果はホスト次第で、API ではホストを選べません。
+
 ### ステージ 2 — Instant Cluster
 
-クラスタはコンソール（**Clusters → Create cluster**）か、GraphQL の `createCluster` / `deleteCluster` で作成します。REST API にクラスタのエンドポイントはありません。フォームはクラスタ全体の時間あたり価格と、種別ごとの Available／Unavailable を表示します。2026-11-07 はすべての種別が **Unavailable** で、同じ時刻に A100 SXM と H100 SXM の単体 Pod はデプロイできました。フォームはこれを GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }` から読み、Unavailable なら `null` が返ります。同じ日の夜、A100 SXM は韓国時間 19:29〜19:36 ごろ Available になり、19:46 には消えていました。そこでこのラボはスクリプトで在庫を待ち、GraphQL でクラスタを作成して両ノードで実行し、遅くとも 75 分後に削除します（[`cluster.py`](https://github.com/litkhai/runpod-hols/blob/main/cluster/01-pytorch-distributed/cluster.py)）。
+クラスタはコンソール（**Clusters → Create cluster**）か、REST v2 の `POST /v2/clusters` / `DELETE /v2/clusters/{id}` で作成します（2026-11-24 に仕様を確認、[#126](https://github.com/litkhai/runpod-hols/issues/126)）。11 月の実行は REST にクラスタのエンドポイントがなかった時期で、GraphQL `createCluster` / `deleteCluster` を使いました。フォームはクラスタ全体の時間あたり価格と、種別ごとの Available／Unavailable を表示します。2026-11-07 はすべての種別が **Unavailable** で、同じ時刻に A100 SXM と H100 SXM の単体 Pod はデプロイできました。フォームはこれを GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }` から読み、Unavailable なら `null` が返ります。同じ日の夜、A100 SXM は韓国時間 19:29〜19:36 ごろ Available になり、19:46 には消えていました。そこでこのラボはスクリプトで在庫を待ち、（現在はカタログの `product=CLUSTER` で在庫を読み）REST v2 でクラスタを作成して両ノードで実行し、遅くとも 75 分後に削除します（[`cluster.py`](https://github.com/litkhai/runpod-hols/blob/main/cluster/01-pytorch-distributed/cluster.py)）。
+
+2026-11-24（韓国時間 23:15〜01:15）に在庫が見えるたびに REST v2 の作成を試しました。カタログは A100 SXM のクラスタ在庫を `LOW` と 6 回示しましたが、`POST /v2/clusters` はすべて `400 Insufficient resources` でした。作成も課金もありませんでした。カタログの在庫は配置を保証せず、実際の確認は作成リクエストです（[#130](https://github.com/litkhai/runpod-hols/issues/130)）。
 
 <figure class="shot"><a href="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}"><img src="{{ '/assets/img/cluster/instant-cluster-unavailable.webp' | relative_url }}" alt="Deploy Instant Cluster 画面：B300、B200、H200 SXM、H100 SXM がすべて Unavailable" loading="lazy" width="1400" height="998"></a><figcaption>Deploy Instant Cluster、2026-11-07：Pod あたり GPU 8 基、GPU 時間あたりとクラスタ時間あたりの価格、すべて Unavailable。</figcaption></figure>
 
