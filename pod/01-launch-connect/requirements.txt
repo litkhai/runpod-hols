@@ -1,2 +1,3 @@
-# Written against the 1.x GraphQL client; 2.x (REST v2) rejects launch.py arguments — see README.
-runpod~=1.12.0
+# runpod 2.x calls REST API v2 for Pods, so a scoped key without GraphQL works (#126).
+# Pinned to the minor version read for this lab; 1.12 used GraphQL.
+runpod~=2.4.0

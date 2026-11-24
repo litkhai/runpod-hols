@@ -109,7 +109,7 @@ is_completed(s) -> s in ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED"]
 | User-Agent | `RunPod-Python-SDK/1.12.0 …` | Same format with `2.1.0`; agent detection unchanged |
 
 <div class="warn" markdown="1">
-**Code written for 1.x can fail silently on 2.x.** A Pod no longer has `desiredStatus`, so a filter such as `p.get("desiredStatus") == "RUNNING"` returns nothing — and a guard built on it stops guarding. The Pod lab is pinned to `runpod~=1.12.0` for that reason.
+**Code written for 1.x can fail silently on 2.x.** A Pod no longer has `desiredStatus`, so a filter such as `p.get("desiredStatus") == "RUNNING"` returns nothing — and a guard built on it stops guarding. The Pod lab stayed on `runpod~=1.12.0` for that reason until 2026-11-24, when it was ported to 2.4.0 and re-run ([#126](https://github.com/litkhai/runpod-hols/issues/126)).
 </div>
 
 The SDK uses the `/v2` paths on `api.runpod.io` — REST v2, [spec](https://api.runpod.io/v2/openapi.json). REST v1 at `https://rest.runpod.io/v1` was retired on 2026-11-15 and its host no longer resolves (checked 2026-11-24, [#101](https://github.com/litkhai/runpod-hols/issues/101)).
@@ -292,7 +292,7 @@ is_completed(s) -> s in ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED"]
 | User-Agent | `RunPod-Python-SDK/1.12.0 …` | 같은 형식에 `2.1.0`. 에이전트 감지는 그대로 |
 
 <div class="warn" markdown="1">
-**1.x 용 코드가 2.x 에서 조용히 틀릴 수 있습니다.** Pod 에 더는 `desiredStatus` 가 없으므로 `p.get("desiredStatus") == "RUNNING"` 같은 필터는 아무것도 돌려주지 않고, 그 위에 세운 안전장치는 작동을 멈춥니다. 그래서 Pod 실습은 `runpod~=1.12.0` 으로 고정합니다.
+**1.x 용 코드가 2.x 에서 조용히 틀릴 수 있습니다.** Pod 에 더는 `desiredStatus` 가 없으므로 `p.get("desiredStatus") == "RUNNING"` 같은 필터는 아무것도 돌려주지 않고, 그 위에 세운 안전장치는 작동을 멈춥니다. 그래서 Pod 실습은 2026-11-24 까지 `runpod~=1.12.0` 에 머물렀고, 이후 2.4.0 으로 포팅해 다시 실행했습니다 ([#126](https://github.com/litkhai/runpod-hols/issues/126)).
 </div>
 
 SDK 는 `api.runpod.io` 의 `/v2` 경로, 즉 REST v2 를 씁니다 ([스펙](https://api.runpod.io/v2/openapi.json)). `https://rest.runpod.io/v1` 의 REST v1 은 2026-11-15 에 폐기됐고 호스트가 더는 조회되지 않습니다 (2026-11-24 확인, [#101](https://github.com/litkhai/runpod-hols/issues/101)).
@@ -475,7 +475,7 @@ is_completed(s) -> s in ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED"]
 | User-Agent | `RunPod-Python-SDK/1.12.0 …` | 格式相同，版本为 `2.1.0`；agent 检测未变 |
 
 <div class="warn" markdown="1">
-**为 1.x 编写的代码在 2.x 上可能静默失败。** Pod 不再有 `desiredStatus`，所以像 `p.get("desiredStatus") == "RUNNING"` 这样的过滤条件什么也不返回——基于它构建的防护也就不再起作用。正因如此，Pod 实验固定使用 `runpod~=1.12.0`。
+**为 1.x 编写的代码在 2.x 上可能静默失败。** Pod 不再有 `desiredStatus`，所以像 `p.get("desiredStatus") == "RUNNING"` 这样的过滤条件什么也不返回——基于它构建的防护也就不再起作用。正因如此，Pod 实验在 2026-11-24 之前一直固定使用 `runpod~=1.12.0`，之后移植到 2.4.0 并重新运行（[#126](https://github.com/litkhai/runpod-hols/issues/126)）。
 </div>
 
 SDK 使用 `api.runpod.io` 上的 `/v2` 路径，即 REST v2（[规范](https://api.runpod.io/v2/openapi.json)）。位于 `https://rest.runpod.io/v1` 的 REST v1 已于 2026-11-15 停用，该主机已无法解析（2026-11-24 检查，[#101](https://github.com/litkhai/runpod-hols/issues/101)）。
@@ -658,7 +658,7 @@ is_completed(s) -> s in ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED"]
 | User-Agent | `RunPod-Python-SDK/1.12.0 …` | 同じ形式で `2.1.0`。agent の検出は変更なし |
 
 <div class="warn" markdown="1">
-**1.x 向けに書いたコードは 2.x で黙って失敗することがあります。** Pod にはもう `desiredStatus` がないため、`p.get("desiredStatus") == "RUNNING"` のようなフィルタは何も返さず、それに基づくガードは機能しなくなります。Pod のラボが `runpod~=1.12.0` に固定されているのはこのためです。
+**1.x 向けに書いたコードは 2.x で黙って失敗することがあります。** Pod にはもう `desiredStatus` がないため、`p.get("desiredStatus") == "RUNNING"` のようなフィルタは何も返さず、それに基づくガードは機能しなくなります。このため Pod のラボは 2026-11-24 まで `runpod~=1.12.0` に固定していましたが、その後 2.4.0 に移植して再実行しました（[#126](https://github.com/litkhai/runpod-hols/issues/126)）。
 </div>
 
 SDK は `api.runpod.io` 上の `/v2` パス、つまり REST v2 を使います（[仕様](https://api.runpod.io/v2/openapi.json)）。`https://rest.runpod.io/v1` の REST v1 は 2026-11-15 に廃止され、ホストはもう名前解決できません（2026-11-24 確認、[#101](https://github.com/litkhai/runpod-hols/issues/101)）。

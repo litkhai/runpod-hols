@@ -159,7 +159,7 @@ These wrap Runpod's GraphQL API, so responses come back shaped by GraphQL rather
 | User-Agent | `RunPod-Python-SDK/1.12.0 …` | Same format with `2.1.0`; agent detection unchanged |
 
 <div class="warn" markdown="1">
-**Code written for 1.x can fail silently on 2.x.** A Pod no longer has `desiredStatus`, so a filter such as `p.get("desiredStatus") == "RUNNING"` returns nothing — and a guard built on it stops guarding. The Pod lab is pinned to `runpod~=1.12.0` for that reason.
+**Code written for 1.x can fail silently on 2.x.** A Pod no longer has `desiredStatus`, so a filter such as `p.get("desiredStatus") == "RUNNING"` returns nothing — and a guard built on it stops guarding. The Pod lab stayed on `runpod~=1.12.0` for that reason until 2026-11-24, when it was ported to 2.4.0 and re-run ([#126](https://github.com/litkhai/runpod-hols/issues/126)).
 </div>
 
 The SDK uses the `/v2` paths on `api.runpod.io` — REST v2, [spec](https://api.runpod.io/v2/openapi.json). REST v1 at `https://rest.runpod.io/v1` was retired on 2026-11-15 and its host no longer resolves (checked 2026-11-24, [#101](https://github.com/litkhai/runpod-hols/issues/101)).
@@ -425,7 +425,7 @@ runpod.terminate_pod(pod_id)
 | User-Agent | `RunPod-Python-SDK/1.12.0 …` | 같은 형식에 `2.1.0`. 에이전트 감지는 그대로 |
 
 <div class="warn" markdown="1">
-**1.x 용 코드가 2.x 에서 조용히 틀릴 수 있습니다.** Pod 에 더는 `desiredStatus` 가 없으므로 `p.get("desiredStatus") == "RUNNING"` 같은 필터는 아무것도 돌려주지 않고, 그 위에 세운 안전장치는 작동을 멈춥니다. 그래서 Pod 실습은 `runpod~=1.12.0` 으로 고정합니다.
+**1.x 용 코드가 2.x 에서 조용히 틀릴 수 있습니다.** Pod 에 더는 `desiredStatus` 가 없으므로 `p.get("desiredStatus") == "RUNNING"` 같은 필터는 아무것도 돌려주지 않고, 그 위에 세운 안전장치는 작동을 멈춥니다. 그래서 Pod 실습은 2026-11-24 까지 `runpod~=1.12.0` 에 머물렀고, 이후 2.4.0 으로 포팅해 다시 실행했습니다 ([#126](https://github.com/litkhai/runpod-hols/issues/126)).
 </div>
 
 SDK 는 `api.runpod.io` 의 `/v2` 경로, 즉 REST v2 를 씁니다 ([스펙](https://api.runpod.io/v2/openapi.json)). `https://rest.runpod.io/v1` 의 REST v1 은 2026-11-15 에 폐기됐고 호스트가 더는 조회되지 않습니다 (2026-11-24 확인, [#101](https://github.com/litkhai/runpod-hols/issues/101)).

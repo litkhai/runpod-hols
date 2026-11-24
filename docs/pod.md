@@ -11,7 +11,7 @@ permalink: /pod/
 ## English
 
 <div class="note" markdown="1">
-**Lab 01 runs end to end** — launch from Python, connect over SSH, tear down, CPU by default. Run on 2026-11-05 with `runpod` 1.12.0: a `cpu3c-2-4` CPU Pod at $0.06/hr, SSH reachable about 4 minutes after launch, under one cent in total. [See the lab](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect).
+**Lab 01 runs end to end** — launch from Python, connect over SSH, tear down, CPU by default. First run on 2026-11-05 with `runpod` 1.12.0; re-run on 2026-11-24 with `runpod` 2.4.0 and a key with GraphQL set to None ([#126](https://github.com/litkhai/runpod-hols/issues/126)): a `cpu3c` 2-vCPU CPU Pod at $0.06/hr, SSH reachable within minutes, under one cent in total. [See the lab](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect).
 </div>
 
 A Pod is a GPU or CPU container you rent and control. Unlike Serverless it stays up until you stop it, keeps its filesystem, and gives you shell access. This is where development, experimentation and fine-tuning happen.
@@ -153,7 +153,7 @@ What it changes:
 | CPU Pod without an instance id | Sent; the API rejects it: `instanceId` is required | Rejected in the SDK |
 | CPU Pod with `volume_mount_path` and no network volume | Sent; the volume is dropped | Rejected in the SDK |
 
-Lab 01 pins `runpod~=1.12.0`. On 2.x its scripts would also misread Pods: the REST objects say `status`, not `desiredStatus`, so the running-Pod check would find nothing. [What else changed in 2.x]({{ '/sdk/client/' | relative_url }}). Instance ids look like `cpu3c-2-4` — flavor, vCPU, memory in GB.
+Lab 01 pins `runpod~=2.4.0` since 2026-11-24 ([#126](https://github.com/litkhai/runpod-hols/issues/126)). Porting it took more than the create call: the REST objects say `status`, not `desiredStatus`, so the old running-Pod check found nothing, and `runtime.uptime` stayed at 4 seconds, so `status.py` counts from `startedAt`. [What else changed in 2.x]({{ '/sdk/client/' | relative_url }}). Instance ids look like `cpu3c-2-4` — flavor, vCPU, memory in GB.
 
 ### Without SSH — exec and logs
 
@@ -211,7 +211,7 @@ Note that `runpod/containers` is shared ground with the Serverless track — `ru
 ## 한국어
 
 <div class="note" markdown="1">
-**실습 01 은 처음부터 끝까지 실행됩니다** — Python 으로 기동, SSH 접속, 정리, 기본값 CPU. 2026-11-05 `runpod` 1.12.0 으로 실행했습니다. `cpu3c-2-4` CPU Pod 시간당 $0.06, 기동 후 약 4분 뒤 SSH 접속, 총비용 1센트 미만. [실습 보기](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect).
+**실습 01 은 처음부터 끝까지 실행됩니다** — Python 으로 기동, SSH 접속, 정리, 기본값 CPU. 2026-11-05 `runpod` 1.12.0 으로 처음 실행했고, 2026-11-24 `runpod` 2.4.0 과 GraphQL 을 None 으로 둔 키로 다시 실행했습니다 ([#126](https://github.com/litkhai/runpod-hols/issues/126)). `cpu3c` vCPU 2개 CPU Pod 시간당 $0.06, 몇 분 안에 SSH 접속, 총비용 1센트 미만. [실습 보기](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect).
 </div>
 
 Pod 는 직접 빌려서 제어하는 GPU 또는 CPU 컨테이너입니다. Serverless 와 달리 중지할 때까지 떠 있고, 파일시스템이 유지되며, 셸 접속이 가능합니다. 개발, 실험, 파인튜닝이 이루어지는 곳입니다.
@@ -353,7 +353,7 @@ curl -X POST https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API
 | 인스턴스 ID 없는 CPU Pod | 전송됨. API 가 거부: `instanceId` 필수 | SDK 에서 거부 |
 | 네트워크 볼륨 없이 `volume_mount_path` 를 준 CPU Pod | 전송됨. 볼륨은 빠짐 | SDK 에서 거부 |
 
-실습 01 은 `runpod~=1.12.0` 으로 고정합니다. 2.x 에서는 스크립트가 Pod 도 잘못 읽습니다. REST 객체에는 `desiredStatus` 가 아니라 `status` 가 있어 실행 중 Pod 확인이 아무것도 찾지 못합니다. [2.x 의 다른 변경점]({{ '/sdk/client/' | relative_url }}). 인스턴스 ID 는 `cpu3c-2-4` 처럼 flavor, vCPU, 메모리(GB) 순입니다.
+실습 01 은 2026-11-24 부터 `runpod~=2.4.0` 으로 고정합니다 ([#126](https://github.com/litkhai/runpod-hols/issues/126)). 포팅은 생성 호출만의 문제가 아니었습니다. REST 객체에는 `desiredStatus` 가 아니라 `status` 가 있어 예전 실행 중 Pod 확인이 아무것도 찾지 못했고, `runtime.uptime` 이 4초에 머물러 `status.py` 는 `startedAt` 부터 계산합니다. [2.x 의 다른 변경점]({{ '/sdk/client/' | relative_url }}). 인스턴스 ID 는 `cpu3c-2-4` 처럼 flavor, vCPU, 메모리(GB) 순입니다.
 
 ### SSH 없이 — exec 와 로그
 
@@ -411,7 +411,7 @@ Pod 는 코드 저장소가 필요 없습니다. 콘솔, CLI, SDK 로 기동하�
 ## 简体中文
 
 <div class="note" markdown="1">
-**实验 01 已端到端跑通**——从 Python 启动、通过 SSH 连接、销毁，默认使用 CPU。2026-11-05 使用 `runpod` 1.12.0 运行：一个 `cpu3c-2-4` CPU Pod，$0.06/hr，启动后约 4 分钟可通过 SSH 连接，总费用不到一美分。[查看实验](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect)。
+**实验 01 已端到端跑通**——从 Python 启动、通过 SSH 连接、销毁，默认使用 CPU。2026-11-05 首次使用 `runpod` 1.12.0 运行；2026-11-24 使用 `runpod` 2.4.0 和 GraphQL 设为 None 的密钥重新运行（[#126](https://github.com/litkhai/runpod-hols/issues/126)）：一个 `cpu3c` 2 vCPU 的 CPU Pod，$0.06/hr，几分钟内可通过 SSH 连接，总费用不到一美分。[查看实验](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect)。
 </div>
 
 Pod 是你租用并自行控制的 GPU 或 CPU 容器。与 Serverless 不同，它会一直运行直到你停止它，保留其文件系统，并提供 shell 访问。开发、实验和微调都在这里进行。
@@ -553,7 +553,7 @@ curl -X POST https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API
 | 不带 instance id 的 CPU Pod | 会发送；API 拒绝：`instanceId` 为必填 | 在 SDK 中被拒绝 |
 | 带 `volume_mount_path` 但没有 network volume 的 CPU Pod | 会发送；volume 被丢弃 | 在 SDK 中被拒绝 |
 
-实验 01 固定使用 `runpod~=1.12.0`。在 2.x 上，它的脚本还会误读 Pod：REST 对象中的字段是 `status` 而不是 `desiredStatus`，所以检查运行中 Pod 的逻辑将什么也找不到。[2.x 中的其他变化]({{ '/sdk/client/' | relative_url }})。instance id 形如 `cpu3c-2-4`——规格类型、vCPU、以 GB 计的内存。
+自 2026-11-24 起，实验 01 固定使用 `runpod~=2.4.0`（[#126](https://github.com/litkhai/runpod-hols/issues/126)）。移植不只是改创建调用：REST 对象中的字段是 `status` 而不是 `desiredStatus`，旧的运行中 Pod 检查什么也找不到；`runtime.uptime` 一直停在 4 秒，所以 `status.py` 从 `startedAt` 计算。[2.x 中的其他变化]({{ '/sdk/client/' | relative_url }})。instance id 形如 `cpu3c-2-4`——规格类型、vCPU、以 GB 计的内存。
 
 ### 不用 SSH——exec 与日志
 
@@ -611,7 +611,7 @@ Pod 不需要代码仓库——你可以从控制台、CLI 或 SDK 启动——�
 ## 日本語
 
 <div class="note" markdown="1">
-**ラボ 01 はエンドツーエンドで動作します**。Python から起動し、SSH で接続し、削除します。デフォルトは CPU です。2026-11-05 に `runpod` 1.12.0 で実行：`cpu3c-2-4` の CPU Pod で $0.06/hr、起動から約 4 分で SSH 接続可能になり、合計 1 セント未満でした。[ラボを見る](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect)。
+**ラボ 01 はエンドツーエンドで動作します**。Python から起動し、SSH で接続し、削除します。デフォルトは CPU です。2026-11-05 に `runpod` 1.12.0 で初回実行し、2026-11-24 に `runpod` 2.4.0 と GraphQL を None にしたキーで再実行しました（[#126](https://github.com/litkhai/runpod-hols/issues/126)）：`cpu3c` 2 vCPU の CPU Pod で $0.06/hr、数分で SSH 接続でき、合計 1 セント未満でした。[ラボを見る](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect)。
 </div>
 
 Pod は借りて自分で制御する GPU または CPU コンテナです。Serverless と違い、停止するまで動き続け、ファイルシステムを保持し、シェルアクセスができます。開発、実験、ファインチューニングはここで行います。
@@ -753,7 +753,7 @@ curl -X POST https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API
 | instance id なしの CPU Pod | 送信される。API が拒否：`instanceId` は必須 | SDK で拒否 |
 | `volume_mount_path` ありで network volume なしの CPU Pod | 送信される。volume は落とされる | SDK で拒否 |
 
-ラボ 01 は `runpod~=1.12.0` に固定しています。2.x ではスクリプトが Pod を読み違えることもあります。REST のオブジェクトは `desiredStatus` ではなく `status` なので、稼働中の Pod のチェックが何も見つけられません。[2.x でのその他の変更]({{ '/sdk/client/' | relative_url }})。instance id は `cpu3c-2-4` のような形式で、フレーバー、vCPU、GB 単位のメモリを表します。
+ラボ 01 は 2026-11-24 から `runpod~=2.4.0` に固定しています（[#126](https://github.com/litkhai/runpod-hols/issues/126)）。移植は作成呼び出しだけでは済みませんでした。REST のオブジェクトは `desiredStatus` ではなく `status` なので以前の稼働中 Pod のチェックは何も見つけられず、`runtime.uptime` が 4 秒のままだったため `status.py` は `startedAt` から数えます。[2.x でのその他の変更]({{ '/sdk/client/' | relative_url }})。instance id は `cpu3c-2-4` のような形式で、フレーバー、vCPU、GB 単位のメモリを表します。
 
 ### SSH なしで：exec とログ
 
