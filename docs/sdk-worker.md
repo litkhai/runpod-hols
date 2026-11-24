@@ -16,7 +16,7 @@ Read out of the installed source at 1.11.0 and 1.12.0, and confirmed by running 
 
 ### What changed in 2.x
 
-Read from the installed 2.1.0 source on 2026-11-05 and compared with 1.12.0. No worker was built or run on 2.x; the labs' workers stay on `runpod~=1.12.0`, the version they were deployed and measured with.
+Read from the installed 2.1.0 source on 2026-11-05 and compared with 1.12.0. On 2026-11-25 the Lab 01 hello-worker was rebuilt with `runpod==2.4.0` (`docker.io/litkhai/hello-worker:v1.1.0-sdk2.4.0`) and run ([#136](https://github.com/litkhai/runpod-hols/issues/136)): the local `test_input.json` run passed; on a CPU Serverless endpoint (`cpu3c`, 2 vCPU) created over REST v2, `run_sync` from the 2.4.0 client returned `Hello, SDK 2.4!` in 7 s including the cold start; a job cancelled while queued made `job.output()` raise `JobError: job … CANCELLED`. The endpoint was deleted afterwards. Locally, a handler returning `float("nan")` completed on 1.12.0 (`{'x': nan}`) and failed on 2.4.0 (*return value must be json-serializable*). The labs' workers stay on `runpod~=1.12.0`, the version they were deployed and measured with.
 
 | | 2.1.0 |
 |---|---|
@@ -260,7 +260,7 @@ Local `test_input.json` runs do **not** exercise streaming — the generator com
 
 ### 2.x 에서 바뀐 것
 
-2026-11-05 에 설치된 2.1.0 소스를 읽고 1.12.0 과 비교했습니다. 2.x 로 워커를 빌드하거나 실행하지는 않았습니다. 실습 워커는 배포하고 측정한 버전인 `runpod~=1.12.0` 에 그대로 둡니다.
+2026-11-05 에 설치된 2.1.0 소스를 읽고 1.12.0 과 비교했습니다. 2026-11-25 에 실습 01 hello-worker 를 `runpod==2.4.0` 으로 다시 빌드해 (`docker.io/litkhai/hello-worker:v1.1.0-sdk2.4.0`) 실행했습니다 ([#136](https://github.com/litkhai/runpod-hols/issues/136)). 로컬 `test_input.json` 실행은 통과했고, REST v2 로 만든 CPU Serverless 엔드포인트 (`cpu3c`, vCPU 2개) 에서 2.4.0 클라이언트의 `run_sync` 가 콜드 스타트를 포함해 7초 만에 `Hello, SDK 2.4!` 를 돌려줬습니다. 대기 중에 취소한 작업에서는 `job.output()` 이 `JobError: job … CANCELLED` 를 던졌습니다. 엔드포인트는 끝난 뒤 지웠습니다. 로컬에서 `float("nan")` 을 돌려주는 핸들러는 1.12.0 에서는 완료 (`{'x': nan}`), 2.4.0 에서는 실패 (*return value must be json-serializable*) 했습니다. 실습 워커는 배포하고 측정한 버전인 `runpod~=1.12.0` 에 그대로 둡니다.
 
 | | 2.1.0 |
 |---|---|
@@ -506,7 +506,7 @@ SDK 中**在你的 worker 容器内部运行**的那一半。另一半见 [Clien
 
 ### 2.x 中的变化
 
-于 2026-11-05 读取已安装的 2.1.0 源码，并与 1.12.0 对比。没有在 2.x 上构建或运行任何 worker；实验的 worker 仍停留在 `runpod~=1.12.0`，即部署和测量时所用的版本。
+于 2026-11-05 读取已安装的 2.1.0 源码，并与 1.12.0 对比。2026-11-25 用 `runpod==2.4.0` 重新构建实验 01 的 hello-worker（`docker.io/litkhai/hello-worker:v1.1.0-sdk2.4.0`）并运行（[#136](https://github.com/litkhai/runpod-hols/issues/136)）：本地 `test_input.json` 运行通过；在通过 REST v2 创建的 CPU Serverless endpoint（`cpu3c`，2 vCPU）上，2.4.0 客户端的 `run_sync` 在 7 s 内（含冷启动）返回 `Hello, SDK 2.4!`；排队时被取消的 job 让 `job.output()` 抛出 `JobError: job … CANCELLED`。endpoint 随后已删除。在本地，返回 `float("nan")` 的 handler 在 1.12.0 上完成（`{'x': nan}`），在 2.4.0 上失败（*return value must be json-serializable*）。实验的 worker 仍停留在 `runpod~=1.12.0`，即部署和测量时所用的版本。
 
 | | 2.1.0 |
 |---|---|
@@ -752,7 +752,7 @@ SDK のうち、**worker コンテナの中で動く**半分です。もう半�
 
 ### 2.x での変更点
 
-2026-11-05 にインストール済みの 2.1.0 のソースを読み、1.12.0 と比較しました。2.x で worker をビルド・実行はしていません。ラボの worker は、デプロイと計測に使ったバージョンである `runpod~=1.12.0` のままです。
+2026-11-05 にインストール済みの 2.1.0 のソースを読み、1.12.0 と比較しました。2026-11-25 にラボ 01 の hello-worker を `runpod==2.4.0` で再ビルドし（`docker.io/litkhai/hello-worker:v1.1.0-sdk2.4.0`）、実行しました（[#136](https://github.com/litkhai/runpod-hols/issues/136)）。ローカルの `test_input.json` の実行は成功し、REST v2 で作成した CPU の Serverless endpoint（`cpu3c`、2 vCPU）では、2.4.0 クライアントの `run_sync` がコールドスタート込みで 7 秒で `Hello, SDK 2.4!` を返しました。キュー待ちの間にキャンセルした job では `job.output()` が `JobError: job … CANCELLED` を送出しました。endpoint は終了後に削除しました。ローカルでは、`float("nan")` を返す handler は 1.12.0 では完了し（`{'x': nan}`）、2.4.0 では失敗しました（*return value must be json-serializable*）。ラボの worker は、デプロイと計測に使ったバージョンである `runpod~=1.12.0` のままです。
 
 | | 2.1.0 |
 |---|---|
