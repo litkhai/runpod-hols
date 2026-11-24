@@ -15,7 +15,7 @@
 | File | Role |
 |---|---|
 | `handler.py` | Probe worker shared with labs 07–08: sleeps, fails or streams on request; reports its worker id, uptime, and how many jobs it was running when this one started |
-| `Dockerfile`, `requirements.txt` | `python:3.11-slim` + `runpod~=1.12.0`; deployed from GitHub in the console |
+| `Dockerfile`, `requirements.txt` | `python:3.11-slim` + `runpod~=2.4.0` (1.12.0 until 2026-11-25); deployed from GitHub in the console for the 2026-11-07 runs |
 | `burst.py` | Submits N jobs with `/run` at once, polls `/status` and `/health` until all finish |
 | `results/*.json` | Every job's `delayTime`, `executionTime`, `workerId` and the handler's own timing |
 
@@ -56,6 +56,23 @@ Things noticed on the way:
 - Changing the template env replaced all workers (new worker ids) without a new build.
 - `GET /v1/templates/<id>` returned 404 for this GitHub-built template, while `PATCH` on the same id worked (REST v1; the curl lines above are the REST v2 form, not re-run — [#101](https://github.com/litkhai/runpod-hols/issues/101)).
 
+
+### Re-run on SDK 2.4.0 (2026-11-25)
+
+The same 50 jobs of 2 s, with the probe built on `runpod==2.4.0` (`docker.io/litkhai/runpod-hols-probe:sdk2.4.0`) on endpoints created over REST v2 (CPU `cpu5g`, 2 vCPU / 8 GB, idle timeout 5 s, FlashBoot off), one endpoint per setting, two minutes of warm-up before each burst ([#138](https://github.com/litkhai/runpod-hols/issues/138)). A control ran the 1.12.0 probe (`…:sdk1.12.0`) the same way.
+
+| Run | 1.12.0, 2026-11-07 | 2.4.0, 2026-11-25 | 1.12.0 control, 2026-11-25 |
+|---|---|---|---|
+| `queue_delay_c1` | 42.6 s, 5 workers | 64.7 s, 2 workers | 93.1 s, 2 workers |
+| `request_count25_c1` | 135.6 s | 100.5 s | — |
+| `request_count25_c4` | 36.0 s | 31.5 s | — |
+| One worker, next 2 s job starts every | 3.23–3.68 s | **2.32–2.76 s** | 3.24–3.55 s |
+
+- **2.4 took about a second off every job.** A concurrency-1 worker started its next 2 s job every 2.33 s (median) instead of 3.34 s; the control on the same day and setup kept 3.34 s. 2.4 frees a job's slot before its result is uploaded and takes the next job meanwhile, so the ~1.3 s gap became ~0.3 s. On the same two workers the burst finished in 64.7 s instead of 93.1 s.
+- **Only two workers ran jobs on the new endpoints, with either SDK.** Up to six more cycled between initialising and idle without taking a job. The 2026-11-07 endpoint had five workers ready after its build; why fresh REST endpoints held at two was not found.
+- **Changing the template env did not reach an endpoint created over REST.** The create copies the template into the endpoint (`templateId` reads back `null`), so `PATCH /v2/templates/{id}` left the workers unchanged — unlike the GitHub-built template above. Each setting got its own endpoint instead.
+- **REST rejects `idleTimeout` with request-count scaling:** `idleTimeout does not apply to queue-based endpoints scaling on requestCount` (400).
+
 ---
 
 ## 한국어
@@ -69,7 +86,7 @@ Things noticed on the way:
 | 파일 | 역할 |
 |---|---|
 | `handler.py` | 실습 07–08 과 같이 쓰는 프로브 워커: 요청에 따라 대기·실패·스트리밍하고, 워커 id, 가동 시간, 이 작업이 시작될 때 처리 중이던 작업 수를 보고 |
-| `Dockerfile`, `requirements.txt` | `python:3.11-slim` + `runpod~=1.12.0`; 콘솔에서 GitHub 로 배포 |
+| `Dockerfile`, `requirements.txt` | `python:3.11-slim` + `runpod~=2.4.0` (2026-11-25 전까지 1.12.0). 2026-11-07 실행은 콘솔에서 GitHub 로 배포 |
 | `burst.py` | `/run` 으로 작업 N 개를 한꺼번에 보내고, 모두 끝날 때까지 `/status` 와 `/health` 를 확인 |
 | `results/*.json` | 작업별 `delayTime`, `executionTime`, `workerId` 와 핸들러가 잰 시각 |
 
@@ -109,3 +126,20 @@ python3 burst.py <id> --jobs 50 --seconds 2 --label request_count25_c4 --out res
 - 빌드 뒤 `/health` 는 **idle 워커 5개** — 최대치만큼 — 를 보였고, 작업이 돌기 시작한 뒤에도 약 20초 동안 `idle: 5` 를 유지했다. `/health` 는 수십 초 늦는다고 보자.
 - 템플릿 env 를 바꾸자 새 빌드 없이 워커가 모두 교체됐다 (새 워커 id).
 - 이 GitHub 빌드 템플릿에 `GET /v1/templates/<id>` 는 404 를 돌려줬지만, 같은 id 로 `PATCH` 는 됐다 (REST v1. 위 curl 은 REST v2 형태이며 다시 실행하지 않음 — [#101](https://github.com/litkhai/runpod-hols/issues/101)).
+
+
+### SDK 2.4.0 재실행 (2026-11-25)
+
+같은 2초짜리 작업 50개를 `runpod==2.4.0` 으로 빌드한 프로브 (`docker.io/litkhai/runpod-hols-probe:sdk2.4.0`) 로 돌렸다. 엔드포인트는 REST v2 로 만들었고 (CPU `cpu5g`, 2 vCPU / 8 GB, 유휴 타임아웃 5초, FlashBoot 끔), 설정마다 따로 만들어 버스트 전에 2분씩 워커를 준비시켰다 ([#138](https://github.com/litkhai/runpod-hols/issues/138)). 대조군으로 1.12.0 프로브 (`…:sdk1.12.0`) 를 같은 방식으로 돌렸다.
+
+| 실행 | 1.12.0, 2026-11-07 | 2.4.0, 2026-11-25 | 1.12.0 대조군, 2026-11-25 |
+|---|---|---|---|
+| `queue_delay_c1` | 42.6초, 워커 5개 | 64.7초, 워커 2개 | 93.1초, 워커 2개 |
+| `request_count25_c1` | 135.6초 | 100.5초 | — |
+| `request_count25_c4` | 36.0초 | 31.5초 | — |
+| 워커 하나가 다음 2초 작업을 시작하는 간격 | 3.23–3.68초 | **2.32–2.76초** | 3.24–3.55초 |
+
+- **2.4 는 작업마다 약 1초를 줄였다.** 동시성 1 워커가 2초 작업을 3.34초가 아니라 2.33초 (중앙값) 마다 시작했고, 같은 날 같은 설정의 대조군은 3.34초 그대로였다. 2.4 는 결과를 올리기 전에 슬롯을 비우고 그동안 다음 작업을 받으므로, 약 1.3초이던 간격이 약 0.3초가 됐다. 같은 워커 2개로 버스트가 93.1초 대신 64.7초에 끝났다.
+- **새 엔드포인트에서는 SDK 와 상관없이 워커 2개만 작업을 받았다.** 나머지 최대 6개는 작업을 받지 않고 초기화와 idle 을 오갔다. 2026-11-07 엔드포인트는 빌드 뒤 워커 5개가 준비돼 있었다. 새 REST 엔드포인트가 2개에 머문 이유는 찾지 못했다.
+- **템플릿 env 를 바꿔도 REST 로 만든 엔드포인트에는 반영되지 않았다.** 생성 시 템플릿을 엔드포인트에 복사하므로 (`templateId` 를 다시 읽으면 `null`), `PATCH /v2/templates/{id}` 는 워커를 바꾸지 않았다. 위의 GitHub 빌드 템플릿과 다르다. 그래서 설정마다 엔드포인트를 따로 만들었다.
+- **REST 는 요청 수 스케일링에 `idleTimeout` 을 주면 거부한다:** `idleTimeout does not apply to queue-based endpoints scaling on requestCount` (400).

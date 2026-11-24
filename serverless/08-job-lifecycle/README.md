@@ -50,6 +50,16 @@ What this means for a client:
 - **The execution timeout is enforced late** — 7 s over the 5 s limit here — so do not rely on it for exact cut-offs.
 - Webhooks (`"webhook": url`) were not tested: they need a public receiver.
 
+
+### Re-run on SDK 2.4.0 (2026-11-25)
+
+Every case above, with the probe built on `runpod==2.4.0` on a REST-created CPU endpoint (two workers, `CONCURRENCY=4` set at create, [#138](https://github.com/litkhai/runpod-hols/issues/138)); results in `results/sdk2.4_lifecycle.json`. Each case ended in the same status as on 1.12. The differences:
+
+- **The failed job still carries the internals:** the error JSON has the same keys — type, message, traceback, hostname, worker id — with `runpod_version` `2.4.0`.
+- **The execution timeout was again enforced late:** `FAILED` after 9.2 s for a 5 s limit (12.4 s on 1.12).
+- Cancelling a running job still took about 21 s to return; `/runsync` still gave up at 90.5 s with `IN_PROGRESS`; the TTL job was again 404 about 10 s after submission.
+- Short `/runsync` on a starting worker: 6.1 s with a 4.0 s start (5.6 s / 4.1 s on 1.12).
+
 ---
 
 ## 한국어
@@ -97,3 +107,13 @@ python3 lifecycle.py <endpoint_id> --out results/lifecycle.json
 - **`/runsync` 는 약 90초에서 포기하고** id 를 돌려준다. 긴 작업에 쓰는 클라이언트는 `/status` 로 넘어가야 한다.
 - **실행 시간 제한은 늦게 적용된다** — 여기서는 5초 제한에 7초 초과 — 정확한 차단에 기대지 않는다.
 - 웹훅 (`"webhook": url`) 은 공개 수신 서버가 필요해 시험하지 않았다.
+
+
+### SDK 2.4.0 재실행 (2026-11-25)
+
+위의 모든 경우를 `runpod==2.4.0` 으로 빌드한 프로브로 다시 돌렸다. REST 로 만든 CPU 엔드포인트 (워커 2개, `CONCURRENCY=4` 를 생성 시 지정, [#138](https://github.com/litkhai/runpod-hols/issues/138)). 결과는 `results/sdk2.4_lifecycle.json`. 모든 경우가 1.12 와 같은 상태로 끝났다. 다른 점:
+
+- **실패한 작업은 여전히 내부 정보를 담는다:** 오류 JSON 의 키가 같다 — type, message, traceback, hostname, worker id — 그리고 `runpod_version` 이 `2.4.0`.
+- **실행 시간 제한은 이번에도 늦게 적용됐다:** 5초 제한에 9.2초 뒤 `FAILED` (1.12 에서 12.4초).
+- 실행 중인 작업 취소는 여전히 약 21초 뒤 응답했고, `/runsync` 는 여전히 90.5초에 `IN_PROGRESS` 로 포기했으며, TTL 작업은 이번에도 제출 약 10초 뒤 404 였다.
+- 기동 중인 워커에서 짧은 `/runsync`: 6.1초, 그중 기동 4.0초 (1.12 에서 5.6초 / 4.1초).

@@ -16,7 +16,7 @@
 |---|---|
 | `handler.py` | The worker. `handler(job)` reads `job["input"]` and returns the result |
 | `test_input.json` | Sample input used automatically by local runs |
-| `requirements.txt` | Python dependencies (`runpod~=1.12.0`) |
+| `requirements.txt` | Python dependencies (`runpod~=2.4.0`; 1.12.0 until 2026-11-25) |
 | `Dockerfile` | Image definition (`python:3.11-slim`) |
 | `.runpod/hub.json` | Runpod Hub listing metadata (only needed when publishing) |
 | `.runpod/tests.json` | Test definitions run by Hub CI |
@@ -223,7 +223,7 @@ Move heavy work out of the handler: load a model at module scope and observe the
 |---|---|
 | `handler.py` | 워커 본체. `handler(job)` 가 `job["input"]` 을 읽어 결과를 반환 |
 | `test_input.json` | 로컬 실행 시 자동으로 사용되는 샘플 입력 |
-| `requirements.txt` | Python 의존성 (`runpod~=1.12.0`) |
+| `requirements.txt` | Python 의존성 (`runpod~=2.4.0`. 2026-11-25 전까지 1.12.0) |
 | `Dockerfile` | 이미지 정의 (`python:3.11-slim`) |
 | `.runpod/hub.json` | Runpod Hub 게시용 메타데이터 (게시할 때만 필요) |
 | `.runpod/tests.json` | Hub CI 가 실행하는 테스트 정의 |

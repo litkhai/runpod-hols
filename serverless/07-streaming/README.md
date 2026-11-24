@@ -41,6 +41,21 @@ python3 stream.py <endpoint_id> --chunks 200 --every 0.02 --runs 3 --out results
 - **`/runsync` does not stream.** With `return_aggregate_stream` it returns the full list of chunks once the generator is done, and so does the final `/status`.
 - Right after the env change one job still landed on an old, non-streaming worker and came back as a plain result. Wait for the workers to roll over before measuring.
 
+
+### Re-run on SDK 2.4.0 (2026-11-25)
+
+Same runs with the probe built on `runpod==2.4.0`, on a REST-created CPU endpoint with `HANDLER_KIND=stream` set at create ([#138](https://github.com/litkhai/runpod-hols/issues/138)); results in `results/sdk2.4_*.json`.
+
+| | 20 chunks × 0.5 s | 200 chunks × 20 ms |
+|---|---|---|
+| First chunk, warm worker | **0.95–1.06 s** (1.6–1.7 s on 1.12) | **0.74–0.84 s** (0.95 s) |
+| `delayTime`, warm | 0.1 s (0.8 s) | 0.1 s (0.5 s) |
+| Chunk made → received, median | 0.36–0.47 s | 0.54–0.56 s |
+| Handler time for the chunks | 10.9 s | 13.4–13.7 s |
+| `/runsync` of the same input | 11.5 s | 13.8 s |
+
+The first chunk came about 0.6 s sooner because a warm worker picked the job up in 0.1 s instead of 0.8 s. The rest did not change: chunks still took a third to half a second to reach the client, and **each `yield` still cost about 45–50 ms** — 200 chunks still took 13.4 s for 4 s of sleeps.
+
 ---
 
 ## 한국어
@@ -79,3 +94,18 @@ python3 stream.py <endpoint_id> --chunks 200 --every 0.02 --runs 3 --out results
 - **`yield` 한 번에 핸들러가 약 45–55 ms 를 썼다.** 20 ms 청크 200개가 4초가 아니라 13초 걸렸다 — yield 할 때마다 제너레이터가 멈춰 있었다. 초당 50 토큰을 만드는 모델이 토큰마다 yield 하면 초당 15 토큰 아래로 묶인다. **토큰을 묶어서 yield 하자.**
 - **`/runsync` 는 스트리밍하지 않는다.** `return_aggregate_stream` 이면 제너레이터가 끝난 뒤 청크 전체 목록을 한꺼번에 돌려주고, 최종 `/status` 도 같다.
 - env 를 바꾼 직후 작업 하나가 아직 스트리밍이 아닌 예전 워커에 가서 일반 결과로 돌아왔다. 측정 전에 워커가 모두 바뀔 때까지 기다린다.
+
+
+### SDK 2.4.0 재실행 (2026-11-25)
+
+`runpod==2.4.0` 으로 빌드한 프로브로 같은 실행을 했다. 엔드포인트는 REST 로 만든 CPU 엔드포인트이고 `HANDLER_KIND=stream` 을 생성 시 지정했다 ([#138](https://github.com/litkhai/runpod-hols/issues/138)). 결과는 `results/sdk2.4_*.json`.
+
+| | 청크 20개 × 0.5초 | 청크 200개 × 20 ms |
+|---|---|---|
+| 첫 청크, 워커가 떠 있을 때 | **0.95–1.06초** (1.12 에서 1.6–1.7초) | **0.74–0.84초** (0.95초) |
+| `delayTime`, 워커가 떠 있을 때 | 0.1초 (0.8초) | 0.1초 (0.5초) |
+| 청크 생성 → 수신, 중앙값 | 0.36–0.47초 | 0.54–0.56초 |
+| 청크를 만든 핸들러 시간 | 10.9초 | 13.4–13.7초 |
+| 같은 입력의 `/runsync` | 11.5초 | 13.8초 |
+
+떠 있는 워커가 작업을 0.8초가 아니라 0.1초 만에 가져가서 첫 청크가 약 0.6초 빨라졌다. 나머지는 그대로다. 청크는 여전히 만들어진 뒤 0.3–0.5초 만에 도착했고, **`yield` 한 번에 여전히 약 45–50 ms** 가 들었다. 청크 200개는 4초 대기에 여전히 13.4초가 걸렸다.
