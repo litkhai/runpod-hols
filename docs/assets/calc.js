@@ -12,16 +12,16 @@
   'use strict';
 
   // Dense TFLOPS and bandwidth from vendor datasheets; price is Runpod Secure
-  // Cloud on-demand per GPU-hour, read from the GraphQL catalogue 2026-11-07.
-  // 연산 성능·대역폭은 제조사 자료, 가격은 2026-11-07 Runpod Secure Cloud 시간당.
+  // Cloud on-demand per GPU-hour, read from the REST v2 catalog 2026-11-25 (#132).
+  // 연산 성능·대역폭은 제조사 자료, 가격은 2026-11-25 Runpod Secure Cloud 시간당 (REST v2 카탈로그).
   var GPUS = [
-    { id: 'l4',    name: 'L4 24GB',           vram: 24,  bw: 0.30, fp16: 121,  fp8: 242,  price: 0.59 },
+    { id: 'l4',    name: 'L4 24GB',           vram: 24,  bw: 0.30, fp16: 121,  fp8: 242,  price: 0.69 },
     { id: '4090',  name: 'RTX 4090 24GB',     vram: 24,  bw: 1.01, fp16: 165,  fp8: 330,  price: 0.89 },
     { id: 'l40s',  name: 'L40S 48GB',         vram: 48,  bw: 0.86, fp16: 181,  fp8: 366,  price: 1.09 },
-    { id: 'a100',  name: 'A100 SXM 80GB',     vram: 80,  bw: 2.04, fp16: 312,  fp8: 624,  price: 1.79 },
+    { id: 'a100',  name: 'A100 SXM 80GB',     vram: 80,  bw: 2.04, fp16: 312,  fp8: 624,  price: 2.19 },
     { id: 'h100p', name: 'H100 PCIe 80GB',    vram: 80,  bw: 2.00, fp16: 756,  fp8: 1513, price: 2.89 },
-    { id: 'h100',  name: 'H100 SXM 80GB',     vram: 80,  bw: 3.35, fp16: 989,  fp8: 1979, price: 3.99 },
-    { id: 'pro6k', name: 'RTX PRO 6000 96GB', vram: 96,  bw: 1.80, fp16: 503,  fp8: 1007, price: 2.49 },
+    { id: 'h100',  name: 'H100 SXM 80GB',     vram: 80,  bw: 3.35, fp16: 989,  fp8: 1979, price: 4.39 },
+    { id: 'pro6k', name: 'RTX PRO 6000 96GB', vram: 96,  bw: 1.80, fp16: 503,  fp8: 1007, price: 2.69 },
     { id: 'h200',  name: 'H200 SXM 141GB',    vram: 141, bw: 4.80, fp16: 989,  fp8: 1979, price: 5.29 },
     { id: 'b200',  name: 'B200 180GB',        vram: 180, bw: 8.00, fp16: 2250, fp8: 4500, price: 7.99 },
     { id: 'b300',  name: 'B300 288GB',        vram: 288, bw: 8.00, fp16: 2250, fp8: 5000, price: 8.99 }

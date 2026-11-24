@@ -303,7 +303,7 @@ Single-stream token rate is set by how many times per second you can read the we
   <div class="calc-hd"><b>Decode throughput and inference cost</b><span>CALCULATOR 02</span></div>
   <div class="calc-bd">
     <div class="calc-grid">
-      <div><label>GPU (Runpod Secure, 2026-11-07)</label><select data-f="gpu" data-gpus="h100"></select></div>
+      <div><label>GPU (Runpod Secure, 2026-11-25)</label><select data-f="gpu" data-gpus="h100"></select></div>
       <div><label>GPU count</label><input data-f="n" type="number" value="1" min="1" max="8"></div>
       <div><label>Params (B)</label><input data-f="p" type="number" value="7" min="0.1" step="0.1"></div>
       <div><label>Weight precision</label><select data-f="wp"><option value="2">FP16 / BF16</option><option value="1" selected>FP8 / INT8</option><option value="0.5">INT4</option></select></div>
@@ -333,7 +333,7 @@ Single-stream token rate is set by how many times per second you can read the we
       <div><label>Params (B)</label><input data-f="p" type="number" value="7" min="0.1" step="0.1"></div>
       <div><label>Tokens (B)</label><input data-f="tok" type="number" value="1" min="0.001" step="0.1"></div>
       <div><label>Method</label><select data-f="m"><option value="6">Full FT (6N)</option><option value="5">LoRA (~5N)</option></select></div>
-      <div><label>GPU (Runpod Secure, 2026-11-07)</label><select data-f="gpu" data-gpus="h100"></select></div>
+      <div><label>GPU (Runpod Secure, 2026-11-25)</label><select data-f="gpu" data-gpus="h100"></select></div>
       <div><label>GPU count</label><input data-f="n" type="number" value="8" min="1"></div>
       <div><label>MFU (%)</label><input data-f="mfu" type="number" value="40" min="5" max="70"></div>
     </div>
@@ -348,7 +348,7 @@ Single-stream token rate is set by how many times per second you can read the we
 </div>
 
 <div class="note" markdown="1">
-**About these calculators.** First-order approximations: real numbers move with framework, batch composition, sequence-length distribution and scheduler. The point is which variable dominates, not an exact figure. FLOPS are dense and Blackwell figures approximate; prices are Runpod Secure Cloud on-demand per GPU-hour, read from the catalogue on 2026-11-07.
+**About these calculators.** First-order approximations: real numbers move with framework, batch composition, sequence-length distribution and scheduler. The point is which variable dominates, not an exact figure. FLOPS are dense and Blackwell figures approximate; prices are Runpod Secure Cloud on-demand per GPU-hour, read from the REST v2 catalog on 2026-11-25.
 </div>
 
 ## The transformer, briefly
@@ -504,21 +504,21 @@ A reasoning model multiplies output tokens, and decode throughput is the product
 inference cost per 1M output tokens = (hourly price ÷ 3600) ÷ throughput (tok/s) × 1,000,000
 ```
 
-7B in FP8 on one H100 SXM at 3,000 tok/s with continuous batching: 1,000,000 ÷ 3,000 = 333 s = 0.093 h, × USD 3.99 = **about USD 0.37 per 1M output tokens**. Set that against API pricing and the self-hosting break-even falls out.
+7B in FP8 on one H100 SXM at 3,000 tok/s with continuous batching: 1,000,000 ÷ 3,000 = 333 s = 0.093 h, × USD 4.39 = **about USD 0.41 per 1M output tokens**. Set that against API pricing and the self-hosting break-even falls out.
 
-**Effective cost = hourly price ÷ actual utilisation.** A USD 3.99 GPU used 20% of the time effectively costs about USD 20 an hour. That is the case for Serverless and autoscaling, and why cold start is a headline metric.
+**Effective cost = hourly price ÷ actual utilisation.** A USD 4.39 GPU used 20% of the time effectively costs about USD 22 an hour. That is the case for Serverless and autoscaling, and why cold start is a headline metric.
 
-Runpod Pod prices per GPU-hour, read from the catalogue on 2026-11-07:
+Runpod Pod prices per GPU-hour, read from the REST v2 catalog on 2026-11-25:
 
 | GPU | VRAM | Secure Cloud | Community Cloud |
 |---|---|---|---|
-| L4 | 24 GB | 0.59 | 0.44 |
+| L4 | 24 GB | 0.69 | 0.44 |
 | RTX 4090 | 24 GB | 0.89 | 0.34 |
 | L40S | 48 GB | 1.09 | 0.79 |
-| A100 SXM | 80 GB | 1.79 | 1.39 |
+| A100 SXM | 80 GB | 2.19 | 1.39 |
 | H100 PCIe | 80 GB | 2.89 | 1.99 |
-| RTX PRO 6000 | 96 GB | 2.49 | 1.69 |
-| H100 SXM | 80 GB | 3.99 | 2.69 |
+| RTX PRO 6000 | 96 GB | 2.69 | 1.69 |
+| H100 SXM | 80 GB | 4.39 | 2.69 |
 | H200 SXM | 141 GB | 5.29 | 3.59 |
 | B200 | 180 GB | 7.99 | 5.98 |
 | B300 | 288 GB | 8.99 | 6.94 |
@@ -526,7 +526,7 @@ Runpod Pod prices per GPU-hour, read from the catalogue on 2026-11-07:
 | Shape | Price | Risk |
 |---|---|---|
 | On demand | Baseline | None |
-| Spot / community | Cheaper — 22–62% on the table above | Preemption or weaker guarantees; checkpointing mandatory |
+| Spot / community | Cheaper — 23–62% on the table above | Preemption or weaker guarantees; checkpointing mandatory |
 | Reserved / committed | 30–50% cheaper | 1–3 year lock-in, generation risk |
 | Self-built | Lowest in the long run | Space, power, cooling, depreciation, headcount |
 
@@ -870,7 +870,7 @@ LoRA   y = W · x + B·A·x    W 는 고정, A(4096×16)와 B(16×4096)만 학�
   <div class="calc-hd"><b>디코딩 처리량 · 추론 비용</b><span>CALCULATOR 02</span></div>
   <div class="calc-bd">
     <div class="calc-grid">
-      <div><label>GPU (Runpod Secure, 2026-11-07)</label><select data-f="gpu" data-gpus="h100"></select></div>
+      <div><label>GPU (Runpod Secure, 2026-11-25)</label><select data-f="gpu" data-gpus="h100"></select></div>
       <div><label>GPU 장수</label><input data-f="n" type="number" value="1" min="1" max="8"></div>
       <div><label>파라미터 (B)</label><input data-f="p" type="number" value="7" min="0.1" step="0.1"></div>
       <div><label>가중치 정밀도</label><select data-f="wp"><option value="2">FP16 / BF16</option><option value="1" selected>FP8 / INT8</option><option value="0.5">INT4</option></select></div>
@@ -900,7 +900,7 @@ LoRA   y = W · x + B·A·x    W 는 고정, A(4096×16)와 B(16×4096)만 학�
       <div><label>파라미터 (B)</label><input data-f="p" type="number" value="7" min="0.1" step="0.1"></div>
       <div><label>학습 토큰 (B)</label><input data-f="tok" type="number" value="1" min="0.001" step="0.1"></div>
       <div><label>방식</label><select data-f="m"><option value="6">Full FT (6N)</option><option value="5">LoRA (~5N)</option></select></div>
-      <div><label>GPU (Runpod Secure, 2026-11-07)</label><select data-f="gpu" data-gpus="h100"></select></div>
+      <div><label>GPU (Runpod Secure, 2026-11-25)</label><select data-f="gpu" data-gpus="h100"></select></div>
       <div><label>GPU 장수</label><input data-f="n" type="number" value="8" min="1"></div>
       <div><label>MFU (%)</label><input data-f="mfu" type="number" value="40" min="5" max="70"></div>
     </div>
@@ -915,7 +915,7 @@ LoRA   y = W · x + B·A·x    W 는 고정, A(4096×16)와 B(16×4096)만 학�
 </div>
 
 <div class="note" markdown="1">
-**계산기에 대해.** 전부 1차 근사입니다. 실제 값은 프레임워크, 배치 구성, 시퀀스 길이 분포, 스케줄러에 따라 달라집니다. 목적은 정확한 값이 아니라 어떤 변수가 지배하는지를 보는 것입니다. FLOPS 는 dense 기준이고 Blackwell 계열은 근사치입니다. 가격은 Runpod Secure Cloud 온디맨드 GPU 시간당 단가로, 2026-11-07 카탈로그에서 읽었습니다.
+**계산기에 대해.** 전부 1차 근사입니다. 실제 값은 프레임워크, 배치 구성, 시퀀스 길이 분포, 스케줄러에 따라 달라집니다. 목적은 정확한 값이 아니라 어떤 변수가 지배하는지를 보는 것입니다. FLOPS 는 dense 기준이고 Blackwell 계열은 근사치입니다. 가격은 Runpod Secure Cloud 온디맨드 GPU 시간당 단가로, 2026-11-25 REST v2 카탈로그에서 읽었습니다.
 </div>
 
 ## 트랜스포머, 짧게
@@ -1071,21 +1071,21 @@ FLOPs 는 사실상 전부 텐서 코어의 GEMM 입니다. 나머지는 모두 
 출력 1M 토큰당 추론 원가 = (시간당 단가 ÷ 3600) ÷ 처리량 (tok/s) × 1,000,000
 ```
 
-7B FP8 을 H100 SXM 한 장에서 continuous batching 으로 3,000 tok/s 낸다고 하면: 1,000,000 ÷ 3,000 = 333 s = 0.093 h, × USD 3.99 = **출력 1M 토큰당 약 USD 0.37**. 이 숫자를 API 단가와 비교하면 자체 서빙 손익분기가 바로 나옵니다.
+7B FP8 을 H100 SXM 한 장에서 continuous batching 으로 3,000 tok/s 낸다고 하면: 1,000,000 ÷ 3,000 = 333 s = 0.093 h, × USD 4.39 = **출력 1M 토큰당 약 USD 0.41**. 이 숫자를 API 단가와 비교하면 자체 서빙 손익분기가 바로 나옵니다.
 
-**실효 원가 = 시간당 단가 ÷ 실제 가동률.** USD 3.99 짜리 GPU 를 20% 만 쓰면 실효 시간당 약 USD 20 입니다. Serverless 와 오토스케일이 존재하는 이유이고, 콜드스타트가 핵심 지표인 이유입니다.
+**실효 원가 = 시간당 단가 ÷ 실제 가동률.** USD 4.39 짜리 GPU 를 20% 만 쓰면 실효 시간당 약 USD 22 입니다. Serverless 와 오토스케일이 존재하는 이유이고, 콜드스타트가 핵심 지표인 이유입니다.
 
-Runpod Pod 의 GPU 시간당 가격, 2026-11-07 카탈로그 기준:
+Runpod Pod 의 GPU 시간당 가격, 2026-11-25 REST v2 카탈로그 기준:
 
 | GPU | VRAM | Secure Cloud | Community Cloud |
 |---|---|---|---|
-| L4 | 24 GB | 0.59 | 0.44 |
+| L4 | 24 GB | 0.69 | 0.44 |
 | RTX 4090 | 24 GB | 0.89 | 0.34 |
 | L40S | 48 GB | 1.09 | 0.79 |
-| A100 SXM | 80 GB | 1.79 | 1.39 |
+| A100 SXM | 80 GB | 2.19 | 1.39 |
 | H100 PCIe | 80 GB | 2.89 | 1.99 |
-| RTX PRO 6000 | 96 GB | 2.49 | 1.69 |
-| H100 SXM | 80 GB | 3.99 | 2.69 |
+| RTX PRO 6000 | 96 GB | 2.69 | 1.69 |
+| H100 SXM | 80 GB | 4.39 | 2.69 |
 | H200 SXM | 141 GB | 5.29 | 3.59 |
 | B200 | 180 GB | 7.99 | 5.98 |
 | B300 | 288 GB | 8.99 | 6.94 |
@@ -1093,7 +1093,7 @@ Runpod Pod 의 GPU 시간당 가격, 2026-11-07 카탈로그 기준:
 | 형태 | 단가 | 리스크 |
 |---|---|---|
 | 온디맨드 | 기준 | 없음 |
-| 스팟 / 커뮤니티 | 더 저렴 — 위 표에서 22–62% | 선점 또는 약한 보장. 체크포인팅 필수 |
+| 스팟 / 커뮤니티 | 더 저렴 — 위 표에서 23–62% | 선점 또는 약한 보장. 체크포인팅 필수 |
 | 예약 / 약정 | 30–50% 저렴 | 1–3년 락인, 세대 교체 리스크 |
 | 자체 구축 | 장기 최저 | 상면·전력·냉각·감가·인력 |
 
@@ -1437,7 +1437,7 @@ LoRA       y = W · x + B·A·x    W 冻结；只训练 A (4096×16) 和 B (16×
   <div class="calc-hd"><b>Decode 吞吐与推理成本</b><span>CALCULATOR 02</span></div>
   <div class="calc-bd">
     <div class="calc-grid">
-      <div><label>GPU（Runpod Secure，2026-11-07）</label><select data-f="gpu" data-gpus="h100"></select></div>
+      <div><label>GPU（Runpod Secure，2026-11-25）</label><select data-f="gpu" data-gpus="h100"></select></div>
       <div><label>GPU 数量</label><input data-f="n" type="number" value="1" min="1" max="8"></div>
       <div><label>参数量 (B)</label><input data-f="p" type="number" value="7" min="0.1" step="0.1"></div>
       <div><label>权重精度</label><select data-f="wp"><option value="2">FP16 / BF16</option><option value="1" selected>FP8 / INT8</option><option value="0.5">INT4</option></select></div>
@@ -1467,7 +1467,7 @@ LoRA       y = W · x + B·A·x    W 冻结；只训练 A (4096×16) 和 B (16×
       <div><label>参数量 (B)</label><input data-f="p" type="number" value="7" min="0.1" step="0.1"></div>
       <div><label>Token 数 (B)</label><input data-f="tok" type="number" value="1" min="0.001" step="0.1"></div>
       <div><label>方法</label><select data-f="m"><option value="6">全量微调 (6N)</option><option value="5">LoRA (~5N)</option></select></div>
-      <div><label>GPU（Runpod Secure，2026-11-07）</label><select data-f="gpu" data-gpus="h100"></select></div>
+      <div><label>GPU（Runpod Secure，2026-11-25）</label><select data-f="gpu" data-gpus="h100"></select></div>
       <div><label>GPU 数量</label><input data-f="n" type="number" value="8" min="1"></div>
       <div><label>MFU (%)</label><input data-f="mfu" type="number" value="40" min="5" max="70"></div>
     </div>
@@ -1482,7 +1482,7 @@ LoRA       y = W · x + B·A·x    W 冻结；只训练 A (4096×16) 和 B (16×
 </div>
 
 <div class="note" markdown="1">
-**关于这些计算器。** 这些是一阶近似：实际数字会随框架、批次组成、序列长度分布和调度器而变化。重点是看哪个变量起主导作用，而不是一个精确数字。FLOPS 为 dense 数据，Blackwell 数据为近似值；价格为 Runpod Secure Cloud 按需的每 GPU 小时价格，于 2026-11-07 从目录读取。
+**关于这些计算器。** 这些是一阶近似：实际数字会随框架、批次组成、序列长度分布和调度器而变化。重点是看哪个变量起主导作用，而不是一个精确数字。FLOPS 为 dense 数据，Blackwell 数据为近似值；价格为 Runpod Secure Cloud 按需的每 GPU 小时价格，于 2026-11-25 从 REST v2 目录读取。
 </div>
 
 ## Transformer 简介
@@ -1638,21 +1638,21 @@ Token 是 BPE 子词。词表覆盖不足的文字——在许多模型中包括
 每 1M 输出 token 的推理成本 = (每小时价格 ÷ 3600) ÷ 吞吐 (tok/s) × 1,000,000
 ```
 
-7B FP8 在一块 H100 SXM 上，使用 continuous batching 达到 3,000 tok/s：1,000,000 ÷ 3,000 = 333 s = 0.093 h，× USD 3.99 = **每 1M 输出 token 约 USD 0.37**。把它与 API 定价对比，自托管的盈亏平衡点就出来了。
+7B FP8 在一块 H100 SXM 上，使用 continuous batching 达到 3,000 tok/s：1,000,000 ÷ 3,000 = 333 s = 0.093 h，× USD 4.39 = **每 1M 输出 token 约 USD 0.41**。把它与 API 定价对比，自托管的盈亏平衡点就出来了。
 
-**实际成本 = 每小时价格 ÷ 实际利用率。** 一块 USD 3.99 的 GPU 只用了 20% 的时间，实际成本约为每小时 USD 20。这就是 Serverless 和自动扩缩容的理由，也是冷启动成为核心指标的原因。
+**实际成本 = 每小时价格 ÷ 实际利用率。** 一块 USD 4.39 的 GPU 只用了 20% 的时间，实际成本约为每小时 USD 22。这就是 Serverless 和自动扩缩容的理由，也是冷启动成为核心指标的原因。
 
-Runpod Pod 每 GPU 小时价格，于 2026-11-07 从目录读取：
+Runpod Pod 每 GPU 小时价格，于 2026-11-25 从 REST v2 目录读取：
 
 | GPU | 显存 | Secure Cloud | Community Cloud |
 |---|---|---|---|
-| L4 | 24 GB | 0.59 | 0.44 |
+| L4 | 24 GB | 0.69 | 0.44 |
 | RTX 4090 | 24 GB | 0.89 | 0.34 |
 | L40S | 48 GB | 1.09 | 0.79 |
-| A100 SXM | 80 GB | 1.79 | 1.39 |
+| A100 SXM | 80 GB | 2.19 | 1.39 |
 | H100 PCIe | 80 GB | 2.89 | 1.99 |
-| RTX PRO 6000 | 96 GB | 2.49 | 1.69 |
-| H100 SXM | 80 GB | 3.99 | 2.69 |
+| RTX PRO 6000 | 96 GB | 2.69 | 1.69 |
+| H100 SXM | 80 GB | 4.39 | 2.69 |
 | H200 SXM | 141 GB | 5.29 | 3.59 |
 | B200 | 180 GB | 7.99 | 5.98 |
 | B300 | 288 GB | 8.99 | 6.94 |
@@ -1660,7 +1660,7 @@ Runpod Pod 每 GPU 小时价格，于 2026-11-07 从目录读取：
 | 形式 | 价格 | 风险 |
 |---|---|---|
 | 按需 | 基准 | 无 |
-| Spot / community | 更便宜——上表中低 22–62% | 可能被抢占或保障较弱；必须做 checkpoint |
+| Spot / community | 更便宜——上表中低 23–62% | 可能被抢占或保障较弱；必须做 checkpoint |
 | 预留 / 承诺使用 | 便宜 30–50% | 锁定 1–3 年，有代际更替风险 |
 | 自建 | 长期看最低 | 场地、电力、散热、折旧、人力 |
 
@@ -2004,7 +2004,7 @@ LoRA       y = W · x + B·A·x    W は凍結。A (4096×16) と B (16×4096) �
   <div class="calc-hd"><b>デコードのスループットと推論コスト</b><span>CALCULATOR 02</span></div>
   <div class="calc-bd">
     <div class="calc-grid">
-      <div><label>GPU（Runpod Secure、2026-11-07）</label><select data-f="gpu" data-gpus="h100"></select></div>
+      <div><label>GPU（Runpod Secure、2026-11-25）</label><select data-f="gpu" data-gpus="h100"></select></div>
       <div><label>GPU 数</label><input data-f="n" type="number" value="1" min="1" max="8"></div>
       <div><label>パラメータ数（B）</label><input data-f="p" type="number" value="7" min="0.1" step="0.1"></div>
       <div><label>重みの精度</label><select data-f="wp"><option value="2">FP16 / BF16</option><option value="1" selected>FP8 / INT8</option><option value="0.5">INT4</option></select></div>
@@ -2034,7 +2034,7 @@ LoRA       y = W · x + B·A·x    W は凍結。A (4096×16) と B (16×4096) �
       <div><label>パラメータ数（B）</label><input data-f="p" type="number" value="7" min="0.1" step="0.1"></div>
       <div><label>トークン数（B）</label><input data-f="tok" type="number" value="1" min="0.001" step="0.1"></div>
       <div><label>方法</label><select data-f="m"><option value="6">フル FT（6N）</option><option value="5">LoRA（~5N）</option></select></div>
-      <div><label>GPU（Runpod Secure、2026-11-07）</label><select data-f="gpu" data-gpus="h100"></select></div>
+      <div><label>GPU（Runpod Secure、2026-11-25）</label><select data-f="gpu" data-gpus="h100"></select></div>
       <div><label>GPU 数</label><input data-f="n" type="number" value="8" min="1"></div>
       <div><label>MFU（%）</label><input data-f="mfu" type="number" value="40" min="5" max="70"></div>
     </div>
@@ -2049,7 +2049,7 @@ LoRA       y = W · x + B·A·x    W は凍結。A (4096×16) と B (16×4096) �
 </div>
 
 <div class="note" markdown="1">
-**これらの計算機について。** 一次近似です。実際の数値は、フレームワーク、バッチの構成、シーケンス長の分布、スケジューラによって変わります。重要なのはどの変数が支配的かであって、正確な数値ではありません。FLOPS は密の値で、Blackwell の数値は概算です。価格は Runpod Secure Cloud のオンデマンドの GPU 時間あたりで、2026-11-07 にカタログから読み取りました。
+**これらの計算機について。** 一次近似です。実際の数値は、フレームワーク、バッチの構成、シーケンス長の分布、スケジューラによって変わります。重要なのはどの変数が支配的かであって、正確な数値ではありません。FLOPS は密の値で、Blackwell の数値は概算です。価格は Runpod Secure Cloud のオンデマンドの GPU 時間あたりで、2026-11-25 に REST v2 カタログから読み取りました。
 </div>
 
 ## Transformer の概要
@@ -2205,21 +2205,21 @@ FLOPs のほぼすべては Tensor コア上の GEMM です。それ以外はす
 出力 100 万トークンあたりの推論コスト = (時間あたりの価格 ÷ 3600) ÷ スループット (tok/s) × 1,000,000
 ```
 
-H100 SXM 1 基で FP8 の 7B を continuous batching で 3,000 tok/s 出す場合：1,000,000 ÷ 3,000 = 333 秒 = 0.093 時間、× USD 3.99 = **出力 100 万トークンあたり約 USD 0.37** です。これを API の価格と比べれば、セルフホストの損益分岐点が見えてきます。
+H100 SXM 1 基で FP8 の 7B を continuous batching で 3,000 tok/s 出す場合：1,000,000 ÷ 3,000 = 333 秒 = 0.093 時間、× USD 4.39 = **出力 100 万トークンあたり約 USD 0.41** です。これを API の価格と比べれば、セルフホストの損益分岐点が見えてきます。
 
-**実効コスト = 時間あたりの価格 ÷ 実際の使用率。** USD 3.99 の GPU を 20% の時間しか使わなければ、実質的に時間あたり約 USD 20 かかります。これが Serverless とオートスケーリングを使う理由であり、コールドスタートが重要な指標である理由です。
+**実効コスト = 時間あたりの価格 ÷ 実際の使用率。** USD 4.39 の GPU を 20% の時間しか使わなければ、実質的に時間あたり約 USD 22 かかります。これが Serverless とオートスケーリングを使う理由であり、コールドスタートが重要な指標である理由です。
 
-Runpod の Pod の GPU 時間あたりの価格、2026-11-07 にカタログから読み取り：
+Runpod の Pod の GPU 時間あたりの価格、2026-11-25 に REST v2 カタログから読み取り：
 
 | GPU | VRAM | Secure Cloud | Community Cloud |
 |---|---|---|---|
-| L4 | 24 GB | 0.59 | 0.44 |
+| L4 | 24 GB | 0.69 | 0.44 |
 | RTX 4090 | 24 GB | 0.89 | 0.34 |
 | L40S | 48 GB | 1.09 | 0.79 |
-| A100 SXM | 80 GB | 1.79 | 1.39 |
+| A100 SXM | 80 GB | 2.19 | 1.39 |
 | H100 PCIe | 80 GB | 2.89 | 1.99 |
-| RTX PRO 6000 | 96 GB | 2.49 | 1.69 |
-| H100 SXM | 80 GB | 3.99 | 2.69 |
+| RTX PRO 6000 | 96 GB | 2.69 | 1.69 |
+| H100 SXM | 80 GB | 4.39 | 2.69 |
 | H200 SXM | 141 GB | 5.29 | 3.59 |
 | B200 | 180 GB | 7.99 | 5.98 |
 | B300 | 288 GB | 8.99 | 6.94 |
@@ -2227,7 +2227,7 @@ Runpod の Pod の GPU 時間あたりの価格、2026-11-07 にカタログか�
 | 形態 | 価格 | リスク |
 |---|---|---|
 | オンデマンド | 基準 | なし |
-| スポット / コミュニティ | 安い — 上の表では 22–62% | プリエンプションまたは保証が弱い。チェックポイントが必須 |
+| スポット / コミュニティ | 安い — 上の表では 23–62% | プリエンプションまたは保証が弱い。チェックポイントが必須 |
 | リザーブド / コミット | 30–50% 安い | 1–3 年の拘束、世代交代のリスク |
 | 自社構築 | 長期的には最安 | スペース、電力、冷却、減価償却、人員 |
 
