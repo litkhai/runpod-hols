@@ -66,6 +66,33 @@ Pods need no code repository — you launch them from the console, CLI, or SDK �
 
 Note that `runpod/containers` is shared ground with the Serverless track — `runpod/base` is both the Pod template base and the image the Serverless `worker-template` builds on.
 
+### Queued Pods — wait for a GPU instead of failing
+
+A REST v2 create with `queue` is placed when stock appears, instead of failing with *no instances currently available*. Run on 2026-11-24 with the lab key ([#111](https://github.com/litkhai/runpod-hols/issues/111)):
+
+```bash
+curl -X POST https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{
+  "name": "hol-q-now", "image": "runpod/base:1.0.2-ubuntu2404", "cloud": "SECURE",
+  "gpu": {"id": "NVIDIA RTX 2000 Ada Generation", "count": 1}, "disk": 10,
+  "queue": {"expiresAt": "2026-11-23T18:49:20Z", "allowedHours": {"monday": [9, 10, 11, 12]}}}'
+```
+
+| Step | What happened |
+|---|---|
+| Create, RTX 2000 Ada (Secure stock `NONE`) | `202` with a queued-pod object — `status: QUEUED`, `podId: null` — and `Location: /v2/queued-pods/{id}` |
+| Create with `startsAt` two hours ahead | `202 QUEUED` at once, without trying to deploy |
+| Create with `cpu` and `queue` | `400 queue is only supported for GPU pods` |
+| While queued, 11 minutes | `spendRate.current` 0 in `GET /v2/account/limits`; no Pod in `/v2/pods` |
+| Then | The scheduler placed it: `DEPLOYED`, `podId` set, `resolvedAt` 18:00:11 UTC. The Pod was `RUNNING` and `spendRate.current` read 0.241 — it bills from that moment. Deleted 14 s later |
+| `DELETE /v2/queued-pods/{id}` | The future one became `CANCELLED`; the deployed one stayed `DEPLOYED`. Both 204, and a second DELETE is 204 too |
+
+What it changes:
+
+- **No retry loop for stock.** In October a type with no stock failed 10 creates out of 10 (C25), and stock flipped all day (C27). This RTX 2000 Ada read `NONE` before and after and was still placed in between. `queue` exists only on `POST /v2/pods`; the cluster lab's wait for A100 or H100 ([#93](https://github.com/litkhai/runpod-hols/issues/93)) still polls.
+- **A queued Pod costs nothing until it deploys — then it bills without asking.** Bound it with `expiresAt` (default and cap 30 days) or `allowedHours`, and watch `/v2/queued-pods`. `notifyEmail` must be an address on the account; not tried here.
+- **Billing lags.** Five minutes after the deploy, `/v2/billing/pods` had no record yet; `spendRate.current` is the live signal.
+
 ### ⚠️ Before You Start
 
 Set a spending limit in the console, and get into the habit of terminating Pods the moment a lab ends. A forgotten Pod is the most common surprise on a Runpod bill.
@@ -130,6 +157,33 @@ Pod 는 코드 저장소가 필요 없습니다. 콘솔, CLI, SDK 로 기동하�
 | [runpod/runpodctl](https://github.com/runpod/runpodctl) | Pod 기동 및 관리용 CLI |
 
 `runpod/containers` 는 Serverless 트랙과 겹치는 지점입니다. `runpod/base` 는 Pod 템플릿의 베이스이면서 동시에 Serverless `worker-template` 이 사용하는 이미지이기도 합니다.
+
+### 대기 Pod — 실패하는 대신 GPU 를 기다리기
+
+REST v2 생성에 `queue` 를 주면 *no instances currently available* 로 실패하는 대신 재고가 생길 때 배치됩니다. 2026-11-24 에 실습용 키로 실행했습니다 ([#111](https://github.com/litkhai/runpod-hols/issues/111)).
+
+```bash
+curl -X POST https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{
+  "name": "hol-q-now", "image": "runpod/base:1.0.2-ubuntu2404", "cloud": "SECURE",
+  "gpu": {"id": "NVIDIA RTX 2000 Ada Generation", "count": 1}, "disk": 10,
+  "queue": {"expiresAt": "2026-11-23T18:49:20Z", "allowedHours": {"monday": [9, 10, 11, 12]}}}'
+```
+
+| 단계 | 결과 |
+|---|---|
+| RTX 2000 Ada (Secure 재고 `NONE`) 로 생성 | `202` 와 대기 Pod 객체 — `status: QUEUED`, `podId: null` — 그리고 `Location: /v2/queued-pods/{id}` |
+| `startsAt` 을 두 시간 뒤로 두고 생성 | 배치를 시도하지 않고 바로 `202 QUEUED` |
+| `cpu` 와 `queue` 로 생성 | `400 queue is only supported for GPU pods` |
+| 대기 중 11분 | `GET /v2/account/limits` 의 `spendRate.current` 0. `/v2/pods` 에 Pod 없음 |
+| 그 뒤 | 스케줄러가 배치: `DEPLOYED`, `podId` 채워짐, `resolvedAt` 18:00:11 UTC. Pod 은 `RUNNING`, `spendRate.current` 0.241 — 이 순간부터 과금. 14초 뒤 삭제 |
+| `DELETE /v2/queued-pods/{id}` | 미래 시작분은 `CANCELLED`, 이미 배치된 것은 `DEPLOYED` 그대로. 둘 다 204, 두 번째 DELETE 도 204 |
+
+바뀌는 것:
+
+- **재고를 위한 재시도 루프가 필요 없습니다.** 10월에는 재고 없는 종류가 생성 10번 중 10번 실패했고 (C25), 재고는 하루 종일 바뀌었습니다 (C27). 이 RTX 2000 Ada 는 전후로 `NONE` 이었는데도 그 사이에 배치됐습니다. `queue` 는 `POST /v2/pods` 에만 있으므로 A100·H100 을 기다리는 클러스터 실습 ([#93](https://github.com/litkhai/runpod-hols/issues/93)) 은 여전히 폴링합니다.
+- **대기 Pod 은 배치되기 전까지 무료지만, 배치되면 묻지 않고 과금됩니다.** `expiresAt` (기본값이자 상한 30일) 이나 `allowedHours` 로 제한하고 `/v2/queued-pods` 를 지켜보세요. `notifyEmail` 은 계정의 주소여야 하며 여기서는 시도하지 않았습니다.
+- **과금 기록은 늦게 올라옵니다.** 배치 5분 뒤에도 `/v2/billing/pods` 에 기록이 없었습니다. 실시간 신호는 `spendRate.current` 입니다.
 
 ### ⚠️ 시작하기 전에
 
