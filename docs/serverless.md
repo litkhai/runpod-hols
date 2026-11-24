@@ -140,6 +140,8 @@ Lab 01 deployed from GitHub, CPU workers, `workers_min = 0`:
 |---|---|---|
 | First (cold) | 3,704 ms | 222 ms |
 | Warm | 776–806 ms | 194–217 ms |
+| First (cold), SDK 2.4.0 (2026-11-25) | 2,285 ms | 145 ms |
+| Warm, SDK 2.4.0 | 92–95 ms | 137–140 ms |
 
 `delayTime` is queue plus worker startup, `executionTime` is the handler. The handler is a rounding error — almost all of the first request is cold start, which is exactly what `workers_min = 0` buys you in cost and pays for in latency.
 
@@ -485,6 +487,8 @@ GitHub 연동으로 배포한 실습 01, CPU 워커, `workers_min = 0` 기준입
 |---|---|---|
 | 첫 요청 (콜드) | 3,704 ms | 222 ms |
 | 워밍 후 | 776~806 ms | 194~217 ms |
+| 첫 요청 (콜드), SDK 2.4.0 (2026-11-25) | 2,285 ms | 145 ms |
+| 워밍 후, SDK 2.4.0 | 92~95 ms | 137~140 ms |
 
 `delayTime` 은 큐 대기와 워커 기동, `executionTime` 은 핸들러 실행입니다. 핸들러는 오차 수준이고 첫 요청의 대부분이 콜드 스타트입니다. `workers_min = 0` 이 비용으로 얻고 지연시간으로 치르는 것이 정확히 이것입니다.
 
@@ -830,6 +834,8 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 |---|---|---|
 | 第一次（冷） | 3,704 ms | 222 ms |
 | 热 | 776–806 ms | 194–217 ms |
+| 第一次（冷），SDK 2.4.0（2026-11-25） | 2,285 ms | 145 ms |
+| 热，SDK 2.4.0 | 92–95 ms | 137–140 ms |
 
 `delayTime` 是排队加 worker 启动，`executionTime` 是 handler。handler 的耗时可以忽略不计——第一次请求几乎全是冷启动，这正是 `workers_min = 0` 在成本上换来的、并在延迟上付出的代价。
 
@@ -1175,6 +1181,8 @@ GitHub からデプロイした ラボ 01、CPU worker、`workers_min = 0`：
 |---|---|---|
 | 初回（コールド） | 3,704 ms | 222 ms |
 | ウォーム | 776–806 ms | 194–217 ms |
+| 初回（コールド）、SDK 2.4.0（2026-11-25） | 2,285 ms | 145 ms |
+| ウォーム、SDK 2.4.0 | 92–95 ms | 137–140 ms |
 
 `delayTime` はキュー待ちと worker の起動、`executionTime` は handler です。handler は誤差程度で、初回リクエストのほぼすべてがコールドスタートです。これこそ `workers_min = 0` がコスト面で得て、レイテンシ面で支払うものです。
 
