@@ -3,7 +3,7 @@
 
 Env: RUNPOD_API_KEY, ENDPOINT_ID, N (cold probes, default 6), GAP_S (idle gap before each cold probe, default 180)
 Usage: python3 flashboot_alternate.py
-Before probe i, FlashBoot is set to on for even i and off for odd i (PATCH /endpoints/{id}, REST v1).
+Before probe i, FlashBoot is set to on for even i and off for odd i (PATCH /v2/serverless/{id}; the recorded runs used REST v1 PATCH /endpoints/{id}, #101).
 Each probe is one request after the gap (cold) and one right after (warm), in coldstart_probe.py's row
 format plus a "flashboot" field, so coldstart_phases.py can split the cold starts. C22: from a 60 s gap
 on, every request got a new container; 180 s leaves margin.
@@ -37,8 +37,9 @@ def call(path, data=None):
 rows = []
 for i in range(N):
     fb = i % 2 == 0
-    api("PATCH", f"/endpoints/{EP}", {"flashboot": fb})
-    got = api("GET", f"/endpoints/{EP}").get("flashboot")
+    # v2 FlashBoot is an enum; the row keeps fb as a bool so coldstart_phases.py still splits on it.
+    api("PATCH", f"/serverless/{EP}", {"flashboot": "FLASHBOOT" if fb else "OFF"})
+    got = api("GET", f"/serverless/{EP}").get("flashboot")
     print(f"probe {i}: flashboot set {fb}, endpoint reports {got}; idle {GAP}s", flush=True)
     time.sleep(GAP)
     for kind in ("cold", "warm"):

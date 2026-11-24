@@ -18,7 +18,9 @@
 | Pod volume | `/workspace` | Yes |
 | Network volume | `/workspace`, replacing the Pod volume | Yes, until you delete the volume |
 
-A Pod has a Pod volume *or* a network volume at `/workspace`, not both: *"If attached, a network volume replaces the Pod network volume"* ([`POST /pods`](https://rest.runpod.io/v1/openapi.json)).
+A Pod has a Pod volume *or* a network volume at `/workspace`, not both. REST v1, which these runs used, said *"If attached, a network volume replaces the Pod network volume"*; REST v2 rejects the pair with a 400 — `mounts.persistent` (the Pod volume) and `mounts.network` are mutually exclusive, and `persistent` is not allowed on CPU Pods at all ([`Mounts`](https://api.runpod.io/v2/openapi.json), read 2026-11-24).
+
+The lab now calls REST v2 ([#101](https://github.com/litkhai/runpod-hols/issues/101)): `lab.py status` was run against it on 2026-11-24; create, stop, start and delete were not re-run. The results below were recorded on REST v1, so they use its field names (`volumeInGb`, `costPerHr`).
 
 ### Files
 
@@ -163,7 +165,9 @@ Not run: other data centers, a Pod volume on a host where it might be local disk
 | Pod 볼륨 | `/workspace` | 예 |
 | 네트워크 볼륨 | `/workspace`, Pod 볼륨을 대체 | 예, 볼륨을 지울 때까지 |
 
-Pod 은 `/workspace` 에 Pod 볼륨 *또는* 네트워크 볼륨을 가집니다. 둘 다는 아닙니다. *"If attached, a network volume replaces the Pod network volume"* ([`POST /pods`](https://rest.runpod.io/v1/openapi.json)).
+Pod 은 `/workspace` 에 Pod 볼륨 *또는* 네트워크 볼륨을 가집니다. 둘 다는 아닙니다. 이 측정에 쓴 REST v1 은 *"If attached, a network volume replaces the Pod network volume"* 라고 했고, REST v2 는 둘을 함께 주면 400 으로 거부합니다. `mounts.persistent` (Pod 볼륨) 와 `mounts.network` 는 함께 쓸 수 없고, CPU Pod 에는 `persistent` 자체가 허용되지 않습니다 ([`Mounts`](https://api.runpod.io/v2/openapi.json), 2026-11-24 확인).
+
+실습은 이제 REST v2 를 호출합니다 ([#101](https://github.com/litkhai/runpod-hols/issues/101)). 2026-11-24 에 `lab.py status` 를 v2 로 실행했고, 생성·중지·시작·삭제는 다시 실행하지 않았습니다. 아래 결과는 REST v1 에서 기록했으므로 v1 필드 이름 (`volumeInGb`, `costPerHr`) 을 씁니다.
 
 ### 파일 구성
 

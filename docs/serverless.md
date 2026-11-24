@@ -170,7 +170,7 @@ The 12 s is container start, imports, a 2.37 s model load and the SDK's fitness 
 <figure class="shot"><a href="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}" alt="GPU configuration split into Previous generation and Latest generation tabs" loading="lazy" width="1400" height="998"></a><figcaption>The console now separates the pools into <strong>Previous generation</strong> and <strong>Latest generation</strong> ("require a CUDA 12.8+ image"). 02-llm-chat has 16 GB and 24 GB ticked here and a 24 GB pool on the Latest tab, so the form warns "You selected GPUs from both generations" — the situation above.</figcaption></figure>
 
 <div class="note" markdown="1">
-**Pinning a MIG type needs GraphQL.** The REST API rejects the MIG type in `gpuTypeIds`. The GraphQL `saveEndpoint` mutation takes a pool plus exclusions instead — `gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` left only the MIG slice.
+**Pinning a MIG type needed GraphQL.** REST v1 rejected the MIG type in `gpuTypeIds`. The GraphQL `saveEndpoint` mutation takes a pool plus exclusions instead — `gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` left only the MIG slice. REST v2 has the same shape, `gpu.pools` plus `gpu.excludedTypes` (spec read 2026-11-24, not re-run).
 
 **Worker logs do not end.** `https://api.runpod.io/v2/serverless/{endpoint}/workers/{worker}/logs` answered as a stream that never closed, so a plain `curl` hangs. Give it a client timeout, such as `curl -m 20`, and read what arrived.
 </div>
@@ -485,7 +485,7 @@ GitHub 연동으로 배포한 실습 01, CPU 워커, `workers_min = 0` 기준입
 <figure class="shot"><a href="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}" alt="Previous generation 과 Latest generation 탭으로 나뉜 GPU configuration" loading="lazy" width="1400" height="998"></a><figcaption>콘솔은 이제 풀을 <strong>Previous generation</strong> 과 <strong>Latest generation</strong> ("CUDA 12.8+ 이미지 필요") 으로 나눈다. 02-llm-chat 은 여기서 16 GB 와 24 GB 를, Latest 탭에서 24 GB 풀을 골라 두어서 "You selected GPUs from both generations" 경고가 뜬다. 위에서 설명한 바로 그 상황이다.</figcaption></figure>
 
 <div class="note" markdown="1">
-**MIG 타입 고정은 GraphQL 로 해야 합니다.** REST API 는 `gpuTypeIds` 에 MIG 타입을 넣으면 거부합니다. GraphQL `saveEndpoint` 뮤테이션은 풀과 제외 목록을 받습니다. `gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` 로 MIG 조각만 남았습니다.
+**MIG 타입 고정은 GraphQL 로 해야 했습니다.** REST v1 은 `gpuTypeIds` 에 MIG 타입을 넣으면 거부했습니다. GraphQL `saveEndpoint` 뮤테이션은 풀과 제외 목록을 받습니다. `gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` 로 MIG 조각만 남았습니다. REST v2 도 같은 형태인 `gpu.pools` 와 `gpu.excludedTypes` 를 받습니다 (2026-11-24 스펙 확인, 재실행하지 않음).
 
 **워커 로그는 끝나지 않습니다.** `https://api.runpod.io/v2/serverless/{endpoint}/workers/{worker}/logs` 는 닫히지 않는 스트림으로 응답해서 일반 `curl` 은 멈춥니다. `curl -m 20` 처럼 클라이언트 타임아웃을 주고 그때까지 받은 내용을 읽으세요.
 </div>
@@ -800,7 +800,7 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 <figure class="shot"><a href="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}" alt="GPU configuration 分为 Previous generation 和 Latest generation 两个标签页" loading="lazy" width="1400" height="998"></a><figcaption>控制台现在把 GPU 池分成 <strong>Previous generation</strong> 和 <strong>Latest generation</strong>（"需要 CUDA 12.8+ 镜像"）。02-llm-chat 在这里勾选了 16 GB 和 24 GB，在 Latest 标签页又勾选了一个 24 GB 池，因此表单提示 "You selected GPUs from both generations"——正是上面描述的情况。</figcaption></figure>
 
 <div class="note" markdown="1">
-**固定 MIG 类型需要 GraphQL。** REST API 不接受 `gpuTypeIds` 中的 MIG 类型。GraphQL 的 `saveEndpoint` mutation 则接受一个池加排除项——`gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` 之后只剩下 MIG 切片。
+**固定 MIG 类型曾需要 GraphQL。** REST v1 不接受 `gpuTypeIds` 中的 MIG 类型。GraphQL 的 `saveEndpoint` mutation 则接受一个池加排除项——`gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` 之后只剩下 MIG 切片。REST v2 采用同样的形式：`gpu.pools` 加 `gpu.excludedTypes`（2026-11-24 读取规范，未重新运行）。
 
 **worker 日志不会结束。** `https://api.runpod.io/v2/serverless/{endpoint}/workers/{worker}/logs` 以一个永不关闭的流响应，所以普通的 `curl` 会挂起。给它设置客户端超时，例如 `curl -m 20`，然后读取已收到的内容。
 </div>
@@ -1115,7 +1115,7 @@ GitHub からデプロイした ラボ 01、CPU worker、`workers_min = 0`：
 <figure class="shot"><a href="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}" alt="Previous generation と Latest generation のタブに分かれた GPU configuration" loading="lazy" width="1400" height="998"></a><figcaption>コンソールはプールを <strong>Previous generation</strong> と <strong>Latest generation</strong>（「CUDA 12.8+ のイメージが必要」）に分けるようになりました。02-llm-chat はここで 16 GB と 24 GB を、Latest タブで 24 GB のプールを選んでいるため、"You selected GPUs from both generations" と警告が出ます。上で説明した状況そのものです。</figcaption></figure>
 
 <div class="note" markdown="1">
-**MIG タイプの固定には GraphQL が必要です。** REST API は `gpuTypeIds` に MIG タイプを入れると拒否します。GraphQL の `saveEndpoint` ミューテーションは、代わりにプールと除外リストを受け取ります。`gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` で MIG スライスだけが残りました。
+**MIG タイプの固定には GraphQL が必要でした。** REST v1 は `gpuTypeIds` に MIG タイプを入れると拒否しました。GraphQL の `saveEndpoint` ミューテーションは、代わりにプールと除外リストを受け取ります。`gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` で MIG スライスだけが残りました。REST v2 も同じ形の `gpu.pools` と `gpu.excludedTypes` を受け付けます（2026-11-24 に仕様を確認、再実行はしていません）。
 
 **worker のログは終わりません。** `https://api.runpod.io/v2/serverless/{endpoint}/workers/{worker}/logs` は閉じないストリームとして応答するため、素の `curl` は止まったままになります。`curl -m 20` のようにクライアント側のタイムアウトを付け、届いた分を読んでください。
 </div>
