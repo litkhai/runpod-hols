@@ -97,7 +97,7 @@ FINAL_STATES = ["COMPLETED", "FAILED", "TIMED_OUT"]
 is_completed(s) -> s in ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED"]
 ```
 
-> **These two disagree**: `CANCELLED` is final for `is_completed()` but not for `FINAL_STATES`. `run_sync` checks the list without it, while `job.output()` polls on the function that has it. If you cancel a job you are waiting on, prefer `output()`.
+> **These two disagree**: `CANCELLED` is final for `is_completed()` but not for `FINAL_STATES`. `run_sync` checks the list without it, while `job.output()` polls on the function that has it. If you cancel a job you are waiting on, prefer `output()`. This is 1.12 and 2.1; 2.4 treats `CANCELLED` as final in both and raises `JobError`.
 
 ### Async
 
@@ -165,6 +165,19 @@ These wrap Runpod's GraphQL API, so responses come back shaped by GraphQL rather
 The SDK uses the `/v2` paths on `api.runpod.io` — REST v2, [spec](https://api.runpod.io/v2/openapi.json). REST v1 at `https://rest.runpod.io/v1` was retired on 2026-11-15 and its host no longer resolves (checked 2026-11-24, [#101](https://github.com/litkhai/runpod-hols/issues/101)).
 
 The upstream `CHANGELOG.md` labels the 2.0.0 notes as a second `2.1.0` section dated 2026-10-28. The GitHub release `v2.0.0` carries those notes under `2.0.0`, and PyPI and the tags agree on 2.0.0 for 2026-10-30.
+
+### From 2.1 to 2.4
+
+2.2.0 reached PyPI on 2026-11-09, 2.3.0 on 2026-11-17 and 2.4.0 on 2026-11-20. Read from the 2.4.0 wheel on 2026-11-25 and compared with 2.1.0 ([#134](https://github.com/litkhai/runpod-hols/issues/134)); the `JobError` rows were run against a stubbed client, nothing else was called.
+
+| | 2.4.0 |
+|---|---|
+| A failed job | `run_sync` and `job.output()` raise `runpod.error.JobError` (`job_id`, `status`, `error`) for `FAILED`, `TIMED_OUT` and `CANCELLED`, where 2.1 returned `None`. `run_sync` on a stub answering `FAILED`: `JobError: job j1 FAILED: boom`. Code that checked for `None` now needs `try` |
+| `CANCELLED` | Final for both calls — the disagreement under Job states is gone in 2.4 |
+| Credential profiles | `RUNPOD_PROFILE` picks a profile in `~/.runpod/config.toml`, saved with `rp login --profile NAME`; unset means `default` |
+| Hosts | `RUNPOD_CONSOLE_URL` and `RUNPOD_PROXY_DOMAIN` join `RUNPOD_ENDPOINT_BASE_URL`; read on every call |
+| Network volume files | New resumable upload and download through the S3-compatible API, multipart above 64 MiB, resume state under `~/.runpod/transfers` |
+| User-Agent | Calls can carry `Integration/<name>`; the `runpod.apps` runtime sends `Integration/apps` |
 
 ### REST v1 to v2
 
@@ -272,7 +285,7 @@ In 2.x the `runpod` command is the new `rp` CLI instead — see the table above.
 | `run_sync` default timeout is 24h | A hung job blocks your script all day |
 | `run_sync` auto-wraps input | Both `{"x": 1}` and `{"input": {"x": 1}}` work; helpful, but obscures the wire format |
 | `/runsync` may return `IN_PROGRESS` | The SDK polls for you; raw HTTP callers must handle it |
-| `CANCELLED` is inconsistent between the two state checks | Prefer `job.output()` when cancellation is possible |
+| `CANCELLED` is inconsistent between the two state checks | Prefer `job.output()` when cancellation is possible; on 2.4 both raise `JobError` |
 | `job.output()` and `stream()` poll every second | Fine for labs; a tight loop for latency-sensitive work |
 | The `runpod` CLI ≠ `runpodctl` | Different tools, overlapping names |
 
@@ -363,7 +376,7 @@ FINAL_STATES = ["COMPLETED", "FAILED", "TIMED_OUT"]
 is_completed(s) -> s in ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED"]
 ```
 
-> **이 둘이 서로 다릅니다.** `CANCELLED` 는 `is_completed()` 에서는 최종 상태지만 `FINAL_STATES` 에는 없습니다. `run_sync` 는 `CANCELLED` 가 빠진 목록을 확인하고, `job.output()` 은 포함된 함수로 폴링합니다. 대기 중인 작업을 취소할 가능성이 있다면 `output()` 쪽이 안전합니다.
+> **이 둘이 서로 다릅니다.** `CANCELLED` 는 `is_completed()` 에서는 최종 상태지만 `FINAL_STATES` 에는 없습니다. `run_sync` 는 `CANCELLED` 가 빠진 목록을 확인하고, `job.output()` 은 포함된 함수로 폴링합니다. 대기 중인 작업을 취소할 가능성이 있다면 `output()` 쪽이 안전합니다. 1.12 와 2.1 의 이야기이고, 2.4 는 두 곳 모두 `CANCELLED` 를 최종 상태로 보고 `JobError` 를 던집니다.
 
 ### 비동기
 
@@ -431,6 +444,19 @@ runpod.terminate_pod(pod_id)
 SDK 는 `api.runpod.io` 의 `/v2` 경로, 즉 REST v2 를 씁니다 ([스펙](https://api.runpod.io/v2/openapi.json)). `https://rest.runpod.io/v1` 의 REST v1 은 2026-11-15 에 폐기됐고 호스트가 더는 조회되지 않습니다 (2026-11-24 확인, [#101](https://github.com/litkhai/runpod-hols/issues/101)).
 
 상류 `CHANGELOG.md` 는 2.0.0 의 노트를 2026-10-28 날짜의 두 번째 `2.1.0` 섹션으로 표기합니다. GitHub 릴리스 `v2.0.0` 에는 같은 노트가 `2.0.0` 으로 올라 있고, PyPI 와 태그도 2026-10-30 의 2.0.0 으로 일치합니다.
+
+### 2.1 에서 2.4 로
+
+2.2.0 은 2026-11-09, 2.3.0 은 2026-11-17, 2.4.0 은 2026-11-20 에 PyPI 에 올라왔습니다. 2026-11-25 에 2.4.0 휠을 읽고 2.1.0 과 비교했습니다 ([#134](https://github.com/litkhai/runpod-hols/issues/134)). `JobError` 두 행은 가짜 클라이언트로 실행해 확인했고, 그 밖에는 호출하지 않았습니다.
+
+| | 2.4.0 |
+|---|---|
+| 실패한 작업 | `run_sync` 와 `job.output()` 이 `FAILED`, `TIMED_OUT`, `CANCELLED` 에서 `runpod.error.JobError` (`job_id`, `status`, `error`) 를 던집니다. 2.1 은 `None` 을 돌려줬습니다. `FAILED` 를 돌려주는 가짜 클라이언트에서 `run_sync` 는 `JobError: job j1 FAILED: boom`. `None` 을 확인하던 코드는 이제 `try` 가 필요합니다 |
+| `CANCELLED` | 두 호출 모두 최종 상태로 봅니다. 작업 상태 절의 불일치는 2.4 에서 사라졌습니다 |
+| 인증 프로필 | `RUNPOD_PROFILE` 이 `~/.runpod/config.toml` 의 프로필을 고릅니다 (`rp login --profile NAME` 으로 저장). 비어 있으면 `default` |
+| 호스트 | `RUNPOD_ENDPOINT_BASE_URL` 에 `RUNPOD_CONSOLE_URL`, `RUNPOD_PROXY_DOMAIN` 이 더해졌고, 호출할 때마다 읽습니다 |
+| 네트워크 볼륨 파일 | S3 호환 API 를 통한 이어받기 가능한 업로드·다운로드가 새로 생겼습니다. 64 MiB 초과는 multipart, 재개 상태는 `~/.runpod/transfers` |
+| User-Agent | 호출에 `Integration/<name>` 을 붙일 수 있고, `runpod.apps` 런타임은 `Integration/apps` 를 보냅니다 |
 
 ### REST v1 에서 v2 로
 
@@ -538,6 +564,6 @@ handler_path, python_version, requirements_path
 | `run_sync` 기본 타임아웃 24시간 | 멈춘 작업이 스크립트를 하루 종일 붙잡음 |
 | `run_sync` 가 입력을 자동으로 감쌈 | `{"x": 1}` 과 `{"input": {"x": 1}}` 모두 동작. 편하지만 실제 전송 형식이 가려짐 |
 | `/runsync` 가 `IN_PROGRESS` 를 반환할 수 있음 | SDK 는 대신 폴링해주지만, 순수 HTTP 호출자는 직접 처리해야 함 |
-| 두 상태 검사에서 `CANCELLED` 취급이 다름 | 취소 가능성이 있으면 `job.output()` 사용 |
+| 두 상태 검사에서 `CANCELLED` 취급이 다름 | 취소 가능성이 있으면 `job.output()` 사용. 2.4 에서는 둘 다 `JobError` |
 | `job.output()` 과 `stream()` 은 1초 간격 폴링 | 실습에는 충분하지만 지연에 민감한 작업에는 촘촘한 루프 |
 | `runpod` CLI ≠ `runpodctl` | 이름이 겹치는 서로 다른 도구 |

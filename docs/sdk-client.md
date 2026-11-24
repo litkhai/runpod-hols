@@ -76,7 +76,7 @@ is_completed(s) -> s in ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED"]
 ```
 
 <div class="warn" markdown="1">
-**The two disagree on `CANCELLED`.** `run_sync` checks the list without it; `job.output()` polls on the function that has it. If cancellation is possible, prefer `output()`.
+**The two disagree on `CANCELLED`.** `run_sync` checks the list without it; `job.output()` polls on the function that has it. If cancellation is possible, prefer `output()`. This is 1.12 and 2.1; 2.4 treats `CANCELLED` as final in both and raises `JobError`.
 </div>
 
 ### Managing infrastructure
@@ -115,6 +115,19 @@ is_completed(s) -> s in ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED"]
 The SDK uses the `/v2` paths on `api.runpod.io` — REST v2, [spec](https://api.runpod.io/v2/openapi.json). REST v1 at `https://rest.runpod.io/v1` was retired on 2026-11-15 and its host no longer resolves (checked 2026-11-24, [#101](https://github.com/litkhai/runpod-hols/issues/101)).
 
 The upstream `CHANGELOG.md` labels the 2.0.0 notes as a second `2.1.0` section dated 2026-10-28. The GitHub release `v2.0.0` carries those notes under `2.0.0`, and PyPI and the tags agree on 2.0.0 for 2026-10-30.
+
+### From 2.1 to 2.4
+
+2.2.0 reached PyPI on 2026-11-09, 2.3.0 on 2026-11-17 and 2.4.0 on 2026-11-20. Read from the 2.4.0 wheel on 2026-11-25 and compared with 2.1.0 ([#134](https://github.com/litkhai/runpod-hols/issues/134)); the `JobError` rows were run against a stubbed client, nothing else was called.
+
+| | 2.4.0 |
+|---|---|
+| A failed job | `run_sync` and `job.output()` raise `runpod.error.JobError` (`job_id`, `status`, `error`) for `FAILED`, `TIMED_OUT` and `CANCELLED`, where 2.1 returned `None`. `run_sync` on a stub answering `FAILED`: `JobError: job j1 FAILED: boom`. Code that checked for `None` now needs `try` |
+| `CANCELLED` | Final for both calls — the disagreement under Job states is gone in 2.4 |
+| Credential profiles | `RUNPOD_PROFILE` picks a profile in `~/.runpod/config.toml`, saved with `rp login --profile NAME`; unset means `default` |
+| Hosts | `RUNPOD_CONSOLE_URL` and `RUNPOD_PROXY_DOMAIN` join `RUNPOD_ENDPOINT_BASE_URL`; read on every call |
+| Network volume files | New resumable upload and download through the S3-compatible API, multipart above 64 MiB, resume state under `~/.runpod/transfers` |
+| User-Agent | Calls can carry `Integration/<name>`; the `runpod.apps` runtime sends `Integration/apps` |
 
 ### REST v1 to v2
 
@@ -259,7 +272,7 @@ is_completed(s) -> s in ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED"]
 ```
 
 <div class="warn" markdown="1">
-**둘이 `CANCELLED` 취급을 다르게 합니다.** `run_sync` 는 `CANCELLED` 가 빠진 목록을 확인하고, `job.output()` 은 포함된 함수로 폴링합니다. 취소 가능성이 있으면 `output()` 을 쓰세요.
+**둘이 `CANCELLED` 취급을 다르게 합니다.** `run_sync` 는 `CANCELLED` 가 빠진 목록을 확인하고, `job.output()` 은 포함된 함수로 폴링합니다. 취소 가능성이 있으면 `output()` 을 쓰세요. 1.12 와 2.1 의 이야기이고, 2.4 는 두 곳 모두 `CANCELLED` 를 최종 상태로 보고 `JobError` 를 던집니다.
 </div>
 
 ### 인프라 관리
@@ -298,6 +311,19 @@ is_completed(s) -> s in ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED"]
 SDK 는 `api.runpod.io` 의 `/v2` 경로, 즉 REST v2 를 씁니다 ([스펙](https://api.runpod.io/v2/openapi.json)). `https://rest.runpod.io/v1` 의 REST v1 은 2026-11-15 에 폐기됐고 호스트가 더는 조회되지 않습니다 (2026-11-24 확인, [#101](https://github.com/litkhai/runpod-hols/issues/101)).
 
 상류 `CHANGELOG.md` 는 2.0.0 의 노트를 2026-10-28 날짜의 두 번째 `2.1.0` 섹션으로 표기합니다. GitHub 릴리스 `v2.0.0` 에는 같은 노트가 `2.0.0` 으로 올라 있고, PyPI 와 태그도 2026-10-30 의 2.0.0 으로 일치합니다.
+
+### 2.1 에서 2.4 로
+
+2.2.0 은 2026-11-09, 2.3.0 은 2026-11-17, 2.4.0 은 2026-11-20 에 PyPI 에 올라왔습니다. 2026-11-25 에 2.4.0 휠을 읽고 2.1.0 과 비교했습니다 ([#134](https://github.com/litkhai/runpod-hols/issues/134)). `JobError` 두 행은 가짜 클라이언트로 실행해 확인했고, 그 밖에는 호출하지 않았습니다.
+
+| | 2.4.0 |
+|---|---|
+| 실패한 작업 | `run_sync` 와 `job.output()` 이 `FAILED`, `TIMED_OUT`, `CANCELLED` 에서 `runpod.error.JobError` (`job_id`, `status`, `error`) 를 던집니다. 2.1 은 `None` 을 돌려줬습니다. `FAILED` 를 돌려주는 가짜 클라이언트에서 `run_sync` 는 `JobError: job j1 FAILED: boom`. `None` 을 확인하던 코드는 이제 `try` 가 필요합니다 |
+| `CANCELLED` | 두 호출 모두 최종 상태로 봅니다. 작업 상태 절의 불일치는 2.4 에서 사라졌습니다 |
+| 인증 프로필 | `RUNPOD_PROFILE` 이 `~/.runpod/config.toml` 의 프로필을 고릅니다 (`rp login --profile NAME` 으로 저장). 비어 있으면 `default` |
+| 호스트 | `RUNPOD_ENDPOINT_BASE_URL` 에 `RUNPOD_CONSOLE_URL`, `RUNPOD_PROXY_DOMAIN` 이 더해졌고, 호출할 때마다 읽습니다 |
+| 네트워크 볼륨 파일 | S3 호환 API 를 통한 이어받기 가능한 업로드·다운로드가 새로 생겼습니다. 64 MiB 초과는 multipart, 재개 상태는 `~/.runpod/transfers` |
+| User-Agent | 호출에 `Integration/<name>` 을 붙일 수 있고, `runpod.apps` 런타임은 `Integration/apps` 를 보냅니다 |
 
 ### REST v1 에서 v2 로
 
@@ -442,7 +468,7 @@ is_completed(s) -> s in ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED"]
 ```
 
 <div class="warn" markdown="1">
-**两者对 `CANCELLED` 的看法不一致。** `run_sync` 检查的是不含它的列表；`job.output()` 轮询时用的是包含它的函数。如果可能发生取消，优先使用 `output()`。
+**两者对 `CANCELLED` 的看法不一致。** `run_sync` 检查的是不含它的列表；`job.output()` 轮询时用的是包含它的函数。如果可能发生取消，优先使用 `output()`。这是 1.12 和 2.1 的情况；2.4 中两者都把 `CANCELLED` 视为最终状态并抛出 `JobError`。
 </div>
 
 ### 管理基础设施
@@ -481,6 +507,19 @@ is_completed(s) -> s in ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED"]
 SDK 使用 `api.runpod.io` 上的 `/v2` 路径，即 REST v2（[规范](https://api.runpod.io/v2/openapi.json)）。位于 `https://rest.runpod.io/v1` 的 REST v1 已于 2026-11-15 停用，该主机已无法解析（2026-11-24 检查，[#101](https://github.com/litkhai/runpod-hols/issues/101)）。
 
 上游的 `CHANGELOG.md` 把 2.0.0 的说明标成了第二个 `2.1.0` 小节，日期为 2026-10-28。GitHub release `v2.0.0` 在 `2.0.0` 下记载了这些说明，PyPI 和 tag 也一致表明 2.0.0 发布于 2026-10-30。
+
+### 从 2.1 到 2.4
+
+2.2.0 于 2026-11-09、2.3.0 于 2026-11-17、2.4.0 于 2026-11-20 发布到 PyPI。2026-11-25 读取 2.4.0 的 wheel 并与 2.1.0 对比（[#134](https://github.com/litkhai/runpod-hols/issues/134)）；`JobError` 两行用桩客户端实际运行过，其余没有调用。
+
+| | 2.4.0 |
+|---|---|
+| 失败的 job | `run_sync` 和 `job.output()` 在 `FAILED`、`TIMED_OUT`、`CANCELLED` 时抛出 `runpod.error.JobError`（`job_id`、`status`、`error`），2.1 则返回 `None`。对返回 `FAILED` 的桩客户端调用 `run_sync`：`JobError: job j1 FAILED: boom`。原来检查 `None` 的代码现在需要 `try` |
+| `CANCELLED` | 两个调用都视为最终状态——Job 状态一节中的不一致在 2.4 中消失了 |
+| 凭据 profile | `RUNPOD_PROFILE` 选择 `~/.runpod/config.toml` 中的 profile（用 `rp login --profile NAME` 保存）；未设置时为 `default` |
+| 主机 | 在 `RUNPOD_ENDPOINT_BASE_URL` 之外新增 `RUNPOD_CONSOLE_URL` 和 `RUNPOD_PROXY_DOMAIN`，每次调用时读取 |
+| network volume 文件 | 新增通过 S3 兼容 API 的可续传上传和下载，超过 64 MiB 用 multipart，续传状态在 `~/.runpod/transfers` |
+| User-Agent | 调用可以带上 `Integration/<name>`；`runpod.apps` 运行时发送 `Integration/apps` |
 
 ### 从 REST v1 到 v2
 
@@ -625,7 +664,7 @@ is_completed(s) -> s in ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED"]
 ```
 
 <div class="warn" markdown="1">
-**この 2 つは `CANCELLED` の扱いが食い違っています。** `run_sync` はそれを含まないリストを確認し、`job.output()` はそれを含む関数でポーリングします。キャンセルがありうるなら `output()` を使ってください。
+**この 2 つは `CANCELLED` の扱いが食い違っています。** `run_sync` はそれを含まないリストを確認し、`job.output()` はそれを含む関数でポーリングします。キャンセルがありうるなら `output()` を使ってください。これは 1.12 と 2.1 の話で、2.4 ではどちらも `CANCELLED` を最終状態とし、`JobError` を送出します。
 </div>
 
 ### インフラの管理
@@ -664,6 +703,19 @@ is_completed(s) -> s in ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED"]
 SDK は `api.runpod.io` 上の `/v2` パス、つまり REST v2 を使います（[仕様](https://api.runpod.io/v2/openapi.json)）。`https://rest.runpod.io/v1` の REST v1 は 2026-11-15 に廃止され、ホストはもう名前解決できません（2026-11-24 確認、[#101](https://github.com/litkhai/runpod-hols/issues/101)）。
 
 上流の `CHANGELOG.md` は 2.0.0 のノートを、日付 2026-10-28 の 2 つ目の `2.1.0` セクションとしてラベル付けしています。GitHub リリースの `v2.0.0` はそのノートを `2.0.0` として載せており、PyPI とタグも 2.0.0 が 2026-10-30 であることで一致しています。
+
+### 2.1 から 2.4 へ
+
+2.2.0 は 2026-11-09、2.3.0 は 2026-11-17、2.4.0 は 2026-11-20 に PyPI に公開されました。2026-11-25 に 2.4.0 の wheel を読み、2.1.0 と比較しました（[#134](https://github.com/litkhai/runpod-hols/issues/134)）。`JobError` の 2 行はスタブのクライアントで実行して確認し、それ以外は呼び出していません。
+
+| | 2.4.0 |
+|---|---|
+| 失敗した job | `run_sync` と `job.output()` は `FAILED`、`TIMED_OUT`、`CANCELLED` で `runpod.error.JobError`（`job_id`、`status`、`error`）を送出します。2.1 は `None` を返していました。`FAILED` を返すスタブで `run_sync` を呼ぶと `JobError: job j1 FAILED: boom`。`None` を確認していたコードには `try` が必要です |
+| `CANCELLED` | どちらの呼び出しでも最終状態です。Job の状態の節にある食い違いは 2.4 でなくなりました |
+| 認証プロファイル | `RUNPOD_PROFILE` が `~/.runpod/config.toml` のプロファイルを選びます（`rp login --profile NAME` で保存）。未設定なら `default` |
+| ホスト | `RUNPOD_ENDPOINT_BASE_URL` に加えて `RUNPOD_CONSOLE_URL` と `RUNPOD_PROXY_DOMAIN` が追加され、呼び出しのたびに読まれます |
+| network volume のファイル | S3 互換 API による再開可能なアップロードとダウンロードが新設されました。64 MiB 超は multipart、再開用の状態は `~/.runpod/transfers` |
+| User-Agent | 呼び出しに `Integration/<name>` を付けられます。`runpod.apps` ランタイムは `Integration/apps` を送ります |
 
 ### REST v1 から v2 へ
 
