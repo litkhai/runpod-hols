@@ -135,6 +135,30 @@ python teardown.py --all    # every Pod on the account
 
 Then confirm with `python status.py`.
 
+### Without SSH — exec and logs
+
+REST v2 runs a command in a Pod and streams its logs over HTTPS, with no SSH key, port or public IP. Run on 2026-11-24 on a `cpu3c` 2-vCPU CPU Pod created without `startSsh` or ports ([#112](https://github.com/litkhai/runpod-hols/issues/112)).
+
+```bash
+curl -X POST https://api.runpod.io/v2/pods/$POD_ID/exec -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{"command": ["sh", "-c", "nproc; df -h / | tail -1"]}'
+# Server-Sent Events: the stream stays open, so always bound it with -m
+curl -sN -m 15 -H "Authorization: Bearer $RUNPOD_API_KEY" "https://api.runpod.io/v2/pods/$POD_ID/logs?tail=20"
+```
+
+| Call | Result |
+|---|---|
+| exec right after the create | `409 Pod container is starting, retry shortly`; the first 200 came about 25 s after the Pod read `RUNNING` |
+| `["sh", "-c", "echo out; echo err >&2; exit 3"]` | 200 with `exitCode` 3, `stdout` and `stderr` — a non-zero exit is a result, not an error |
+| `["sleep", "30"]` with `timeoutSeconds` 2 | 200 after 2 s, `timedOut: true`, `exitCode` null |
+| `env` and `cwd` | `{"GREETING": "hi"}` in `/tmp` printed `hi from /tmp` |
+| `echo marker > /proc/1/fd/1` | The line appeared in the log stream as `source: container` |
+| `logs?tail=20` | `system` lines (image pull, container start) and `container` lines (the image's start script); `source=` picks one |
+
+**The key needs GraphQL access.** With the lab key (GraphQL None) exec answered `403 This API key cannot run commands on pods` and logs `403 Access to the requested resource was denied`. A key with REST *All resources* and GraphQL Read only got logs but still not exec; GraphQL Read / Write unlocked both. The spec names only `pods:write` and `pods:read`. Serverless worker logs behave the same way ([#104](https://github.com/litkhai/runpod-hols/issues/104)).
+
+Three CPU Pods of about two minutes each, about USD 0.01 in all.
+
 ### Where the volume actually mounts
 
 The SDK and the console disagree:
@@ -297,6 +321,30 @@ python teardown.py --all    # 계정의 모든 Pod
 ```
 
 이후 `python status.py` 로 확인합니다.
+
+### SSH 없이 — exec 와 로그
+
+REST v2 는 SSH 키·포트·공인 IP 없이 HTTPS 로 Pod 안에서 명령을 실행하고 로그를 스트리밍합니다. 2026-11-24 에 `startSsh` 와 포트 없이 만든 `cpu3c` 2 vCPU CPU Pod 에서 실행했습니다 ([#112](https://github.com/litkhai/runpod-hols/issues/112)).
+
+```bash
+curl -X POST https://api.runpod.io/v2/pods/$POD_ID/exec -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{"command": ["sh", "-c", "nproc; df -h / | tail -1"]}'
+# Server-Sent Events: the stream stays open, so always bound it with -m
+curl -sN -m 15 -H "Authorization: Bearer $RUNPOD_API_KEY" "https://api.runpod.io/v2/pods/$POD_ID/logs?tail=20"
+```
+
+| 호출 | 결과 |
+|---|---|
+| 생성 직후 exec | `409 Pod container is starting, retry shortly`. Pod 이 `RUNNING` 이 된 지 약 25초 뒤 처음 200 |
+| `["sh", "-c", "echo out; echo err >&2; exit 3"]` | `exitCode` 3, `stdout`, `stderr` 를 담은 200 — 0 이 아닌 종료도 오류가 아니라 결과 |
+| `timeoutSeconds` 2 로 `["sleep", "30"]` | 2초 뒤 200, `timedOut: true`, `exitCode` null |
+| `env` 와 `cwd` | `/tmp` 에서 `{"GREETING": "hi"}` 로 `hi from /tmp` 출력 |
+| `echo marker > /proc/1/fd/1` | 그 줄이 로그 스트림에 `source: container` 로 나타남 |
+| `logs?tail=20` | `system` 줄 (이미지 pull, 컨테이너 시작) 과 `container` 줄 (이미지 시작 스크립트). `source=` 로 하나만 고를 수 있음 |
+
+**키에 GraphQL 권한이 필요합니다.** 실습용 키 (GraphQL None) 로는 exec 가 `403 This API key cannot run commands on pods`, 로그가 `403 Access to the requested resource was denied` 였습니다. REST *All resources* 에 GraphQL Read only 를 준 키는 로그는 됐지만 exec 는 여전히 안 됐고, GraphQL Read / Write 를 주자 둘 다 됐습니다. 스펙에는 `pods:write` 와 `pods:read` 만 적혀 있습니다. Serverless 워커 로그도 같습니다 ([#104](https://github.com/litkhai/runpod-hols/issues/104)).
+
+약 2분짜리 CPU Pod 세 개, 합계 약 USD 0.01.
 
 ### 볼륨이 실제로 마운트되는 위치
 
