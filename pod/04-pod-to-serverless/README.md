@@ -18,7 +18,7 @@
 | Network volume mounted at | `/workspace` | `/runpod-volume` |
 | Your code | `/workspace/app/handler.py` | `/runpod-volume/app/handler.py` — the same file |
 | Python packages | `pip install --target /workspace/app/deps` | `PYTHONPATH=/runpod-volume/app/deps` |
-| Start | You, over SSH | Template `dockerStartCmd: ["python3", "-u", "/runpod-volume/app/handler.py"]` |
+| Start | You, over SSH | Template `cmd: ["python3", "-u", "/runpod-volume/app/handler.py"]` (v1: `dockerStartCmd`) |
 
 The usual way to ship a worker is to bake the code into an image, as [Serverless Lab 01](../../serverless/01-hello-worker) does. Sharing a volume skips the build, so you can edit on the Pod and the next cold worker runs the edit. The price is paid at every cold start: the worker imports from a network filesystem.
 
@@ -63,7 +63,7 @@ INFO   | Job result: {'output': {'device': 'NVIDIA GeForce RTX 4090', 'loaded_fr
 
 ```bash
 python3 lab.py pod delete
-python3 lab.py endpoint create      # template with dockerStartCmd + PYTHONPATH, endpoint on the volume
+python3 lab.py endpoint create      # template with cmd + PYTHONPATH, endpoint on the volume
 python3 lab.py run                  # one job, polls until done
 ```
 
@@ -140,7 +140,7 @@ Not run: editing the handler on the Pod while the endpoint is live, a volume sha
 | 네트워크 볼륨 마운트 위치 | `/workspace` | `/runpod-volume` |
 | 코드 | `/workspace/app/handler.py` | `/runpod-volume/app/handler.py` — 같은 파일 |
 | Python 패키지 | `pip install --target /workspace/app/deps` | `PYTHONPATH=/runpod-volume/app/deps` |
-| 시작 | SSH 로 직접 | 템플릿 `dockerStartCmd: ["python3", "-u", "/runpod-volume/app/handler.py"]` |
+| 시작 | SSH 로 직접 | 템플릿 `cmd: ["python3", "-u", "/runpod-volume/app/handler.py"]` (v1: `dockerStartCmd`) |
 
 워커를 배포하는 일반적인 방법은 [Serverless Lab 01](../../serverless/01-hello-worker) 처럼 코드를 이미지에 굽는 것입니다. 볼륨을 공유하면 빌드를 건너뛰므로, Pod 에서 고친 것을 다음 콜드 워커가 바로 실행합니다. 대가는 콜드 스타트마다 치릅니다. 워커가 네트워크 파일시스템에서 import 합니다.
 
@@ -185,7 +185,7 @@ INFO   | Job result: {'output': {'device': 'NVIDIA GeForce RTX 4090', 'loaded_fr
 
 ```bash
 python3 lab.py pod delete
-python3 lab.py endpoint create      # dockerStartCmd + PYTHONPATH 템플릿, 볼륨을 붙인 엔드포인트
+python3 lab.py endpoint create      # cmd + PYTHONPATH 템플릿, 볼륨을 붙인 엔드포인트
 python3 lab.py run                  # 작업 하나, 끝날 때까지 폴링
 ```
 

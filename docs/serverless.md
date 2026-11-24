@@ -59,6 +59,8 @@ The handler has to be written for it. `HF_HUB_OFFLINE` is read when `huggingface
 
 **Cold start** — a request arriving with no warm worker must pull the image and start the container first. This is why model loading belongs at module scope, not inside the handler: module scope runs once per worker, the handler runs once per request.
 
+**FlashBoot** — in REST v2 a mode, not a switch: `OFF` (the spec default), `FLASHBOOT`, which resumes a paused worker when one is free, or `PRIORITY_FLASHBOOT`, which the console describes as loading workers onto idle GPUs ahead of time. `PRIORITY_FLASHBOOT` is refused on create and on update for GPU and CPU endpoints alike — `400 Priority FlashBoot is enabled by Runpod sales` (2026-11-24, [#119](https://github.com/litkhai/runpod-hols/issues/119)) — so it was not measured.
+
 **Endpoint API**
 
 | Route | Behaviour |
@@ -149,6 +151,31 @@ Lab 01 deployed from GitHub, CPU workers, `workers_min = 0`:
 **`/runsync` can return `IN_PROGRESS`.** It is not guaranteed to return `COMPLETED` with an `output`; be ready to poll `/status/{id}`.
 </div>
 
+### Endpoint metrics over the API
+
+REST v2 returns the series behind the console's **Metrics** tab, and each endpoint's workers, builds and releases. Every call needs only `serverless:read`. Read on 2026-11-24 for `01-hello-world` and `02-llm-chat` ([#104](https://github.com/litkhai/runpod-hols/issues/104)).
+
+| Call | Returns |
+|---|---|
+| `GET /v2/serverless/{id}/metrics/requests` | Per bucket: requests, completed, failed, retries, and `delayTimeMs` / `executionTimeMs` as min, max, p70–p98 and total |
+| `…/metrics/cold-starts` | Per bucket: count and `durationMs` percentiles |
+| `…/metrics/workers` | Per bucket: idle, initializing, running, throttled, unhealthy |
+| `GET /v2/serverless/{id}/workers` | Current workers with data center, GPU type, image and endpoint version, plus a count by status |
+| `…/builds`, `…/builds/{buildId}` | GitHub builds: commit, branch, image, timestamps |
+| `…/releases` | Each endpoint version with a field-by-field `diff` and the build behind it |
+
+`interval` is one of `1m`, `5m`, `15m`, `30m`, `1h`, `6h`, `12h`, `1d` (`day` is a 422). The window defaults to the last 24 hours and reaches back 90 days.
+
+**The numbers match the console.** For `01-hello-world` on 2026-11-07 the API gave 77 requests, 77 completed, 17,044 ms total execution, and 11 cold starts totalling 29,146 ms. The Metrics tab over the same days shows 77 / 77, 17.04 s, 11 and 29.15 s.
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/metrics-tab-api-compare.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/metrics-tab-api-compare.webp' | relative_url }}" alt="Metrics tab of 01-hello-world, Nov 6 to Nov 9: 77 requests, 77 completed, execution time 17.04 s, cold start count 11" loading="lazy" width="1400" height="729"></a><figcaption>01-hello-world, Metrics tab, 2026-11-06 to 11-09. The same totals as <code>metrics/requests</code> and <code>metrics/cold-starts</code>.</figcaption></figure>
+
+What did not work:
+
+- **Worker logs need GraphQL access on the key.** `GET …/workers/{workerId}/logs` (Server-Sent Events) answered 403 *Access to the requested resource was denied* — not the scope message other refusals carry — for idle workers, for the worker running a job (one `01-hello-world` job, 2026-11-24) and for it again after the job completed. The same call with a temporary key holding REST *All resources* plus GraphQL Read / Write and `api.runpod.ai` returned 200 and streamed `system` lines (container create, image pull, `worker is ready`); with REST *All resources* alone it was 403 again. The spec lists only `serverless:read`. GraphQL Read only was not tried. `source=container` sent nothing within 12 s.
+- **Build logs.** The builds description points to `…/builds/{buildId}/logs`; the path is not in the spec and returns 404.
+- **Worker counts differ.** `/workers` listed five (four idle, one initializing) where the console's Workers tab showed two.
+
 ### Lab 02 — LLM chat deployed from GitHub
 
 Lab 02 deploys `Qwen/Qwen2.5-1.5B-Instruct` from GitHub, with the weights in the endpoint's **Model** field. Everything below was run on 2026-10-11; [the lab README](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat#what-was-run) has the full record.
@@ -170,7 +197,7 @@ The 12 s is container start, imports, a 2.37 s model load and the SDK's fitness 
 <figure class="shot"><a href="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}" alt="GPU configuration split into Previous generation and Latest generation tabs" loading="lazy" width="1400" height="998"></a><figcaption>The console now separates the pools into <strong>Previous generation</strong> and <strong>Latest generation</strong> ("require a CUDA 12.8+ image"). 02-llm-chat has 16 GB and 24 GB ticked here and a 24 GB pool on the Latest tab, so the form warns "You selected GPUs from both generations" — the situation above.</figcaption></figure>
 
 <div class="note" markdown="1">
-**Pinning a MIG type needs GraphQL.** The REST API rejects the MIG type in `gpuTypeIds`. The GraphQL `saveEndpoint` mutation takes a pool plus exclusions instead — `gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` left only the MIG slice.
+**Pinning a MIG type needed GraphQL.** REST v1 rejected the MIG type in `gpuTypeIds`. The GraphQL `saveEndpoint` mutation takes a pool plus exclusions instead — `gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` left only the MIG slice. REST v2 has the same shape, `gpu.pools` plus `gpu.excludedTypes` (spec read 2026-11-24, not re-run).
 
 **Worker logs do not end.** `https://api.runpod.io/v2/serverless/{endpoint}/workers/{worker}/logs` answered as a stream that never closed, so a plain `curl` hangs. Give it a client timeout, such as `curl -m 20`, and read what arrived.
 </div>
@@ -374,6 +401,8 @@ Runpod Serverless 는 코드를 오토스케일 HTTP 엔드포인트로 실행�
 
 **콜드 스타트** — 워밍된 워커가 없을 때 들어온 요청은 이미지를 받고 컨테이너를 띄우는 시간을 먼저 거칩니다. 모델 로딩을 handler 안이 아니라 모듈 스코프에 둬야 하는 이유입니다. 모듈 스코프는 워커당 1회, handler 는 요청당 1회 실행됩니다.
 
+**FlashBoot** — REST v2 에서는 켜고 끄는 값이 아니라 모드입니다. `OFF` (스펙 기본값), 여유 워커가 있으면 멈춰 둔 워커를 되살리는 `FLASHBOOT`, 콘솔 설명상 유휴 GPU 에 워커를 미리 올려 두는 `PRIORITY_FLASHBOOT`. `PRIORITY_FLASHBOOT` 는 GPU·CPU 엔드포인트 모두 생성과 변경에서 `400 Priority FlashBoot is enabled by Runpod sales` 로 거부되어 (2026-11-24, [#119](https://github.com/litkhai/runpod-hols/issues/119)) 측정하지 못했습니다.
+
 **엔드포인트 API**
 
 | 경로 | 동작 |
@@ -464,6 +493,31 @@ GitHub 연동으로 배포한 실습 01, CPU 워커, `workers_min = 0` 기준입
 **`/runsync` 가 `IN_PROGRESS` 를 반환할 수 있습니다.** 항상 `output` 이 담긴 `COMPLETED` 가 오는 것은 아니므로 `/status/{id}` 폴링을 대비하세요.
 </div>
 
+### API 로 보는 엔드포인트 지표
+
+REST v2 는 콘솔 **Metrics** 탭의 시계열과 엔드포인트별 워커·빌드·릴리스를 돌려줍니다. 모두 `serverless:read` 만 있으면 됩니다. 2026-11-24 에 `01-hello-world` 와 `02-llm-chat` 으로 조회했습니다 ([#104](https://github.com/litkhai/runpod-hols/issues/104)).
+
+| 호출 | 돌려주는 것 |
+|---|---|
+| `GET /v2/serverless/{id}/metrics/requests` | 구간별 요청·완료·실패·재시도 수, `delayTimeMs`·`executionTimeMs` 의 min, max, p70–p98, 합계 |
+| `…/metrics/cold-starts` | 구간별 횟수와 `durationMs` 백분위 |
+| `…/metrics/workers` | 구간별 idle, initializing, running, throttled, unhealthy |
+| `GET /v2/serverless/{id}/workers` | 현재 워커의 데이터센터, GPU 종류, 이미지, 엔드포인트 버전과 상태별 개수 |
+| `…/builds`, `…/builds/{buildId}` | GitHub 빌드: 커밋, 브랜치, 이미지, 시각 |
+| `…/releases` | 엔드포인트 버전마다 필드별 `diff` 와 원인이 된 빌드 |
+
+`interval` 은 `1m`, `5m`, `15m`, `30m`, `1h`, `6h`, `12h`, `1d` 중 하나입니다 (`day` 는 422). 기본 구간은 최근 24시간이고 90일까지 거슬러 올라갑니다.
+
+**수치가 콘솔과 같습니다.** `01-hello-world` 의 2026-11-07 은 API 로 요청 77, 완료 77, 실행 시간 합계 17,044 ms, 콜드 스타트 11회 합계 29,146 ms 였고, 같은 기간 Metrics 탭은 77 / 77, 17.04 s, 11, 29.15 s 입니다.
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/metrics-tab-api-compare.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/metrics-tab-api-compare.webp' | relative_url }}" alt="01-hello-world 의 Metrics 탭, 11월 6일–9일: 요청 77, 완료 77, 실행 시간 17.04 s, 콜드 스타트 11" loading="lazy" width="1400" height="729"></a><figcaption>01-hello-world, Metrics 탭, 2026-11-06–11-09. <code>metrics/requests</code>, <code>metrics/cold-starts</code> 와 합계가 같다.</figcaption></figure>
+
+안 된 것:
+
+- **워커 로그는 키에 GraphQL 권한이 있어야 합니다.** `GET …/workers/{workerId}/logs` (Server-Sent Events) 는 idle 워커, 작업을 실행 중인 워커 (2026-11-24 `01-hello-world` 작업 1건), 작업이 끝난 직후의 같은 워커 모두에 403 *Access to the requested resource was denied* 를 돌려줬습니다. 다른 거부와 달리 범위 메시지가 아닙니다. REST *All resources* 에 GraphQL Read / Write 와 `api.runpod.ai` 까지 준 임시 키로는 200 과 함께 `system` 줄 (컨테이너 생성, 이미지 pull, `worker is ready`) 이 흘러나왔고, REST *All resources* 만 준 키로는 다시 403 이었습니다. 스펙에는 `serverless:read` 만 적혀 있습니다. GraphQL Read only 는 시도하지 않았습니다. `source=container` 는 12초 안에 아무것도 보내지 않았습니다.
+- **빌드 로그.** builds 설명은 `…/builds/{buildId}/logs` 를 가리키지만, 그 경로는 스펙에 없고 404 를 돌려줍니다.
+- **워커 수가 다릅니다.** `/workers` 는 다섯 (idle 넷, initializing 하나) 을, 콘솔 Workers 탭은 둘을 보여줬습니다.
+
 ### 실습 02 — GitHub 로 배포한 LLM 채팅
 
 실습 02 는 `Qwen/Qwen2.5-1.5B-Instruct` 를 GitHub 연동으로 배포하고, 가중치는 엔드포인트의 **Model** 필드로 공급합니다. 아래는 모두 2026-10-11 에 실행한 결과이며, 전체 기록은 [실습 README](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat#한국어) 에 있습니다.
@@ -485,7 +539,7 @@ GitHub 연동으로 배포한 실습 01, CPU 워커, `workers_min = 0` 기준입
 <figure class="shot"><a href="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}" alt="Previous generation 과 Latest generation 탭으로 나뉜 GPU configuration" loading="lazy" width="1400" height="998"></a><figcaption>콘솔은 이제 풀을 <strong>Previous generation</strong> 과 <strong>Latest generation</strong> ("CUDA 12.8+ 이미지 필요") 으로 나눈다. 02-llm-chat 은 여기서 16 GB 와 24 GB 를, Latest 탭에서 24 GB 풀을 골라 두어서 "You selected GPUs from both generations" 경고가 뜬다. 위에서 설명한 바로 그 상황이다.</figcaption></figure>
 
 <div class="note" markdown="1">
-**MIG 타입 고정은 GraphQL 로 해야 합니다.** REST API 는 `gpuTypeIds` 에 MIG 타입을 넣으면 거부합니다. GraphQL `saveEndpoint` 뮤테이션은 풀과 제외 목록을 받습니다. `gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` 로 MIG 조각만 남았습니다.
+**MIG 타입 고정은 GraphQL 로 해야 했습니다.** REST v1 은 `gpuTypeIds` 에 MIG 타입을 넣으면 거부했습니다. GraphQL `saveEndpoint` 뮤테이션은 풀과 제외 목록을 받습니다. `gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` 로 MIG 조각만 남았습니다. REST v2 도 같은 형태인 `gpu.pools` 와 `gpu.excludedTypes` 를 받습니다 (2026-11-24 스펙 확인, 재실행하지 않음).
 
 **워커 로그는 끝나지 않습니다.** `https://api.runpod.io/v2/serverless/{endpoint}/workers/{worker}/logs` 는 닫히지 않는 스트림으로 응답해서 일반 `curl` 은 멈춥니다. `curl -m 20` 처럼 클라이언트 타임아웃을 주고 그때까지 받은 내용을 읽으세요.
 </div>
@@ -689,6 +743,8 @@ handler 必须为此专门编写。`HF_HUB_OFFLINE` 在 `huggingface_hub` 被导
 
 **冷启动**——在没有热 worker 时到达的请求，必须先拉取镜像并启动容器。这就是模型加载应放在模块作用域、而不是 handler 内部的原因：模块作用域每个 worker 运行一次，handler 每个请求运行一次。
 
+**FlashBoot**——在 REST v2 中是一种模式而不是开关：`OFF`（规范默认值）、在有空闲时恢复已暂停 worker 的 `FLASHBOOT`，以及控制台描述为预先把 worker 加载到空闲 GPU 上的 `PRIORITY_FLASHBOOT`。无论 GPU 还是 CPU endpoint，`PRIORITY_FLASHBOOT` 在创建和更新时都被拒绝——`400 Priority FlashBoot is enabled by Runpod sales`（2026-11-24，[#119](https://github.com/litkhai/runpod-hols/issues/119)）——因此没有测量。
+
 **端点 API**
 
 | 路由 | 行为 |
@@ -779,6 +835,31 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 **`/runsync` 可能返回 `IN_PROGRESS`。** 它并不保证返回带有 `output` 的 `COMPLETED`；请准备好轮询 `/status/{id}`。
 </div>
 
+### 通过 API 查看 endpoint 指标
+
+REST v2 返回控制台 **Metrics** 标签页背后的时间序列，以及每个 endpoint 的 worker、构建和发布。所有调用只需要 `serverless:read`。2026-11-24 对 `01-hello-world` 和 `02-llm-chat` 读取（[#104](https://github.com/litkhai/runpod-hols/issues/104)）。
+
+| 调用 | 返回内容 |
+|---|---|
+| `GET /v2/serverless/{id}/metrics/requests` | 每个时间桶的请求、完成、失败、重试数，以及 `delayTimeMs` / `executionTimeMs` 的 min、max、p70–p98 和总计 |
+| `…/metrics/cold-starts` | 每个时间桶的次数和 `durationMs` 百分位 |
+| `…/metrics/workers` | 每个时间桶的 idle、initializing、running、throttled、unhealthy |
+| `GET /v2/serverless/{id}/workers` | 当前 worker 的数据中心、GPU 类型、镜像和 endpoint 版本，以及按状态的计数 |
+| `…/builds`、`…/builds/{buildId}` | GitHub 构建：提交、分支、镜像、时间戳 |
+| `…/releases` | 每个 endpoint 版本的逐字段 `diff` 以及对应的构建 |
+
+`interval` 取 `1m`、`5m`、`15m`、`30m`、`1h`、`6h`、`12h`、`1d` 之一（`day` 返回 422）。默认窗口为最近 24 小时，最多回溯 90 天。
+
+**数值与控制台一致。** `01-hello-world` 在 2026-11-07：API 给出 77 个请求、77 个完成、执行总时长 17,044 ms、11 次冷启动共 29,146 ms；同一时段的 Metrics 标签页显示 77 / 77、17.04 s、11 和 29.15 s。
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/metrics-tab-api-compare.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/metrics-tab-api-compare.webp' | relative_url }}" alt="01-hello-world 的 Metrics 标签页，11 月 6 日至 9 日：77 个请求、77 个完成、执行时间 17.04 s、冷启动 11 次" loading="lazy" width="1400" height="729"></a><figcaption>01-hello-world，Metrics 标签页，2026-11-06 至 11-09。合计与 <code>metrics/requests</code> 和 <code>metrics/cold-starts</code> 相同。</figcaption></figure>
+
+未成功的部分：
+
+- **Worker 日志要求密钥具有 GraphQL 权限。** `GET …/workers/{workerId}/logs`（Server-Sent Events）对 idle worker、正在运行任务的 worker（2026-11-24 的一个 `01-hello-world` 任务）以及任务完成后的同一 worker 都返回 403 *Access to the requested resource was denied*——不是其他拒绝所带的范围信息。改用一个临时密钥（REST *All resources* 加上 GraphQL Read / Write 和 `api.runpod.ai`）后返回 200，并流出 `system` 行（创建容器、拉取镜像、`worker is ready`）；只给 REST *All resources* 时又是 403。规范中只列出 `serverless:read`。没有尝试 GraphQL Read only。`source=container` 在 12 秒内没有发送任何内容。
+- **构建日志。** builds 的说明指向 `…/builds/{buildId}/logs`，但该路径不在规范中，返回 404。
+- **Worker 数量不一致。** `/workers` 列出五个（四个 idle、一个 initializing），控制台的 Workers 标签页只显示两个。
+
 ### 实验 02 — 从 GitHub 部署的 LLM 聊天
 
 实验 02 从 GitHub 部署 `Qwen/Qwen2.5-1.5B-Instruct`，权重通过端点的 **Model** 字段提供。以下全部在 2026-10-11 运行；完整记录见[实验 README](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat#what-was-run)。
@@ -800,7 +881,7 @@ docker buildx build --file /app/<id>/temp/serverless/01-hello-worker/Dockerfile 
 <figure class="shot"><a href="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}" alt="GPU configuration 分为 Previous generation 和 Latest generation 两个标签页" loading="lazy" width="1400" height="998"></a><figcaption>控制台现在把 GPU 池分成 <strong>Previous generation</strong> 和 <strong>Latest generation</strong>（"需要 CUDA 12.8+ 镜像"）。02-llm-chat 在这里勾选了 16 GB 和 24 GB，在 Latest 标签页又勾选了一个 24 GB 池，因此表单提示 "You selected GPUs from both generations"——正是上面描述的情况。</figcaption></figure>
 
 <div class="note" markdown="1">
-**固定 MIG 类型需要 GraphQL。** REST API 不接受 `gpuTypeIds` 中的 MIG 类型。GraphQL 的 `saveEndpoint` mutation 则接受一个池加排除项——`gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` 之后只剩下 MIG 切片。
+**固定 MIG 类型曾需要 GraphQL。** REST v1 不接受 `gpuTypeIds` 中的 MIG 类型。GraphQL 的 `saveEndpoint` mutation 则接受一个池加排除项——`gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` 之后只剩下 MIG 切片。REST v2 采用同样的形式：`gpu.pools` 加 `gpu.excludedTypes`（2026-11-24 读取规范，未重新运行）。
 
 **worker 日志不会结束。** `https://api.runpod.io/v2/serverless/{endpoint}/workers/{worker}/logs` 以一个永不关闭的流响应，所以普通的 `curl` 会挂起。给它设置客户端超时，例如 `curl -m 20`，然后读取已收到的内容。
 </div>
@@ -1004,6 +1085,8 @@ handler はこれに合わせて書く必要があります。`HF_HUB_OFFLINE` �
 
 **コールドスタート**：ウォームな worker がないときに届いたリクエストは、まずイメージを pull してコンテナを起動しなければなりません。モデルのロードを handler の中ではなくモジュールスコープに置くべき理由がこれです。モジュールスコープは worker ごとに 1 回、handler はリクエストごとに 1 回実行されます。
 
+**FlashBoot**：REST v2 ではオン・オフではなくモードです。`OFF`（仕様の既定値）、空きがあれば一時停止したワーカーを再開する `FLASHBOOT`、コンソールの説明ではアイドル GPU にワーカーを先に載せておく `PRIORITY_FLASHBOOT` があります。`PRIORITY_FLASHBOOT` は GPU・CPU の endpoint とも作成と更新で `400 Priority FlashBoot is enabled by Runpod sales` により拒否され（2026-11-24、[#119](https://github.com/litkhai/runpod-hols/issues/119)）、測定はしていません。
+
 **エンドポイント API**
 
 | ルート | 動作 |
@@ -1094,6 +1177,31 @@ GitHub からデプロイした ラボ 01、CPU worker、`workers_min = 0`：
 **`/runsync` は `IN_PROGRESS` を返すことがあります。** `output` 付きの `COMPLETED` が返る保証はないので、`/status/{id}` をポーリングできるようにしておいてください。
 </div>
 
+### API で見る endpoint の指標
+
+REST v2 は、コンソールの **Metrics** タブの時系列と、endpoint ごとのワーカー・ビルド・リリースを返します。どの呼び出しも `serverless:read` だけで足ります。2026-11-24 に `01-hello-world` と `02-llm-chat` で読み取りました（[#104](https://github.com/litkhai/runpod-hols/issues/104)）。
+
+| 呼び出し | 返すもの |
+|---|---|
+| `GET /v2/serverless/{id}/metrics/requests` | バケットごとのリクエスト・完了・失敗・リトライ数と、`delayTimeMs` / `executionTimeMs` の min、max、p70–p98、合計 |
+| `…/metrics/cold-starts` | バケットごとの回数と `durationMs` のパーセンタイル |
+| `…/metrics/workers` | バケットごとの idle、initializing、running、throttled、unhealthy |
+| `GET /v2/serverless/{id}/workers` | 現在のワーカーのデータセンター、GPU タイプ、イメージ、endpoint バージョンと、状態別の数 |
+| `…/builds`、`…/builds/{buildId}` | GitHub ビルド：コミット、ブランチ、イメージ、時刻 |
+| `…/releases` | endpoint のバージョンごとのフィールド単位の `diff` と、その元になったビルド |
+
+`interval` は `1m`、`5m`、`15m`、`30m`、`1h`、`6h`、`12h`、`1d` のいずれかです（`day` は 422）。既定の期間は直近 24 時間で、90 日前までさかのぼれます。
+
+**数値はコンソールと一致します。** `01-hello-world` の 2026-11-07 は、API ではリクエスト 77、完了 77、実行時間の合計 17,044 ms、コールドスタート 11 回で合計 29,146 ms でした。同じ期間の Metrics タブは 77 / 77、17.04 s、11、29.15 s です。
+
+<figure class="shot"><a href="{{ '/assets/img/serverless/metrics-tab-api-compare.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/metrics-tab-api-compare.webp' | relative_url }}" alt="01-hello-world の Metrics タブ、11 月 6 日〜9 日：リクエスト 77、完了 77、実行時間 17.04 s、コールドスタート 11 回" loading="lazy" width="1400" height="729"></a><figcaption>01-hello-world、Metrics タブ、2026-11-06〜11-09。<code>metrics/requests</code> と <code>metrics/cold-starts</code> と合計が同じ。</figcaption></figure>
+
+うまくいかなかったこと：
+
+- **ワーカーのログにはキーの GraphQL 権限が必要です。** `GET …/workers/{workerId}/logs`（Server-Sent Events）は、idle ワーカー、ジョブを実行中のワーカー（2026-11-24 の `01-hello-world` ジョブ 1 件）、ジョブ完了直後の同じワーカーのいずれにも 403 *Access to the requested resource was denied* を返しました。ほかの拒否と違い、スコープのメッセージではありません。REST *All resources* に GraphQL Read / Write と `api.runpod.ai` を加えた一時キーでは 200 になり、`system` の行（コンテナ作成、イメージの pull、`worker is ready`）が流れてきました。REST *All resources* だけのキーでは再び 403 でした。仕様には `serverless:read` しか書かれていません。GraphQL Read only は試していません。`source=container` は 12 秒以内に何も送りませんでした。
+- **ビルドのログ。** builds の説明は `…/builds/{buildId}/logs` を指していますが、このパスは仕様になく 404 を返します。
+- **ワーカー数が食い違います。** `/workers` は 5 つ（idle 4、initializing 1）を返し、コンソールの Workers タブは 2 つを表示しました。
+
 ### ラボ 02 — GitHub からデプロイした LLM チャット
 
 ラボ 02 は `Qwen/Qwen2.5-1.5B-Instruct` を GitHub からデプロイし、重みはエンドポイントの **Model** フィールドで渡します。以下はすべて 2026-10-11 に実行したもので、完全な記録は[ラボの README](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat#what-was-run) にあります。
@@ -1115,7 +1223,7 @@ GitHub からデプロイした ラボ 01、CPU worker、`workers_min = 0`：
 <figure class="shot"><a href="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}" alt="Previous generation と Latest generation のタブに分かれた GPU configuration" loading="lazy" width="1400" height="998"></a><figcaption>コンソールはプールを <strong>Previous generation</strong> と <strong>Latest generation</strong>（「CUDA 12.8+ のイメージが必要」）に分けるようになりました。02-llm-chat はここで 16 GB と 24 GB を、Latest タブで 24 GB のプールを選んでいるため、"You selected GPUs from both generations" と警告が出ます。上で説明した状況そのものです。</figcaption></figure>
 
 <div class="note" markdown="1">
-**MIG タイプの固定には GraphQL が必要です。** REST API は `gpuTypeIds` に MIG タイプを入れると拒否します。GraphQL の `saveEndpoint` ミューテーションは、代わりにプールと除外リストを受け取ります。`gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` で MIG スライスだけが残りました。
+**MIG タイプの固定には GraphQL が必要でした。** REST v1 は `gpuTypeIds` に MIG タイプを入れると拒否しました。GraphQL の `saveEndpoint` ミューテーションは、代わりにプールと除外リストを受け取ります。`gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` で MIG スライスだけが残りました。REST v2 も同じ形の `gpu.pools` と `gpu.excludedTypes` を受け付けます（2026-11-24 に仕様を確認、再実行はしていません）。
 
 **worker のログは終わりません。** `https://api.runpod.io/v2/serverless/{endpoint}/workers/{worker}/logs` は閉じないストリームとして応答するため、素の `curl` は止まったままになります。`curl -m 20` のようにクライアント側のタイムアウトを付け、届いた分を読んでください。
 </div>

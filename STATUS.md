@@ -14,8 +14,8 @@ Updated 2026-10-20.
 | [`pod/02-storage`](./pod/02-storage) | **Yes** — stop/start, terminate and re-attach, CPU Pods, run 2026-11-05 in EU-RO-1 over REST v1; first `start` after a stop refused for lack of GPUs on the host |
 | [`pod/03-custom-template`](./pod/03-custom-template) | **Yes** — template with a plain and a secret env var, Pod, rotation, run 2026-11-05 on a CPU Pod; resolved secret and Pod API key sit in `/etc/rp_environment` (644); `restart` returned 500 |
 | [`pod/04-pod-to-serverless`](./pod/04-pod-to-serverless) | **Yes** — handler tested on an RTX 4090 Pod, served unchanged from Serverless via a shared network volume, 2026-11-05 EU-RO-1; first job `delayTime` 205 s, `runsync` returned `IN_QUEUE` at 90.9 s |
-| [`terraform/01-endpoint`](./terraform/01-endpoint) | **Yes** — `apply` and `destroy` run 2026-10-11 with two provider workarounds; one request served 2026-10-20 from a Docker Hub image on RTX 4090, then destroyed |
-| [`terraform/02-pod`](./terraform/02-pod) | **Yes** — `apply`, SSH, network volume and `destroy` run 2026-10-16; provider ignores `gpu_type_id` (Pods came up as RTX 4090); Jupyter not checked |
+| [`terraform/01-endpoint`](./terraform/01-endpoint) | **Yes** — provider 2.0.0 (REST v2): `apply`, one request on RTX 4090 and `destroy` run 2026-11-24 with Terraform 1.17.2 and a key without GraphQL; no workarounds needed; a template name used in October was refused (`endpoint template names must be unique`) ([#115](https://github.com/litkhai/runpod-hols/issues/115)) |
+| [`terraform/02-pod`](./terraform/02-pod) | **Yes** — provider 2.0.0: `apply`, `plan` with no drift and `destroy` run 2026-11-24 with a Pod volume and with a network volume in EU-RO-1; `gpu_type_id` now honoured (RTX 2000 Ada); JupyterLab answered; SSH login not checked (key not on the account) ([#115](https://github.com/litkhai/runpod-hols/issues/115)) |
 | [`cluster/01-pytorch-distributed`](./cluster/01-pytorch-distributed) | **Partly** — stage 1 run 2026-11-07 on 2× RTX 4090 (`SYS`, NCCL via host memory, 15.6 GB/s, DDP 0.21 scaling) and 2× A100 SXM (`NV12`, 201 GB/s, 0.91); 4× H100 SXM Pod (NV18, 356 GB/s, 0.82); stage 2 Instant Cluster (2 × 8 A100 SXM) ran twice and produced no multi-node figure: first NCCL fell back to sockets (0.32 GB/s), then with the cluster image every InfiniBand HCA hit *local catastrophic error* on the first transfer — a host PCIe fault per Runpod support (2026-11-07/08, about USD 63; [#52](https://github.com/litkhai/runpod-hols/issues/52), recorded as a failure) |
 | [`inference-characterization/`](./inference-characterization) | **Yes** — Pod sweeps on Secure Cloud GPU types, Serverless cold-start probes with worker logs, 2026-10-06/07; Community Cloud Pod never reachable over SSH; per-run seed re-run and three-host run found no Secure capacity on 2026-11-06 (C31, [#6](https://github.com/litkhai/runpod-hols/issues/6) closed); review follow-up tests all done ([#8](https://github.com/litkhai/runpod-hols/issues/8) closed; T4 cached model 2026-11-07, C32: no weight download, a container per cold start); FlashBoot-off claims C9/C17/C19 re-run with the state read back (C33, [#60](https://github.com/litkhai/runpod-hols/issues/60)): the create call had ignored `flashboot: false`, and October's off figures did not recur |
 | [`sdk/`](./sdk) | Source read at 1.11.0 and 1.12.0; client exercised live |
@@ -41,8 +41,15 @@ on staged files in `.githooks/pre-commit` — enable it once per clone with
 All three scale to zero; `currentSpendPerHr` was `0` on 2026-10-11. `vLLM v2.22.5`
 has `workersMax` 0 on that date, so it serves nothing until raised.
 
+API keys (2026-11-24): `runpod-hols-lab-2026-11-24` is scoped — REST Write on Pods,
+Serverless, Instant clusters, Volumes, Templates, Secrets; Read on Audit logs, Billing,
+Catalog, Tags, Account; `api.runpod.ai` Read/Write; GraphQL None
+([#103](https://github.com/litkhai/runpod-hols/issues/103)). The full-access
+`runpod-hols-2026-11-07` key is still enabled until its owner revokes it.
+
 > `Endpoint.health()` reports worker slots even when nothing is billing. It is
-> not a spend signal — query `myself { currentSpendPerHr }` for that.
+> not a spend signal — read `spendRate.current` from `GET /v2/account/limits`
+> (or GraphQL `myself { currentSpendPerHr }`) for that.
 
 ## Open work
 
@@ -50,6 +57,7 @@ Tracked as issues — [all open](https://github.com/litkhai/runpod-hols/issues) 
 [needs a re-run](https://github.com/litkhai/runpod-hols/issues?q=is%3Aopen+label%3Are-verify) ·
 [new labs](https://github.com/litkhai/runpod-hols/issues?q=is%3Aopen+label%3Aenhancement).
 
-- Re-verify: [#37](https://github.com/litkhai/runpod-hols/issues/37) `runpod` SDK 2.x ·
+- Re-verify: [#101](https://github.com/litkhai/runpod-hols/issues/101) labs moved to REST v2 (reads verified 2026-11-24; creates not re-run) ·
+  [#37](https://github.com/litkhai/runpod-hols/issues/37) `runpod` SDK 2.x ·
   [#65](https://github.com/litkhai/runpod-hols/issues/65) FlashBoot Standard mode.
 - New labs: [#19](https://github.com/litkhai/runpod-hols/issues/19) the cluster track — [#52](https://github.com/litkhai/runpod-hols/issues/52) stage 2 closed as a recorded failure (InfiniBand fatal errors; Runpod support traced both to host PCIe faults, [#97](https://github.com/litkhai/runpod-hols/issues/97)). Serverless: [#62](https://github.com/litkhai/runpod-hols/issues/62) load-balancing endpoints, [#63](https://github.com/litkhai/runpod-hols/issues/63) Bulk Requests. Pod: [#64](https://github.com/litkhai/runpod-hols/issues/64) Global volume.

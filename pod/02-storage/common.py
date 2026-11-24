@@ -2,11 +2,12 @@
 
 스토리지 실습 공용 헬퍼: .env 로딩, REST 호출, 로컬 상태.
 
-Standard library only. Field names come from the published OpenAPI spec,
-rest.runpod.io/v1/openapi.json (read 2026-11-05) — the REST API rather than
-the Python SDK, whose Pod calls changed shape in 2.0 (#37).
-표준 라이브러리만 사용한다. 필드 이름은 발행된 OpenAPI 스펙 기준이다. Python
-SDK 는 2.0 에서 Pod 호출 형태가 바뀌었으므로 (#37) REST API 를 직접 쓴다.
+Standard library only. Field names come from the published REST v2 spec,
+api.runpod.io/v2/openapi.json (read 2026-11-24; v1 was retired 2026-11-15, #101) —
+the REST API rather than the Python SDK, whose Pod calls changed shape in 2.0 (#37).
+표준 라이브러리만 사용한다. 필드 이름은 발행된 REST v2 스펙 기준이다 (v1 은
+2026-11-15 폐기, #101). Python SDK 는 2.0 에서 Pod 호출 형태가 바뀌었으므로 (#37)
+REST API 를 직접 쓴다.
 """
 
 from __future__ import annotations
@@ -23,7 +24,7 @@ LAB_DIR = pathlib.Path(__file__).resolve().parent
 # Ids this lab created, so later steps and cleanup need no arguments. Gitignored.
 # 이 실습이 만든 id. 이후 단계와 정리가 인자 없이 동작하도록. gitignore 대상.
 STATE_FILE = LAB_DIR / ".storage.json"
-REST = "https://rest.runpod.io/v1"
+REST = "https://api.runpod.io/v2"
 
 
 def api_key() -> str:

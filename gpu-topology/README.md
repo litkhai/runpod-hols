@@ -59,16 +59,16 @@ Both are *available* and neither is *configurable*. What you choose is a GPU typ
 
 ### What the API lets you control
 
-`POST /pods` in the [published OpenAPI spec](https://rest.runpod.io/v1/openapi.json) has 33 properties. None of them mention interconnect, topology, NVLink, MIG, or partitioning. The GPU-related ones are:
+`POST /pods` in the [published REST v2 spec](https://api.runpod.io/v2/openapi.json) (read 2026-11-24) has 19 top-level properties. None of them mention interconnect, NVLink, MIG, or partitioning. The GPU-related ones sit in its `gpu` object:
 
 | Property | Meaning |
 |---|---|
-| `gpuTypeIds` | Which GPU models are acceptable |
-| `gpuCount` | How many to attach |
-| `gpuTypePriority` | Whether to fall back on availability |
-| `minRAMPerGPU`, `minVCPUPerGPU` | Host resources per GPU |
+| `gpu.id` | The one GPU model to place on — REST v1 took a list (`gpuTypeIds`) with `gpuTypePriority` fallback |
+| `gpu.count` | How many to attach |
+| `gpu.allowedCudaVersions`, `gpu.minCudaVersion` | Host CUDA versions |
+| `gpu.minRamPerGpu`, `gpu.minVcpuCountPerGpu` | Host resources per GPU |
 
-`POST /endpoints` is narrower still — it requires a `templateId` and carries no GPU-topology field at all. The whole REST surface is 23 paths, with nothing for builds, topology, or partitioning.
+`POST /serverless` picks GPU *pools* (`gpu.pools`, narrowed with `gpu.excludedTypes`) and carries no GPU-topology field. The REST v2 surface is 75 paths; GitHub builds can be read (`GET /serverless/{id}/builds`) but not started, and nothing covers topology or partitioning. REST v1, which had 33 Pod properties and 23 paths, was retired on 2026-11-15 ([#101](https://github.com/litkhai/runpod-hols/issues/101)).
 
 So the lever is SKU selection. Everything below is about reading that lever correctly.
 
@@ -127,7 +127,7 @@ Nothing to reconfigure — you tune around it.
 
 | | |
 |---|---|
-| Re-deploy | Pick an SXM/NVL SKU explicitly rather than letting `gpuTypePriority` fall back |
+| Re-deploy | Name the SXM/NVL SKU explicitly — a REST v2 Pod takes exactly one `gpu.id` |
 | Lower the parallelism degree | Tensor parallelism is the most communication-hungry; pipeline or data parallelism tolerates PCIe better |
 | Shard less often | Larger micro-batches mean fewer all-reduces for the same work |
 | Check NCCL is not silently degrading | `NCCL_DEBUG=INFO` prints the transport it selected per pair |
@@ -231,7 +231,7 @@ Inter-node traffic runs over interfaces `ens1`–`ens8`; the primary node reache
 |---|---|
 | 48 GPU types; two are MIG SKUs | Live catalogue query against this account |
 | `POST /pods` has no topology field | Published OpenAPI spec, 33 properties enumerated |
-| REST surface is 23 paths, no build or partition control | Same spec |
+| REST v2 is 75 paths; builds are read-only, no partition control | Same spec |
 | MIG needs root, stopped processes, reset pre-Hopper | NVIDIA documentation |
 | `topo -m` legend | NVIDIA documentation |
 | Clusters are Docker containers | Runpod's own comparison page |
@@ -289,16 +289,16 @@ Multi-Instance GPU 는 물리 카드 하나를 **GPU Instance** 로 잘라 각�
 
 ### API 로 제어할 수 있는 것
 
-[발행된 OpenAPI 스펙](https://rest.runpod.io/v1/openapi.json)의 `POST /pods` 는 속성이 33개인데, interconnect·topology·NVLink·MIG·partition 관련 항목이 하나도 없습니다. GPU 관련은 이게 전부입니다.
+[발행된 REST v2 스펙](https://api.runpod.io/v2/openapi.json) (2026-11-24 확인)의 `POST /pods` 는 최상위 속성이 19개인데, interconnect·NVLink·MIG·partition 관련 항목이 하나도 없습니다. GPU 관련은 `gpu` 객체 안에 있는 이것이 전부입니다.
 
 | 속성 | 의미 |
 |---|---|
-| `gpuTypeIds` | 허용할 GPU 모델 |
-| `gpuCount` | 붙일 개수 |
-| `gpuTypePriority` | 가용성에 따라 대체할지 여부 |
-| `minRAMPerGPU`, `minVCPUPerGPU` | GPU 당 호스트 자원 |
+| `gpu.id` | 배치할 GPU 모델 하나. REST v1 은 목록 (`gpuTypeIds`) 과 `gpuTypePriority` 대체를 받았음 |
+| `gpu.count` | 붙일 개수 |
+| `gpu.allowedCudaVersions`, `gpu.minCudaVersion` | 호스트 CUDA 버전 |
+| `gpu.minRamPerGpu`, `gpu.minVcpuCountPerGpu` | GPU 당 호스트 자원 |
 
-`POST /endpoints` 는 더 좁아서 `templateId` 를 요구할 뿐 GPU 토폴로지 필드가 아예 없습니다. REST 전체가 23개 경로이며 빌드·토폴로지·파티셔닝용 경로는 없습니다.
+`POST /serverless` 는 GPU *풀* (`gpu.pools`, `gpu.excludedTypes` 로 제외) 을 고를 뿐 GPU 토폴로지 필드가 없습니다. REST v2 는 75개 경로이며, GitHub 빌드는 조회 (`GET /serverless/{id}/builds`) 만 되고 시작할 수 없습니다. 토폴로지·파티셔닝용 경로는 없습니다. Pod 속성 33개, 경로 23개였던 REST v1 은 2026-11-15 에 폐기됐습니다 ([#101](https://github.com/litkhai/runpod-hols/issues/101)).
 
 즉 레버는 SKU 선택 하나입니다. 아래는 그 레버를 제대로 읽는 방법입니다.
 
@@ -357,7 +357,7 @@ GPU1	NV12	 X 	SYS … NODE	64-127	1
 
 | | |
 |---|---|
-| 재배포 | `gpuTypePriority` 대체에 맡기지 말고 SXM/NVL SKU 를 명시적으로 지정 |
+| 재배포 | SXM/NVL SKU 를 명시적으로 지정. REST v2 Pod 은 `gpu.id` 하나만 받음 |
 | 병렬화 차수 낮추기 | 텐서 병렬이 통신을 가장 많이 씁니다. 파이프라인·데이터 병렬이 PCIe 를 더 잘 견딥니다 |
 | 덜 자주 샤딩 | 마이크로배치를 키우면 같은 작업에 all-reduce 횟수가 줄어듭니다 |
 | NCCL 이 조용히 성능을 떨구고 있지 않은지 확인 | `NCCL_DEBUG=INFO` 가 쌍별로 선택한 전송 방식을 출력합니다 |
@@ -461,7 +461,7 @@ CUDA MPS 는 Pod 안에서 별도 준비 없이 동작합니다. 이미지에 `n
 |---|---|
 | GPU 타입 48개, 그중 둘이 MIG SKU | 이 계정으로 카탈로그 실시간 조회 |
 | `POST /pods` 에 토폴로지 필드 없음 | 발행된 OpenAPI 스펙, 속성 33개 전수 확인 |
-| REST 전체 23개 경로, 빌드·파티션 제어 없음 | 같은 스펙 |
+| REST v2 75개 경로, 빌드는 조회만, 파티션 제어 없음 | 같은 스펙 |
 | MIG 는 root·프로세스 정지·Hopper 이전 리셋 필요 | NVIDIA 문서 |
 | `topo -m` 범례 | NVIDIA 문서 |
 | Cluster 는 Docker 컨테이너 | Runpod 자체 비교 페이지 |

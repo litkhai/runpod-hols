@@ -34,14 +34,15 @@ def stock():
 
 
 def attempt(gpu, reading, rnd):
-    body = {"name": "ic-stockprobe", "imageName": IMAGE, "computeType": "GPU", "gpuTypeIds": [gpu], "gpuCount": 1,
-            "cloudType": "SECURE", "allowedCudaVersions": ["13.0"], "containerDiskInGb": 20, "volumeInGb": 0}
+    # REST v2 body (#101). v2 returns no machine id, so new rows carry machine_id null.
+    body = {"name": "ic-stockprobe", "image": IMAGE, "cloud": "SECURE", "disk": 20,
+            "gpu": {"id": gpu, "count": 1, "allowedCudaVersions": ["13.0"]}}
     row = {"round": rnd, "t_kst": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "gpu": gpu, "reading_[cuda13,any]": reading}
     t0 = time.time()
     try:
         pod = api("POST", "/pods", body)
         row.update(created=True, pod_id=pod.get("id"), datacenter=pod.get("dataCenterId") or pod.get("datacenter"),
-                   cost_per_hr=pod.get("costPerHr"), machine_id=pod.get("machineId"))
+                   cost_per_hr=pod.get("cost"), machine_id=pod.get("machineId"))
         try:
             api("DELETE", "/pods/" + pod["id"])
             row["deleted"] = True

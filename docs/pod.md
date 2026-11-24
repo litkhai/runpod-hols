@@ -114,6 +114,35 @@ One network volume, mounted at `/workspace` on a Pod and at `/runpod-volume` on 
 
 Good for iterating; for production, bake the code into an image as Serverless Lab 01 does — the volume pins the endpoint to one data center and makes every cold start import over the network.
 
+### Queued Pods — wait for a GPU instead of failing
+
+A REST v2 create with `queue` is placed when stock appears, instead of failing with *no instances currently available*. Run on 2026-11-24 with the lab key ([#111](https://github.com/litkhai/runpod-hols/issues/111)):
+
+```bash
+curl -X POST https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{
+  "name": "hol-q-now", "image": "runpod/base:1.0.2-ubuntu2404", "cloud": "SECURE",
+  "gpu": {"id": "NVIDIA RTX 2000 Ada Generation", "count": 1}, "disk": 10,
+  "queue": {"expiresAt": "2026-11-23T18:49:20Z", "allowedHours": {"monday": [9, 10, 11, 12]}}}'
+```
+
+| Step | What happened |
+|---|---|
+| Create, RTX 2000 Ada (Secure stock `NONE`) | `202` with a queued-pod object — `status: QUEUED`, `podId: null` — and `Location: /v2/queued-pods/{id}` |
+| Create with `startsAt` two hours ahead | `202 QUEUED` at once, without trying to deploy |
+| Create with `cpu` and `queue` | `400 queue is only supported for GPU pods` |
+| While queued, 11 minutes | `spendRate.current` 0 in `GET /v2/account/limits`; no Pod in `/v2/pods` |
+| Then | The scheduler placed it: `DEPLOYED`, `podId` set, `resolvedAt` 18:00:11 UTC. The Pod was `RUNNING` and `spendRate.current` read 0.241 — it bills from that moment. Deleted 14 s later |
+| `DELETE /v2/queued-pods/{id}` | The future one became `CANCELLED`; the deployed one stayed `DEPLOYED`. Both 204, and a second DELETE is 204 too |
+
+<figure class="shot"><a href="{{ '/assets/img/pod/queued-pods-waiting.webp' | relative_url }}"><img src="{{ '/assets/img/pod/queued-pods-waiting.webp' | relative_url }}" alt="Pods page, Waiting for availability: hol-q-later and hol-q-now, RTX 2000 Ada x1, Auto-deploy badge, created and expiry times" loading="lazy" width="980" height="450"></a><figcaption>Pods → <strong>Waiting for availability</strong>, 2026-11-24: both queued Pods with the <em>Auto-deploy</em> badge and their expiry.</figcaption></figure>
+
+What it changes:
+
+- **No retry loop for stock.** In October a type with no stock failed 10 creates out of 10 (C25), and stock flipped all day (C27). This RTX 2000 Ada read `NONE` before and after and was still placed in between. `queue` exists only on `POST /v2/pods`; the cluster lab's wait for A100 or H100 ([#93](https://github.com/litkhai/runpod-hols/issues/93)) still polls.
+- **A queued Pod costs nothing until it deploys — then it bills without asking.** Bound it with `expiresAt` (default and cap 30 days) or `allowedHours`, and watch `/v2/queued-pods`. `notifyEmail` must be an address on the account; not tried here.
+- **Billing lags.** Five minutes after the deploy, `/v2/billing/pods` had no record yet; `spendRate.current` is the live signal.
+
 ### What changed in the SDK
 
 | | `runpod` 1.12.0 | `runpod` 2.0.0+ (2026-10-30) |
@@ -123,6 +152,30 @@ Good for iterating; for production, bake the code into an image as Serverless La
 | CPU Pod with `volume_mount_path` and no network volume | Sent; the volume is dropped | Rejected in the SDK |
 
 Lab 01 pins `runpod~=1.12.0`. On 2.x its scripts would also misread Pods: the REST objects say `status`, not `desiredStatus`, so the running-Pod check would find nothing. [What else changed in 2.x]({{ '/sdk/client/' | relative_url }}). Instance ids look like `cpu3c-2-4` — flavor, vCPU, memory in GB.
+
+### Without SSH — exec and logs
+
+REST v2 runs a command in a Pod and streams its logs over HTTPS, with no SSH key, port or public IP. Run on 2026-11-24 on a `cpu3c` 2-vCPU CPU Pod created without `startSsh` or ports ([#112](https://github.com/litkhai/runpod-hols/issues/112)).
+
+```bash
+curl -X POST https://api.runpod.io/v2/pods/$POD_ID/exec -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{"command": ["sh", "-c", "nproc; df -h / | tail -1"]}'
+# Server-Sent Events: the stream stays open, so always bound it with -m
+curl -sN -m 15 -H "Authorization: Bearer $RUNPOD_API_KEY" "https://api.runpod.io/v2/pods/$POD_ID/logs?tail=20"
+```
+
+| Call | Result |
+|---|---|
+| exec right after the create | `409 Pod container is starting, retry shortly`; the first 200 came about 25 s after the Pod read `RUNNING` |
+| `["sh", "-c", "echo out; echo err >&2; exit 3"]` | 200 with `exitCode` 3, `stdout` and `stderr` — a non-zero exit is a result, not an error |
+| `["sleep", "30"]` with `timeoutSeconds` 2 | 200 after 2 s, `timedOut: true`, `exitCode` null |
+| `env` and `cwd` | `{"GREETING": "hi"}` in `/tmp` printed `hi from /tmp` |
+| `echo marker > /proc/1/fd/1` | The line appeared in the log stream as `source: container` |
+| `logs?tail=20` | `system` lines (image pull, container start) and `container` lines (the image's start script); `source=` picks one |
+
+**The key needs GraphQL access.** With the lab key (GraphQL None) exec answered `403 This API key cannot run commands on pods` and logs `403 Access to the requested resource was denied`. A key with REST *All resources* and GraphQL Read only got logs but still not exec; GraphQL Read / Write unlocked both. The spec names only `pods:write` and `pods:read`. Serverless worker logs behave the same way ([#104](https://github.com/litkhai/runpod-hols/issues/104)).
+
+Three CPU Pods of about two minutes each, about USD 0.01 in all.
 
 ### Billing
 
@@ -259,6 +312,35 @@ Pod 는 직접 빌려서 제어하는 GPU 또는 CPU 컨테이너입니다. Serv
 
 반복 개발에는 좋습니다. 프로덕션은 Serverless 실습 01 처럼 코드를 이미지에 구우세요. 볼륨은 엔드포인트를 한 데이터센터에 묶고, 콜드 스타트마다 네트워크 너머로 import 하게 만듭니다.
 
+### 대기 Pod — 실패하는 대신 GPU 를 기다리기
+
+REST v2 생성에 `queue` 를 주면 *no instances currently available* 로 실패하는 대신 재고가 생길 때 배치됩니다. 2026-11-24 에 실습용 키로 실행했습니다 ([#111](https://github.com/litkhai/runpod-hols/issues/111)).
+
+```bash
+curl -X POST https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{
+  "name": "hol-q-now", "image": "runpod/base:1.0.2-ubuntu2404", "cloud": "SECURE",
+  "gpu": {"id": "NVIDIA RTX 2000 Ada Generation", "count": 1}, "disk": 10,
+  "queue": {"expiresAt": "2026-11-23T18:49:20Z", "allowedHours": {"monday": [9, 10, 11, 12]}}}'
+```
+
+| 단계 | 결과 |
+|---|---|
+| RTX 2000 Ada (Secure 재고 `NONE`) 로 생성 | `202` 와 대기 Pod 객체 — `status: QUEUED`, `podId: null` — 그리고 `Location: /v2/queued-pods/{id}` |
+| `startsAt` 을 두 시간 뒤로 두고 생성 | 배치를 시도하지 않고 바로 `202 QUEUED` |
+| `cpu` 와 `queue` 로 생성 | `400 queue is only supported for GPU pods` |
+| 대기 중 11분 | `GET /v2/account/limits` 의 `spendRate.current` 0. `/v2/pods` 에 Pod 없음 |
+| 그 뒤 | 스케줄러가 배치: `DEPLOYED`, `podId` 채워짐, `resolvedAt` 18:00:11 UTC. Pod 은 `RUNNING`, `spendRate.current` 0.241 — 이 순간부터 과금. 14초 뒤 삭제 |
+| `DELETE /v2/queued-pods/{id}` | 미래 시작분은 `CANCELLED`, 이미 배치된 것은 `DEPLOYED` 그대로. 둘 다 204, 두 번째 DELETE 도 204 |
+
+<figure class="shot"><a href="{{ '/assets/img/pod/queued-pods-waiting.webp' | relative_url }}"><img src="{{ '/assets/img/pod/queued-pods-waiting.webp' | relative_url }}" alt="Pods 페이지, Waiting for availability: hol-q-later 와 hol-q-now, RTX 2000 Ada x1, Auto-deploy 표시, 생성·만료 시각" loading="lazy" width="980" height="450"></a><figcaption>Pods → <strong>Waiting for availability</strong>, 2026-11-24: <em>Auto-deploy</em> 표시와 만료 시각이 붙은 대기 Pod 두 개.</figcaption></figure>
+
+바뀌는 것:
+
+- **재고를 위한 재시도 루프가 필요 없습니다.** 10월에는 재고 없는 종류가 생성 10번 중 10번 실패했고 (C25), 재고는 하루 종일 바뀌었습니다 (C27). 이 RTX 2000 Ada 는 전후로 `NONE` 이었는데도 그 사이에 배치됐습니다. `queue` 는 `POST /v2/pods` 에만 있으므로 A100·H100 을 기다리는 클러스터 실습 ([#93](https://github.com/litkhai/runpod-hols/issues/93)) 은 여전히 폴링합니다.
+- **대기 Pod 은 배치되기 전까지 무료지만, 배치되면 묻지 않고 과금됩니다.** `expiresAt` (기본값이자 상한 30일) 이나 `allowedHours` 로 제한하고 `/v2/queued-pods` 를 지켜보세요. `notifyEmail` 은 계정의 주소여야 하며 여기서는 시도하지 않았습니다.
+- **과금 기록은 늦게 올라옵니다.** 배치 5분 뒤에도 `/v2/billing/pods` 에 기록이 없었습니다. 실시간 신호는 `spendRate.current` 입니다.
+
 ### SDK 에서 바뀐 것
 
 | | `runpod` 1.12.0 | `runpod` 2.0.0+ (2026-10-30) |
@@ -268,6 +350,30 @@ Pod 는 직접 빌려서 제어하는 GPU 또는 CPU 컨테이너입니다. Serv
 | 네트워크 볼륨 없이 `volume_mount_path` 를 준 CPU Pod | 전송됨. 볼륨은 빠짐 | SDK 에서 거부 |
 
 실습 01 은 `runpod~=1.12.0` 으로 고정합니다. 2.x 에서는 스크립트가 Pod 도 잘못 읽습니다. REST 객체에는 `desiredStatus` 가 아니라 `status` 가 있어 실행 중 Pod 확인이 아무것도 찾지 못합니다. [2.x 의 다른 변경점]({{ '/sdk/client/' | relative_url }}). 인스턴스 ID 는 `cpu3c-2-4` 처럼 flavor, vCPU, 메모리(GB) 순입니다.
+
+### SSH 없이 — exec 와 로그
+
+REST v2 는 SSH 키·포트·공인 IP 없이 HTTPS 로 Pod 안에서 명령을 실행하고 로그를 스트리밍합니다. 2026-11-24 에 `startSsh` 와 포트 없이 만든 `cpu3c` 2 vCPU CPU Pod 에서 실행했습니다 ([#112](https://github.com/litkhai/runpod-hols/issues/112)).
+
+```bash
+curl -X POST https://api.runpod.io/v2/pods/$POD_ID/exec -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{"command": ["sh", "-c", "nproc; df -h / | tail -1"]}'
+# Server-Sent Events: the stream stays open, so always bound it with -m
+curl -sN -m 15 -H "Authorization: Bearer $RUNPOD_API_KEY" "https://api.runpod.io/v2/pods/$POD_ID/logs?tail=20"
+```
+
+| 호출 | 결과 |
+|---|---|
+| 생성 직후 exec | `409 Pod container is starting, retry shortly`. Pod 이 `RUNNING` 이 된 지 약 25초 뒤 처음 200 |
+| `["sh", "-c", "echo out; echo err >&2; exit 3"]` | `exitCode` 3, `stdout`, `stderr` 를 담은 200 — 0 이 아닌 종료도 오류가 아니라 결과 |
+| `timeoutSeconds` 2 로 `["sleep", "30"]` | 2초 뒤 200, `timedOut: true`, `exitCode` null |
+| `env` 와 `cwd` | `/tmp` 에서 `{"GREETING": "hi"}` 로 `hi from /tmp` 출력 |
+| `echo marker > /proc/1/fd/1` | 그 줄이 로그 스트림에 `source: container` 로 나타남 |
+| `logs?tail=20` | `system` 줄 (이미지 pull, 컨테이너 시작) 과 `container` 줄 (이미지 시작 스크립트). `source=` 로 하나만 고를 수 있음 |
+
+**키에 GraphQL 권한이 필요합니다.** 실습용 키 (GraphQL None) 로는 exec 가 `403 This API key cannot run commands on pods`, 로그가 `403 Access to the requested resource was denied` 였습니다. REST *All resources* 에 GraphQL Read only 를 준 키는 로그는 됐지만 exec 는 여전히 안 됐고, GraphQL Read / Write 를 주자 둘 다 됐습니다. 스펙에는 `pods:write` 와 `pods:read` 만 적혀 있습니다. Serverless 워커 로그도 같습니다 ([#104](https://github.com/litkhai/runpod-hols/issues/104)).
+
+약 2분짜리 CPU Pod 세 개, 합계 약 USD 0.01.
 
 ### 과금
 
@@ -404,6 +510,35 @@ template 的 `env` 中可以写 {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %
 
 适合迭代开发；用于生产时，应像 Serverless 实验 01 那样把代码打包进镜像——volume 会把 endpoint 固定在一个数据中心，并使每次冷启动都通过网络 import。
 
+### 排队 Pod——等待 GPU 而不是直接失败
+
+REST v2 创建时带上 `queue`，在有库存时才放置，而不是因 *no instances currently available* 失败。2026-11-24 用实验密钥运行（[#111](https://github.com/litkhai/runpod-hols/issues/111)）：
+
+```bash
+curl -X POST https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{
+  "name": "hol-q-now", "image": "runpod/base:1.0.2-ubuntu2404", "cloud": "SECURE",
+  "gpu": {"id": "NVIDIA RTX 2000 Ada Generation", "count": 1}, "disk": 10,
+  "queue": {"expiresAt": "2026-11-23T18:49:20Z", "allowedHours": {"monday": [9, 10, 11, 12]}}}'
+```
+
+| 步骤 | 结果 |
+|---|---|
+| 创建 RTX 2000 Ada（Secure 库存 `NONE`） | `202` 加排队 Pod 对象——`status: QUEUED`、`podId: null`——以及 `Location: /v2/queued-pods/{id}` |
+| `startsAt` 设为两小时后再创建 | 立即 `202 QUEUED`，不尝试部署 |
+| 同时带 `cpu` 和 `queue` 创建 | `400 queue is only supported for GPU pods` |
+| 排队中，11 分钟 | `GET /v2/account/limits` 的 `spendRate.current` 为 0；`/v2/pods` 中没有 Pod |
+| 之后 | 调度器完成放置：`DEPLOYED`、`podId` 已填、`resolvedAt` 18:00:11 UTC。Pod 为 `RUNNING`，`spendRate.current` 为 0.241——从这一刻开始计费。14 秒后删除 |
+| `DELETE /v2/queued-pods/{id}` | 未来开始的那个变为 `CANCELLED`；已部署的仍为 `DEPLOYED`。两者都返回 204，再次 DELETE 也是 204 |
+
+<figure class="shot"><a href="{{ '/assets/img/pod/queued-pods-waiting.webp' | relative_url }}"><img src="{{ '/assets/img/pod/queued-pods-waiting.webp' | relative_url }}" alt="Pods 页面，Waiting for availability：hol-q-later 和 hol-q-now，RTX 2000 Ada x1，Auto-deploy 标记，创建和到期时间" loading="lazy" width="980" height="450"></a><figcaption>Pods → <strong>Waiting for availability</strong>，2026-11-24：两个排队 Pod，带 <em>Auto-deploy</em> 标记和到期时间。</figcaption></figure>
+
+带来的变化：
+
+- **不再需要为库存写重试循环。** 10 月里没有库存的类型 10 次创建全部失败（C25），库存全天都在变化（C27）。这个 RTX 2000 Ada 前后读数都是 `NONE`，却在中间被放置了。`queue` 只存在于 `POST /v2/pods`；等待 A100 或 H100 的集群实验（[#93](https://github.com/litkhai/runpod-hols/issues/93)）仍需轮询。
+- **排队 Pod 在部署前不收费——部署后不经确认就开始计费。** 用 `expiresAt`（默认且上限 30 天）或 `allowedHours` 加以限制，并关注 `/v2/queued-pods`。`notifyEmail` 必须是账号中的地址；此处未尝试。
+- **计费记录有延迟。** 部署 5 分钟后 `/v2/billing/pods` 仍无记录；实时信号是 `spendRate.current`。
+
 ### SDK 中的变化
 
 | | `runpod` 1.12.0 | `runpod` 2.0.0+（2026-10-30） |
@@ -413,6 +548,30 @@ template 的 `env` 中可以写 {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %
 | 带 `volume_mount_path` 但没有 network volume 的 CPU Pod | 会发送；volume 被丢弃 | 在 SDK 中被拒绝 |
 
 实验 01 固定使用 `runpod~=1.12.0`。在 2.x 上，它的脚本还会误读 Pod：REST 对象中的字段是 `status` 而不是 `desiredStatus`，所以检查运行中 Pod 的逻辑将什么也找不到。[2.x 中的其他变化]({{ '/sdk/client/' | relative_url }})。instance id 形如 `cpu3c-2-4`——规格类型、vCPU、以 GB 计的内存。
+
+### 不用 SSH——exec 与日志
+
+REST v2 通过 HTTPS 在 Pod 内运行命令并流式获取日志，无需 SSH 密钥、端口或公网 IP。2026-11-24 在一个不带 `startSsh` 和端口创建的 `cpu3c` 2 vCPU CPU Pod 上运行（[#112](https://github.com/litkhai/runpod-hols/issues/112)）。
+
+```bash
+curl -X POST https://api.runpod.io/v2/pods/$POD_ID/exec -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{"command": ["sh", "-c", "nproc; df -h / | tail -1"]}'
+# Server-Sent Events: the stream stays open, so always bound it with -m
+curl -sN -m 15 -H "Authorization: Bearer $RUNPOD_API_KEY" "https://api.runpod.io/v2/pods/$POD_ID/logs?tail=20"
+```
+
+| 调用 | 结果 |
+|---|---|
+| 创建后立即 exec | `409 Pod container is starting, retry shortly`；Pod 显示 `RUNNING` 约 25 秒后首次返回 200 |
+| `["sh", "-c", "echo out; echo err >&2; exit 3"]` | 200，含 `exitCode` 3、`stdout` 和 `stderr`——非零退出是结果而不是错误 |
+| `["sleep", "30"]` 配 `timeoutSeconds` 2 | 2 秒后返回 200，`timedOut: true`，`exitCode` 为 null |
+| `env` 和 `cwd` | 在 `/tmp` 中以 `{"GREETING": "hi"}` 打印出 `hi from /tmp` |
+| `echo marker > /proc/1/fd/1` | 该行以 `source: container` 出现在日志流中 |
+| `logs?tail=20` | `system` 行（拉取镜像、启动容器）和 `container` 行（镜像的启动脚本）；可用 `source=` 只选一种 |
+
+**密钥需要 GraphQL 权限。** 用实验密钥（GraphQL 为 None）时，exec 返回 `403 This API key cannot run commands on pods`，日志返回 `403 Access to the requested resource was denied`。REST *All resources* 加 GraphQL Read only 的密钥能读日志，但 exec 仍不行；GraphQL Read / Write 后两者都可用。规范只写了 `pods:write` 和 `pods:read`。Serverless worker 日志也一样（[#104](https://github.com/litkhai/runpod-hols/issues/104)）。
+
+三个约 2 分钟的 CPU Pod，合计约 USD 0.01。
 
 ### 计费
 
@@ -549,6 +708,35 @@ template の `env` には {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %} を�
 
 反復開発には向いています。本番では Serverless ラボ 01 のようにコードをイメージに焼き込んでください。volume は endpoint を 1 つのデータセンターに固定し、コールドスタートのたびにネットワーク越しの import を発生させます。
 
+### 待機 Pod：失敗する代わりに GPU を待つ
+
+REST v2 の作成に `queue` を付けると、*no instances currently available* で失敗する代わりに、在庫が出たときに配置されます。2026-11-24 にラボ用キーで実行しました（[#111](https://github.com/litkhai/runpod-hols/issues/111)）。
+
+```bash
+curl -X POST https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{
+  "name": "hol-q-now", "image": "runpod/base:1.0.2-ubuntu2404", "cloud": "SECURE",
+  "gpu": {"id": "NVIDIA RTX 2000 Ada Generation", "count": 1}, "disk": 10,
+  "queue": {"expiresAt": "2026-11-23T18:49:20Z", "allowedHours": {"monday": [9, 10, 11, 12]}}}'
+```
+
+| 手順 | 結果 |
+|---|---|
+| RTX 2000 Ada（Secure の在庫 `NONE`）で作成 | `202` と待機 Pod のオブジェクト——`status: QUEUED`、`podId: null`——と `Location: /v2/queued-pods/{id}` |
+| `startsAt` を 2 時間後にして作成 | 配置を試みずにすぐ `202 QUEUED` |
+| `cpu` と `queue` で作成 | `400 queue is only supported for GPU pods` |
+| 待機中の 11 分間 | `GET /v2/account/limits` の `spendRate.current` は 0。`/v2/pods` に Pod なし |
+| その後 | スケジューラーが配置：`DEPLOYED`、`podId` が入り、`resolvedAt` 18:00:11 UTC。Pod は `RUNNING` で `spendRate.current` は 0.241——この時点から課金。14 秒後に削除 |
+| `DELETE /v2/queued-pods/{id}` | 将来開始のものは `CANCELLED`、配置済みのものは `DEPLOYED` のまま。どちらも 204、2 回目の DELETE も 204 |
+
+<figure class="shot"><a href="{{ '/assets/img/pod/queued-pods-waiting.webp' | relative_url }}"><img src="{{ '/assets/img/pod/queued-pods-waiting.webp' | relative_url }}" alt="Pods ページの Waiting for availability：hol-q-later と hol-q-now、RTX 2000 Ada x1、Auto-deploy の表示、作成と期限の時刻" loading="lazy" width="980" height="450"></a><figcaption>Pods → <strong>Waiting for availability</strong>、2026-11-24：<em>Auto-deploy</em> の表示と期限が付いた待機 Pod 2 つ。</figcaption></figure>
+
+変わること：
+
+- **在庫のための再試行ループが不要になります。** 10 月には在庫のない種類が作成 10 回中 10 回失敗し（C25）、在庫は 1 日中変わっていました（C27）。この RTX 2000 Ada は前後とも `NONE` でしたが、その間に配置されました。`queue` は `POST /v2/pods` にしかないため、A100 か H100 を待つクラスターのラボ（[#93](https://github.com/litkhai/runpod-hols/issues/93)）は引き続きポーリングします。
+- **待機 Pod は配置されるまで無料ですが、配置されると確認なしに課金されます。** `expiresAt`（既定値かつ上限 30 日）や `allowedHours` で制限し、`/v2/queued-pods` を監視してください。`notifyEmail` はアカウントのアドレスである必要があり、ここでは試していません。
+- **課金の記録は遅れます。** 配置 5 分後でも `/v2/billing/pods` に記録はありませんでした。リアルタイムの指標は `spendRate.current` です。
+
 ### SDK で変わったこと
 
 | | `runpod` 1.12.0 | `runpod` 2.0.0+（2026-10-30） |
@@ -558,6 +746,30 @@ template の `env` には {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %} を�
 | `volume_mount_path` ありで network volume なしの CPU Pod | 送信される。volume は落とされる | SDK で拒否 |
 
 ラボ 01 は `runpod~=1.12.0` に固定しています。2.x ではスクリプトが Pod を読み違えることもあります。REST のオブジェクトは `desiredStatus` ではなく `status` なので、稼働中の Pod のチェックが何も見つけられません。[2.x でのその他の変更]({{ '/sdk/client/' | relative_url }})。instance id は `cpu3c-2-4` のような形式で、フレーバー、vCPU、GB 単位のメモリを表します。
+
+### SSH なしで：exec とログ
+
+REST v2 は、SSH キー・ポート・パブリック IP なしに、HTTPS で Pod 内でコマンドを実行し、ログをストリーミングします。2026-11-24 に、`startSsh` とポートなしで作成した `cpu3c` 2 vCPU の CPU Pod で実行しました（[#112](https://github.com/litkhai/runpod-hols/issues/112)）。
+
+```bash
+curl -X POST https://api.runpod.io/v2/pods/$POD_ID/exec -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{"command": ["sh", "-c", "nproc; df -h / | tail -1"]}'
+# Server-Sent Events: the stream stays open, so always bound it with -m
+curl -sN -m 15 -H "Authorization: Bearer $RUNPOD_API_KEY" "https://api.runpod.io/v2/pods/$POD_ID/logs?tail=20"
+```
+
+| 呼び出し | 結果 |
+|---|---|
+| 作成直後の exec | `409 Pod container is starting, retry shortly`。Pod が `RUNNING` になって約 25 秒後に最初の 200 |
+| `["sh", "-c", "echo out; echo err >&2; exit 3"]` | `exitCode` 3、`stdout`、`stderr` を含む 200——0 以外の終了もエラーではなく結果 |
+| `timeoutSeconds` 2 で `["sleep", "30"]` | 2 秒後に 200、`timedOut: true`、`exitCode` は null |
+| `env` と `cwd` | `/tmp` で `{"GREETING": "hi"}` により `hi from /tmp` を出力 |
+| `echo marker > /proc/1/fd/1` | その行がログストリームに `source: container` として現れた |
+| `logs?tail=20` | `system` の行（イメージの pull、コンテナ起動）と `container` の行（イメージの起動スクリプト）。`source=` で一方だけ選べる |
+
+**キーに GraphQL の権限が必要です。** ラボ用キー（GraphQL None）では、exec は `403 This API key cannot run commands on pods`、ログは `403 Access to the requested resource was denied` でした。REST *All resources* に GraphQL Read only を付けたキーではログは取れましたが exec は不可で、GraphQL Read / Write で両方とも使えました。仕様には `pods:write` と `pods:read` しか書かれていません。Serverless のワーカーログも同じです（[#104](https://github.com/litkhai/runpod-hols/issues/104)）。
+
+約 2 分の CPU Pod 3 つで、合計約 USD 0.01。
 
 ### 課金
 

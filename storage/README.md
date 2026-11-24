@@ -23,16 +23,16 @@ Everything here was run on 2026-11-07 ([#64](https://github.com/litkhai/runpod-h
 | Tier | What it actually is (2026-11-07) | Lives | Price | Attach |
 |---|---|---|---|---|
 | Container disk | `overlay` on the host's local NVMe | Until the Pod stops | In the Pod price | Always there |
-| Pod volume ("Volume disk", legacy) | MooseFS over FUSE (`mfs#euro-3.runpod.net`) in EU-RO-1 | Until the Pod is deleted | USD 0.10/GB-month running, 0.20 stopped | `volumeInGb` |
-| Network volume, standard | The same MooseFS | Until you delete it | USD 0.07/GB-month (0.05 beyond 1 TB) | `networkVolumeId`, one datacenter |
-| Network volume, high-performance | A VAST NFS server (`us-ca-2-vast.runpod.net:/runpodfs`) | Until you delete it | USD 0.14/GB-month | GraphQL only (`isNextGenStorage: true`) |
-| Global volume (beta) | An object store over FUSE (`fuse.geesefs`, 1.0P) | Until you delete it | First 100 GB free, then USD 0.09/GB-month + IOPS (console, 2026-11-24) | GraphQL only (`volumeMounts`, `OBJECT_STORE_VOLUME`) |
+| Pod volume ("Volume disk", legacy) | MooseFS over FUSE (`mfs#euro-3.runpod.net`) in EU-RO-1 | Until the Pod is deleted | USD 0.10/GB-month running, 0.20 stopped | `mounts.persistent` (REST v2; v1 `volumeInGb`) |
+| Network volume, standard | The same MooseFS | Until you delete it | USD 0.07/GB-month (0.05 beyond 1 TB) | `mounts.network`, one datacenter |
+| Network volume, high-performance | A VAST NFS server (`us-ca-2-vast.runpod.net:/runpodfs`) | Until you delete it | USD 0.14/GB-month | REST v2 `type: HIGH_PERFORMANCE` (spec); these runs used GraphQL `isNextGenStorage` |
+| Global volume (beta) | An object store over FUSE (`fuse.geesefs`, 1.0P) | Until you delete it | First 100 GB free, then USD 0.09/GB-month + IOPS (console, 2026-11-24) | REST v2 `mounts.global` (spec); these runs used GraphQL `volumeMounts` |
 
 ![Create new volume page with the High-performance filter: AP-IN-1, AP-IN-2, CA-MTL-1, CA-MTL-4, EU-FR-1, EUR-NO-2, US-CA-2](../docs/assets/img/storage/create-network-volume-hp.webp)
 
 *Create new volume, High-performance filter: seven datacenters, only US-CA-2 also S3-compatible. Picking one switches the volume to high-performance at USD 0.14/GB-month — twice standard. The filter's tooltip promises "up to 2x faster"; the docs say "up to 3x throughput and 4x IOPS".*
 
-Three API surfaces are involved, and none covers everything. REST v1 creates standard network volumes and attaches them to Pods; GraphQL (what the console uses) is the only way to create a high-performance volume or attach a global volume; global volumes themselves are created through `POST https://api.runpod.io/v2/global-volumes`.
+These runs (2026-11-07) needed three API surfaces: REST v1 for standard network volumes, GraphQL (what the console uses) to create a high-performance volume or attach a global volume, and `POST https://api.runpod.io/v2/global-volumes` to create global volumes. REST v1 was retired on 2026-11-15. REST v2 now covers every tier on paper — `POST /v2/network-volumes` takes `type: HIGH_PERFORMANCE`, and a Pod's `mounts` takes `persistent`, `network` and `global` ([spec](https://api.runpod.io/v2/openapi.json), read 2026-11-24, not re-run; [#101](https://github.com/litkhai/runpod-hols/issues/101)).
 
 <div class="warn" markdown="1">
 **Passing both kinds to one GraphQL deploy drops the network volume.** `podFindAndDeployOnDemand` with `networkVolumeId` *and* a global volume in `volumeMounts` started a Pod with only the global volume; `/workspace` was the container disk, and nothing reported an error. Check `df -T /workspace` after every deploy.
@@ -89,6 +89,26 @@ Same vLLM worker (`worker-v1-vllm` v2.28.0, Qwen2.5-7B-Instruct, 14.29 GiB), RTX
 
 The network volume saved the download and then spent as long reading from MooseFS, and the cold starts came out slower overall. For a model of this size, set the endpoint's Model field ([Serverless](https://runpod.litkhai.dev/serverless/)) and leave the network volume for data that must persist and be shared — outputs, checkpoints, datasets that several Pods read. The global volume was not tried for weights: its measured cold read across regions (39 MiB/s) rules it out.
 
+## A global volume on Serverless
+
+An endpoint can mount one global volume over REST v2. Create the volume with `POST /v2/global-volumes` and only a `name`, then pass it under `mounts.global`. Workers always see it at `/runpod-volume` — no custom path, no data-center constraint. Run on 2026-11-24 with a CPU endpoint (`cpu3c`, 2 vCPU) and an inline handler ([#117](https://github.com/litkhai/runpod-hols/issues/117)):
+
+```bash
+curl -X POST https://api.runpod.io/v2/global-volumes -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{"name": "hol-gv-serverless"}'
+# then, in POST /v2/serverless:
+#   "mounts": {"global": [{"volumeId": "<id>"}]}
+```
+
+| Check | Result |
+|---|---|
+| Inside the worker | `/runpod-volume` is `fuse.geesefs`, the same object store as on Pods; the worker's system log says *Global volume … mounted at /runpod-volume (read-write)* |
+| Another data center | A file written by a worker in US-CA-2 was listed by a fresh worker in US-NC-1 a minute later |
+| Network and global together | `400 an endpoint cannot have both a network volume and a global volume` |
+| Clean-up | Endpoint and volume deleted at once (204), with no wait |
+
+Not settled: in both runs, a job sent to a worker whose container had been stopped after the idle timeout and started again never reached the handler — the container stopped 7 s after the SDK started — and failed with *job timed out after 1 retries*. Fresh workers in either data center served their first job. No control run without the volume was made, so this is not pinned on the volume. Both runs together cost under USD 0.05.
+
 ## Getting data in without a Pod — the S3 API
 
 Network volumes in S3-capable datacenters (EU-RO-1 here) also answer at `https://s3api-<dc>.runpod.io`, with the volume id as the bucket. It needs an S3 API key from **Credentials → S3 API Keys**, separate from the Runpod API key and with read and write access to every S3-capable volume. Measured on 2026-11-07 with `aws s3 cp`, 1 GiB:
@@ -132,16 +152,16 @@ Runpod 의 모든 제품은 같은 몇 가지 스토리지 계층 위에 놓여 
 | 계층 | 실제 정체 (2026-11-07) | 수명 | 가격 | 연결 방식 |
 |---|---|---|---|---|
 | 컨테이너 디스크 | 호스트 로컬 NVMe 위의 `overlay` | Pod 가 중지될 때까지 | Pod 가격에 포함 | 항상 존재 |
-| Pod 볼륨 ("Volume disk", 레거시) | EU-RO-1 의 FUSE 기반 MooseFS (`mfs#euro-3.runpod.net`) | Pod 가 삭제될 때까지 | 실행 중 USD 0.10/GB-월, 중지 시 0.20 | `volumeInGb` |
-| 네트워크 볼륨, 표준 | 같은 MooseFS | 직접 삭제할 때까지 | USD 0.07/GB-월 (1 TB 초과분 0.05) | `networkVolumeId`, 데이터센터 하나 |
-| 네트워크 볼륨, 고성능 | VAST NFS 서버 (`us-ca-2-vast.runpod.net:/runpodfs`) | 직접 삭제할 때까지 | USD 0.14/GB-월 | GraphQL 전용 (`isNextGenStorage: true`) |
-| 글로벌 볼륨 (베타) | FUSE 기반 오브젝트 스토어 (`fuse.geesefs`, 1.0P) | 직접 삭제할 때까지 | 처음 100 GB 무료, 이후 USD 0.09/GB-월 + IOPS (콘솔, 2026-11-24) | GraphQL 전용 (`volumeMounts`, `OBJECT_STORE_VOLUME`) |
+| Pod 볼륨 ("Volume disk", 레거시) | EU-RO-1 의 FUSE 기반 MooseFS (`mfs#euro-3.runpod.net`) | Pod 가 삭제될 때까지 | 실행 중 USD 0.10/GB-월, 중지 시 0.20 | `mounts.persistent` (REST v2. v1 은 `volumeInGb`) |
+| 네트워크 볼륨, 표준 | 같은 MooseFS | 직접 삭제할 때까지 | USD 0.07/GB-월 (1 TB 초과분 0.05) | `mounts.network`, 데이터센터 하나 |
+| 네트워크 볼륨, 고성능 | VAST NFS 서버 (`us-ca-2-vast.runpod.net:/runpodfs`) | 직접 삭제할 때까지 | USD 0.14/GB-월 | REST v2 `type: HIGH_PERFORMANCE` (스펙). 이 측정은 GraphQL `isNextGenStorage` 로 함 |
+| 글로벌 볼륨 (베타) | FUSE 기반 오브젝트 스토어 (`fuse.geesefs`, 1.0P) | 직접 삭제할 때까지 | 처음 100 GB 무료, 이후 USD 0.09/GB-월 + IOPS (콘솔, 2026-11-24) | REST v2 `mounts.global` (스펙). 이 측정은 GraphQL `volumeMounts` 로 함 |
 
 ![High-performance 필터를 적용한 볼륨 생성 페이지: AP-IN-1, AP-IN-2, CA-MTL-1, CA-MTL-4, EU-FR-1, EUR-NO-2, US-CA-2](../docs/assets/img/storage/create-network-volume-hp.webp)
 
 *볼륨 생성, High-performance 필터: 데이터센터 일곱 곳이며, S3 호환까지 되는 곳은 US-CA-2 뿐입니다. 이 중 하나를 고르면 볼륨이 USD 0.14/GB-월의 고성능으로 바뀝니다 — 표준의 두 배입니다. 필터의 툴팁은 "최대 2배 빠름"을, 문서는 "최대 3배 처리량, 4배 IOPS"를 약속합니다.*
 
-관련된 API 는 세 가지이고, 어느 것도 전부를 다루지 못합니다. REST v1 은 표준 네트워크 볼륨을 만들고 Pod 에 연결합니다. GraphQL(콘솔이 쓰는 API)은 고성능 볼륨을 만들거나 글로벌 볼륨을 연결하는 유일한 방법입니다. 글로벌 볼륨 자체는 `POST https://api.runpod.io/v2/global-volumes` 로 생성합니다.
+이 측정 (2026-11-07) 에는 API 세 가지가 필요했습니다. 표준 네트워크 볼륨은 REST v1, 고성능 볼륨 생성과 글로벌 볼륨 연결은 GraphQL(콘솔이 쓰는 API), 글로벌 볼륨 생성은 `POST https://api.runpod.io/v2/global-volumes` 였습니다. REST v1 은 2026-11-15 에 폐기됐습니다. 이제 스펙상으로는 REST v2 가 모든 계층을 다룹니다. `POST /v2/network-volumes` 는 `type: HIGH_PERFORMANCE` 를 받고, Pod 의 `mounts` 는 `persistent`, `network`, `global` 을 받습니다 ([스펙](https://api.runpod.io/v2/openapi.json), 2026-11-24 확인, 재실행하지 않음. [#101](https://github.com/litkhai/runpod-hols/issues/101)).
 
 <div class="warn" markdown="1">
 **두 종류를 한 번의 GraphQL 배포에 함께 넘기면 네트워크 볼륨이 빠집니다.** `networkVolumeId` *와* `volumeMounts` 의 글로벌 볼륨을 함께 넘긴 `podFindAndDeployOnDemand` 는 글로벌 볼륨만 붙은 Pod 를 띄웠습니다. `/workspace` 는 컨테이너 디스크였고, 어떤 오류도 보고되지 않았습니다. 배포할 때마다 `df -T /workspace` 로 확인하세요.
@@ -197,6 +217,26 @@ Runpod 의 모든 제품은 같은 몇 가지 스토리지 계층 위에 놓여 
 | 네트워크 볼륨 (`/runpod-volume`) | 137.9–195.2 s | 첫 회 이후 다운로드 없음, ~0.5 GB/s 로 27.8–31.1 s 로드 |
 
 네트워크 볼륨은 다운로드를 아꼈지만 그만큼을 MooseFS 에서 읽는 데 썼고, 콜드 스타트는 전체적으로 더 느렸습니다. 이 크기의 모델이라면 엔드포인트의 Model 필드를 설정하고([Serverless](https://runpod.litkhai.dev/serverless/)), 네트워크 볼륨은 유지·공유되어야 하는 데이터 — 출력물, 체크포인트, 여러 Pod 가 읽는 데이터셋 — 에 남겨두세요. 글로벌 볼륨은 가중치용으로 시험하지 않았습니다. 측정된 리전 간 콜드 리드(39 MiB/s)만으로 제외됩니다.
+
+## Serverless 의 글로벌 볼륨
+
+REST v2 로 엔드포인트에 글로벌 볼륨 하나를 붙일 수 있습니다. `POST /v2/global-volumes` 에 `name` 만 주어 볼륨을 만들고 `mounts.global` 에 넣습니다. 워커는 항상 `/runpod-volume` 에서 봅니다 — 경로 지정도, 데이터센터 제약도 없습니다. 2026-11-24 에 CPU 엔드포인트 (`cpu3c`, 2 vCPU) 와 인라인 핸들러로 실행했습니다 ([#117](https://github.com/litkhai/runpod-hols/issues/117)).
+
+```bash
+curl -X POST https://api.runpod.io/v2/global-volumes -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H 'Content-Type: application/json' -d '{"name": "hol-gv-serverless"}'
+# then, in POST /v2/serverless:
+#   "mounts": {"global": [{"volumeId": "<id>"}]}
+```
+
+| 확인 | 결과 |
+|---|---|
+| 워커 안 | `/runpod-volume` 은 Pod 에서와 같은 오브젝트 스토어 `fuse.geesefs`. 워커 시스템 로그에 *Global volume … mounted at /runpod-volume (read-write)* |
+| 다른 데이터센터 | US-CA-2 워커가 쓴 파일을 1분 뒤 US-NC-1 의 새 워커가 목록에서 봄 |
+| 네트워크와 글로벌 함께 | `400 an endpoint cannot have both a network volume and a global volume` |
+| 정리 | 엔드포인트와 볼륨이 기다림 없이 바로 삭제됨 (204) |
+
+정리되지 않은 것: 두 번의 실행 모두, 유휴 타임아웃으로 컨테이너가 내려갔다가 다시 뜬 워커로 간 작업은 핸들러에 닿지 못했습니다 — SDK 가 시작하고 7초 뒤 컨테이너가 멈췄고 — *job timed out after 1 retries* 로 실패했습니다. 두 데이터센터 모두 새 워커는 첫 작업을 처리했습니다. 볼륨 없는 대조 실행은 하지 않았으므로 원인을 볼륨으로 단정하지 않습니다. 두 실행 합계 USD 0.05 미만.
 
 ## Pod 없이 데이터 넣기 — S3 API
 

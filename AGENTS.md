@@ -35,8 +35,9 @@ repeats everything on the pull request.
 - **A Liquid `|` is not a table column.** `{{ '/x/' | relative_url }}` never
   reaches the rendered table. Strip Liquid before counting.
 - **Labs run from their own venv:** `<lab>/.venv/bin/python`.
-- **GitHub builds are console-only.** The published OpenAPI spec has 23 paths
-  and none create a build; `POST /endpoints` takes a `templateId`.
+- **GitHub builds are console-only.** REST v2 (75 paths, 2026-11-24) reads
+  builds (`GET /v2/serverless/{id}/builds`) but none start one; `POST /v2/serverless`
+  takes a `templateId` or an image. REST v1 (`rest.runpod.io`) is gone since 2026-11-15.
 - **Repo doc and site page are separate files** — `sdk/worker.md` and
   `docs/sdk-worker.md`. Change both. A verification pass caught `VolumeCache`
   living only in the repo copy while the site page linked to it.

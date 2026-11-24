@@ -20,9 +20,9 @@ LAB_DIR = pathlib.Path(__file__).resolve().parent
 # deploy.py 가 만든 것. chat.py 와 teardown.py 가 인자 없이 동작하도록. gitignore 대상.
 STATE_FILE = LAB_DIR / ".endpoint.json"
 
-# Field names from the published OpenAPI spec, rest.runpod.io/v1/openapi.json (read 2026-11-05).
-# 필드 이름은 발행된 OpenAPI 스펙 기준 (2026-11-05 확인).
-REST = "https://rest.runpod.io/v1"
+# Field names from the published REST v2 spec, api.runpod.io/v2/openapi.json (read 2026-11-24).
+# REST v1 was retired 2026-11-15 (#101). / 필드 이름은 REST v2 스펙 기준 (2026-11-24 확인). v1 은 2026-11-15 폐기.
+REST = "https://api.runpod.io/v2"
 
 
 def api_key() -> str:

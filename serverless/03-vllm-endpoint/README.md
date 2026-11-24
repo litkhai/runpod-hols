@@ -46,7 +46,7 @@ uv pip install --python .venv/bin/python -r requirements.txt
 .venv/bin/python deploy.py
 ```
 
-The template carries the model as environment variables — `MODEL_NAME=Qwen/Qwen2.5-1.5B-Instruct`, `MAX_MODEL_LEN=4096` — which is all [worker-vllm](https://github.com/runpod-workers/worker-vllm/tree/v2.30.2) needs. The endpoint lists three GPU types in order: RTX 4090, RTX A5000, RTX A4500. Field names are from the published [OpenAPI spec](https://rest.runpod.io/v1/openapi.json).
+The template carries the model as environment variables — `MODEL_NAME=Qwen/Qwen2.5-1.5B-Instruct`, `MAX_MODEL_LEN=4096` — which is all [worker-vllm](https://github.com/runpod-workers/worker-vllm/tree/v2.30.2) needs. The run below listed three GPU types in order over REST v1: RTX 4090, RTX A5000, RTX A4500. REST v2 selects Serverless GPUs by pool and has no order, so `deploy.py` now asks for their pools — `ADA_24`, `AMPERE_24`, `AMPERE_16` (catalog read 2026-11-24) — and workers land on whichever has capacity. Field names are from the [REST v2 spec](https://api.runpod.io/v2/openapi.json); `deploy.py --dry-run` was run against it, the deploy itself was not re-run ([#101](https://github.com/litkhai/runpod-hols/issues/101)).
 
 ### Step 3 — Call it
 
@@ -167,7 +167,7 @@ uv pip install --python .venv/bin/python -r requirements.txt
 .venv/bin/python deploy.py
 ```
 
-템플릿은 모델을 환경변수로 전달합니다. `MODEL_NAME=Qwen/Qwen2.5-1.5B-Instruct`, `MAX_MODEL_LEN=4096`. [worker-vllm](https://github.com/runpod-workers/worker-vllm/tree/v2.30.2) 에 필요한 것은 이것뿐입니다. 엔드포인트에는 GPU 를 RTX 4090, RTX A5000, RTX A4500 순으로 지정합니다. 필드 이름은 발행된 [OpenAPI 스펙](https://rest.runpod.io/v1/openapi.json) 기준입니다.
+템플릿은 모델을 환경변수로 전달합니다. `MODEL_NAME=Qwen/Qwen2.5-1.5B-Instruct`, `MAX_MODEL_LEN=4096`. [worker-vllm](https://github.com/runpod-workers/worker-vllm/tree/v2.30.2) 에 필요한 것은 이것뿐입니다. 아래 실행은 REST v1 로 GPU 를 RTX 4090, RTX A5000, RTX A4500 순으로 지정했습니다. REST v2 는 Serverless GPU 를 풀로 고르고 순서가 없으므로, `deploy.py` 는 이제 이 셋의 풀 `ADA_24`, `AMPERE_24`, `AMPERE_16` (2026-11-24 카탈로그 확인) 을 지정하고, 워커는 여유가 있는 풀에 놓입니다. 필드 이름은 [REST v2 스펙](https://api.runpod.io/v2/openapi.json) 기준입니다. `deploy.py --dry-run` 은 실행했고 배포 자체는 다시 실행하지 않았습니다 ([#101](https://github.com/litkhai/runpod-hols/issues/101)).
 
 ### 3단계 — 호출
 
