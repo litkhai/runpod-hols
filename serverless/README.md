@@ -59,6 +59,29 @@ Base URL is `https://api.runpod.ai/v2/{ENDPOINT_ID}`, authenticated with `Author
 
 **Worker counts** — Active Workers stay warm and are billed continuously; Max Workers caps scale-out. Keep Active at 0 for labs.
 
+### Endpoint metrics over the API
+
+REST v2 returns the series behind the console's **Metrics** tab, and each endpoint's workers, builds and releases. Every call needs only `serverless:read`. Read on 2026-11-24 for `01-hello-world` and `02-llm-chat` ([#104](https://github.com/litkhai/runpod-hols/issues/104)).
+
+| Call | Returns |
+|---|---|
+| `GET /v2/serverless/{id}/metrics/requests` | Per bucket: requests, completed, failed, retries, and `delayTimeMs` / `executionTimeMs` as min, max, p70–p98 and total |
+| `…/metrics/cold-starts` | Per bucket: count and `durationMs` percentiles |
+| `…/metrics/workers` | Per bucket: idle, initializing, running, throttled, unhealthy |
+| `GET /v2/serverless/{id}/workers` | Current workers with data center, GPU type, image and endpoint version, plus a count by status |
+| `…/builds`, `…/builds/{buildId}` | GitHub builds: commit, branch, image, timestamps |
+| `…/releases` | Each endpoint version with a field-by-field `diff` and the build behind it |
+
+`interval` is one of `1m`, `5m`, `15m`, `30m`, `1h`, `6h`, `12h`, `1d` (`day` is a 422). The window defaults to the last 24 hours and reaches back 90 days.
+
+**The numbers match the console.** For `01-hello-world` on 2026-11-07 the API gave 77 requests, 77 completed, 17,044 ms total execution, and 11 cold starts totalling 29,146 ms. The Metrics tab over the same days shows 77 / 77, 17.04 s, 11 and 29.15 s.
+
+What did not work:
+
+- **Worker logs need GraphQL access on the key.** `GET …/workers/{workerId}/logs` (Server-Sent Events) answered 403 *Access to the requested resource was denied* — not the scope message other refusals carry — for idle workers, for the worker running a job (one `01-hello-world` job, 2026-11-24) and for it again after the job completed. The same call with a temporary key holding REST *All resources* plus GraphQL Read / Write and `api.runpod.ai` returned 200 and streamed `system` lines (container create, image pull, `worker is ready`); with REST *All resources* alone it was 403 again. The spec lists only `serverless:read`. GraphQL Read only was not tried. `source=container` sent nothing within 12 s.
+- **Build logs.** The builds description points to `…/builds/{buildId}/logs`; the path is not in the spec and returns 404.
+- **Worker counts differ.** `/workers` listed five (four idle, one initializing) where the console's Workers tab showed two.
+
 ### Adding a New Lab
 
 Each lab is a **self-contained worker directory**. Its `Dockerfile` uses bare `COPY` paths, so the folder can be copied elsewhere and still build. Nothing references the repo root.
@@ -176,6 +199,29 @@ Lab 02 의 진짜 주제입니다. 선택지는 셋이고, 보통 세 번째가 
 기본 URL 은 `https://api.runpod.ai/v2/{ENDPOINT_ID}` 이고, `Authorization: Bearer $RUNPOD_API_KEY` 로 인증합니다.
 
 **워커 수 설정** — Active Worker 는 상시 워밍 상태로 유지되어 계속 과금되고, Max Worker 는 스케일아웃 상한입니다. 실습에서는 Active 를 0 으로 둡니다.
+
+### API 로 보는 엔드포인트 지표
+
+REST v2 는 콘솔 **Metrics** 탭의 시계열과 엔드포인트별 워커·빌드·릴리스를 돌려줍니다. 모두 `serverless:read` 만 있으면 됩니다. 2026-11-24 에 `01-hello-world` 와 `02-llm-chat` 으로 조회했습니다 ([#104](https://github.com/litkhai/runpod-hols/issues/104)).
+
+| 호출 | 돌려주는 것 |
+|---|---|
+| `GET /v2/serverless/{id}/metrics/requests` | 구간별 요청·완료·실패·재시도 수, `delayTimeMs`·`executionTimeMs` 의 min, max, p70–p98, 합계 |
+| `…/metrics/cold-starts` | 구간별 횟수와 `durationMs` 백분위 |
+| `…/metrics/workers` | 구간별 idle, initializing, running, throttled, unhealthy |
+| `GET /v2/serverless/{id}/workers` | 현재 워커의 데이터센터, GPU 종류, 이미지, 엔드포인트 버전과 상태별 개수 |
+| `…/builds`, `…/builds/{buildId}` | GitHub 빌드: 커밋, 브랜치, 이미지, 시각 |
+| `…/releases` | 엔드포인트 버전마다 필드별 `diff` 와 원인이 된 빌드 |
+
+`interval` 은 `1m`, `5m`, `15m`, `30m`, `1h`, `6h`, `12h`, `1d` 중 하나입니다 (`day` 는 422). 기본 구간은 최근 24시간이고 90일까지 거슬러 올라갑니다.
+
+**수치가 콘솔과 같습니다.** `01-hello-world` 의 2026-11-07 은 API 로 요청 77, 완료 77, 실행 시간 합계 17,044 ms, 콜드 스타트 11회 합계 29,146 ms 였고, 같은 기간 Metrics 탭은 77 / 77, 17.04 s, 11, 29.15 s 입니다.
+
+안 된 것:
+
+- **워커 로그는 키에 GraphQL 권한이 있어야 합니다.** `GET …/workers/{workerId}/logs` (Server-Sent Events) 는 idle 워커, 작업을 실행 중인 워커 (2026-11-24 `01-hello-world` 작업 1건), 작업이 끝난 직후의 같은 워커 모두에 403 *Access to the requested resource was denied* 를 돌려줬습니다. 다른 거부와 달리 범위 메시지가 아닙니다. REST *All resources* 에 GraphQL Read / Write 와 `api.runpod.ai` 까지 준 임시 키로는 200 과 함께 `system` 줄 (컨테이너 생성, 이미지 pull, `worker is ready`) 이 흘러나왔고, REST *All resources* 만 준 키로는 다시 403 이었습니다. 스펙에는 `serverless:read` 만 적혀 있습니다. GraphQL Read only 는 시도하지 않았습니다. `source=container` 는 12초 안에 아무것도 보내지 않았습니다.
+- **빌드 로그.** builds 설명은 `…/builds/{buildId}/logs` 를 가리키지만, 그 경로는 스펙에 없고 404 를 돌려줍니다.
+- **워커 수가 다릅니다.** `/workers` 는 다섯 (idle 넷, initializing 하나) 을, 콘솔 Workers 탭은 둘을 보여줬습니다.
 
 ### 새 실습 추가하기
 
