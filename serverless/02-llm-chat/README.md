@@ -144,6 +144,17 @@ Measured on 2026-10-11 (RTX A5000, CA-MTL-1, idle timeout 5 s, FlashBoot off):
 | `messages` form | 133 ms | 305 ms |
 | No prompt (fails by design) | 127 ms | 129 ms |
 
+Re-run 2026-11-25 on SDK 2.4.0, after the console rebuilt the endpoint from `main` (RTX A5000, CA-MTL-1, same settings):
+
+| Request | `delayTime` | `executionTime` |
+|---|---|---|
+| First prompt | 17,864 ms | 1,789 ms |
+| Same prompt again | 137 ms | 860 ms |
+| `messages` form | 164 ms | 112 ms |
+| No prompt (fails by design) | 134 ms | 52 ms |
+
+All four behaved as before: `loaded_from: cache`, `blue` for the `messages` form, and `FAILED` with the handler's message for no prompt. `model_load_seconds` was 3.42 (2.37 on 1.12.0). The first request was slower, but one cold sample on a freshly rebuilt endpoint does not separate the SDK from the host; warm requests matched.
+
 The worker had pulled the image and the model before the first request — that happens right after a build, and the pull took about 3 minutes. The 12 s is container start, imports, `model_load_seconds` of 2.37 and the SDK's fitness checks (0.46 s). A host that has never seen the image adds the pull.
 
 ### Local testing
@@ -179,6 +190,9 @@ python3 -c "from model_cache import snapshot_path; print(snapshot_path('Qwen/Qwe
 ### What was run
 
 Verified on Runpod Serverless, 2026-10-11: SDK 1.12.0, image `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime` built by the console from this lab, RTX A5000. Build, deploy, all four requests above, and the cache path.
+Build, deploy, all four requests above, and the cache path.
+
+Re-run 2026-11-25 on SDK 2.4.0 (`runpod~=2.4.0`): the console rebuilt the endpoint from `main` after [#139](https://github.com/litkhai/runpod-hols/pull/139), and the same four requests completed or failed as on 1.12.0, on RTX A5000.
 
 Also verified 2026-10-11 on `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` (sm_120), same image, with the endpoint's GPU list narrowed to that type for one request: the container logged `cache_probe` with the docs layout populated, loaded the model from cache in 1.49 s on `cuda:0`, and the SDK fitness checks started (`GPU binary test passed: 1 GPU(s) healthy (CUDA 13.0)`, memory check passed; the rest of the log was not captured). The request completed with `loaded_from: cache`. The REST API does not accept that MIG type in `gpuTypeIds`; the GraphQL `saveEndpoint` mutation with `gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` selected it.
 
@@ -328,6 +342,17 @@ curl -X POST "https://api.runpod.ai/v2/$RUNPOD_ENDPOINT_ID/runsync" \
 | `messages` 형식 | 133 ms | 305 ms |
 | 프롬프트 없음 (의도된 실패) | 127 ms | 129 ms |
 
+2026-11-25 SDK 2.4.0으로 다시 측정했습니다. 콘솔이 `main`에서 엔드포인트를 다시 빌드한 뒤입니다(RTX A5000, CA-MTL-1, 설정 동일).
+
+| 요청 | `delayTime` | `executionTime` |
+|---|---|---|
+| 첫 프롬프트 | 17,864 ms | 1,789 ms |
+| 같은 프롬프트 다시 | 137 ms | 860 ms |
+| `messages` 형식 | 164 ms | 112 ms |
+| 프롬프트 없음 (의도된 실패) | 134 ms | 52 ms |
+
+네 요청 모두 전과 같이 동작했습니다. `loaded_from: cache`였고, `messages` 형식은 `blue`를 답했고, 프롬프트 없는 요청은 핸들러의 메시지와 함께 `FAILED`였습니다. `model_load_seconds`는 3.42초였습니다(1.12.0에서는 2.37초). 첫 요청은 더 느렸지만, 새로 빌드한 엔드포인트에서 콜드 한 번만 잰 값이라 SDK 탓인지 호스트 탓인지 가를 수 없습니다. 웜 요청은 비슷했습니다.
+
 첫 요청 전에 워커가 이미지와 모델을 미리 받아 두었습니다. 빌드 직후에 일어나며, 이미지 받는 데 약 3분이 걸렸습니다. 12초는 컨테이너 시작, import, `model_load_seconds` 2.37초, SDK 시작 점검 0.46초를 합친 값입니다. 이미지를 처음 받는 호스트라면 그 시간이 더해집니다.
 
 ### 로컬 테스트
@@ -363,6 +388,9 @@ python3 -c "from model_cache import snapshot_path; print(snapshot_path('Qwen/Qwe
 ### 실행한 것
 
 2026-10-11 Runpod Serverless 에서 검증: SDK 1.12.0, 이 실습으로 콘솔이 빌드한 `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime` 기반 이미지, RTX A5000. 빌드, 배포, 위 요청 네 건, 캐시 경로.
+빌드, 배포, 위 요청 네 건, 캐시 경로.
+
+2026-11-25 SDK 2.4.0(`runpod~=2.4.0`)으로 다시 실행: [#139](https://github.com/litkhai/runpod-hols/pull/139) 병합 뒤 콘솔이 `main`에서 엔드포인트를 다시 빌드했고, 같은 요청 네 건이 RTX A5000에서 1.12.0 때와 같이 완료되거나 실패했다.
 
 2026-10-11 `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` (sm_120) 에서도 같은 이미지로 검증: 요청 한 건 동안 엔드포인트 GPU 목록을 이 타입으로 좁혔다. 컨테이너가 docs 레이아웃이 채워진 `cache_probe` 를 남기고, 캐시에서 1.49 초 만에 `cuda:0` 에 모델을 올렸고, SDK fitness check 가 시작됐다 (`GPU binary test passed: 1 GPU(s) healthy (CUDA 13.0)`, 메모리 체크 통과; 그 뒤 로그는 수집하지 못함). 요청은 `loaded_from: cache` 로 완료됐다. REST API 는 이 MIG 타입을 `gpuTypeIds` 로 받지 않으며, GraphQL `saveEndpoint` 뮤테이션에 `gpuIds: "AMPERE_24,-NVIDIA RTX A5000,-NVIDIA L4,-NVIDIA GeForce RTX 3090"` 를 주어 선택했다.
 

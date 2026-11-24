@@ -44,7 +44,7 @@ Without `uv`, use any Python 3.10+: `python3.11 -m venv .venv && .venv/bin/pip i
 With no arguments the SDK picks up `test_input.json`, runs one job, and exits:
 
 ```
---- Starting Serverless Worker |  Version 1.12.0 ---
+--- Starting Serverless Worker |  Version 2.4.0 ---
 INFO   | Using test_input.json as job input.
 INFO   | local_test | Started.
 INFO   | Job local_test completed successfully.
@@ -183,6 +183,10 @@ Measured on this endpoint, CPU workers, `workers_min = 0`:
 |---|---|---|
 | First (cold) | 3,704 ms | 222 ms |
 | Warm | 776–806 ms | 194–217 ms |
+| First (cold), SDK 2.4.0 (2026-11-25) | 2,285 ms | 145 ms |
+| Warm, SDK 2.4.0 | 92–95 ms | 137–140 ms |
+
+The first two rows are SDK 1.12.0. After the move to 2.4.0 the console rebuilt this endpoint from `main` and the same request was sent again: one cold, three warm. The warm `delayTime` fell from about 0.8 s to under 0.1 s, the same drop [07-streaming](../07-streaming/) saw (0.8 s to 0.1 s). One cold sample is not enough to compare cold starts.
 
 `delayTime` is queue plus worker startup; `executionTime` is your handler. The handler is a rounding error here — **almost all of the first request is cold start**, which is the whole reason `workers_min = 0` trades latency for cost. Fire several requests in a row and watch `worker_id` change as workers scale out.
 
@@ -251,7 +255,7 @@ macOS 시스템 `python3` 는 3.9 이므로 사용하지 마세요. SDK 가 3.10
 인자 없이 실행하면 SDK 가 `test_input.json` 을 읽어 작업 1건을 처리하고 종료합니다.
 
 ```
---- Starting Serverless Worker |  Version 1.12.0 ---
+--- Starting Serverless Worker |  Version 2.4.0 ---
 INFO   | Using test_input.json as job input.
 INFO   | local_test | Started.
 INFO   | Job local_test completed successfully.
@@ -390,6 +394,10 @@ curl -X POST "https://api.runpod.ai/v2/$RUNPOD_ENDPOINT_ID/runsync" \
 |---|---|---|
 | 첫 요청 (콜드) | 3,704 ms | 222 ms |
 | 워밍 후 | 776~806 ms | 194~217 ms |
+| 첫 요청 (콜드), SDK 2.4.0 (2026-11-25) | 2,285 ms | 145 ms |
+| 워밍 후, SDK 2.4.0 | 92~95 ms | 137~140 ms |
+
+앞의 두 행은 SDK 1.12.0입니다. 2.4.0으로 올린 뒤 콘솔이 `main`에서 이 엔드포인트를 다시 빌드했고, 같은 요청을 콜드 1번, 웜 3번 다시 보냈습니다. 웜 요청의 `delayTime`이 약 0.8초에서 0.1초 아래로 줄었습니다. [07-streaming](../07-streaming/)에서 본 감소(0.8초 → 0.1초)와 같습니다. 콜드 스타트는 한 번만 재서 비교하기에 부족합니다.
 
 `delayTime` 은 큐 대기와 워커 기동, `executionTime` 은 핸들러 실행 시간입니다. 여기서 핸들러는 오차 수준이고 **첫 요청의 대부분이 콜드 스타트**입니다. `workers_min = 0` 이 지연시간과 비용을 맞바꾼다는 말의 실체가 이것입니다. 요청을 연속으로 보내면 워커가 늘어나며 `worker_id` 가 바뀌는 것도 볼 수 있습니다.
 

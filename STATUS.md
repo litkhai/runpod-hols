@@ -7,8 +7,8 @@ Updated 2026-10-20.
 | Track | Run against a real account? |
 |---|---|
 | [`setup/`](./setup) | Yes |
-| [`serverless/01-hello-worker`](./serverless/01-hello-worker) | **Yes** — deployed, called, measured; re-run on SDK 1.12.0 |
-| [`serverless/02-llm-chat`](./serverless/02-llm-chat) | **Yes** — built by the console, deployed, called and measured 2026-10-11 on RTX A5000 and RTX PRO 6000 Blackwell MIG 1g.24gb with the CUDA 12.8 image; cache path settled (docs layout) |
+| [`serverless/01-hello-worker`](./serverless/01-hello-worker) | **Yes** — deployed, called, measured; re-run on SDK 1.12.0 and 2.4.0 (2026-11-25) |
+| [`serverless/02-llm-chat`](./serverless/02-llm-chat) | **Yes** — built by the console, deployed, called and measured 2026-10-11 on RTX A5000 and RTX PRO 6000 Blackwell MIG 1g.24gb with the CUDA 12.8 image; cache path settled (docs layout); re-run on SDK 2.4.0 2026-11-25 ([#138](https://github.com/litkhai/runpod-hols/issues/138)) |
 | [`serverless/03-vllm-endpoint`](./serverless/03-vllm-endpoint) | **Yes** — deployed by script, called with the OpenAI SDK and torn down 2026-11-05 on RTX 4090 (`worker-v1-vllm:v2.30.2`); first cold start 15 min, of which vLLM 77 s; first request HTTP 520; Re-run on REST v2 2026-11-24 ([#123](https://github.com/litkhai/runpod-hols/issues/123)): models after 114 s, template deleted at once |
 | [`pod/01-launch-connect`](./pod/01-launch-connect) | **Yes** — launch, SSH, teardown run 2026-11-05 on a `cpu3c-2-4` CPU Pod with `runpod` 1.12.0; re-run 2026-11-24 on `runpod` 2.4.0 with a key without GraphQL, stacking guard and teardown checked ([#126](https://github.com/litkhai/runpod-hols/issues/126)); CPU Pods get no volume disk; JupyterLab and `--stop` not checked |
 | [`pod/02-storage`](./pod/02-storage) | **Yes** — stop/start, terminate and re-attach, CPU Pods, run 2026-11-05 in EU-RO-1 over REST v1; first `start` after a stop refused for lack of GPUs on the host; Re-run on REST v2 2026-11-24 ([#123](https://github.com/litkhai/runpod-hols/issues/123)): same results on an L4 and CPU Pods (no RTX 4090 stock); a CPU Pod no longer gets a Pod volume request |
