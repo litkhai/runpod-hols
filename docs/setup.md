@@ -50,7 +50,7 @@ What the labs need:
 | Deploying Lab 01 through the console | No key needed |
 | Calling a deployed endpoint | Serverless endpoints Read and Write, or only that endpoint |
 | Pod, Serverless, storage and cluster labs on REST | REST Write on Pods, Serverless, Instant clusters, Volumes, Templates, Secrets; Read on Audit logs, Billing, Catalog, Tags, Account; Serverless endpoints Read and Write — the key above |
-| `terraform/` | Not yet checked with a scoped key |
+| `terraform/` | The key above; checked 2026-11-24 [#115](https://github.com/litkhai/runpod-hols/issues/115). The provider's GraphQL reads of a few deprecated attributes answer 401, shown as warnings |
 
 The lab key leaves GraphQL at None on purpose: a GraphQL grant has no per-resource split. Two 403s are not about the key — `GET /v2/tags` answered *Resource tagging is not enabled for this user* with Tags Read granted, and `GET /v2/organization` needs `membership:read`, which this personal account's dialog does not list.
 
@@ -175,7 +175,7 @@ python setup/verify-auth.py     # 3. 키가 실제로 동작하는가
 | 콘솔에서 Lab 01 배포 | 키 불필요 |
 | 배포한 엔드포인트 호출 | Serverless endpoints Read·Write, 또는 그 엔드포인트만 |
 | REST 를 쓰는 Pod·Serverless·스토리지·클러스터 실습 | REST 의 Pods, Serverless, Instant clusters, Volumes, Templates, Secrets 에 Write, Audit logs, Billing, Catalog, Tags, Account 에 Read, Serverless endpoints Read·Write — 위 화면의 키 |
-| `terraform/` | scoped 키로는 아직 확인하지 않음 |
+| `terraform/` | 위의 키. 2026-11-24 확인 [#115](https://github.com/litkhai/runpod-hols/issues/115). 프로바이더가 일부 폐기 예정 속성을 GraphQL 로 읽다가 401 을 받고 경고로만 표시 |
 
 실습용 키는 GraphQL 을 일부러 None 으로 둡니다. GraphQL 권한은 리소스별로 나뉘지 않습니다. 키와 무관한 403 이 두 가지 있었습니다. `GET /v2/tags` 는 Tags Read 가 있어도 *Resource tagging is not enabled for this user* 였고, `GET /v2/organization` 은 `membership:read` 가 필요한데 이 개인 계정의 대화상자에는 그 항목이 없습니다.
 
@@ -300,7 +300,7 @@ python setup/verify-auth.py     # 3. does the key actually work?
 | 通过控制台部署 Lab 01 | 不需要密钥 |
 | 调用已部署的 endpoint | Serverless endpoints Read 和 Write，或仅限该 endpoint |
 | 使用 REST 的 Pod、Serverless、存储和集群实验 | REST 的 Pods、Serverless、Instant clusters、Volumes、Templates、Secrets 授予 Write；Audit logs、Billing、Catalog、Tags、Account 授予 Read；Serverless endpoints Read 和 Write——即上图中的密钥 |
-| `terraform/` | 尚未用 scoped 密钥检查 |
+| `terraform/` | 上面的密钥；2026-11-24 已检查 [#115](https://github.com/litkhai/runpod-hols/issues/115)。提供程序用 GraphQL 读取几个已弃用属性时返回 401，仅显示为警告 |
 
 实验密钥有意把 GraphQL 设为 None：GraphQL 权限不按资源细分。有两个 403 与密钥无关——即使授予了 Tags Read，`GET /v2/tags` 仍返回 *Resource tagging is not enabled for this user*；`GET /v2/organization` 需要 `membership:read`，而这个个人账号的对话框中没有该项。
 
@@ -425,7 +425,7 @@ python setup/verify-auth.py     # 3. does the key actually work?
 | コンソールから Lab 01 をデプロイ | キー不要 |
 | デプロイした endpoint の呼び出し | Serverless endpoints の Read と Write、またはその endpoint のみ |
 | REST を使う Pod・Serverless・ストレージ・クラスターのラボ | REST の Pods、Serverless、Instant clusters、Volumes、Templates、Secrets に Write、Audit logs、Billing、Catalog、Tags、Account に Read、Serverless endpoints の Read と Write——上の画面のキー |
-| `terraform/` | scoped キーではまだ確認していません |
+| `terraform/` | 上のキー。2026-11-24 に確認 [#115](https://github.com/litkhai/runpod-hols/issues/115)。プロバイダーが一部の非推奨属性を GraphQL で読むと 401 になり、警告として表示されるだけです |
 
 ラボ用キーは GraphQL を意図的に None にしています。GraphQL の権限はリソースごとに分かれません。キーとは関係のない 403 が 2 つありました。`GET /v2/tags` は Tags Read を付けても *Resource tagging is not enabled for this user* で、`GET /v2/organization` には `membership:read` が必要ですが、この個人アカウントのダイアログにはその項目がありません。
 
