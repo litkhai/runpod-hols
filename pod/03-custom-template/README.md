@@ -108,6 +108,19 @@ python3 lab.py status            # secrets [], templates [], pods []
 
 The Pod template deleted at once. A Serverless template did not, in [Serverless Lab 03](../../serverless/03-vllm-endpoint): it stayed held by its deleted endpoint for up to about 90 minutes.
 
+### Re-run on REST v2 (2026-11-24)
+
+The same steps through REST v2 ([#123](https://github.com/litkhai/runpod-hols/issues/123)), CPU Pod `cpu3c` in US-CA-2, about eight minutes:
+
+| Step | Result |
+|---|---|
+| Secret, template, Pod | As before; the Pod read back `template: null` although it was created from the template |
+| Inside the Pod | PID 1 has the resolved secret (hash matches); a non-interactive SSH shell has neither variable; `/etc/rp_environment` is still mode 644 with the secret and `RUNPOD_API_KEY`; new: `RUNPOD_PROXY_BASE` |
+| Rotate, no restart | Old value |
+| `POST /pods/{id}/action` `restart` | `400 There are not enough free vcpu on the host machine to start this pod` — and the Pod was left `EXITED` |
+| `start` | The same 400 twice, accepted on the third try a minute later; the new value |
+| Clean up | Pod, template and secret deleted at once |
+
 ### What was run
 
 2026-11-05, Secure Cloud CPU Pod (`cpu3c`, 2 vCPU), `runpod/base:1.0.2-ubuntu2404`, REST v1 for templates and Pods, REST v2 for secrets.
@@ -231,6 +244,19 @@ python3 lab.py status            # secrets [], templates [], pods []
 ```
 
 Pod 템플릿은 바로 지워졌습니다. [Serverless Lab 03](../../serverless/03-vllm-endpoint) 의 Serverless 템플릿은 그렇지 않았습니다. 삭제된 엔드포인트가 최대 약 90분 동안 잡고 있었습니다.
+
+### REST v2 로 재실행 (2026-11-24)
+
+같은 단계를 REST v2 로 ([#123](https://github.com/litkhai/runpod-hols/issues/123)), US-CA-2 의 CPU Pod `cpu3c` 로 약 8분 동안 실행했습니다.
+
+| 단계 | 결과 |
+|---|---|
+| 시크릿, 템플릿, Pod | 이전과 같음. 템플릿으로 만들었는데도 Pod 을 읽으면 `template: null` |
+| Pod 안 | PID 1 에 해석된 시크릿 (해시 일치), 비대화형 SSH 셸에는 두 변수 모두 없음. `/etc/rp_environment` 는 여전히 644 이고 시크릿과 `RUNPOD_API_KEY` 포함. 새로 `RUNPOD_PROXY_BASE` |
+| 교체, 재시작 없음 | 이전 값 |
+| `POST /pods/{id}/action` `restart` | `400 There are not enough free vcpu on the host machine to start this pod` — 그리고 Pod 이 `EXITED` 로 남음 |
+| `start` | 같은 400 두 번, 1분 뒤 세 번째에 성공. 새 값 |
+| 정리 | Pod, 템플릿, 시크릿 바로 삭제 |
 
 ### 실행 내역
 

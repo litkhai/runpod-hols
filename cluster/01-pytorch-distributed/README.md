@@ -57,6 +57,8 @@ What the numbers say:
 
 Raw files: [`results/2x4090/`](./results/2x4090/), [`results/2xA100SXM/`](./results/2xA100SXM/).
 
+**Re-run on REST v2, 2026-11-24** ([#123](https://github.com/litkhai/runpod-hols/issues/123)): the same 2× RTX 4090 run on another host, after four minutes of capacity retries. `topo -m` showed `NODE` (both GPUs on NUMA node 0) instead of `SYS`, NCCL again used `SHM/direct` with P2P disabled — and all-reduce reached only **3.58 GB/s** at 1 GiB (15.6 in November). One GPU trained at 38,418 samples/s (6.7 ms/step), two at 4,281 (119.6 ms/step): scaling **0.06**. The conclusion stands and sharpens: a GeForce pair depends on the host's PCIe path, which the API does not let you choose. Raw files: [`results/2x4090-2026-11-24/`](./results/2x4090-2026-11-24/).
+
 ### Four H100 SXM in one Pod
 
 While no cluster was in stock, a single Pod with four H100 SXM was (stock "Low"; the first 19 create attempts over ten minutes got *"no instances currently available"*):
@@ -216,6 +218,8 @@ python3 lab.py create --gpu "NVIDIA A100-SXM4-80GB"     # 이어서 태그 2xA10
 - 달러당으로는 이 모델에서 RTX 4090 한 장(USD 0.89/hr 에 초당 39,453)이 두 조합보다 나았다. GPU 를 늘리는 것은 링크가 기울기 크기를 감당할 때만 이득이다.
 
 원본: [`results/2x4090/`](./results/2x4090/), [`results/2xA100SXM/`](./results/2xA100SXM/).
+
+**REST v2 로 재실행, 2026-11-24** ([#123](https://github.com/litkhai/runpod-hols/issues/123)): 같은 2× RTX 4090 실행을 4분간 재고를 재시도한 뒤 다른 호스트에서 했습니다. `topo -m` 은 `SYS` 대신 `NODE` (두 GPU 모두 NUMA 노드 0), NCCL 은 이번에도 P2P 없이 `SHM/direct` — 그런데 1 GiB all-reduce 가 **3.58 GB/s** 에 그쳤습니다 (11월에는 15.6). GPU 1장 38,418 samples/s (6.7 ms/step), 2장 4,281 (119.6 ms/step): 확장 효율 **0.06**. 결론은 그대로이고 더 뚜렷해졌습니다. GeForce 두 장은 호스트의 PCIe 경로에 달려 있고, API 로는 그 경로를 고를 수 없습니다. 원본: [`results/2x4090-2026-11-24/`](./results/2x4090-2026-11-24/).
 
 ### Pod 한 대에 H100 SXM 4장
 

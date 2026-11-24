@@ -73,6 +73,8 @@ Stage 1 cost about USD 0.40 (7 and 3 minutes of Pod time).
 
 The link is 1.8× the A100 pair's and one H100 is 2.4× one A100 here, but efficiency fell to 0.82: with 4.7 ms of compute against about 1 ms of all-reduce, the faster the GPU, the more the link decides. This is the in-node ceiling to compare a cluster against — stage 2's socket run moved 0.32 GB/s between nodes. About USD 3 for 11.5 minutes.
 
+**Re-run on REST v2, 2026-11-24** ([#123](https://github.com/litkhai/runpod-hols/issues/123)): 2× RTX 4090 on another host showed `NODE` instead of `SYS`, yet all-reduce fell to 3.58 GB/s at 1 GiB and two GPUs trained at 4,281 samples/s against 38,418 on one — scaling 0.06. The pair's result depends on the host, which the API does not let you pick.
+
 ### Stage 2 — Instant Cluster
 
 Clusters are created in the console (**Clusters → Create cluster**) or over GraphQL with `createCluster` / `deleteCluster`; the REST API has no cluster endpoints. The form prices the whole cluster per hour and marks each type Available or Unavailable. On 2026-11-07 every type was **Unavailable**, while single A100 SXM and H100 SXM Pods could be deployed at the same time. The form reads this from GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }`, which returns `null` for Unavailable. That evening A100 SXM showed Available from about 19:29 to 19:36 KST and was gone by 19:46, so this lab waits for stock with a script that creates the cluster through GraphQL, runs both nodes and deletes it after at most 75 minutes ([`cluster.py`](https://github.com/litkhai/runpod-hols/blob/main/cluster/01-pytorch-distributed/cluster.py)).
@@ -198,6 +200,8 @@ python3 lab.py delete
 | 확장 효율 (4장 / 1장 × 4) | **0.82** |
 
 연결은 A100 두 장의 1.8배, H100 한 장은 A100 한 장의 2.4배였지만 효율은 0.82 로 떨어졌다. 계산 4.7 ms 에 all-reduce 약 1 ms 라, GPU 가 빠를수록 연결이 성능을 좌우한다. 클러스터와 비교할 노드 안의 천장이 이것이다. 2단계 소켓 실행은 노드 사이 0.32 GB/s 였다. 11.5분에 약 USD 3.
+
+**REST v2 로 재실행, 2026-11-24** ([#123](https://github.com/litkhai/runpod-hols/issues/123)): 다른 호스트의 2× RTX 4090 은 `SYS` 대신 `NODE` 였는데도 1 GiB all-reduce 가 3.58 GB/s 로 떨어졌고, GPU 2장이 4,281 samples/s 로 1장의 38,418 에 못 미쳤습니다 — 확장 효율 0.06. 두 장의 결과는 호스트에 달려 있고, API 로는 호스트를 고를 수 없습니다.
 
 ### 2단계 — Instant Cluster
 
@@ -325,6 +329,8 @@ python3 lab.py delete
 
 连接是两块 A100 的 1.8 倍，单块 H100 在这里是单块 A100 的 2.4 倍，但扩展效率降到 0.82：计算 4.7 ms 对 all-reduce 约 1 ms，GPU 越快，连接越起决定作用。这是与集群比较的节点内上限——第 2 阶段的 Socket 运行在节点间只有 0.32 GB/s。11.5 分钟约 USD 3。
 
+**在 REST v2 上重跑，2026-11-24**（[#123](https://github.com/litkhai/runpod-hols/issues/123)）：另一台主机上的 2× RTX 4090 显示 `NODE` 而不是 `SYS`，但 1 GiB all-reduce 降到 3.58 GB/s，两块 GPU 训练 4,281 samples/s，而一块为 38,418——扩展效率 0.06。这对 GPU 的结果取决于主机，而 API 不允许选择主机。
+
 ### 第 2 阶段 — Instant Cluster
 
 集群可以在控制台创建（**Clusters → Create cluster**），也可以用 GraphQL 的 `createCluster` / `deleteCluster`；REST API 没有集群端点。表单按小时显示整个集群的价格，并把每种类型标为 Available 或 Unavailable。2026-11-07 所有类型都是 **Unavailable**，而同一时间单台 A100 SXM 和 H100 SXM Pod 可以部署。表单从 GraphQL `gpuTypes { lowestPrice(input: {isCluster: true, podCount: 2, gpuCount: 8, …}) { stockStatus } }` 读取，Unavailable 时返回 `null`。当天晚上 A100 SXM 在韩国时间约 19:29–19:36 显示 Available，到 19:46 又消失了；因此本实验用脚本等待库存，通过 GraphQL 创建集群，在两个节点上运行，最迟 75 分钟后删除（[`cluster.py`](https://github.com/litkhai/runpod-hols/blob/main/cluster/01-pytorch-distributed/cluster.py)）。
@@ -450,6 +456,8 @@ python3 lab.py delete
 | スケーリング効率（4 基 / 1 基 × 4） | **0.82** |
 
 接続は A100 2 基の 1.8 倍、H100 1 基はここで A100 1 基の 2.4 倍でしたが、効率は 0.82 に下がりました。計算 4.7 ms に対し all-reduce 約 1 ms で、GPU が速いほど接続が性能を左右します。これがクラスタと比べるべきノード内の上限です。ステージ 2 のソケット実行はノード間 0.32 GB/s でした。11.5 分で約 USD 3。
+
+**REST v2 で再実行、2026-11-24**（[#123](https://github.com/litkhai/runpod-hols/issues/123)）：別ホストの 2× RTX 4090 は `SYS` ではなく `NODE` でしたが、1 GiB の all-reduce は 3.58 GB/s に下がり、GPU 2 基で 4,281 samples/s と 1 基の 38,418 を下回りました——スケーリング効率 0.06。2 基の結果はホスト次第で、API ではホストを選べません。
 
 ### ステージ 2 — Instant Cluster
 
