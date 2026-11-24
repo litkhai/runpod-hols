@@ -47,6 +47,8 @@ Two return keys are **control signals, not data**: `error` marks the job FAILED,
 
 **Cold start** — a request arriving with no warm worker must pull the image and start the container first. This is why model loading belongs at module scope, not inside the handler: module scope runs once per worker, the handler runs once per request.
 
+**FlashBoot** — in REST v2 a mode, not a switch: `OFF` (the spec default), `FLASHBOOT`, which resumes a paused worker when one is free, or `PRIORITY_FLASHBOOT`, which the console describes as loading workers onto idle GPUs ahead of time. `PRIORITY_FLASHBOOT` is refused on create and on update for GPU and CPU endpoints alike — `400 Priority FlashBoot is enabled by Runpod sales` (2026-11-24, [#119](https://github.com/litkhai/runpod-hols/issues/119)) — so it was not measured.
+
 **Endpoint API** — three routes matter:
 
 | Route | Behaviour |
@@ -164,6 +166,8 @@ Lab 02 의 진짜 주제입니다. 선택지는 셋이고, 보통 세 번째가 
 반환값의 키 두 개는 **데이터가 아니라 제어 신호**입니다. `error` 는 작업을 실패로 표시하고, `refresh_worker` 는 작업 후 워커를 재활용합니다. 스트리밍 제너레이터, `concurrency_modifier`, `progress_update`, 입력 검증기, 20MB 반환 제한까지 SDK 소스와 실행으로 확인한 전체 내용은 **[sdk/worker.md](../sdk/worker.md)** 에 있습니다.
 
 **콜드 스타트(Cold start)** — 워밍된 워커가 없는 상태에서 요청이 들어오면 이미지를 받고 컨테이너를 띄우는 시간이 먼저 필요합니다. 모델 로딩을 handler 안이 아니라 모듈 스코프에 둬야 하는 이유가 이것입니다. 모듈 스코프는 워커당 1회, handler 는 요청당 1회 실행됩니다.
+
+**FlashBoot** — REST v2 에서는 켜고 끄는 값이 아니라 모드입니다. `OFF` (스펙 기본값), 여유 워커가 있으면 멈춰 둔 워커를 되살리는 `FLASHBOOT`, 콘솔 설명상 유휴 GPU 에 워커를 미리 올려 두는 `PRIORITY_FLASHBOOT`. `PRIORITY_FLASHBOOT` 는 GPU·CPU 엔드포인트 모두 생성과 변경에서 `400 Priority FlashBoot is enabled by Runpod sales` 로 거부되어 (2026-11-24, [#119](https://github.com/litkhai/runpod-hols/issues/119)) 측정하지 못했습니다.
 
 **엔드포인트 API** — 주요 경로는 세 개입니다.
 

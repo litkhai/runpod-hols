@@ -59,6 +59,8 @@ The handler has to be written for it. `HF_HUB_OFFLINE` is read when `huggingface
 
 **Cold start** — a request arriving with no warm worker must pull the image and start the container first. This is why model loading belongs at module scope, not inside the handler: module scope runs once per worker, the handler runs once per request.
 
+**FlashBoot** — in REST v2 a mode, not a switch: `OFF` (the spec default), `FLASHBOOT`, which resumes a paused worker when one is free, or `PRIORITY_FLASHBOOT`, which the console describes as loading workers onto idle GPUs ahead of time. `PRIORITY_FLASHBOOT` is refused on create and on update for GPU and CPU endpoints alike — `400 Priority FlashBoot is enabled by Runpod sales` (2026-11-24, [#119](https://github.com/litkhai/runpod-hols/issues/119)) — so it was not measured.
+
 **Endpoint API**
 
 | Route | Behaviour |
@@ -373,6 +375,8 @@ Runpod Serverless 는 코드를 오토스케일 HTTP 엔드포인트로 실행�
 **Handler** — `job` 딕셔너리를 받아 JSON 직렬화 가능한 값을 반환하는 함수입니다. 호출자의 payload 는 `job["input"]` 에 들어옵니다. `runpod.serverless.start({"handler": handler})` 를 호출하면 SDK 가 제어권을 가져가 작업 큐를 폴링하며 작업마다 handler 를 실행합니다.
 
 **콜드 스타트** — 워밍된 워커가 없을 때 들어온 요청은 이미지를 받고 컨테이너를 띄우는 시간을 먼저 거칩니다. 모델 로딩을 handler 안이 아니라 모듈 스코프에 둬야 하는 이유입니다. 모듈 스코프는 워커당 1회, handler 는 요청당 1회 실행됩니다.
+
+**FlashBoot** — REST v2 에서는 켜고 끄는 값이 아니라 모드입니다. `OFF` (스펙 기본값), 여유 워커가 있으면 멈춰 둔 워커를 되살리는 `FLASHBOOT`, 콘솔 설명상 유휴 GPU 에 워커를 미리 올려 두는 `PRIORITY_FLASHBOOT`. `PRIORITY_FLASHBOOT` 는 GPU·CPU 엔드포인트 모두 생성과 변경에서 `400 Priority FlashBoot is enabled by Runpod sales` 로 거부되어 (2026-11-24, [#119](https://github.com/litkhai/runpod-hols/issues/119)) 측정하지 못했습니다.
 
 **엔드포인트 API**
 
@@ -689,6 +693,8 @@ handler 必须为此专门编写。`HF_HUB_OFFLINE` 在 `huggingface_hub` 被导
 
 **冷启动**——在没有热 worker 时到达的请求，必须先拉取镜像并启动容器。这就是模型加载应放在模块作用域、而不是 handler 内部的原因：模块作用域每个 worker 运行一次，handler 每个请求运行一次。
 
+**FlashBoot**——在 REST v2 中是一种模式而不是开关：`OFF`（规范默认值）、在有空闲时恢复已暂停 worker 的 `FLASHBOOT`，以及控制台描述为预先把 worker 加载到空闲 GPU 上的 `PRIORITY_FLASHBOOT`。无论 GPU 还是 CPU endpoint，`PRIORITY_FLASHBOOT` 在创建和更新时都被拒绝——`400 Priority FlashBoot is enabled by Runpod sales`（2026-11-24，[#119](https://github.com/litkhai/runpod-hols/issues/119)）——因此没有测量。
+
 **端点 API**
 
 | 路由 | 行为 |
@@ -1003,6 +1009,8 @@ handler はこれに合わせて書く必要があります。`HF_HUB_OFFLINE` �
 **Handler**：`job` 辞書を受け取り、JSON シリアライズ可能な任意の値を返す関数です。`job["input"]` に呼び出し側の payload が入ります。`runpod.serverless.start({"handler": handler})` で制御を SDK に渡すと、SDK がジョブキューをポーリングし、ジョブごとに handler を呼び出します。
 
 **コールドスタート**：ウォームな worker がないときに届いたリクエストは、まずイメージを pull してコンテナを起動しなければなりません。モデルのロードを handler の中ではなくモジュールスコープに置くべき理由がこれです。モジュールスコープは worker ごとに 1 回、handler はリクエストごとに 1 回実行されます。
+
+**FlashBoot**：REST v2 ではオン・オフではなくモードです。`OFF`（仕様の既定値）、空きがあれば一時停止したワーカーを再開する `FLASHBOOT`、コンソールの説明ではアイドル GPU にワーカーを先に載せておく `PRIORITY_FLASHBOOT` があります。`PRIORITY_FLASHBOOT` は GPU・CPU の endpoint とも作成と更新で `400 Priority FlashBoot is enabled by Runpod sales` により拒否され（2026-11-24、[#119](https://github.com/litkhai/runpod-hols/issues/119)）、測定はしていません。
 
 **エンドポイント API**
 
