@@ -12,10 +12,32 @@ Everything the `serverless/` and `pod/` tracks do by hand in the console, done d
 
 | Lab | Creates | Cost while idle |
 |---|---|---|
-| [01-endpoint](./01-endpoint) | `runpod_template` + `runpod_endpoint` | **None** — `workers_min = 0` |
+| [01-endpoint](./01-endpoint) | `runpod_template` + `runpod_serverless_endpoint` | **None** — `workers_min = 0` |
 | [02-pod](./02-pod) | `runpod_pod` (+ optional `runpod_network_volume`) | **Billed per minute** |
 
 Start with 01. It provisions the worker from `serverless/01-hello-worker` and costs nothing until you send a request.
+
+### Provider 2.0.0 (REST v2)
+
+Provider 1.0.8 called REST v1, which Runpod retired on 2026-11-15. Both labs now pin `= 2.0.0` (2026-10-27), a rebuild on REST v2 that does not accept 1.x configurations ([#115](https://github.com/litkhai/runpod-hols/issues/115)). The resource for an endpoint is `runpod_serverless_endpoint`; it takes GPU *pools* (`gpu_pools = ["ADA_24", "AMPERE_16"]`), and `endpoint_type`, `scaling_type` and `scaling_value` are required. A Pod takes `image`, `disk`, `cloud`, and its volume as `persistent_volume = { size, path }` or `network_volumes = [{ volume_id, path }]`.
+
+Run on 2026-11-24 with Terraform 1.17.2 and the scoped lab key (GraphQL None):
+
+| Run | Result |
+|---|---|
+| `01-endpoint` apply | Template and endpoint created; one `/run` returned `Hello, Terraform 2.0.0!` on an RTX 4090 (cold start 25.4 s, execution 155 ms); `plan` after apply: no changes; `destroy` removed both |
+| `02-pod`, Pod volume | RTX 2000 Ada as asked (USD 0.24/hr), `/workspace` a 20 GB Pod volume; JupyterLab answered on its proxy URL; `plan`: no changes; destroyed after 5 minutes |
+| `02-pod`, network volume | 20 GB volume and Pod in EU-RO-1, volume at `/workspace`; `plan`: no changes; both destroyed |
+
+What changed against the 1.0.8 notes below:
+
+- **The 1.0.8 workarounds are gone.** No `readme = ""`, `ports` or `network_volume_id = ""` to dodge "inconsistent result after apply", and no `ignore_changes = [machine_id]` — `plan` showed no changes right after every `apply` without them.
+- **`gpu_type_id` is sent.** 1.0.8 dropped it and Pods came up as RTX 4090; 2.0.0 gave the RTX 2000 Ada that was asked for.
+- **A key without GraphQL works.** The provider still reads a few deprecated attributes (`machine_id`, `volume_encrypted`, the template `readme`, endpoint `users`) from GraphQL. With GraphQL None that read answered 401, and the provider reported it as a warning and left those attributes null.
+- **An old template name can be refused.** The first `apply` created the template, then the endpoint failed with `400 endpoint template names must be unique`. The same happens with a direct REST call; a fresh name works. The default `template_name` is now `hol-hello-worker-v2`.
+- **SSH: `ssh.direct` took over four minutes** to appear (EUR-IS-1). sshd answered, but the key on this machine is not registered on the account, so login was not checked.
+
+The rest of this page describes provider 1.0.8 and stays as the record of the October runs.
 
 ### ⚠️ Read This First — Two Blocking Issues
 
@@ -213,10 +235,32 @@ The provider works for the core cases, but it is young — 9 releases, ~2,000 do
 
 | 실습 | 생성 대상 | 유휴 시 비용 |
 |---|---|---|
-| [01-endpoint](./01-endpoint) | `runpod_template` + `runpod_endpoint` | **없음** — `workers_min = 0` |
+| [01-endpoint](./01-endpoint) | `runpod_template` + `runpod_serverless_endpoint` | **없음** — `workers_min = 0` |
 | [02-pod](./02-pod) | `runpod_pod` (+ 선택적 `runpod_network_volume`) | **분 단위 과금** |
 
 01 부터 시작하세요. `serverless/01-hello-worker` 의 워커를 프로비저닝하며, 요청을 보내기 전까지는 비용이 발생하지 않습니다.
+
+### 프로바이더 2.0.0 (REST v2)
+
+프로바이더 1.0.8 은 REST v1 을 호출했는데, Runpod 이 2026-11-15 에 폐기했습니다. 두 실습은 이제 REST v2 기반으로 새로 만든 `= 2.0.0` (2026-10-27) 에 고정하며, 이 버전은 1.x 구성을 받지 않습니다 ([#115](https://github.com/litkhai/runpod-hols/issues/115)). 엔드포인트 리소스는 `runpod_serverless_endpoint` 이고, GPU *풀* (`gpu_pools = ["ADA_24", "AMPERE_16"]`) 을 받으며 `endpoint_type`, `scaling_type`, `scaling_value` 가 필수입니다. Pod 은 `image`, `disk`, `cloud` 를 받고, 볼륨은 `persistent_volume = { size, path }` 또는 `network_volumes = [{ volume_id, path }]` 로 줍니다.
+
+2026-11-24 에 Terraform 1.17.2 와 scoped 실습용 키 (GraphQL None) 로 실행했습니다.
+
+| 실행 | 결과 |
+|---|---|
+| `01-endpoint` apply | 템플릿과 엔드포인트 생성. `/run` 한 번이 RTX 4090 에서 `Hello, Terraform 2.0.0!` 를 돌려줌 (콜드 스타트 25.4초, 실행 155 ms). apply 직후 `plan`: 변경 없음. `destroy` 로 둘 다 삭제 |
+| `02-pod`, Pod 볼륨 | 요청한 RTX 2000 Ada (시간당 USD 0.24), `/workspace` 는 20 GB Pod 볼륨. JupyterLab 이 프록시 URL 로 응답. `plan`: 변경 없음. 5분 뒤 삭제 |
+| `02-pod`, 네트워크 볼륨 | EU-RO-1 에 20 GB 볼륨과 Pod, 볼륨은 `/workspace`. `plan`: 변경 없음. 둘 다 삭제 |
+
+아래 1.0.8 기록과 달라진 점:
+
+- **1.0.8 우회책이 필요 없습니다.** "inconsistent result after apply" 를 피하려던 `readme = ""`, `ports`, `network_volume_id = ""` 도, `ignore_changes = [machine_id]` 도 없이 매번 apply 직후 `plan` 이 변경 없음이었습니다.
+- **`gpu_type_id` 가 전달됩니다.** 1.0.8 은 이 값을 빠뜨려 Pod 이 RTX 4090 으로 떴지만, 2.0.0 은 요청한 RTX 2000 Ada 를 줬습니다.
+- **GraphQL 권한이 없는 키로도 됩니다.** 프로바이더는 아직 일부 폐기 예정 속성 (`machine_id`, `volume_encrypted`, 템플릿 `readme`, 엔드포인트 `users`) 을 GraphQL 로 읽습니다. GraphQL None 에서는 그 읽기가 401 이었고, 프로바이더는 경고만 내고 해당 속성을 null 로 두었습니다.
+- **예전 템플릿 이름이 거부될 수 있습니다.** 첫 `apply` 는 템플릿을 만든 뒤 엔드포인트에서 `400 endpoint template names must be unique` 로 실패했습니다. REST 를 직접 호출해도 같고, 새 이름은 됩니다. `template_name` 기본값을 `hol-hello-worker-v2` 로 바꿨습니다.
+- **SSH: `ssh.direct` 가 나타나기까지 4분 넘게 걸렸습니다** (EUR-IS-1). sshd 는 응답했지만 이 머신의 키가 계정에 등록돼 있지 않아 로그인은 확인하지 않았습니다.
+
+이 페이지의 나머지는 프로바이더 1.0.8 에 관한 것이며, 10월 실행 기록으로 남겨 둡니다.
 
 ### ⚠️ 먼저 읽을 것 — 두 가지 차단 이슈
 

@@ -10,7 +10,15 @@ output "pod_status" {
 
 output "cost_per_hr" {
   description = "What this Pod costs every hour it stays up. / 이 Pod 가 켜져 있는 동안 시간당 발생하는 비용."
-  value       = runpod_pod.lab.cost_per_hr
+  value       = runpod_pod.lab.cost
+}
+
+output "placement" {
+  description = "Where the Pod landed and on what. / Pod 이 놓인 곳과 GPU."
+  value = {
+    gpu_type_id    = runpod_pod.lab.gpu_type_id
+    data_center_id = runpod_pod.lab.data_center_id
+  }
 }
 
 output "network_volume_id" {
@@ -25,7 +33,7 @@ output "connect_hint" {
     콘솔에서 Pod 를 열면 SSH 명령과 Jupyter 링크를 확인할 수 있다:
       https://console.runpod.io/pods
 
-    Or / 또는: runpodctl get pod ${runpod_pod.lab.id}
+    Or / 또는: curl -H "Authorization: Bearer $RUNPOD_API_KEY" https://api.runpod.io/v2/pods/${runpod_pod.lab.id}
   EOT
 }
 

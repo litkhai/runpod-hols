@@ -8,16 +8,16 @@
 
 pod_name    = "hol-lab-pod"
 image_name  = "runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404"
-# Not sent to the API by provider 1.0.8 — the GPU is picked by availability.
-# 프로바이더 1.0.8 은 이 값을 API 로 보내지 않는다. GPU 는 가용성 기준으로 정해진다.
+# Check stock first: GET /v2/catalog/gpus?include=AVAILABILITY&product=POD
+# 먼저 재고를 확인: GET /v2/catalog/gpus?include=AVAILABILITY&product=POD
 gpu_type_id = "NVIDIA GeForce RTX 4090"
 gpu_count   = 1
 
 # Scratch disk, destroyed with the Pod. / Pod 와 함께 소멸하는 임시 디스크.
 container_disk_in_gb = 20
 
-# Volume disk at /workspace — survives stop, dies on terminate.
-# /workspace 볼륨 디스크 — 중지 시 유지, 삭제 시 소멸.
+# Pod volume at /workspace (when no network volume) — survives stop, dies on terminate.
+# /workspace 의 Pod 볼륨 (네트워크 볼륨이 없을 때) — 중지 시 유지, 삭제 시 소멸.
 volume_in_gb = 20
 
 start_jupyter = true
