@@ -119,8 +119,10 @@ The official [MCP server](https://github.com/runpod/runpod-mcp) is the most acti
 <figure class="shot"><a href="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}"><img src="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}" alt="Console home with the Onboard your agent to Runpod card" loading="lazy" width="1400" height="998"></a><figcaption>The console home, 2026-11-07: Runpod now offers the agent setup itself — one line to paste into a coding agent installs its skills and the MCP server.</figcaption></figure>
 
 ```bash
-claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/
+claude mcp add --transport http runpod -s user https://mcp.runpod.io/
 ```
+
+Version 5.0.0 (2026-11-23) has 138 tools, read from its source on 2026-11-24 ([#106](https://github.com/litkhai/runpod-hols/issues/106)): Pods including `exec-pod`, `stream-pod-logs` and queued Pods; Serverless endpoints, jobs, workers, builds, releases and metrics; network and global volumes; templates, registries and secrets; clusters; organizations; account, billing, tags and the audit log; the GPU/CPU catalog and Hub; a knowledge base (`search-docs`, `list-guides`, `read-guide`); and `report_feedback`, which sends an observation to Runpod. Every list now returns one page (`limit` up to 100, `cursor`), and the hosted server accepts a scoped key whose GraphQL access is None. The address moved from `mcp.getrunpod.io` to `mcp.runpod.io`; both answer.
 
 <div class="warn" markdown="1">
 An agent with a read/write MCP connection can create Pods, and a Pod bills from the moment it starts. Use a read-only key unless the task genuinely needs to provision something.
@@ -243,8 +245,10 @@ REST v2 읽기 호출입니다: `/account`, `/catalog/gpus`, `/pods`, `/serverle
 <figure class="shot"><a href="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}"><img src="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}" alt="콘솔 홈의 Onboard your agent to Runpod 카드" loading="lazy" width="1400" height="998"></a><figcaption>콘솔 홈, 2026-11-07: Runpod 이 에이전트 설정을 직접 안내한다. 코딩 에이전트에 한 줄을 붙여 넣으면 스킬과 MCP 서버가 설치된다.</figcaption></figure>
 
 ```bash
-claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/
+claude mcp add --transport http runpod -s user https://mcp.runpod.io/
 ```
+
+5.0.0 (2026-11-23) 의 도구는 138개이며 2026-11-24 에 소스에서 읽었습니다 ([#106](https://github.com/litkhai/runpod-hols/issues/106)). `exec-pod`, `stream-pod-logs`, 대기 Pod 를 포함한 Pod, Serverless 엔드포인트·작업·워커·빌드·릴리스·지표, 네트워크·글로벌 볼륨, 템플릿·레지스트리·시크릿, 클러스터, 조직, 계정·과금·태그·감사 로그, GPU/CPU 카탈로그와 Hub, 지식 베이스 (`search-docs`, `list-guides`, `read-guide`), 그리고 관찰을 Runpod 에 보내는 `report_feedback` 이 있습니다. 모든 목록은 이제 한 페이지씩 돌려주고 (`limit` 최대 100, `cursor`), hosted 서버는 GraphQL 을 None 으로 둔 scoped 키도 받습니다. 주소는 `mcp.getrunpod.io` 에서 `mcp.runpod.io` 로 바뀌었고 둘 다 응답합니다.
 
 <div class="warn" markdown="1">
 읽기/쓰기 권한으로 MCP 가 연결된 에이전트는 Pod 를 생성할 수 있고, Pod 는 기동 시점부터 과금됩니다. 실제로 리소스를 만들어야 하는 작업이 아니라면 읽기 전용 키를 사용하세요.
@@ -367,8 +371,10 @@ REST v2 只读调用：`/account`、`/catalog/gpus`、`/pods`、`/serverless`。
 <figure class="shot"><a href="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}"><img src="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}" alt="控制台首页的 Onboard your agent to Runpod 卡片" loading="lazy" width="1400" height="998"></a><figcaption>控制台首页，2026-11-07：Runpod 现在直接提供 agent 配置——把一行文字粘贴到编码 agent 中，就会安装其 skills 和 MCP 服务器。</figcaption></figure>
 
 ```bash
-claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/
+claude mcp add --transport http runpod -s user https://mcp.runpod.io/
 ```
+
+5.0.0 版（2026-11-23）共有 138 个工具，于 2026-11-24 从源码读取（[#106](https://github.com/litkhai/runpod-hols/issues/106)）：Pod（含 `exec-pod`、`stream-pod-logs` 和排队 Pod）；Serverless endpoint、任务、worker、构建、发布和指标；network volume 与 global volume；模板、镜像仓库和 secret；集群；组织；账号、计费、标签和审计日志；GPU/CPU 目录与 Hub；知识库（`search-docs`、`list-guides`、`read-guide`）；以及向 Runpod 发送观察的 `report_feedback`。所有列表现在每次返回一页（`limit` 最多 100，`cursor`），托管服务器也接受 GraphQL 权限为 None 的 scoped 密钥。地址从 `mcp.getrunpod.io` 改为 `mcp.runpod.io`，两者都可响应。
 
 <div class="warn" markdown="1">
 拥有读写 MCP 连接的智能体可以创建 Pod，而 Pod 从启动那一刻起就开始计费。除非任务确实需要创建资源，否则请使用只读密钥。
@@ -491,8 +497,10 @@ REST v2 の読み取り専用呼び出し：`/account`、`/catalog/gpus`、`/pod
 <figure class="shot"><a href="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}"><img src="{{ '/assets/img/setup/home-agent-card.webp' | relative_url }}" alt="コンソールのホームにある Onboard your agent to Runpod カード" loading="lazy" width="1400" height="998"></a><figcaption>コンソールのホーム、2026-11-07：Runpod がエージェントの設定を自ら案内しています。コーディングエージェントに 1 行貼り付けると、スキルと MCP サーバーが入ります。</figcaption></figure>
 
 ```bash
-claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/
+claude mcp add --transport http runpod -s user https://mcp.runpod.io/
 ```
+
+5.0.0（2026-11-23）のツールは 138 個で、2026-11-24 にソースから読み取りました（[#106](https://github.com/litkhai/runpod-hols/issues/106)）。`exec-pod`、`stream-pod-logs`、待機中の Pod を含む Pod、Serverless の endpoint・ジョブ・ワーカー・ビルド・リリース・指標、network volume とグローバルボリューム、テンプレート・レジストリ・シークレット、クラスター、組織、アカウント・課金・タグ・監査ログ、GPU/CPU カタログと Hub、ナレッジベース（`search-docs`、`list-guides`、`read-guide`）、そして観察を Runpod に送る `report_feedback` があります。すべての一覧は 1 ページずつ返すようになり（`limit` は最大 100、`cursor`）、ホスト版サーバーは GraphQL を None にした scoped キーも受け付けます。アドレスは `mcp.getrunpod.io` から `mcp.runpod.io` に変わり、どちらも応答します。
 
 <div class="warn" markdown="1">
 読み書き可能な MCP 接続を持つエージェントは Pod を作成でき、Pod は起動した瞬間から課金されます。タスクが本当に何かをプロビジョニングする必要がない限り、読み取り専用のキーを使ってください。
