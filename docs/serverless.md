@@ -268,7 +268,7 @@ Fifty 2-second jobs sent at once to a CPU endpoint with at most five workers, un
 
 - **Queue delay** jumps to the cap as soon as requests wait; **request count** keeps one worker per N queued requests on the way down as well as up, so a long tail runs on one worker.
 - **Concurrency is the cheaper scale-out** for I/O-bound handlers: the same two workers did the work almost four times faster.
-- A one-job-at-a-time worker lost about 1.3 s fetching each next job, and every worker's first job paid about 3 s of start-up even when `/health` called it *idle*. `/health` itself trailed by about 20 s.
+- A one-job-at-a-time worker lost about 1.3 s fetching each next job, and every worker's first job paid about 3 s of start-up even when `/health` called it *idle*. `/health` itself trailed by about 20 s. On SDK 2.4.0 the gap between jobs fell to about 0.3 s (2.33 s per 2 s job against 3.34 s for a 1.12.0 control, 2026-11-25, [#138](https://github.com/litkhai/runpod-hols/issues/138)).
 
 ### Lab 07 — streaming
 
@@ -277,12 +277,13 @@ A generator handler with `return_aggregate_stream: True`, read through `/stream/
 | | 20 chunks × 0.5 s | 200 chunks × 20 ms |
 |---|---|---|
 | First chunk, warm worker | 1.6–1.7 s | 0.95 s |
+| First chunk, warm worker, SDK 2.4.0 (2026-11-25) | 0.95–1.06 s | 0.74–0.84 s |
 | Chunk made → received, median | 0.31–0.37 s | 0.51–0.55 s |
 | Handler time | 11.1 s for 10 s | **13.0–13.4 s for 4 s** |
 | `/runsync` | All at once, 12.2 s | All at once, 14.9 s |
 
 - `/stream` is a long poll: each call returns as soon as new chunks exist.
-- **Each `yield` held the generator for about 45–55 ms.** A model yielding single tokens at 50 per second would be slowed to under 15 — yield groups of tokens.
+- **Each `yield` held the generator for about 45–55 ms.** A model yielding single tokens at 50 per second would be slowed to under 15 — yield groups of tokens. Unchanged on SDK 2.4.0.
 - `/runsync` and the final `/status` return the whole list only at the end; only `/stream` streams.
 
 ### Lab 08 — how jobs end
@@ -612,7 +613,7 @@ REST v2 는 콘솔 **Metrics** 탭의 시계열과 엔드포인트별 워커·�
 
 - **Queue delay** 는 요청이 기다리기 시작하면 곧바로 상한까지 늘립니다. **Request count** 는 대기 요청 N 개마다 워커 하나를 늘릴 때뿐 아니라 줄일 때도 지켜서, 긴 꼬리를 워커 하나가 처리합니다.
 - I/O 위주 핸들러라면 **동시성이 더 싼 확장**입니다. 같은 워커 둘이 거의 네 배 빨리 끝냈습니다.
-- 한 번에 하나씩 처리하는 워커는 다음 작업을 가져올 때마다 약 1.3초를 잃었고, 모든 워커의 첫 작업은 `/health` 가 *idle* 이라고 보여 줄 때도 약 3초의 기동 시간을 냈습니다. `/health` 자체도 약 20초 늦었습니다.
+- 한 번에 하나씩 처리하는 워커는 다음 작업을 가져올 때마다 약 1.3초를 잃었고, 모든 워커의 첫 작업은 `/health` 가 *idle* 이라고 보여 줄 때도 약 3초의 기동 시간을 냈습니다. `/health` 자체도 약 20초 늦었습니다. SDK 2.4.0 에서는 작업 사이 간격이 약 0.3초로 줄었습니다 (2초 작업마다 2.33초, 같은 날 1.12.0 대조군은 3.34초, 2026-11-25, [#138](https://github.com/litkhai/runpod-hols/issues/138)).
 
 ### 실습 07 — 스트리밍
 
@@ -621,12 +622,13 @@ REST v2 는 콘솔 **Metrics** 탭의 시계열과 엔드포인트별 워커·�
 | | 청크 20개 × 0.5초 | 청크 200개 × 20 ms |
 |---|---|---|
 | 첫 청크, 워커가 떠 있을 때 | 1.6–1.7초 | 0.95초 |
+| 첫 청크, 워커가 떠 있을 때, SDK 2.4.0 (2026-11-25) | 0.95–1.06초 | 0.74–0.84초 |
 | 청크 생성 → 수신, 중앙값 | 0.31–0.37초 | 0.51–0.55초 |
 | 핸들러 시간 | 10초 분량에 11.1초 | **4초 분량에 13.0–13.4초** |
 | `/runsync` | 12.2초 뒤 한꺼번에 | 14.9초 뒤 한꺼번에 |
 
 - `/stream` 은 롱 폴링입니다. 호출마다 새 청크가 생기는 즉시 돌아옵니다.
-- **`yield` 한 번마다 제너레이터가 약 45–55 ms 멈췄습니다.** 초당 50 토큰을 하나씩 yield 하는 모델은 초당 15 토큰 아래로 느려집니다 — 토큰을 묶어서 yield 하세요.
+- **`yield` 한 번마다 제너레이터가 약 45–55 ms 멈췄습니다.** 초당 50 토큰을 하나씩 yield 하는 모델은 초당 15 토큰 아래로 느려집니다 — 토큰을 묶어서 yield 하세요. SDK 2.4.0 에서도 같았습니다.
 - `/runsync` 와 최종 `/status` 는 끝난 뒤 전체 목록을 한꺼번에 돌려줍니다. 스트리밍은 `/stream` 뿐입니다.
 
 ### 실습 08 — 작업이 끝나는 방식
@@ -956,7 +958,7 @@ REST v2 返回控制台 **Metrics** 标签页背后的时间序列，以及每�
 
 - **Queue delay** 一旦有请求等待就直接扩到上限；**Request count** 在扩和缩两个方向上都按每 N 个排队请求一个 worker，因此长尾由一个 worker 处理。
 - 对 I/O 密集的 handler，**并发是更便宜的扩展方式**：同样两个 worker 快了将近四倍。
-- 每次只处理一个任务的 worker 每取一个新任务约损失 1.3 秒；即使 `/health` 显示为 *idle*，每个 worker 的第一个任务仍要付出约 3 秒的启动时间。`/health` 本身约滞后 20 秒。
+- 每次只处理一个任务的 worker 每取一个新任务约损失 1.3 秒；即使 `/health` 显示为 *idle*，每个 worker 的第一个任务仍要付出约 3 秒的启动时间。`/health` 本身约滞后 20 秒。在 SDK 2.4.0 上，任务之间的间隔降到约 0.3 秒（每个 2 秒任务 2.33 秒，同日 1.12.0 对照组为 3.34 秒，2026-11-25，[#138](https://github.com/litkhai/runpod-hols/issues/138)）。
 
 ### 实验 07 — 流式输出
 
@@ -965,12 +967,13 @@ REST v2 返回控制台 **Metrics** 标签页背后的时间序列，以及每�
 | | 20 块 × 0.5 秒 | 200 块 × 20 ms |
 |---|---|---|
 | 第一块，worker 已在运行 | 1.6–1.7 秒 | 0.95 秒 |
+| 第一块，worker 已在运行，SDK 2.4.0（2026-11-25） | 0.95–1.06 秒 | 0.74–0.84 秒 |
 | 生成 → 收到，中位数 | 0.31–0.37 秒 | 0.51–0.55 秒 |
 | handler 用时 | 10 秒的内容用了 11.1 秒 | **4 秒的内容用了 13.0–13.4 秒** |
 | `/runsync` | 12.2 秒后一次性返回 | 14.9 秒后一次性返回 |
 
 - `/stream` 是长轮询：每次调用在有新块时立即返回。
-- **每次 `yield` 让生成器停顿约 45–55 ms。** 每秒 50 个 token、逐个 yield 的模型会被拖慢到每秒不足 15 个——请成组 yield。
+- **每次 `yield` 让生成器停顿约 45–55 ms。** 每秒 50 个 token、逐个 yield 的模型会被拖慢到每秒不足 15 个——请成组 yield。SDK 2.4.0 上也一样。
 - `/runsync` 和最终的 `/status` 只在结束后一次性返回全部列表；只有 `/stream` 是流式的。
 
 ### 实验 08 — 任务如何结束
@@ -1300,7 +1303,7 @@ REST v2 は、コンソールの **Metrics** タブの時系列と、endpoint �
 
 - **Queue delay** はリクエストが待ち始めるとすぐ上限まで増やします。**Request count** は待機リクエスト N 件ごとにワーカー 1 つを、増やすときだけでなく減らすときも守るため、長い裾野を 1 つのワーカーが処理します。
 - I/O 中心のハンドラーなら **同時実行の方が安い拡張** です。同じ 2 つのワーカーがほぼ 4 倍速く終えました。
-- 1 件ずつ処理するワーカーは次のジョブを取るたびに約 1.3 秒を失い、`/health` が *idle* と表示していても、各ワーカーの最初のジョブは約 3 秒の起動時間を払いました。`/health` 自体も約 20 秒遅れていました。
+- 1 件ずつ処理するワーカーは次のジョブを取るたびに約 1.3 秒を失い、`/health` が *idle* と表示していても、各ワーカーの最初のジョブは約 3 秒の起動時間を払いました。`/health` 自体も約 20 秒遅れていました。SDK 2.4.0 ではジョブ間の間隔が約 0.3 秒に縮みました（2 秒のジョブごとに 2.33 秒、同日の 1.12.0 の対照は 3.34 秒、2026-11-25、[#138](https://github.com/litkhai/runpod-hols/issues/138)）。
 
 ### ラボ 07 — ストリーミング
 
@@ -1309,12 +1312,13 @@ REST v2 は、コンソールの **Metrics** タブの時系列と、endpoint �
 | | チャンク 20 個 × 0.5 秒 | チャンク 200 個 × 20 ms |
 |---|---|---|
 | 最初のチャンク、ワーカー起動済み | 1.6〜1.7 秒 | 0.95 秒 |
+| 最初のチャンク、ワーカー起動済み、SDK 2.4.0（2026-11-25） | 0.95〜1.06 秒 | 0.74〜0.84 秒 |
 | 生成 → 受信、中央値 | 0.31〜0.37 秒 | 0.51〜0.55 秒 |
 | ハンドラー時間 | 10 秒分に 11.1 秒 | **4 秒分に 13.0〜13.4 秒** |
 | `/runsync` | 12.2 秒後にまとめて | 14.9 秒後にまとめて |
 
 - `/stream` はロングポーリングです。呼び出しごとに新しいチャンクができ次第返ります。
-- **`yield` のたびにジェネレーターが約 45〜55 ms 止まりました。** 毎秒 50 トークンを 1 つずつ yield するモデルは毎秒 15 トークン未満に落ちます——トークンはまとめて yield してください。
+- **`yield` のたびにジェネレーターが約 45〜55 ms 止まりました。** 毎秒 50 トークンを 1 つずつ yield するモデルは毎秒 15 トークン未満に落ちます——トークンはまとめて yield してください。SDK 2.4.0 でも同じでした。
 - `/runsync` と最終の `/status` は終了後に全リストをまとめて返します。ストリーミングするのは `/stream` だけです。
 
 ### ラボ 08 — ジョブの終わり方

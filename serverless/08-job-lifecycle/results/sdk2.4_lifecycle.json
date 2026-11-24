@@ -1,0 +1,275 @@
+{
+ "runsync_short": {
+  "wall_s": 6.1,
+  "resp": {
+   "delayTime": 4043,
+   "executionTime": 1200,
+   "id": "sync-ffdf2ba1-6b21-44e4-aee1-5789d5d7a0bd-e1",
+   "output": {
+    "concurrency": 4,
+    "running_at_start": 1,
+    "slept_s": 1.001,
+    "started_at": 1795543169.872,
+    "tag": null,
+    "worker_id": "zzt1ja0vhr4dxp",
+    "worker_uptime_s": 1.72
+   },
+   "status": "COMPLETED",
+   "workerId": "zzt1ja0vhr4dxp"
+  }
+ },
+ "error_output": [
+  {
+   "t": 7.08,
+   "status": "FAILED",
+   "resp": {
+    "delayTime": 111,
+    "error": "reported in the output, not raised",
+    "executionTime": 328,
+    "id": "92db7af3-613c-4f31-9eab-255d675472a8-e1",
+    "status": "FAILED",
+    "workerId": "zzt1ja0vhr4dxp"
+   }
+  }
+ ],
+ "fail": [
+  {
+   "t": 8.01,
+   "status": "FAILED",
+   "resp": {
+    "delayTime": 94,
+    "error": "{\"error_type\": \"<class 'RuntimeError'>\", \"error_message\": \"asked to fail\", \"error_traceback\": \"Traceback (most recent call last):\\n  File \\\"/usr/local/lib/python3.11/site-packages/runpod/serverless/modules/rp_job.py\\\", line 285, in run_job\\n    await handler_return\\n  File \\\"/app/handler.py\\\", line 38, in plain\\n    raise RuntimeError(\\\"asked to fail\\\")\\nRuntimeError: asked to fail\\n\", \"hostname\": \"zzt1ja0vhr4dxp-64411837\", \"worker_id\": \"zzt1ja0vhr4dxp\", \"runpod_version\": \"2.4.0\"}",
+    "executionTime": 324,
+    "id": "e2c1b567-d8fd-41e3-8226-7fafa28dccac-e1",
+    "status": "FAILED",
+    "workerId": "zzt1ja0vhr4dxp"
+   }
+  }
+ ],
+ "retry": {
+  "first": {
+   "t": 9.03,
+   "status": "FAILED",
+   "resp": {
+    "delayTime": 94,
+    "error": "{\"error_type\": \"<class 'RuntimeError'>\", \"error_message\": \"asked to fail\", \"error_traceback\": \"Traceback (most recent call last):\\n  File \\\"/usr/local/lib/python3.11/site-packages/runpod/serverless/modules/rp_job.py\\\", line 285, in run_job\\n    await handler_return\\n  File \\\"/app/handler.py\\\", line 38, in plain\\n    raise RuntimeError(\\\"asked to fail\\\")\\nRuntimeError: asked to fail\\n\", \"hostname\": \"zzt1ja0vhr4dxp-64411837\", \"worker_id\": \"zzt1ja0vhr4dxp\", \"runpod_version\": \"2.4.0\"}",
+    "executionTime": 336,
+    "id": "2868faeb-4744-4e2d-a4c1-2d5dc69b7266-e2",
+    "status": "FAILED",
+    "workerId": "zzt1ja0vhr4dxp"
+   }
+  },
+  "retry": {
+   "id": "2868faeb-4744-4e2d-a4c1-2d5dc69b7266-e2",
+   "status": "IN_QUEUE"
+  },
+  "after": [
+   {
+    "t": 9.9,
+    "status": "FAILED",
+    "resp": {
+     "delayTime": 1012,
+     "error": "{\"error_type\": \"<class 'RuntimeError'>\", \"error_message\": \"asked to fail\", \"error_traceback\": \"Traceback (most recent call last):\\n  File \\\"/usr/local/lib/python3.11/site-packages/runpod/serverless/modules/rp_job.py\\\", line 285, in run_job\\n    await handler_return\\n  File \\\"/app/handler.py\\\", line 38, in plain\\n    raise RuntimeError(\\\"asked to fail\\\")\\nRuntimeError: asked to fail\\n\", \"hostname\": \"zzt1ja0vhr4dxp-64411837\", \"worker_id\": \"zzt1ja0vhr4dxp\", \"runpod_version\": \"2.4.0\"}",
+     "executionTime": 331,
+     "id": "2868faeb-4744-4e2d-a4c1-2d5dc69b7266-e2",
+     "retries": 1,
+     "status": "FAILED",
+     "workerId": "zzt1ja0vhr4dxp"
+    }
+   }
+  ]
+ },
+ "cancel_running": {
+  "before": [
+   {
+    "t": 10.78,
+    "status": "IN_PROGRESS",
+    "resp": {
+     "delayTime": 93,
+     "id": "5d286a9f-e54a-460d-938d-d1f23c69086f-e1",
+     "status": "IN_PROGRESS",
+     "workerId": "zzt1ja0vhr4dxp"
+    }
+   }
+  ],
+  "cancel": {
+   "delayTime": 93,
+   "executionTime": 21357,
+   "id": "5d286a9f-e54a-460d-938d-d1f23c69086f-e1",
+   "status": "CANCELLED",
+   "workerId": "zzt1ja0vhr4dxp"
+  },
+  "after": [
+   {
+    "t": 32.27,
+    "status": "CANCELLED",
+    "resp": {
+     "delayTime": 93,
+     "executionTime": 21357,
+     "id": "5d286a9f-e54a-460d-938d-d1f23c69086f-e1",
+     "status": "CANCELLED",
+     "workerId": "zzt1ja0vhr4dxp"
+    }
+   }
+  ],
+  "later": {
+   "delayTime": 93,
+   "executionTime": 21357,
+   "id": "5d286a9f-e54a-460d-938d-d1f23c69086f-e1",
+   "status": "CANCELLED",
+   "workerId": "zzt1ja0vhr4dxp"
+  }
+ },
+ "execution_timeout": [
+  {
+   "t": 33.5,
+   "status": "IN_PROGRESS",
+   "resp": {
+    "delayTime": 97,
+    "id": "67ea8bdb-e411-463a-87c2-eeb9e78d32ea-e2",
+    "status": "IN_PROGRESS",
+    "workerId": "zzt1ja0vhr4dxp"
+   }
+  },
+  {
+   "t": 42.82,
+   "status": "FAILED",
+   "resp": {
+    "delayTime": 97,
+    "error": "executionTimeout exceeded",
+    "executionTime": 9170,
+    "id": "67ea8bdb-e411-463a-87c2-eeb9e78d32ea-e2",
+    "status": "FAILED",
+    "workerId": "zzt1ja0vhr4dxp"
+   }
+  }
+ ],
+ "cancel_queued_and_purge": {
+  "queued_before": {
+   "93f5eec1-f970-4135-b0db-a32ddb908ec9-e2": "IN_QUEUE",
+   "47d0692a-f323-47c1-a559-bc83eed6520e-e1": "IN_QUEUE",
+   "9d431d81-5d36-485e-ac83-3dfcb3392d06-e1": "IN_QUEUE",
+   "d3ed2fe1-3155-447a-bbaa-81022db95cf3-e2": "IN_QUEUE"
+  },
+  "cancel_first": {
+   "id": "93f5eec1-f970-4135-b0db-a32ddb908ec9-e2",
+   "status": "CANCELLED"
+  },
+  "purge": {
+   "removed": 6,
+   "status": "completed"
+  },
+  "after": {
+   "93f5eec1-f970-4135-b0db-a32ddb908ec9-e2": "CANCELLED",
+   "47d0692a-f323-47c1-a559-bc83eed6520e-e1": null,
+   "9d431d81-5d36-485e-ac83-3dfcb3392d06-e1": null,
+   "d3ed2fe1-3155-447a-bbaa-81022db95cf3-e2": null
+  },
+  "health_after_purge": {
+   "jobs": {
+    "completed": 1,
+    "failed": 5,
+    "inProgress": 9,
+    "inQueue": 0,
+    "retried": 1
+   },
+   "workers": {
+    "idle": 2,
+    "initializing": 0,
+    "ready": 2,
+    "running": 0,
+    "throttled": 0,
+    "unhealthy": 0
+   }
+  },
+  "fill_final": {
+   "b68443f6-7733-4041-99be-72342fd8ddee-e1": "FAILED",
+   "ba0522e7-ea1b-4542-b37a-33225679f04d-e2": "COMPLETED",
+   "d8f3b7e1-1b58-406d-8f34-347722ca6fe2-e2": "COMPLETED",
+   "7e6f809d-568a-4670-8c4d-51d697de2022-e2": "COMPLETED",
+   "9daf2e6c-e9cc-44d0-9ee4-db6e1d404b73-e1": "COMPLETED",
+   "67085df6-99d1-434a-a6e0-955e16783ff3-e1": "COMPLETED",
+   "f4f66819-dd0d-4301-997b-728be40638e0-e1": "COMPLETED",
+   "646ae5eb-8155-4843-98e9-abd68f926211-e2": "COMPLETED",
+   "89b5dd07-af09-45fa-83d4-22fc3e82b151-e1": "COMPLETED",
+   "7db545ba-c20c-42c7-b348-1a319293636f-e1": null,
+   "ea73bfd0-1a4d-4100-8cf7-4dff91851350-e1": null,
+   "c05d2690-6d5b-4e83-9ff1-3acfd1176581-e1": null
+  }
+ },
+ "ttl": {
+  "ttl_job": [
+   {
+    "t": 176.88,
+    "status": "IN_QUEUE",
+    "resp": {
+     "id": "2678183a-968d-41df-9d88-4aba58554809-e1",
+     "status": "IN_QUEUE"
+    }
+   },
+   {
+    "t": 186.69,
+    "status": null,
+    "resp": {
+     "http_error": 404,
+     "body": "{\"status\":404,\"title\":\"Not Found\",\"detail\":\"job not found\"}"
+    }
+   }
+  ],
+  "fill_final": [
+   "COMPLETED",
+   "COMPLETED",
+   "COMPLETED",
+   "COMPLETED",
+   "COMPLETED",
+   "COMPLETED",
+   "COMPLETED",
+   "COMPLETED",
+   "COMPLETED",
+   "COMPLETED",
+   "COMPLETED",
+   "COMPLETED"
+  ]
+ },
+ "runsync_long": {
+  "wall_s": 90.5,
+  "resp": {
+   "delayTime": 98,
+   "id": "sync-d7b79c2e-50f9-4cdf-819c-57f7143c03d1-e1",
+   "status": "IN_PROGRESS",
+   "workerId": "zzt1ja0vhr4dxp"
+  },
+  "after": [
+   {
+    "t": 345.31,
+    "status": "IN_PROGRESS",
+    "resp": {
+     "delayTime": 98,
+     "id": "sync-d7b79c2e-50f9-4cdf-819c-57f7143c03d1-e1",
+     "status": "IN_PROGRESS",
+     "workerId": "zzt1ja0vhr4dxp"
+    }
+   },
+   {
+    "t": 356.06,
+    "status": "COMPLETED",
+    "resp": {
+     "delayTime": 98,
+     "executionTime": 100234,
+     "id": "sync-d7b79c2e-50f9-4cdf-819c-57f7143c03d1-e1",
+     "output": {
+      "concurrency": 4,
+      "running_at_start": 1,
+      "slept_s": 100.001,
+      "started_at": 1795543420.029,
+      "tag": null,
+      "worker_id": "zzt1ja0vhr4dxp",
+      "worker_uptime_s": 182.81
+     },
+     "status": "COMPLETED",
+     "workerId": "zzt1ja0vhr4dxp"
+    }
+   }
+  ]
+ }
+}
