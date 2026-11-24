@@ -48,7 +48,8 @@ Catalog, Tags, Account; `api.runpod.ai` Read/Write; GraphQL None
 `runpod-hols-2026-11-07` key is still enabled until its owner revokes it.
 
 > `Endpoint.health()` reports worker slots even when nothing is billing. It is
-> not a spend signal — query `myself { currentSpendPerHr }` for that.
+> not a spend signal — read `spendRate.current` from `GET /v2/account/limits`
+> (or GraphQL `myself { currentSpendPerHr }`) for that.
 
 ## Open work
 
