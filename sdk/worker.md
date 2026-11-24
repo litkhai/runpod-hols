@@ -26,7 +26,7 @@
 
 ### What changed in 2.x
 
-Read from the installed 2.1.0 source on 2026-11-05 and compared with 1.12.0. No worker was built or run on 2.x; the labs' workers stay on `runpod~=1.12.0`, the version they were deployed and measured with.
+Read from the installed 2.1.0 source on 2026-11-05 and compared with 1.12.0. On 2026-11-25 the Lab 01 hello-worker was rebuilt with `runpod==2.4.0` (`docker.io/litkhai/hello-worker:v1.1.0-sdk2.4.0`) and run ([#136](https://github.com/litkhai/runpod-hols/issues/136)): the local `test_input.json` run passed; on a CPU Serverless endpoint (`cpu3c`, 2 vCPU) created over REST v2, `run_sync` from the 2.4.0 client returned `Hello, SDK 2.4!` in 7 s including the cold start; a job cancelled while queued made `job.output()` raise `JobError: job … CANCELLED`. The endpoint was deleted afterwards. Locally, a handler returning `float("nan")` completed on 1.12.0 (`{'x': nan}`) and failed on 2.4.0 (*return value must be json-serializable*). The labs' workers stay on `runpod~=1.12.0`, the version they were deployed and measured with.
 
 | | 2.1.0 |
 |---|---|
@@ -490,7 +490,7 @@ It checks types, applies defaults, enforces `constraints` lambdas, and rejects u
 
 ### 2.x 에서 바뀐 것
 
-2026-11-05 에 설치된 2.1.0 소스를 읽고 1.12.0 과 비교했습니다. 2.x 로 워커를 빌드하거나 실행하지는 않았습니다. 실습 워커는 배포하고 측정한 버전인 `runpod~=1.12.0` 에 그대로 둡니다.
+2026-11-05 에 설치된 2.1.0 소스를 읽고 1.12.0 과 비교했습니다. 2026-11-25 에 실습 01 hello-worker 를 `runpod==2.4.0` 으로 다시 빌드해 (`docker.io/litkhai/hello-worker:v1.1.0-sdk2.4.0`) 실행했습니다 ([#136](https://github.com/litkhai/runpod-hols/issues/136)). 로컬 `test_input.json` 실행은 통과했고, REST v2 로 만든 CPU Serverless 엔드포인트 (`cpu3c`, vCPU 2개) 에서 2.4.0 클라이언트의 `run_sync` 가 콜드 스타트를 포함해 7초 만에 `Hello, SDK 2.4!` 를 돌려줬습니다. 대기 중에 취소한 작업에서는 `job.output()` 이 `JobError: job … CANCELLED` 를 던졌습니다. 엔드포인트는 끝난 뒤 지웠습니다. 로컬에서 `float("nan")` 을 돌려주는 핸들러는 1.12.0 에서는 완료 (`{'x': nan}`), 2.4.0 에서는 실패 (*return value must be json-serializable*) 했습니다. 실습 워커는 배포하고 측정한 버전인 `runpod~=1.12.0` 에 그대로 둡니다.
 
 | | 2.1.0 |
 |---|---|
