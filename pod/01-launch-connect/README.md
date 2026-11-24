@@ -20,19 +20,24 @@ python launch.py --cpu cpu3g-4-16           # a bigger CPU Pod
 python launch.py --gpu "NVIDIA RTX A4000"   # with a GPU
 ```
 
-A CPU Pod needs an instance id, `<flavor>-<vCPU>-<memory GB>`. Without one the API answers `Field "deployCpuPodInput.instanceId" of required type "String!" was not provided`. The flavors come from the `cpuFlavors` GraphQL query: `cpu3c`/`cpu5c` (2 GB per vCPU), `cpu3g`/`cpu5g` (4 GB), `cpu3m`/`cpu5m` (8 GB), 2–32 vCPU.
+A CPU Pod needs an instance id, `<flavor>-<vCPU>-<memory GB>`; the SDK sends `cpu3c-2-4` as `{"id": "cpu3c", "vcpuCount": 2}`. The flavors come from `GET /v2/catalog/cpus`: `cpu3c`/`cpu5c` (2 GB per vCPU), `cpu3g`/`cpu5g` (4 GB), `cpu3m`/`cpu5m` (8 GB), 2–32 vCPU.
 
-### Setup — pin the SDK
+### Setup
 
 ```bash
 cd pod/01-launch-connect
 uv venv --python 3.11 .venv
-uv pip install --python .venv/bin/python -r requirements.txt   # runpod~=1.12.0
+uv pip install --python .venv/bin/python -r requirements.txt   # runpod~=2.4.0
 ```
 
-The scripts are written against the 1.x client. `runpod` 2.0.0 (2026-10-30) moved Pod calls to REST API v2 and rejects this lab's CPU launch before sending anything: `REST API v2 does not support: volume_mount_path on CPU pods without network_volume_id`. An unpinned `pip install runpod` gets 2.x.
+`runpod` 2.x calls REST API v2 for Pods, so the lab key with GraphQL set to None works ([#126](https://github.com/litkhai/runpod-hols/issues/126)). Until 2026-11-24 this lab pinned 1.12, which used GraphQL. Porting meant more than the launch call:
 
-Porting is more than the launch call. In 2.x `get_pods()` returns REST objects — `status`, `image`, `cost`, `runtime.uptime` — where these scripts read `desiredStatus`, `imageName`, `costPerHr` and `uptimeSeconds`. On 2.x the running-Pod filter would match nothing, so `launch.py` would no longer refuse to stack Pods. The pin stays until the scripts are ported and run again ([SDK 2.x changes](../../sdk/client.md#what-changed-in-2x)).
+- `get_pods()` returns REST objects: `status`, `image`, `cost`, `gpu`/`cpu`, `ssh.direct`. The 1.x names `desiredStatus`, `imageName`, `costPerHr` and `uptimeSeconds` are gone, and a filter on them matches nothing — `launch.py` would stop refusing a second Pod.
+- `create_pod` rejects `volume_mount_path` on a CPU Pod without a network volume, so `launch.py` sends no volume for CPU.
+- `runtime.uptime` read 4 seconds for the whole run, so `status.py` counts uptime from `startedAt`.
+- `get_gpu(id, count)` reads `/v2/catalog/gpus/{id}` with availability; `launch.py` prints the stock and price before asking.
+
+[What else changed in 2.x](../../sdk/client.md#what-changed-in-2x).
 
 ### The one thing that costs money
 
@@ -55,7 +60,7 @@ A Pod bills from boot until you terminate it, whether you are using it or not. E
 | `status.py` | Read-only. Every Pod, its cost, and its SSH details |
 | `teardown.py` | Terminates (or `--stop`s) the Pod |
 | `common.py` | Credential loading, formatting, the confirmation prompt |
-| `requirements.txt` | `runpod~=1.12.0` |
+| `requirements.txt` | `runpod~=2.4.0` |
 
 ### Step 1 — See what you have
 
@@ -170,7 +175,7 @@ The SDK and the console disagree:
 
 `launch.py` pins `volume_mount_path="/workspace"` so the path matches the console, the docs and the other labs. If you call `create_pod` yourself and skip that argument, your persistent disk lands somewhere else and nothing warns you.
 
-That applies to GPU Pods. On a CPU Pod, SDK 1.12 never sends `volume_in_gb`: the Pod came up with `volumeInGb` 0, and `df` showed `/workspace` on the same 10 GB overlay as `/`. Anything written there is gone at terminate, and at stop as well. Persistent storage on CPU Pods is [#16](https://github.com/litkhai/runpod-hols/issues/16).
+That applies to GPU Pods. A CPU Pod gets no volume disk: SDK 2.x rejects `volume_mount_path` there, and SDK 1.12 dropped `volume_in_gb`. The Pod came up with `volumeInGb` 0, and `df` showed `/workspace` on the same 10 GB overlay as `/`. Anything written there is gone at terminate, and at stop as well. Persistent storage on CPU Pods is [#16](https://github.com/litkhai/runpod-hols/issues/16).
 
 ### Verified
 
@@ -188,6 +193,21 @@ Run end to end on 2026-11-05 with `runpod` 1.12.0, CPU Pod `cpu3c-2-4`, from the
 | `status.py` after | `No Pods.` |
 
 The whole run cost under one cent. Not checked: JupyterLab on 8888, `--stop`, a GPU Pod from this script ([`terraform/02-pod`](../../terraform/02-pod) launched GPU Pods on 2026-10-16).
+
+**Re-run on `runpod` 2.4.0, 2026-11-24** ([#126](https://github.com/litkhai/runpod-hols/issues/126)), with the lab key (GraphQL None):
+
+| Step | Result |
+|---|---|
+| `status.py` before | `No Pods.` |
+| `launch.py --dry-run`, CPU and `--gpu` | Plan printed; the GPU plan shows stock and price from the catalog |
+| `launch.py --gpu "NOT-A-GPU" --dry-run` | Refused before the plan, nothing created |
+| `launch.py` | `cpu3c`, 2 vCPU, US-CA-2, $0.06/hr |
+| SSH | Connected. `nproc` 2, `/workspace` on the 10 GB overlay, torch 2.9.1+cu128 |
+| `launch.py` again | Refused: a Pod is already running |
+| `teardown.py --yes` | Terminated |
+| `status.py` after | `No Pods.`; `currentSpendPerHr` 0 |
+
+About 8 minutes, under one cent.
 
 ---
 
@@ -207,19 +227,24 @@ python launch.py --cpu cpu3g-4-16           # 더 큰 CPU Pod
 python launch.py --gpu "NVIDIA RTX A4000"   # GPU 부착
 ```
 
-CPU Pod 에는 인스턴스 ID (`<flavor>-<vCPU>-<메모리 GB>`) 가 필요합니다. 없으면 API 가 `Field "deployCpuPodInput.instanceId" of required type "String!" was not provided` 로 거부합니다. flavor 목록은 GraphQL `cpuFlavors` 쿼리에서 나옵니다. `cpu3c`/`cpu5c` (vCPU 당 2 GB), `cpu3g`/`cpu5g` (4 GB), `cpu3m`/`cpu5m` (8 GB), vCPU 2–32개.
+CPU Pod 에는 인스턴스 ID (`<flavor>-<vCPU>-<메모리 GB>`) 가 필요합니다. SDK 는 `cpu3c-2-4` 를 `{"id": "cpu3c", "vcpuCount": 2}` 로 보냅니다. flavor 목록은 `GET /v2/catalog/cpus` 에서 나옵니다. `cpu3c`/`cpu5c` (vCPU 당 2 GB), `cpu3g`/`cpu5g` (4 GB), `cpu3m`/`cpu5m` (8 GB), vCPU 2–32개.
 
-### 준비 — SDK 버전 고정
+### 준비
 
 ```bash
 cd pod/01-launch-connect
 uv venv --python 3.11 .venv
-uv pip install --python .venv/bin/python -r requirements.txt   # runpod~=1.12.0
+uv pip install --python .venv/bin/python -r requirements.txt   # runpod~=2.4.0
 ```
 
-스크립트는 1.x 클라이언트 기준입니다. `runpod` 2.0.0 (2026-10-30) 은 Pod 호출을 REST API v2 로 옮겼고, 이 실습의 CPU 기동을 요청을 보내기도 전에 거부합니다. `REST API v2 does not support: volume_mount_path on CPU pods without network_volume_id`. 버전을 고정하지 않은 `pip install runpod` 는 2.x 를 설치합니다.
+`runpod` 2.x 는 Pod 호출에 REST API v2 를 쓰므로 GraphQL 을 None 으로 둔 실습용 키로 동작합니다 ([#126](https://github.com/litkhai/runpod-hols/issues/126)). 2026-11-24 전까지는 GraphQL 을 쓰는 1.12 로 고정했습니다. 포팅은 기동 호출만의 문제가 아니었습니다.
 
-포팅은 기동 호출만의 문제가 아닙니다. 2.x 의 `get_pods()` 는 REST 객체 — `status`, `image`, `cost`, `runtime.uptime` — 를 돌려주는데, 이 스크립트는 `desiredStatus`, `imageName`, `costPerHr`, `uptimeSeconds` 를 읽습니다. 2.x 에서는 실행 중 Pod 필터가 아무것도 찾지 못해 `launch.py` 의 중복 기동 방지가 작동하지 않습니다. 스크립트를 포팅하고 다시 실행할 때까지 고정을 유지합니다 ([SDK 2.x 변경점](../../sdk/client.md#2x-에서-바뀐-것)).
+- `get_pods()` 는 REST 객체 — `status`, `image`, `cost`, `gpu`/`cpu`, `ssh.direct` — 를 돌려줍니다. 1.x 의 `desiredStatus`, `imageName`, `costPerHr`, `uptimeSeconds` 는 없고, 이 이름으로 거르면 아무것도 걸리지 않아 `launch.py` 의 중복 기동 방지가 작동하지 않습니다.
+- `create_pod` 은 네트워크 볼륨 없는 CPU Pod 에 `volume_mount_path` 를 주면 거부하므로, `launch.py` 는 CPU 에는 볼륨을 보내지 않습니다.
+- `runtime.uptime` 이 실행 내내 4초였으므로 `status.py` 는 `startedAt` 부터 가동 시간을 계산합니다.
+- `get_gpu(id, count)` 는 `/v2/catalog/gpus/{id}` 를 재고와 함께 읽습니다. `launch.py` 는 확인을 묻기 전에 재고와 가격을 출력합니다.
+
+[2.x 의 다른 변경점](../../sdk/client.md#2x-에서-바뀐-것).
 
 ### 돈이 나가는 지점은 하나입니다
 
@@ -242,7 +267,7 @@ Pod 은 기동부터 삭제까지, 사용 여부와 무관하게 과금됩니다
 | `status.py` | 읽기 전용. 모든 Pod 과 비용, SSH 정보 |
 | `teardown.py` | Pod 삭제 (또는 `--stop` 으로 중지) |
 | `common.py` | 자격 증명 로딩, 출력 형식, 확인 프롬프트 |
-| `requirements.txt` | `runpod~=1.12.0` |
+| `requirements.txt` | `runpod~=2.4.0` |
 
 ### 1단계 — 현재 상태 확인
 
@@ -357,7 +382,7 @@ SDK 와 콘솔이 다릅니다.
 
 `launch.py` 는 `volume_mount_path="/workspace"` 를 명시해 콘솔·문서·다른 실습과 경로를 맞춥니다. `create_pod` 을 직접 호출하면서 이 인자를 빠뜨리면 영구 디스크가 다른 곳에 붙고, 아무 경고도 나오지 않습니다.
 
-이는 GPU Pod 이야기입니다. CPU Pod 에서는 SDK 1.12 가 `volume_in_gb` 를 아예 보내지 않습니다. Pod 은 `volumeInGb` 0 으로 떴고, `df` 로 보면 `/workspace` 가 `/` 와 같은 10 GB overlay 위에 있었습니다. 여기에 쓴 것은 삭제 때는 물론 중지 때도 사라집니다. CPU Pod 의 영구 스토리지는 [#16](https://github.com/litkhai/runpod-hols/issues/16) 에서 다룹니다.
+이는 GPU Pod 이야기입니다. CPU Pod 에는 볼륨 디스크가 없습니다. SDK 2.x 는 거기에 `volume_mount_path` 를 주면 거부하고, SDK 1.12 는 `volume_in_gb` 를 보내지 않았습니다. Pod 은 `volumeInGb` 0 으로 떴고, `df` 로 보면 `/workspace` 가 `/` 와 같은 10 GB overlay 위에 있었습니다. 여기에 쓴 것은 삭제 때는 물론 중지 때도 사라집니다. CPU Pod 의 영구 스토리지는 [#16](https://github.com/litkhai/runpod-hols/issues/16) 에서 다룹니다.
 
 ### 검증 내역
 
@@ -375,3 +400,18 @@ SDK 와 콘솔이 다릅니다.
 | 종료 후 `status.py` | `No Pods.` |
 
 전체 비용은 1센트 미만이었습니다. 확인하지 않은 것: 8888 의 JupyterLab, `--stop`, 이 스크립트로 GPU Pod 기동 ([`terraform/02-pod`](../../terraform/02-pod) 이 2026-10-16 에 GPU Pod 을 띄움).
+
+**`runpod` 2.4.0 재실행, 2026-11-24** ([#126](https://github.com/litkhai/runpod-hols/issues/126)), 실습용 키 (GraphQL None):
+
+| 단계 | 결과 |
+|---|---|
+| 시작 전 `status.py` | `No Pods.` |
+| `launch.py --dry-run`, CPU 와 `--gpu` | 계획 출력. GPU 계획에는 카탈로그의 재고와 가격이 나옴 |
+| `launch.py --gpu "NOT-A-GPU" --dry-run` | 계획 전에 거부, 생성 없음 |
+| `launch.py` | `cpu3c`, vCPU 2개, US-CA-2, $0.06/hr |
+| SSH | 접속. `nproc` 2, `/workspace` 는 10 GB overlay, torch 2.9.1+cu128 |
+| `launch.py` 재실행 | 거부: 이미 실행 중인 Pod 있음 |
+| `teardown.py --yes` | 삭제 |
+| 종료 후 `status.py` | `No Pods.`, `currentSpendPerHr` 0 |
+
+약 8분, 1센트 미만.

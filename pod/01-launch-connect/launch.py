@@ -19,8 +19,10 @@ import sys
 from common import POD_ID_FILE, client, confirm, describe, running_pods
 
 DEFAULT_IMAGE = "runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404"
-# Smallest Compute-Optimized size: 2 vCPU, 2 GB per vCPU (cpuFlavors, 2026-11-05).
-# 가장 작은 Compute-Optimized 사양: vCPU 2개, vCPU 당 2GB (cpuFlavors, 2026-11-05).
+# Smallest Compute-Optimized size: 2 vCPU, 2 GB per vCPU. runpod 2.x sends the
+# flavor and vCPU count from this id; the memory part is checked, not sent.
+# 가장 작은 Compute-Optimized 사양: vCPU 2개, vCPU 당 2GB. runpod 2.x 는 이 id 에서
+# flavor 와 vCPU 수를 보내고, 메모리 부분은 형식만 검사한다.
 DEFAULT_CPU = "cpu3c-2-4"
 
 
@@ -72,13 +74,19 @@ def main() -> int:
     # 아니라 이 지점에서 실패해야 한다.
     if args.gpu:
         try:
-            runpod.get_gpu(args.gpu)
+            gpu = runpod.get_gpu(args.gpu, args.gpu_count)
         except Exception as exc:  # noqa: BLE001 — surface whatever the API said
             print(f"Unknown GPU type {args.gpu!r}: {exc}")
             print("List valid ids with: python -c \"import runpod, os; "
                   "runpod.api_key=os.environ['RUNPOD_API_KEY']; "
                   "print([g['id'] for g in runpod.get_gpus()])\"")
             return 1
+        # runpod 2.x reads the catalog with pod stock (include=AVAILABILITY, product=POD).
+        # runpod 2.x 는 Pod 재고를 포함해 카탈로그를 읽는다.
+        print(f"Stock for {args.gpu} x{args.gpu_count}: {gpu.get('availability')}  "
+              f"(secure ${(gpu.get('price') or {}).get('secure')}/hr per GPU)")
+        if gpu.get("availability") == "NONE":
+            print("No stock right now; the create would fail. / 지금 재고가 없어 생성이 실패합니다.")
 
     kind = f"{args.gpu} x{args.gpu_count}" if args.gpu else f"CPU only / CPU 전용 ({args.cpu})"
     print("About to create a Pod / 아래 Pod 를 생성합니다:")
@@ -88,10 +96,10 @@ def main() -> int:
     if args.gpu:
         print(f"    disks   container {args.disk_gb}GB, volume {args.volume_gb}GB at /workspace")
     else:
-        # SDK 1.12 sends no volumeInGb for a CPU Pod; the Pod came up with
-        # volumeInGb 0 and /workspace on the container disk (2026-11-05).
-        # SDK 1.12 는 CPU Pod 에 volumeInGb 를 보내지 않는다. Pod 는 volumeInGb 0,
-        # /workspace 는 컨테이너 디스크 위였다 (2026-11-05).
+        # REST v2 refuses a Pod volume on a CPU Pod, and runpod 2.x refuses
+        # volume_mount_path on one before sending anything.
+        # REST v2 는 CPU Pod 의 Pod 볼륨을 거부하고, runpod 2.x 는 보내기 전에
+        # volume_mount_path 를 거부한다.
         print(f"    disks   container {args.disk_gb}GB; no volume disk on a CPU Pod — "
               "/workspace is on the container disk")
     print()
@@ -115,12 +123,13 @@ def main() -> int:
         gpu_count=args.gpu_count if args.gpu else 1,
         instance_id=None if args.gpu else args.cpu,
         container_disk_in_gb=args.disk_gb,
-        volume_in_gb=args.volume_gb,
-        # The SDK defaults this to /runpod-volume, while the console defaults to
-        # /workspace. Pin it so the path matches every doc and lab.
-        # SDK 기본값은 /runpod-volume, 콘솔 기본값은 /workspace 다.
-        # 모든 문서와 실습에서 경로가 일치하도록 고정한다.
-        volume_mount_path="/workspace",
+        # A Pod volume only on a GPU Pod (see above). The SDK mounts it at
+        # /runpod-volume by default, the console at /workspace; pin /workspace.
+        # Pod 볼륨은 GPU Pod 에만. SDK 기본 경로는 /runpod-volume, 콘솔은 /workspace
+        # 이므로 /workspace 로 고정한다.
+        volume_in_gb=args.volume_gb if args.gpu else 0,
+        volume_mount_path="/workspace" if args.gpu else None,
+        cloud_type="SECURE",
         start_ssh=True,
         ports="22/tcp,8888/http",
     )

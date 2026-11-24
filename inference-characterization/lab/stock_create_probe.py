@@ -8,7 +8,7 @@ Output: results/stock_create_probe.jsonl, one line per attempt: reading, HTTP re
 Spend: a created Pod lives for the seconds between create and delete, plus container disk.
 Env: RUNPOD_API_KEY (or the repo's .env), ROUNDS, SLEEP_S, LOW_TYPES / NONE_TYPES (comma lists to pin the types).
 """
-import json, os, sys, time, urllib.request, urllib.error
+import json, os, sys, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from pod_sweep import RESULTS, api, load_env  # noqa: E402
@@ -17,20 +17,8 @@ load_env()
 OUT = os.path.join(RESULTS, "stock_create_probe.jsonl")
 ROUNDS = int(os.environ.get("ROUNDS", "10"))
 SLEEP = int(os.environ.get("SLEEP_S", "60"))
-KEEP = ("H100", "H200", "A100", "L40", "4090", "L4", "B200")
 IMAGE = "runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404"
-Q = ('{ gpuTypes { id cuda13: lowestPrice(input:{gpuCount:1, secureCloud:true, minCudaVersion:"13.0"}) { stockStatus } '
-     'any: lowestPrice(input:{gpuCount:1, secureCloud:true}) { stockStatus } } }')
-
-
-def stock():
-    req = urllib.request.Request("https://api.runpod.io/graphql", data=json.dumps({"query": Q}).encode(),
-                                 headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"],
-                                          "Content-Type": "application/json",
-                                          "User-Agent": "runpod-hols-inference-characterization/1.0"})
-    d = json.load(urllib.request.urlopen(req, timeout=30))
-    return {g["id"]: [(g["cuda13"] or {}).get("stockStatus"), (g["any"] or {}).get("stockStatus")]
-            for g in d["data"]["gpuTypes"] if any(k in g["id"] for k in KEEP)}
+from stock_v2 import KEEP, snapshot as stock  # noqa: E402  (REST v2 catalog, #126)
 
 
 def attempt(gpu, reading, rnd):
