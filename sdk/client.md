@@ -138,7 +138,7 @@ runpod.get_pods()          # everything currently costing you money
 runpod.terminate_pod(pod_id)
 ```
 
-`get_pods()` is the cheapest habit worth having — [`verify-auth.py`](../setup/verify-auth.py) calls it precisely to surface Pods you forgot to stop.
+`get_pods()` is the cheapest habit worth having: it surfaces Pods you forgot to stop. [`verify-auth.py`](../setup/verify-auth.py) does the same over REST v2 (`GET /v2/pods`), so it works with a scoped key that has no GraphQL access ([#103](https://github.com/litkhai/runpod-hols/issues/103)).
 
 These wrap Runpod's GraphQL API, so responses come back shaped by GraphQL rather than by REST.
 
@@ -404,7 +404,7 @@ runpod.get_pods()          # 지금 비용이 나가고 있는 모든 것
 runpod.terminate_pod(pod_id)
 ```
 
-`get_pods()` 는 습관으로 삼을 만합니다. [`verify-auth.py`](../setup/verify-auth.py) 가 이 함수를 호출하는 이유도 끄는 것을 잊은 Pod 를 드러내기 위해서입니다.
+`get_pods()` 는 습관으로 삼을 만합니다. 끄는 것을 잊은 Pod 를 드러내 주기 때문입니다. [`verify-auth.py`](../setup/verify-auth.py) 는 같은 일을 REST v2 (`GET /v2/pods`) 로 하므로 GraphQL 권한이 없는 scoped 키로도 동작합니다 ([#103](https://github.com/litkhai/runpod-hols/issues/103)).
 
 이들은 Runpod 의 GraphQL API 를 감싼 것이라, 응답이 REST 가 아니라 GraphQL 형태로 돌아옵니다.
 

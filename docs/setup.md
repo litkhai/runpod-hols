@@ -28,27 +28,38 @@ Create one at [Console → Credentials → API Keys](https://console.runpod.io/u
 **Runpod shows the key once and does not store it.** Copy it into a password manager at creation time. If you lose it you cannot recover it — only create a new one.
 </div>
 
-Keys carry a permission level, set at creation:
+Each key carries scopes per API, set at creation and editable later from the key's menu (**Edit**):
 
-| Level | Meaning |
+| API | Choices |
 |---|---|
-| **All** | Full access |
-| **Restricted** | Per-API access you configure — `None`, `Restricted`, `Read/Write`, `Read Only` |
-| **Read Only** | Read access, no writes |
+| REST (`api.runpod.io/v2`) | Read and Write per resource — Pods, Serverless, Instant clusters, Volumes, Templates, Secrets, Authentication, Billing, Tags; Read only for Audit logs, Catalog, Account. *All resources* ticks every row |
+| GraphQL (`api.runpod.io/graphql`) | None, Read / Write, Read only |
+| Serverless endpoints (`api.runpod.ai`) | Read, Write, optionally limited to chosen endpoints |
 
-<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}" alt="Create API key dialog: the All, Restricted and Read only levels from the table above" loading="lazy" width="1400" height="998"></a><figcaption>Create API key, 2026-11-07. The console now keeps keys under <strong>Credentials → API Keys</strong> rather than Settings.</figcaption></figure>
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-scopes.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-scopes.webp' | relative_url }}" alt="Create API key, REST API section: Write on Pods, Serverless, Instant clusters, Volumes, Templates and Secrets; Authentication off; Audit logs read" loading="lazy" width="1400" height="729"></a><figcaption>Create API key, 2026-11-24: the lab key below. Write on what the labs create, Authentication left off.</figcaption></figure>
 
-| Task | Level |
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-graphql-endpoints.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-graphql-endpoints.webp' | relative_url }}" alt="Lower half of the dialog: Billing, Catalog, Tags and Account read; GraphQL API collapsed at None; api.runpod.ai Read and Write" loading="lazy" width="1400" height="729"></a><figcaption>The rest of the same key: Billing, Catalog, Tags and Account read-only, GraphQL None, <code>api.runpod.ai</code> Read and Write.</figcaption></figure>
+
+**Out-of-scope calls are refused.** On 2026-11-24 a key holding only REST Serverless Read got 200 from `GET /v2/serverless` and 403 with the missing scope named — *this API key does not grant pods:read* — from `GET /v2/pods`, the catalog, billing, audit-log and account reads, `PATCH /v2/serverless/{id}` (`serverless:write`) and `POST /v2/tags`. GraphQL answered 401 and `api.runpod.ai/v2/<id>/health` 403.
+
+What the labs need:
+
+| Task | Scopes |
 |---|---|
-| `verify-auth.py`, browsing GPU types and resources | **Read Only** |
+| `verify-auth.py` | REST Account, Catalog, Pods, Serverless — Read |
 | Deploying Lab 01 through the console | No key needed |
-| Calling a deployed endpoint | Access to that endpoint |
-| `terraform/01-endpoint` | Write access |
-| `terraform/02-pod` | **All** |
+| Calling a deployed endpoint | Serverless endpoints Read and Write, or only that endpoint |
+| Pod, Serverless, storage and cluster labs on REST | REST Write on Pods, Serverless, Instant clusters, Volumes, Templates, Secrets; Read on Audit logs, Billing, Catalog, Tags, Account; Serverless endpoints Read and Write — the key above |
+| `pod/01` (SDK 1.12), cluster stage 2, the stock snapshots in `inference-characterization` | Add GraphQL Read / Write; these still call GraphQL |
+| `terraform/` | Not yet checked with a scoped key |
 
-The documented `Restricted` mode customises access *per Serverless endpoint* and does not clearly cover Pod or Network Volume scope, so `All` is the reliable choice for the Pod lab.
+The lab key leaves GraphQL at None on purpose: a GraphQL grant has no per-resource split. Two 403s are not about the key — `GET /v2/tags` answered *Resource tagging is not enabled for this user* with Tags Read granted, and `GET /v2/organization` needs `membership:read`, which this personal account's dialog does not list.
 
-Permissions can be **edited later** from the Settings page — no need to issue a second key. Start Read Only and raise it when you reach the Terraform labs.
+**Exec and logs need GraphQL.** `POST /v2/pods/{id}/exec` needs GraphQL Read / Write on the key; Pod and worker logs need GraphQL Read only ([#112](https://github.com/litkhai/runpod-hols/issues/112), [#104](https://github.com/litkhai/runpod-hols/issues/104)). The lab key keeps GraphQL at None: create a short-lived key for those calls and delete it after.
+
+**Keys now expire.** Since about 2026-11-24 the dialog has an **Expires** date, 30 days ahead by default, and a *Never expire* box; the lab key above stops working on 2026-12-24. Keys made earlier show *Never*.
+
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}" alt="Create API key dialog with the Expires date set to Dec 24, 2026 and a Never expire checkbox" loading="lazy" width="1400" height="648"></a><figcaption>Create API key, 2026-11-24: a new key expires after 30 days unless <em>Never expire</em> is ticked.</figcaption></figure>
 
 <div class="warn" markdown="1">
 Rotate a key the moment it lands anywhere public — a commit, a screenshot, a paste in chat. Deleting the commit is not enough; the key must be revoked in the console.
@@ -58,7 +69,7 @@ Keys created before **11 November 2024** are legacy: Read/Write or Read Only on 
 
 ### What `verify-auth.py` does
 
-Three read-only calls: `get_user`, `get_gpus`, `get_pods`. Nothing is created, so nothing is billed. The last one matters most — it lists Pods you already have running, which is how you find one left over from a previous session that is still charging you.
+Read-only REST v2 calls: `/account`, `/catalog/gpus`, `/pods`, `/serverless`. Nothing is created, so nothing is billed, and no SDK is needed. The last two matter most — they list Pods already running and endpoints holding active workers, which is how you find something left over from a previous session that is still charging you. A call outside the key's scopes prints the 403 reason and the script carries on.
 
 ### Tooling by track
 
@@ -123,27 +134,38 @@ python setup/verify-auth.py     # 3. 키가 실제로 동작하는가
 **Runpod 은 키를 한 번만 보여주고 저장하지 않습니다.** 생성 시점에 비밀번호 관리자에 복사해 두세요. 분실하면 복구할 수 없고 새로 만드는 수밖에 없습니다.
 </div>
 
-키에는 생성 시 지정하는 권한 등급이 있습니다.
+키에는 API 별 범위(scope)가 있으며, 생성할 때 정하고 나중에 키 메뉴의 **Edit** 에서 바꿀 수 있습니다.
 
-| 등급 | 내용 |
+| API | 선택지 |
 |---|---|
-| **All** | 전체 접근 |
-| **Restricted** | API 별로 직접 설정 — `None`, `Restricted`, `Read/Write`, `Read Only` |
-| **Read Only** | 읽기만, 쓰기 불가 |
+| REST (`api.runpod.io/v2`) | 리소스별 Read·Write — Pods, Serverless, Instant clusters, Volumes, Templates, Secrets, Authentication, Billing, Tags. Audit logs, Catalog, Account 는 Read 만. *All resources* 는 모든 행을 체크 |
+| GraphQL (`api.runpod.io/graphql`) | None, Read / Write, Read only |
+| Serverless endpoints (`api.runpod.ai`) | Read, Write. 특정 엔드포인트로 제한 가능 |
 
-<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}" alt="Create API key 화면: 위 표의 All, Restricted, Read only 권한" loading="lazy" width="1400" height="998"></a><figcaption>Create API key, 2026-11-07. 콘솔은 이제 키를 Settings 가 아니라 <strong>Credentials → API Keys</strong> 에 둔다.</figcaption></figure>
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-scopes.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-scopes.webp' | relative_url }}" alt="Create API key 의 REST API 영역: Pods, Serverless, Instant clusters, Volumes, Templates, Secrets 에 Write, Authentication 은 끔, Audit logs 는 Read" loading="lazy" width="1400" height="729"></a><figcaption>Create API key, 2026-11-24: 아래의 실습용 키. 실습이 만드는 리소스에 Write, Authentication 은 끔.</figcaption></figure>
 
-| 작업 | 등급 |
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-graphql-endpoints.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-graphql-endpoints.webp' | relative_url }}" alt="대화상자 아래쪽: Billing, Catalog, Tags, Account 는 Read, GraphQL API 는 None 으로 접힘, api.runpod.ai 는 Read 와 Write" loading="lazy" width="1400" height="729"></a><figcaption>같은 키의 나머지: Billing, Catalog, Tags, Account 는 읽기만, GraphQL 은 None, <code>api.runpod.ai</code> 는 Read 와 Write.</figcaption></figure>
+
+**범위 밖 호출은 거부됩니다.** 2026-11-24 에 REST Serverless Read 만 가진 키로 `GET /v2/serverless` 는 200, `GET /v2/pods` 와 카탈로그·과금·감사 로그·계정 조회, `PATCH /v2/serverless/{id}` (`serverless:write`), `POST /v2/tags` 는 빠진 범위를 밝힌 403 — *this API key does not grant pods:read* — 이었습니다. GraphQL 은 401, `api.runpod.ai/v2/<id>/health` 는 403 이었습니다.
+
+실습별로 필요한 범위입니다.
+
+| 작업 | 범위 |
 |---|---|
-| `verify-auth.py`, GPU 타입·리소스 조회 | **Read Only** |
+| `verify-auth.py` | REST Account, Catalog, Pods, Serverless — Read |
 | 콘솔에서 Lab 01 배포 | 키 불필요 |
-| 배포한 엔드포인트 호출 | 해당 엔드포인트 접근 권한 |
-| `terraform/01-endpoint` | 쓰기 권한 |
-| `terraform/02-pod` | **All** |
+| 배포한 엔드포인트 호출 | Serverless endpoints Read·Write, 또는 그 엔드포인트만 |
+| REST 를 쓰는 Pod·Serverless·스토리지·클러스터 실습 | REST 의 Pods, Serverless, Instant clusters, Volumes, Templates, Secrets 에 Write, Audit logs, Billing, Catalog, Tags, Account 에 Read, Serverless endpoints Read·Write — 위 화면의 키 |
+| `pod/01` (SDK 1.12), 클러스터 2단계, `inference-characterization` 의 재고 스냅샷 | GraphQL Read / Write 추가. 아직 GraphQL 을 부름 |
+| `terraform/` | scoped 키로는 아직 확인하지 않음 |
 
-문서화된 `Restricted` 모드는 *Serverless 엔드포인트 단위*로 접근을 설정하며 Pod 나 Network Volume 범위는 명확히 다루지 않으므로, Pod 실습에는 `All` 이 확실합니다.
+실습용 키는 GraphQL 을 일부러 None 으로 둡니다. GraphQL 권한은 리소스별로 나뉘지 않습니다. 키와 무관한 403 이 두 가지 있었습니다. `GET /v2/tags` 는 Tags Read 가 있어도 *Resource tagging is not enabled for this user* 였고, `GET /v2/organization` 은 `membership:read` 가 필요한데 이 개인 계정의 대화상자에는 그 항목이 없습니다.
 
-권한은 **나중에 수정할 수 있습니다.** Settings 페이지에서 편집하면 되고 두 번째 키를 발급할 필요가 없습니다. Read Only 로 시작해 Terraform 실습에서 올리세요.
+**exec 와 로그에는 GraphQL 이 필요합니다.** `POST /v2/pods/{id}/exec` 는 키에 GraphQL Read / Write 가, Pod·워커 로그는 GraphQL Read only 가 있어야 합니다 ([#112](https://github.com/litkhai/runpod-hols/issues/112), [#104](https://github.com/litkhai/runpod-hols/issues/104)). 실습용 키는 GraphQL 을 None 으로 유지하고, 이 호출이 필요할 때만 단기 키를 만들어 쓰고 지웁니다.
+
+**키에 만료가 생겼습니다.** 2026-11-24 무렵부터 대화상자에 **Expires** 날짜 (기본 30일 뒤) 와 *Never expire* 체크박스가 있습니다. 위의 실습용 키는 2026-12-24 에 만료됩니다. 그 전에 만든 키는 *Never* 로 표시됩니다.
+
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}" alt="Expires 날짜가 2026년 12월 24일이고 Never expire 체크박스가 있는 Create API key 대화상자" loading="lazy" width="1400" height="648"></a><figcaption>Create API key, 2026-11-24: <em>Never expire</em> 를 체크하지 않으면 새 키는 30일 뒤 만료된다.</figcaption></figure>
 
 <div class="warn" markdown="1">
 키가 공개된 곳에 노출되는 즉시 폐기하세요. 커밋, 스크린샷, 채팅 붙여넣기 모두 해당됩니다. 커밋을 지우는 것만으로는 부족하고 콘솔에서 revoke 해야 합니다.
@@ -153,7 +175,7 @@ python setup/verify-auth.py     # 3. 키가 실제로 동작하는가
 
 ### `verify-auth.py` 가 하는 일
 
-읽기 전용 호출 세 건입니다: `get_user`, `get_gpus`, `get_pods`. 생성하는 것이 없어 과금되지 않습니다. 마지막 항목이 가장 중요한데, 현재 실행 중인 Pod 를 나열해 줍니다. 이전 세션에서 끄지 않고 남겨둔, 지금도 과금되고 있는 Pod 를 찾는 방법입니다.
+REST v2 읽기 호출입니다: `/account`, `/catalog/gpus`, `/pods`, `/serverless`. 생성하는 것이 없어 과금되지 않고 SDK 도 필요 없습니다. 마지막 두 항목이 가장 중요한데, 실행 중인 Pod 와 활성 워커를 둔 엔드포인트를 나열해 줍니다. 이전 세션에서 남겨둔, 지금도 과금되고 있는 것을 찾는 방법입니다. 키 범위 밖의 호출은 403 사유를 출력하고 계속 진행합니다.
 
 ### 트랙별 필요 도구
 
@@ -218,27 +240,38 @@ python setup/verify-auth.py     # 3. does the key actually work?
 **Runpod 只显示一次密钥，并且不保存它。** 创建时就把它复制到密码管理器中。一旦丢失就无法找回——只能新建一个。
 </div>
 
-密钥带有在创建时设定的权限级别：
+每个密钥按 API 设置权限范围（scope），在创建时指定，之后可在密钥菜单的 **Edit** 中修改：
 
-| 级别 | 含义 |
+| API | 选项 |
 |---|---|
-| **All** | 完全访问 |
-| **Restricted** | 由你按 API 配置访问——`None`、`Restricted`、`Read/Write`、`Read Only` |
-| **Read Only** | 只读，不可写入 |
+| REST（`api.runpod.io/v2`） | 按资源分 Read 和 Write——Pods、Serverless、Instant clusters、Volumes、Templates、Secrets、Authentication、Billing、Tags；Audit logs、Catalog、Account 仅 Read。*All resources* 勾选所有行 |
+| GraphQL（`api.runpod.io/graphql`） | None、Read / Write、Read only |
+| Serverless endpoints（`api.runpod.ai`） | Read、Write，可限定到指定 endpoint |
 
-<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}" alt="Create API key 对话框：上表中的 All、Restricted、Read only 三种权限" loading="lazy" width="1400" height="998"></a><figcaption>Create API key，2026-11-07。控制台现在把密钥放在 <strong>Credentials → API Keys</strong>，而不是 Settings。</figcaption></figure>
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-scopes.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-scopes.webp' | relative_url }}" alt="Create API key 的 REST API 区域：Pods、Serverless、Instant clusters、Volumes、Templates、Secrets 勾选 Write，Authentication 未勾选，Audit logs 为 Read" loading="lazy" width="1400" height="729"></a><figcaption>Create API key，2026-11-24：下文的实验密钥。对实验会创建的资源授予 Write，不授予 Authentication。</figcaption></figure>
 
-| 任务 | 级别 |
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-graphql-endpoints.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-graphql-endpoints.webp' | relative_url }}" alt="对话框下半部分：Billing、Catalog、Tags、Account 为 Read，GraphQL API 折叠且为 None，api.runpod.ai 为 Read 和 Write" loading="lazy" width="1400" height="729"></a><figcaption>同一密钥的其余部分：Billing、Catalog、Tags、Account 只读，GraphQL 为 None，<code>api.runpod.ai</code> 为 Read 和 Write。</figcaption></figure>
+
+**超出范围的调用会被拒绝。** 2026-11-24，用只有 REST Serverless Read 的密钥：`GET /v2/serverless` 返回 200；`GET /v2/pods`、目录、计费、审计日志和账号读取、`PATCH /v2/serverless/{id}`（`serverless:write`）以及 `POST /v2/tags` 均返回 403，并指出缺少的范围——*this API key does not grant pods:read*。GraphQL 返回 401，`api.runpod.ai/v2/<id>/health` 返回 403。
+
+各实验所需范围：
+
+| 任务 | 范围 |
 |---|---|
-| `verify-auth.py`，浏览 GPU 类型和资源 | **Read Only** |
-| 通过控制台部署实验 01 | 无需密钥 |
-| 调用已部署的端点 | 对该端点的访问权限 |
-| `terraform/01-endpoint` | 写入权限 |
-| `terraform/02-pod` | **All** |
+| `verify-auth.py` | REST Account、Catalog、Pods、Serverless——Read |
+| 通过控制台部署 Lab 01 | 不需要密钥 |
+| 调用已部署的 endpoint | Serverless endpoints Read 和 Write，或仅限该 endpoint |
+| 使用 REST 的 Pod、Serverless、存储和集群实验 | REST 的 Pods、Serverless、Instant clusters、Volumes、Templates、Secrets 授予 Write；Audit logs、Billing、Catalog、Tags、Account 授予 Read；Serverless endpoints Read 和 Write——即上图中的密钥 |
+| `pod/01`（SDK 1.12）、集群第二阶段、`inference-characterization` 中的库存快照 | 另加 GraphQL Read / Write；它们仍调用 GraphQL |
+| `terraform/` | 尚未用 scoped 密钥检查 |
 
-文档中的 `Restricted` 模式是*按 Serverless 端点*定制访问，并未明确涵盖 Pod 或 Network Volume 的范围，因此对 Pod 实验来说，`All` 是可靠的选择。
+实验密钥有意把 GraphQL 设为 None：GraphQL 权限不按资源细分。有两个 403 与密钥无关——即使授予了 Tags Read，`GET /v2/tags` 仍返回 *Resource tagging is not enabled for this user*；`GET /v2/organization` 需要 `membership:read`，而这个个人账号的对话框中没有该项。
 
-权限可以之后在 Settings 页面**修改**——无需再签发第二个密钥。先从 Read Only 开始，到了 Terraform 实验再提升。
+**exec 和日志需要 GraphQL。** `POST /v2/pods/{id}/exec` 要求密钥具有 GraphQL Read / Write；Pod 和 worker 日志需要 GraphQL Read only（[#112](https://github.com/litkhai/runpod-hols/issues/112)、[#104](https://github.com/litkhai/runpod-hols/issues/104)）。实验密钥保持 GraphQL 为 None：需要这些调用时创建一个短期密钥，用完删除。
+
+**密钥现在会过期。** 大约从 2026-11-24 起，对话框中有 **Expires** 日期（默认 30 天后）和 *Never expire* 复选框；上面的实验密钥将于 2026-12-24 失效。此前创建的密钥显示为 *Never*。
+
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}" alt="Create API key 对话框，Expires 日期为 2026 年 12 月 24 日，并有 Never expire 复选框" loading="lazy" width="1400" height="648"></a><figcaption>Create API key，2026-11-24：除非勾选 <em>Never expire</em>，新密钥 30 天后过期。</figcaption></figure>
 
 <div class="warn" markdown="1">
 密钥一旦出现在任何公开场所——一次提交、一张截图、一次聊天粘贴——就立即轮换。删除提交是不够的；必须在控制台中吊销该密钥。
@@ -248,7 +281,7 @@ python setup/verify-auth.py     # 3. does the key actually work?
 
 ### `verify-auth.py` 做了什么
 
-三个只读调用：`get_user`、`get_gpus`、`get_pods`。不创建任何东西，所以不产生任何费用。最后一个最重要——它列出你已经在运行的 Pod，你就是靠它找到上一次会话遗留下来、仍在计费的 Pod。
+REST v2 只读调用：`/account`、`/catalog/gpus`、`/pods`、`/serverless`。不创建任何东西，所以不产生任何费用，也不需要 SDK。最后两个最重要——它们列出已经在运行的 Pod 和保留了 active worker 的 endpoint，你就是靠它们找到上一次会话遗留下来、仍在计费的资源。超出密钥范围的调用会打印 403 原因，脚本继续执行。
 
 ### 各路线所需工具
 
@@ -313,27 +346,38 @@ python setup/verify-auth.py     # 3. does the key actually work?
 **Runpod はキーを一度しか表示せず、保存もしません。** 作成時にパスワードマネージャーにコピーしてください。紛失すると復元できず、新しく作るしかありません。
 </div>
 
-キーには作成時に設定する権限レベルがあります。
+キーには API ごとのスコープがあり、作成時に設定し、あとからキーのメニューの **Edit** で変更できます。
 
-| レベル | 意味 |
+| API | 選択肢 |
 |---|---|
-| **All** | フルアクセス |
-| **Restricted** | API ごとに自分で設定するアクセス：`None`、`Restricted`、`Read/Write`、`Read Only` |
-| **Read Only** | 読み取りのみ、書き込み不可 |
+| REST（`api.runpod.io/v2`） | リソースごとの Read と Write——Pods、Serverless、Instant clusters、Volumes、Templates、Secrets、Authentication、Billing、Tags。Audit logs、Catalog、Account は Read のみ。*All resources* はすべての行にチェック |
+| GraphQL（`api.runpod.io/graphql`） | None、Read / Write、Read only |
+| Serverless endpoints（`api.runpod.ai`） | Read、Write。特定の endpoint に限定可能 |
 
-<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key.webp' | relative_url }}" alt="Create API key ダイアログ：上の表の All、Restricted、Read only の 3 レベル" loading="lazy" width="1400" height="998"></a><figcaption>Create API key、2026-11-07。コンソールはキーを Settings ではなく <strong>Credentials → API Keys</strong> に置くようになりました。</figcaption></figure>
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-scopes.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-scopes.webp' | relative_url }}" alt="Create API key の REST API 部分：Pods、Serverless、Instant clusters、Volumes、Templates、Secrets に Write、Authentication はオフ、Audit logs は Read" loading="lazy" width="1400" height="729"></a><figcaption>Create API key、2026-11-24：下のラボ用キー。ラボが作るリソースに Write、Authentication はオフ。</figcaption></figure>
 
-| 作業 | レベル |
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-graphql-endpoints.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-graphql-endpoints.webp' | relative_url }}" alt="ダイアログの下半分：Billing、Catalog、Tags、Account は Read、GraphQL API は None のまま折りたたみ、api.runpod.ai は Read と Write" loading="lazy" width="1400" height="729"></a><figcaption>同じキーの残り：Billing、Catalog、Tags、Account は読み取りのみ、GraphQL は None、<code>api.runpod.ai</code> は Read と Write。</figcaption></figure>
+
+**スコープ外の呼び出しは拒否されます。** 2026-11-24、REST の Serverless Read だけを持つキーでは、`GET /v2/serverless` が 200、`GET /v2/pods` とカタログ・課金・監査ログ・アカウントの読み取り、`PATCH /v2/serverless/{id}`（`serverless:write`）、`POST /v2/tags` は、足りないスコープを示す 403——*this API key does not grant pods:read*——でした。GraphQL は 401、`api.runpod.ai/v2/<id>/health` は 403 でした。
+
+ラボごとに必要なスコープ：
+
+| 作業 | スコープ |
 |---|---|
-| `verify-auth.py`、GPU タイプとリソースの参照 | **Read Only** |
-| コンソールからのラボ 01 のデプロイ | キー不要 |
-| デプロイ済みエンドポイントの呼び出し | そのエンドポイントへのアクセス |
-| `terraform/01-endpoint` | 書き込みアクセス |
-| `terraform/02-pod` | **All** |
+| `verify-auth.py` | REST の Account、Catalog、Pods、Serverless——Read |
+| コンソールから Lab 01 をデプロイ | キー不要 |
+| デプロイした endpoint の呼び出し | Serverless endpoints の Read と Write、またはその endpoint のみ |
+| REST を使う Pod・Serverless・ストレージ・クラスターのラボ | REST の Pods、Serverless、Instant clusters、Volumes、Templates、Secrets に Write、Audit logs、Billing、Catalog、Tags、Account に Read、Serverless endpoints の Read と Write——上の画面のキー |
+| `pod/01`（SDK 1.12）、クラスターのステージ 2、`inference-characterization` の在庫スナップショット | GraphQL Read / Write を追加。まだ GraphQL を呼びます |
+| `terraform/` | scoped キーではまだ確認していません |
 
-ドキュメントにある `Restricted` モードは *Serverless エンドポイント単位*でアクセスをカスタマイズするもので、Pod や Network Volume の範囲を明確にはカバーしていません。そのため Pod ラボでは `All` が確実な選択です。
+ラボ用キーは GraphQL を意図的に None にしています。GraphQL の権限はリソースごとに分かれません。キーとは関係のない 403 が 2 つありました。`GET /v2/tags` は Tags Read を付けても *Resource tagging is not enabled for this user* で、`GET /v2/organization` には `membership:read` が必要ですが、この個人アカウントのダイアログにはその項目がありません。
 
-権限は Settings ページから**後で編集できます。** 2 つ目のキーを発行する必要はありません。Read Only で始め、Terraform ラボに進んだら引き上げてください。
+**exec とログには GraphQL が必要です。** `POST /v2/pods/{id}/exec` にはキーの GraphQL Read / Write が、Pod とワーカーのログには GraphQL Read only が必要です（[#112](https://github.com/litkhai/runpod-hols/issues/112)、[#104](https://github.com/litkhai/runpod-hols/issues/104)）。ラボ用キーは GraphQL を None のままにし、これらの呼び出しが必要なときだけ短期キーを作り、使い終わったら削除します。
+
+**キーに有効期限ができました。** 2026-11-24 ごろから、ダイアログに **Expires** の日付（既定は 30 日後）と *Never expire* のチェックボックスがあります。上のラボ用キーは 2026-12-24 に失効します。それ以前に作ったキーは *Never* と表示されます。
+
+<figure class="shot"><a href="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}"><img src="{{ '/assets/img/setup/create-api-key-expires.webp' | relative_url }}" alt="Expires が 2026 年 12 月 24 日で、Never expire のチェックボックスがある Create API key ダイアログ" loading="lazy" width="1400" height="648"></a><figcaption>Create API key、2026-11-24：<em>Never expire</em> にチェックしない限り、新しいキーは 30 日後に失効する。</figcaption></figure>
 
 <div class="warn" markdown="1">
 キーが公開の場所に出たら、その瞬間にローテーションしてください。コミット、スクリーンショット、チャットへの貼り付けも含みます。コミットを削除するだけでは不十分で、コンソールでキーを失効させる必要があります。
@@ -343,7 +387,7 @@ python setup/verify-auth.py     # 3. does the key actually work?
 
 ### `verify-auth.py` がすること
 
-読み取り専用の呼び出し 3 つ：`get_user`、`get_gpus`、`get_pods`。何も作成しないので、何も課金されません。最も重要なのは最後のもので、すでに稼働中の Pod を一覧表示します。前のセッションから残っていて、今も課金されている Pod はこれで見つけます。
+REST v2 の読み取り専用呼び出し：`/account`、`/catalog/gpus`、`/pods`、`/serverless`。何も作成しないので何も課金されず、SDK も不要です。最も重要なのは最後の 2 つで、稼働中の Pod とアクティブワーカーを持つ endpoint を一覧表示します。前のセッションから残っていて、今も課金されているものはこれで見つけます。キーのスコープ外の呼び出しは 403 の理由を表示し、スクリプトはそのまま続行します。
 
 ### トラック別のツール
 
