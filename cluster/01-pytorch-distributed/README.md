@@ -114,6 +114,8 @@ python3 cluster.py auto auto --hours 48 --gpus "NVIDIA A100-SXM4-80GB,NVIDIA H10
 
 **GraphQL needed `deployCost`.** The REST body has no price field; the REST create has not been run yet ([#126](https://github.com/litkhai/runpod-hols/issues/126)). Without it `createCluster` failed with *"The requested price 0 is less than the current minimum price (14.32)"*. The minimum is per Pod, and `deployCost` is for the whole cluster: 14.32 came back as *"requested price 7.16"*, so the November `cluster.py` offered the minimum × `podCount` (28.64). The Pods were then billed at the list price, USD 17.184/hr each (USD 34.37/hr), not at the offer.
 
+**REST v2 create, 2026-11-24: catalog stock without capacity** ([#130](https://github.com/litkhai/runpod-hols/issues/130)). From 23:15 to 01:15 KST the stock was read every 2 minutes (48 reads) with a create on each hit. The catalog showed A100 SXM cluster stock `LOW` six times between 23:33 and 23:45; every `POST /v2/clusters` answered `400 Insufficient resources`, never a validation error. No cluster was created, nothing was billed, and `spendRate.current` was 0 afterwards. Catalog availability is not a placement guarantee — the create is the real check, so a waiting script has to keep trying after a refusal. The REST create path is still unrun.
+
 ### Stage 2 run — sockets instead of InfiniBand
 
 | Step | Time (KST) |
@@ -267,6 +269,8 @@ python3 cluster.py auto auto --hours 48 --gpus "NVIDIA A100-SXM4-80GB,NVIDIA H10
 `auto` 는 2분마다 재고를 확인하고, A100 SXM 이 나오면 위의 영어 절에 있는 본문으로 `POST /v2/clusters` 를 보낸다 (`type` 은 `TRAINING` 또는 `SLURM`). 그다음 무슨 일이 있어도 75분 뒤 `DELETE /v2/clusters/{id}` 를 부르는 분리된 감시 프로세스를 띄우고, 두 노드의 SSH 를 기다려 `run.sh` 를 동시에 돌린다 (SSH 세션은 클러스터 변수를 물려받지 않으므로 컨테이너 PID 1 에서 읽는다). 이어서 `results/` 를 받아 오고 클러스터를 지운다. 시간당 USD 80 (계정의 지출 상한. H100 은 USD 76.61) 을 넘는 것은 만들지 않는다. 수동 단계: `create`, `show`, `push`, `run <tag>`, `pull`, `delete`.
 
 **GraphQL 에는 `deployCost` 가 필요했다.** REST 본문에는 가격 필드가 없고, REST 생성은 아직 실행하지 않았다 ([#126](https://github.com/litkhai/runpod-hols/issues/126)). 빼면 `createCluster` 가 *"The requested price 0 is less than the current minimum price (14.32)"* 로 거절된다. 최소 가격은 Pod 당이고 `deployCost` 는 클러스터 전체 값이다. 14.32 를 넣으면 *"requested price 7.16"* 으로 나뉘어 돌아오므로, 11월의 `cluster.py` 는 최소 가격 × `podCount` (28.64) 로 요청했다. 실제 청구는 요청 값이 아니라 정가, Pod 당 시간당 USD 17.184 (전체 USD 34.37) 였다.
+
+**REST v2 생성, 2026-11-24: 카탈로그에는 재고, 자리는 없음** ([#130](https://github.com/litkhai/runpod-hols/issues/130)). 한국 시간 23:15 부터 01:15 까지 2분마다 재고를 읽고 (48회), 재고가 보일 때마다 생성을 시도했다. 카탈로그는 23:33–23:45 사이 A100 SXM 클러스터 재고를 `LOW` 로 여섯 번 보였지만, `POST /v2/clusters` 는 모두 `400 Insufficient resources` 였다. 검증 오류는 한 번도 없었다. 클러스터는 만들어지지 않았고 과금도 없었으며, 끝난 뒤 `spendRate.current` 는 0 이었다. 카탈로그 재고는 배치를 보장하지 않는다. 실제 확인은 생성 요청이므로, 기다리는 스크립트는 거절 뒤에도 계속 시도해야 한다. REST 생성 경로는 아직 실행되지 않았다.
 
 ### 2단계 실행 — InfiniBand 대신 소켓
 
