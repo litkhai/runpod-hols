@@ -21,45 +21,46 @@ provider "runpod" {}
 resource "runpod_network_volume" "workspace" {
   count = var.create_network_volume ? 1 : 0
 
-  name           = var.volume_name
-  size           = var.volume_size_gb
-  data_center_id = var.data_center_id
+  name        = var.volume_name
+  size        = var.volume_size_gb
+  data_center = var.data_center_id
 }
 
 resource "runpod_pod" "lab" {
   name        = var.pod_name
-  image_name  = var.image_name
+  image       = var.image_name
+  cloud       = "SECURE"
   gpu_type_id = var.gpu_type_id
   gpu_count   = var.gpu_count
 
   # Container disk is scratch space — destroyed with the Pod.
   # 컨테이너 디스크는 임시 공간이다. Pod 와 함께 소멸한다.
-  container_disk_in_gb = var.container_disk_in_gb
+  disk = var.container_disk_in_gb
 
-  # Volume disk mounted at /workspace. Survives a stop, dies on terminate.
-  # Anything you want to keep goes here, not on the container disk.
-  #
-  # /workspace 에 마운트되는 볼륨 디스크. 중지해도 유지되고 삭제 시 소멸한다.
-  # 보존할 것은 컨테이너 디스크가 아니라 여기에 둔다.
-  volume_in_gb      = var.volume_in_gb
-  volume_mount_path = "/workspace"
-
+  # Create-time flags. REST v2 sets up SSH only when asked.
+  # 생성 시에만 쓰이는 값. REST v2 는 요청할 때만 SSH 를 설정한다.
   start_ssh     = true
   start_jupyter = var.start_jupyter
+  ports         = ["8888/http", "22/tcp"]
 
-  # Attach the network volume only when one was created.
-  # 네트워크 볼륨을 생성한 경우에만 연결한다.
-  network_volume_id = var.create_network_volume ? runpod_network_volume.workspace[0].id : null
-
-  # Provider 1.0.8 reads back the machine the Pod landed on into machine_id,
-  # an Optional attribute nobody sets, so every plan after apply wants to
-  # "update" it to null. Nothing can be set in advance — the machine is
-  # assigned at create time — so ignore it.
+  # A Pod has a Pod volume OR network volumes at /workspace, not both
+  # (REST v2 rejects the pair with a 400).
+  #   Pod volume: survives a stop, dies on terminate.
+  #   Network volume: outlives the Pod; it pins the Pod to its data center.
   #
-  # 프로바이더 1.0.8 은 Pod 이 배정된 머신을 machine_id 로 다시 읽어 오는데,
-  # 아무도 설정하지 않는 Optional 속성이라 apply 이후 모든 plan 이 이 값을 null 로
-  # "update" 하려 한다. 머신은 생성 시점에 배정되므로 미리 적을 수 없어 무시한다.
-  lifecycle {
-    ignore_changes = [machine_id]
+  # Pod 은 /workspace 에 Pod 볼륨 또는 네트워크 볼륨을 가진다. 둘 다는 아니다
+  # (REST v2 는 둘을 함께 주면 400).
+  #   Pod 볼륨: 중지해도 유지, 삭제하면 소멸.
+  #   네트워크 볼륨: Pod 보다 오래 남고, Pod 을 그 데이터센터에 묶는다.
+  persistent_volume = var.create_network_volume ? null : {
+    size = var.volume_in_gb
+    path = "/workspace"
   }
+
+  network_volumes = var.create_network_volume ? [{
+    volume_id = runpod_network_volume.workspace[0].id
+    path      = "/workspace"
+  }] : null
+
+  data_center_ids = var.create_network_volume ? [var.data_center_id] : null
 }
