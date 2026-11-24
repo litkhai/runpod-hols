@@ -24,7 +24,7 @@ Everything here was run on 2026-11-07 ([#64](https://github.com/litkhai/runpod-h
 | Pod volume ("Volume disk", legacy) | MooseFS over FUSE (`mfs#euro-3.runpod.net`) in EU-RO-1 | Until the Pod is deleted | USD 0.10/GB-month running, 0.20 stopped | `mounts.persistent` (REST v2; v1 `volumeInGb`) |
 | Network volume, standard | The same MooseFS | Until you delete it | USD 0.07/GB-month (0.05 beyond 1 TB) | `mounts.network`, one datacenter |
 | Network volume, high-performance | A VAST NFS server (`us-ca-2-vast.runpod.net:/runpodfs`) | Until you delete it | USD 0.14/GB-month | REST v2 `type: HIGH_PERFORMANCE` (spec); these runs used GraphQL `isNextGenStorage` |
-| Global volume (beta) | An object store over FUSE (`fuse.geesefs`, 1.0P) | Until you delete it | USD 0.09/GB-month + IOPS | REST v2 `mounts.global` (spec); these runs used GraphQL `volumeMounts` |
+| Global volume (beta) | An object store over FUSE (`fuse.geesefs`, 1.0P) | Until you delete it | First 100 GB free, then USD 0.09/GB-month + IOPS (console, 2026-11-24) | REST v2 `mounts.global` (spec); these runs used GraphQL `volumeMounts` |
 
 <figure class="shot"><a href="{{ '/assets/img/storage/create-network-volume-hp.webp' | relative_url }}"><img src="{{ '/assets/img/storage/create-network-volume-hp.webp' | relative_url }}" alt="Create new volume page with the High-performance filter: AP-IN-1, AP-IN-2, CA-MTL-1, CA-MTL-4, EU-FR-1, EUR-NO-2, US-CA-2" loading="lazy" width="1400" height="998"></a><figcaption>Create new volume, High-performance filter: seven datacenters, only US-CA-2 also S3-compatible. Picking one switches the volume to high-performance at USD 0.14/GB-month — twice standard. The filter's tooltip promises "up to 2x faster"; the docs say "up to 3x throughput and 4x IOPS".</figcaption></figure>
 
@@ -33,6 +33,10 @@ These runs (2026-11-07) needed three API surfaces: REST v1 for standard network 
 <div class="warn" markdown="1">
 **Passing both kinds to one GraphQL deploy drops the network volume.** `podFindAndDeployOnDemand` with `networkVolumeId` *and* a global volume in `volumeMounts` started a Pod with only the global volume; `/workspace` was the container disk, and nothing reported an error. Check `df -T /workspace` after every deploy.
 </div>
+
+**Encryption is a Volume disk option, set in the console only.** In the Pod deploy form, *Create storage → Volume disk (Legacy)* has **Encrypt volume disk** — "Can't be changed after deployment". Network and global volumes offer no such box, and REST v2 has no field for it; Terraform provider 2.0.0 can only read `volume_encrypted` back. Seen 2026-11-24; no encrypted Pod was deployed ([#121](https://github.com/litkhai/runpod-hols/issues/121)).
+
+<figure class="shot"><a href="{{ '/assets/img/storage/create-storage-encrypt-volume-disk.webp' | relative_url }}"><img src="{{ '/assets/img/storage/create-storage-encrypt-volume-disk.webp' | relative_url }}" alt="Create storage dialog with Volume disk (Legacy) selected: size 30 GB and an unticked Encrypt volume disk box; Global volume card reads First 100 GB free" loading="lazy" width="1055" height="435"></a><figcaption>Pod deploy → Create storage, 2026-11-24. Encryption appears only under Volume disk; the global volume card now starts with 100 GB free.</figcaption></figure>
 
 ## One benchmark for every tier
 {: #benchmark }
@@ -152,7 +156,7 @@ Runpod 의 모든 제품은 같은 몇 가지 스토리지 계층 위에 놓여 
 | Pod 볼륨 ("Volume disk", 레거시) | EU-RO-1 의 FUSE 기반 MooseFS (`mfs#euro-3.runpod.net`) | Pod 가 삭제될 때까지 | 실행 중 USD 0.10/GB-월, 중지 시 0.20 | `mounts.persistent` (REST v2. v1 은 `volumeInGb`) |
 | 네트워크 볼륨, 표준 | 같은 MooseFS | 직접 삭제할 때까지 | USD 0.07/GB-월 (1 TB 초과분 0.05) | `mounts.network`, 데이터센터 하나 |
 | 네트워크 볼륨, 고성능 | VAST NFS 서버 (`us-ca-2-vast.runpod.net:/runpodfs`) | 직접 삭제할 때까지 | USD 0.14/GB-월 | REST v2 `type: HIGH_PERFORMANCE` (스펙). 이 측정은 GraphQL `isNextGenStorage` 로 함 |
-| 글로벌 볼륨 (베타) | FUSE 기반 오브젝트 스토어 (`fuse.geesefs`, 1.0P) | 직접 삭제할 때까지 | USD 0.09/GB-월 + IOPS | REST v2 `mounts.global` (스펙). 이 측정은 GraphQL `volumeMounts` 로 함 |
+| 글로벌 볼륨 (베타) | FUSE 기반 오브젝트 스토어 (`fuse.geesefs`, 1.0P) | 직접 삭제할 때까지 | 처음 100 GB 무료, 이후 USD 0.09/GB-월 + IOPS (콘솔, 2026-11-24) | REST v2 `mounts.global` (스펙). 이 측정은 GraphQL `volumeMounts` 로 함 |
 
 <figure class="shot"><a href="{{ '/assets/img/storage/create-network-volume-hp.webp' | relative_url }}"><img src="{{ '/assets/img/storage/create-network-volume-hp.webp' | relative_url }}" alt="High-performance 필터를 적용한 볼륨 생성 페이지: AP-IN-1, AP-IN-2, CA-MTL-1, CA-MTL-4, EU-FR-1, EUR-NO-2, US-CA-2" loading="lazy" width="1400" height="998"></a><figcaption>볼륨 생성, High-performance 필터: 데이터센터 일곱 곳이며, S3 호환까지 되는 곳은 US-CA-2 뿐입니다. 이 중 하나를 고르면 볼륨이 USD 0.14/GB-월의 고성능으로 바뀝니다 — 표준의 두 배입니다. 필터의 툴팁은 "최대 2배 빠름"을, 문서는 "최대 3배 처리량, 4배 IOPS"를 약속합니다.</figcaption></figure>
 
@@ -161,6 +165,10 @@ Runpod 의 모든 제품은 같은 몇 가지 스토리지 계층 위에 놓여 
 <div class="warn" markdown="1">
 **두 종류를 한 번의 GraphQL 배포에 함께 넘기면 네트워크 볼륨이 빠집니다.** `networkVolumeId` *와* `volumeMounts` 의 글로벌 볼륨을 함께 넘긴 `podFindAndDeployOnDemand` 는 글로벌 볼륨만 붙은 Pod 를 띄웠습니다. `/workspace` 는 컨테이너 디스크였고, 어떤 오류도 보고되지 않았습니다. 배포할 때마다 `df -T /workspace` 로 확인하세요.
 </div>
+
+**암호화는 Volume disk 의 옵션이며 콘솔에서만 설정합니다.** Pod 배포 화면의 *Create storage → Volume disk (Legacy)* 에 **Encrypt volume disk** 가 있고 "Can't be changed after deployment" 라고 적혀 있습니다. 네트워크·글로벌 볼륨에는 이 항목이 없고, REST v2 에도 필드가 없습니다. Terraform 프로바이더 2.0.0 은 `volume_encrypted` 를 읽어 올 뿐입니다. 2026-11-24 확인, 암호화된 Pod 은 배포하지 않았습니다 ([#121](https://github.com/litkhai/runpod-hols/issues/121)).
+
+<figure class="shot"><a href="{{ '/assets/img/storage/create-storage-encrypt-volume-disk.webp' | relative_url }}"><img src="{{ '/assets/img/storage/create-storage-encrypt-volume-disk.webp' | relative_url }}" alt="Volume disk (Legacy) 를 고른 Create storage 대화상자: 크기 30 GB, 체크되지 않은 Encrypt volume disk. Global volume 카드에 First 100 GB free" loading="lazy" width="1055" height="435"></a><figcaption>Pod 배포 → Create storage, 2026-11-24. 암호화는 Volume disk 에만 있고, 글로벌 볼륨 카드는 이제 100 GB 무료로 시작한다.</figcaption></figure>
 
 ## 모든 계층에 같은 벤치마크
 {: #benchmark-ko }
@@ -280,7 +288,7 @@ Runpod 的每个产品都建立在同样几种存储层级之上，而它们并�
 | Pod volume（“Volume disk”，旧版） | EU-RO-1 中经 FUSE 挂载的 MooseFS（`mfs#euro-3.runpod.net`） | 直到 Pod 被删除 | 运行时 USD 0.10/GB-月，停止时 0.20 | `mounts.persistent`（REST v2；v1 为 `volumeInGb`） |
 | Network volume，标准 | 同一套 MooseFS | 直到你删除它 | USD 0.07/GB-月（超过 1 TB 部分 0.05） | `mounts.network`，限一个数据中心 |
 | Network volume，high-performance | 一台 VAST NFS 服务器（`us-ca-2-vast.runpod.net:/runpodfs`） | 直到你删除它 | USD 0.14/GB-月 | REST v2 `type: HIGH_PERFORMANCE`（规范）；这些测试用的是 GraphQL `isNextGenStorage` |
-| Global volume（beta） | 经 FUSE 挂载的对象存储（`fuse.geesefs`，1.0P） | 直到你删除它 | USD 0.09/GB-月 + IOPS | REST v2 `mounts.global`（规范）；这些测试用的是 GraphQL `volumeMounts` |
+| Global volume（beta） | 经 FUSE 挂载的对象存储（`fuse.geesefs`，1.0P） | 直到你删除它 | 前 100 GB 免费，之后 USD 0.09/GB-月 + IOPS（控制台，2026-11-24） | REST v2 `mounts.global`（规范）；这些测试用的是 GraphQL `volumeMounts` |
 
 <figure class="shot"><a href="{{ '/assets/img/storage/create-network-volume-hp.webp' | relative_url }}"><img src="{{ '/assets/img/storage/create-network-volume-hp.webp' | relative_url }}" alt="选中 High-performance 筛选条件的 Create new volume 页面：AP-IN-1、AP-IN-2、CA-MTL-1、CA-MTL-4、EU-FR-1、EUR-NO-2、US-CA-2" loading="lazy" width="1400" height="998"></a><figcaption>Create new volume 页面的 High-performance 筛选：七个数据中心，其中只有 US-CA-2 同时兼容 S3。选中其中之一，volume 就会切换为 high-performance，价格为 USD 0.14/GB-月——标准版的两倍。筛选条件的提示框承诺“up to 2x faster”；文档则写着“up to 3x throughput and 4x IOPS”。</figcaption></figure>
 
@@ -289,6 +297,10 @@ Runpod 的每个产品都建立在同样几种存储层级之上，而它们并�
 <div class="warn" markdown="1">
 **在一次 GraphQL 部署中同时传入两种 volume，network volume 会被丢掉。** 用 `podFindAndDeployOnDemand` 同时传入 `networkVolumeId` *和* `volumeMounts` 中的 global volume，启动的 Pod 只挂上了 global volume；`/workspace` 是容器盘，而且没有任何报错。每次部署后都要用 `df -T /workspace` 检查。
 </div>
+
+**加密是 Volume disk 的选项，只能在控制台设置。** Pod 部署表单中，*Create storage → Volume disk (Legacy)* 有 **Encrypt volume disk**——"Can't be changed after deployment"。Network volume 和 global volume 没有这个选项，REST v2 也没有对应字段；Terraform provider 2.0.0 只能读回 `volume_encrypted`。2026-11-24 查看，未部署加密的 Pod（[#121](https://github.com/litkhai/runpod-hols/issues/121)）。
+
+<figure class="shot"><a href="{{ '/assets/img/storage/create-storage-encrypt-volume-disk.webp' | relative_url }}"><img src="{{ '/assets/img/storage/create-storage-encrypt-volume-disk.webp' | relative_url }}" alt="选中 Volume disk (Legacy) 的 Create storage 对话框：大小 30 GB，未勾选的 Encrypt volume disk；Global volume 卡片显示 First 100 GB free" loading="lazy" width="1055" height="435"></a><figcaption>Pod 部署 → Create storage，2026-11-24。加密只出现在 Volume disk 下；global volume 卡片现在从 100 GB 免费起算。</figcaption></figure>
 
 ## 一套基准测试跑遍所有层级
 {: #benchmark-zh }
@@ -408,7 +420,7 @@ Runpod のすべての製品は同じ少数のストレージ階層の上に載�
 | Pod ボリューム（「Volume disk」、レガシー） | EU-RO-1 の FUSE 経由の MooseFS（`mfs#euro-3.runpod.net`） | Pod が削除されるまで | 実行中 USD 0.10/GB-月、停止中 0.20 | `mounts.persistent`（REST v2。v1 は `volumeInGb`） |
 | network volume、標準 | 同じ MooseFS | 自分で削除するまで | USD 0.07/GB-月（1 TB 超は 0.05） | `mounts.network`、1 つのデータセンター |
 | network volume、high-performance | VAST の NFS サーバー（`us-ca-2-vast.runpod.net:/runpodfs`） | 自分で削除するまで | USD 0.14/GB-月 | REST v2 `type: HIGH_PERFORMANCE`（仕様）。この測定は GraphQL `isNextGenStorage` で実施 |
-| グローバルボリューム（ベータ） | FUSE 経由のオブジェクトストア（`fuse.geesefs`、1.0P） | 自分で削除するまで | USD 0.09/GB-月 + IOPS | REST v2 `mounts.global`（仕様）。この測定は GraphQL `volumeMounts` で実施 |
+| グローバルボリューム（ベータ） | FUSE 経由のオブジェクトストア（`fuse.geesefs`、1.0P） | 自分で削除するまで | 最初の 100 GB は無料、以降 USD 0.09/GB-月 + IOPS（コンソール、2026-11-24） | REST v2 `mounts.global`（仕様）。この測定は GraphQL `volumeMounts` で実施 |
 
 <figure class="shot"><a href="{{ '/assets/img/storage/create-network-volume-hp.webp' | relative_url }}"><img src="{{ '/assets/img/storage/create-network-volume-hp.webp' | relative_url }}" alt="High-performance フィルターを選んだ Create new volume ページ：AP-IN-1、AP-IN-2、CA-MTL-1、CA-MTL-4、EU-FR-1、EUR-NO-2、US-CA-2" loading="lazy" width="1400" height="998"></a><figcaption>Create new volume の High-performance フィルター：データセンターは 7 つで、S3 互換も兼ねるのは US-CA-2 だけです。どれかを選ぶとボリュームは USD 0.14/GB-月の high-performance に切り替わり、標準の 2 倍になります。フィルターのツールチップは「up to 2x faster」とうたい、ドキュメントは「up to 3x throughput and 4x IOPS」としています。</figcaption></figure>
 
@@ -417,6 +429,10 @@ Runpod のすべての製品は同じ少数のストレージ階層の上に載�
 <div class="warn" markdown="1">
 **1 回の GraphQL デプロイに両方の種類を渡すと、network volume が落とされます。** `podFindAndDeployOnDemand` に `networkVolumeId` *と* `volumeMounts` のグローバルボリュームを渡したところ、Pod はグローバルボリュームだけで起動しました。`/workspace` はコンテナディスクで、エラーは何も報告されませんでした。デプロイのたびに `df -T /workspace` を確認してください。
 </div>
+
+**暗号化は Volume disk のオプションで、コンソールでのみ設定します。** Pod のデプロイ画面の *Create storage → Volume disk (Legacy)* に **Encrypt volume disk** があり、"Can't be changed after deployment" と書かれています。network volume とグローバルボリュームにはこの項目がなく、REST v2 にもフィールドはありません。Terraform プロバイダー 2.0.0 は `volume_encrypted` を読み取るだけです。2026-11-24 に確認、暗号化した Pod はデプロイしていません（[#121](https://github.com/litkhai/runpod-hols/issues/121)）。
+
+<figure class="shot"><a href="{{ '/assets/img/storage/create-storage-encrypt-volume-disk.webp' | relative_url }}"><img src="{{ '/assets/img/storage/create-storage-encrypt-volume-disk.webp' | relative_url }}" alt="Volume disk (Legacy) を選んだ Create storage ダイアログ：サイズ 30 GB、未チェックの Encrypt volume disk。Global volume のカードに First 100 GB free" loading="lazy" width="1055" height="435"></a><figcaption>Pod デプロイ → Create storage、2026-11-24。暗号化は Volume disk にのみあり、グローバルボリュームのカードは 100 GB 無料から始まる。</figcaption></figure>
 
 ## すべての階層に同じベンチマーク
 {: #benchmark-ja }
