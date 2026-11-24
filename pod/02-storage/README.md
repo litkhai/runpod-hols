@@ -130,6 +130,19 @@ A third kind of persistent storage, listed first in **Add volume** with a **Glob
 
 Use it for read-mostly data that several regions need — weights, configs, datasets — and keep checkpoints and anything two workers write on a network volume or the container disk.
 
+### Re-run on REST v2 (2026-11-24)
+
+The same steps through REST v2 ([#123](https://github.com/litkhai/runpod-hols/issues/123)). The RTX 4090 default had no stock in EU-RO-1, so step 1 ran on an L4 (`--gpu "NVIDIA L4"`, USD 0.69/hr):
+
+| Step | Result |
+|---|---|
+| GPU Pod, Pod volume, stop | `/root` marker gone, `/workspace` marker kept; `spendRate.current` 0.003 while stopped |
+| `start` | Accepted at once; SSH port changed |
+| Network volume, terminate, new Pod | No L4 or RTX 4090 left in EU-RO-1 for six minutes (`400 There are no longer any instances available with the requested specifications`), so this ran on CPU Pods; the new Pod found Pod A's marker |
+| CPU Pod + network volume | Mounted, marker present |
+| CPU Pod + `--disk volume` | REST v2 refuses a Pod volume on a CPU Pod, so the lab sends none; `/workspace` is overlay |
+| Clean up | No Pods, no volumes, `spendRate.current` 0 |
+
 ### What was run
 
 2026-11-05, Secure Cloud, EU-RO-1, image `runpod/base:1.0.2-ubuntu2404`, REST API v1.
@@ -276,6 +289,19 @@ mfs#euro.runpod.net:9421  2.3P  1.9P  399T  83% /workspace
 - Pod B 는 같은 GraphQL mutation 에 `dataCenterId: "EU-RO-1"` 을 넣어 띄웠습니다. 첫 선택인 RTX A5000 은 그곳에 자리가 없었습니다.
 
 여러 지역이 함께 읽는 데이터 — 가중치, 설정, 데이터셋 — 에 쓰고, 체크포인트처럼 둘 이상이 쓰는 데이터는 네트워크 볼륨이나 컨테이너 디스크에 두세요.
+
+### REST v2 로 재실행 (2026-11-24)
+
+같은 단계를 REST v2 로 실행했습니다 ([#123](https://github.com/litkhai/runpod-hols/issues/123)). 기본값 RTX 4090 이 EU-RO-1 에 재고가 없어 1단계는 L4 (`--gpu "NVIDIA L4"`, 시간당 USD 0.69) 로 했습니다.
+
+| 단계 | 결과 |
+|---|---|
+| GPU Pod, Pod 볼륨, 중지 | `/root` 표식 사라짐, `/workspace` 표식 남음. 중지 중 `spendRate.current` 0.003 |
+| `start` | 바로 수락, SSH 포트 바뀜 |
+| 네트워크 볼륨, 삭제, 새 Pod | 6분 동안 EU-RO-1 에 L4·RTX 4090 이 없어 (`400 There are no longer any instances available with the requested specifications`) CPU Pod 으로 진행. 새 Pod 이 Pod A 의 표식을 찾음 |
+| CPU Pod + 네트워크 볼륨 | 마운트됨, 표식 있음 |
+| CPU Pod + `--disk volume` | REST v2 는 CPU Pod 의 Pod 볼륨을 거부하므로 실습이 보내지 않음. `/workspace` 는 overlay |
+| 정리 | Pod·볼륨 없음, `spendRate.current` 0 |
 
 ### 실행 내역
 

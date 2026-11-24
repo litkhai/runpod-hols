@@ -114,6 +114,8 @@ One network volume, mounted at `/workspace` on a Pod and at `/runpod-volume` on 
 
 Good for iterating; for production, bake the code into an image as Serverless Lab 01 does — the volume pins the endpoint to one data center and makes every cold start import over the network.
 
+**Labs 02–04 re-run on REST v2, 2026-11-24** ([#123](https://github.com/litkhai/runpod-hols/issues/123)). Lab 03: a v2 `restart` answered `400 not enough free vcpu on the host` and left the Pod `EXITED`; `start` worked on the third try a minute later, with the rotated secret. Lab 02: the Pod volume survived stop and start (on an L4 — no RTX 4090 in EU-RO-1), a network volume carried a marker to a new Pod, and REST v2 now refuses a Pod volume on a CPU Pod. Lab 04: `pip install` onto the network volume took 219 s instead of ten minutes, and the endpoint served the same file with a 92.8 s first job; the template deleted at once.
+
 ### Queued Pods — wait for a GPU instead of failing
 
 A REST v2 create with `queue` is placed when stock appears, instead of failing with *no instances currently available*. Run on 2026-11-24 with the lab key ([#111](https://github.com/litkhai/runpod-hols/issues/111)):
@@ -311,6 +313,8 @@ Pod 는 직접 빌려서 제어하는 GPU 또는 CPU 컨테이너입니다. Serv
 | 두 번째 작업, 워커는 이미 종료 | `delayTime` 47초 |
 
 반복 개발에는 좋습니다. 프로덕션은 Serverless 실습 01 처럼 코드를 이미지에 구우세요. 볼륨은 엔드포인트를 한 데이터센터에 묶고, 콜드 스타트마다 네트워크 너머로 import 하게 만듭니다.
+
+**실습 02–04 를 REST v2 로 재실행, 2026-11-24** ([#123](https://github.com/litkhai/runpod-hols/issues/123)). 실습 03: v2 `restart` 가 `400 not enough free vcpu on the host` 를 돌려주고 Pod 을 `EXITED` 로 남겼고, `start` 는 1분 뒤 세 번째에 성공했으며 교체한 시크릿이 들어 있었습니다. 실습 02: Pod 볼륨은 중지·재개 후에도 남았고 (EU-RO-1 에 RTX 4090 이 없어 L4 사용), 네트워크 볼륨은 표식을 새 Pod 으로 옮겼으며, REST v2 는 이제 CPU Pod 의 Pod 볼륨을 거부합니다. 실습 04: 네트워크 볼륨에 `pip install` 이 10분이 아니라 219초 걸렸고, 엔드포인트가 같은 파일을 첫 작업 92.8초로 서빙했으며, 템플릿은 바로 삭제됐습니다.
 
 ### 대기 Pod — 실패하는 대신 GPU 를 기다리기
 
@@ -510,6 +514,8 @@ template 的 `env` 中可以写 {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %
 
 适合迭代开发；用于生产时，应像 Serverless 实验 01 那样把代码打包进镜像——volume 会把 endpoint 固定在一个数据中心，并使每次冷启动都通过网络 import。
 
+**实验 02–04 在 REST v2 上重跑，2026-11-24**（[#123](https://github.com/litkhai/runpod-hols/issues/123)）。实验 03：v2 的 `restart` 返回 `400 not enough free vcpu on the host`，并让 Pod 停在 `EXITED`；一分钟后第三次 `start` 成功，带上了轮换后的 secret。实验 02：Pod volume 经过停止和启动后仍在（用的是 L4——EU-RO-1 没有 RTX 4090），network volume 把标记带到了新 Pod，而 REST v2 现在拒绝在 CPU Pod 上挂 Pod volume。实验 04：往 network volume 上 `pip install` 用了 219 秒而不是十分钟，endpoint 以 92.8 秒的首个任务提供了同一个文件；模板立即删除。
+
 ### 排队 Pod——等待 GPU 而不是直接失败
 
 REST v2 创建时带上 `queue`，在有库存时才放置，而不是因 *no instances currently available* 失败。2026-11-24 用实验密钥运行（[#111](https://github.com/litkhai/runpod-hols/issues/111)）：
@@ -707,6 +713,8 @@ template の `env` には {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %} を�
 | 2 つ目の job、worker はすでに消えている | `delayTime` 47 s |
 
 反復開発には向いています。本番では Serverless ラボ 01 のようにコードをイメージに焼き込んでください。volume は endpoint を 1 つのデータセンターに固定し、コールドスタートのたびにネットワーク越しの import を発生させます。
+
+**ラボ 02–04 を REST v2 で再実行、2026-11-24**（[#123](https://github.com/litkhai/runpod-hols/issues/123)）。ラボ 03：v2 の `restart` は `400 not enough free vcpu on the host` を返して Pod を `EXITED` のまま残し、`start` は 1 分後の 3 回目で成功、ローテーションしたシークレットが入っていました。ラボ 02：Pod volume は停止と再開の後も残り（EU-RO-1 に RTX 4090 がなく L4 を使用）、network volume は表示を新しい Pod に引き継ぎ、REST v2 は CPU Pod の Pod volume を拒否するようになりました。ラボ 04：network volume への `pip install` は 10 分ではなく 219 秒で、endpoint は同じファイルを最初のジョブ 92.8 秒で提供し、テンプレートはすぐに削除されました。
 
 ### 待機 Pod：失敗する代わりに GPU を待つ
 

@@ -222,6 +222,8 @@ Lab 03 deploys Runpod's prebuilt `runpod/worker-v1-vllm:v2.30.2` with `Qwen/Qwen
 **Deleting the template can wait an hour and a half or more.** After the endpoint delete, `DELETE /templates/{id}` answered *"Template is still held by deleted endpoint …, which is pending cleanup"*. The message says *"within about 90 minutes"*; on 2026-11-05 one template was still refused at 86 minutes and deleted at 116, another deleted at 92. The lab's `teardown.py` keeps the id and asks you to rerun it.
 </div>
 
+**Re-run on REST v2, 2026-11-24** ([#123](https://github.com/litkhai/runpod-hols/issues/123)): the models list came back after 114 s including the cold start (479.8 s in November), chat in 1.6 s, first streamed token 0.77 s, and the template deleted together with the endpoint.
+
 ### Lab 04 — load-balancing endpoints
 
 A load-balancing endpoint sends `https://<id>.api.runpod.ai/<path>` straight to a plain HTTP server in the worker — no handler, no queue, no runpod SDK. The platform polls the worker's `GET /ping` (204 while starting, 200 when ready) to decide where to route. It is created in the console, not the REST API (`POST /endpoints` has no type field), and it scales on request count only.
@@ -563,6 +565,8 @@ REST v2 는 콘솔 **Metrics** 탭의 시계열과 엔드포인트별 워커·�
 <div class="note" markdown="1">
 **템플릿 삭제는 1시간 반 이상 기다려야 할 수 있습니다.** 엔드포인트를 지운 뒤 `DELETE /templates/{id}` 가 *"Template is still held by deleted endpoint …, which is pending cleanup"* 으로 응답했습니다. 메시지는 *"within about 90 minutes"* 라고 하지만, 2026-11-05 에는 한 템플릿이 86분에도 거부되다 116분에 지워졌고, 다른 하나는 92분에 지워졌습니다. 실습의 `teardown.py` 는 id 를 남기고 다시 실행하라고 안내합니다.
 </div>
+
+**REST v2 로 재실행, 2026-11-24** ([#123](https://github.com/litkhai/runpod-hols/issues/123)): 콜드 스타트를 포함해 114초 만에 모델 목록이 돌아왔고 (11월에는 479.8초), 채팅 1.6초, 스트림 첫 토큰 0.77초였으며, 템플릿은 엔드포인트와 함께 바로 삭제됐습니다.
 
 ### 실습 04 — 로드밸런싱 엔드포인트
 
@@ -906,6 +910,8 @@ REST v2 返回控制台 **Metrics** 标签页背后的时间序列，以及每�
 **删除模板可能要等一个半小时甚至更久。** 删除端点后，`DELETE /templates/{id}` 返回 *"Template is still held by deleted endpoint …, which is pending cleanup"*。消息称 *"within about 90 minutes"*；2026-11-05 当天，一个模板在 86 分钟时仍被拒绝，到 116 分钟才删除，另一个在 92 分钟删除。实验的 `teardown.py` 会保留 id 并提示你重新运行。
 </div>
 
+**在 REST v2 上重跑，2026-11-24**（[#123](https://github.com/litkhai/runpod-hols/issues/123)）：包括冷启动在内 114 秒返回模型列表（11 月为 479.8 秒），聊天 1.6 秒，流式首个 token 0.77 秒，模板随 endpoint 一起立即删除。
+
 ### 实验 04 — 负载均衡端点
 
 负载均衡端点把 `https://<id>.api.runpod.ai/<路径>` 直接转发给 worker 里的普通 HTTP 服务器——没有 handler、没有队列、也不需要 runpod SDK。平台轮询 worker 的 `GET /ping`（启动中 204，就绪 200）来决定路由。它只能在控制台创建，REST API 不行（`POST /endpoints` 没有类型字段），且只支持按请求数扩缩。
@@ -1247,6 +1253,8 @@ REST v2 は、コンソールの **Metrics** タブの時系列と、endpoint �
 <div class="note" markdown="1">
 **テンプレートの削除は 1 時間半以上待つことがあります。** エンドポイントを削除した後、`DELETE /templates/{id}` は *"Template is still held by deleted endpoint …, which is pending cleanup"* と応答しました。メッセージには *"within about 90 minutes"* とありますが、2026-11-05 には、あるテンプレートは 86 分の時点でまだ拒否され 116 分で削除でき、別のものは 92 分で削除できました。ラボの `teardown.py` は id を保持し、再実行するよう案内します。
 </div>
+
+**REST v2 で再実行、2026-11-24**（[#123](https://github.com/litkhai/runpod-hols/issues/123)）：コールドスタート込みで 114 秒でモデル一覧が返り（11 月は 479.8 秒）、チャット 1.6 秒、ストリームの最初のトークン 0.77 秒で、テンプレートは endpoint と一緒にすぐ削除されました。
 
 ### ラボ 04 — ロードバランシング・エンドポイント
 

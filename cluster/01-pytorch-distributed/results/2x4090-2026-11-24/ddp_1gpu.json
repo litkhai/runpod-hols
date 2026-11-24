@@ -1,0 +1,8 @@
+{
+  "world_size": 1,
+  "params": 100687872,
+  "batch_per_gpu": 256,
+  "step_ms": 6.66,
+  "samples_per_s": 38417.7,
+  "gpu": "NVIDIA GeForce RTX 4090"
+}

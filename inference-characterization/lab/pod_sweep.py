@@ -21,6 +21,7 @@ LEDGER = os.path.join(RESULTS, "ledger.json")
 PRICES = os.path.join(RESULTS, "prices.json")
 # REST v2 (api.runpod.io/v2/openapi.json, read 2026-11-24); v1 was retired 2026-11-15 (#101).
 API = "https://api.runpod.io/v2"
+NO_CAPACITY = ("no instances currently available", "no longer any instances available")
 # The PyTorch template image already used by pod/01-launch-connect. vLLM brings its own torch.
 IMAGE = "runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404"
 # vLLM 0.31.0 pins torch 2.13.0 with CUDA 13 dependencies, so the host driver must support CUDA 13.
@@ -142,11 +143,14 @@ def main():
             except RuntimeError as e:
                 # A failed create bills nothing; stock flips between Low and none from minute to minute.
                 # "unexpected end of JSON input" is a transient 500 from the create call; retry it too.
-                transient = "no instances currently available" in str(e) or "unexpected end of JSON" in str(e)
+                # REST v1 said "no instances currently available"; REST v2 says "There are no
+                # longer any instances available with the requested specifications" (2026-11-24, #123).
+                no_cap = any(m in str(e) for m in NO_CAPACITY)
+                transient = no_cap or "unexpected end of JSON" in str(e)
                 if not transient or time.time() > deadline:
-                    status = "no-capacity" if "no instances" in str(e) else "create-failed"
+                    status = "no-capacity" if no_cap else "create-failed"
                     raise
-                log("no capacity for %s (%s), retrying in 60s" % (a.gpu, a.cloud) if "no instances" in str(e)
+                log("no capacity for %s (%s), retrying in 60s" % (a.gpu, a.cloud) if no_cap
                     else "create returned %s, retrying in 60s" % str(e)[-80:])
                 time.sleep(60)
         pod_id, started = pod["id"], time.time()

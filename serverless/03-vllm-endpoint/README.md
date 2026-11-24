@@ -108,6 +108,17 @@ Also seen:
 - **The compile cache goes to `/runpod-volume/vllm-cache`** even with no network volume attached, so every new container compiles again (13.3 s here).
 - **The worker logs `unauthenticated requests to the HF Hub`.** Public model, no harm; a gated one needs `HF_TOKEN`.
 
+### Re-run on REST v2 (2026-11-24)
+
+`deploy.py`, `chat.py` and `teardown.py` through REST v2 ([#123](https://github.com/litkhai/runpod-hols/issues/123)), pools `ADA_24`, `AMPERE_24`, `AMPERE_16`, `openai` 3.58.0:
+
+| Step | Result |
+|---|---|
+| `chat.py` models | Listed after 114 s, including the cold start (479.8 s on 2026-11-05) |
+| Chat | 1.6 s, 40 + 20 tokens |
+| Stream | First token 0.77 s |
+| `teardown.py` | Endpoint and template deleted at once — no 90-minute template hold |
+
 ### What was run
 
 2026-11-05, `runpod/worker-v1-vllm:v2.30.2` (vLLM 0.32.0, Runpod worker SDK 1.12.0), `Qwen/Qwen2.5-1.5B-Instruct`, `MAX_MODEL_LEN` 4096, RTX 4090 in US-NC-1, FlashBoot on, idle timeout 5 s.
@@ -228,6 +239,17 @@ vLLM 자체는 77초였습니다. 나머지 14분은 플랫폼 쪽입니다. 이
 - **`/health` 가 `ready: 1` 인데 응답할 수 있는 것이 없었습니다.** 06:41 무렵 유휴·준비 워커 하나를 보고했지만, 응답한 컨테이너는 7분 뒤에 만들어졌습니다.
 - **컴파일 캐시가 `/runpod-volume/vllm-cache` 로 갑니다.** 네트워크 볼륨이 없어도 그렇습니다. 그래서 새 컨테이너마다 다시 컴파일합니다 (여기서는 13.3초).
 - **워커가 `unauthenticated requests to the HF Hub` 를 기록합니다.** 공개 모델이라 문제는 없고, gated 모델에는 `HF_TOKEN` 이 필요합니다.
+
+### REST v2 로 재실행 (2026-11-24)
+
+`deploy.py`, `chat.py`, `teardown.py` 를 REST v2 로 실행했습니다 ([#123](https://github.com/litkhai/runpod-hols/issues/123)). 풀 `ADA_24`, `AMPERE_24`, `AMPERE_16`, `openai` 3.58.0.
+
+| 단계 | 결과 |
+|---|---|
+| `chat.py` 모델 목록 | 콜드 스타트 포함 114초 (2026-11-05 에는 479.8초) |
+| 채팅 | 1.6초, 40 + 20 토큰 |
+| 스트림 | 첫 토큰 0.77초 |
+| `teardown.py` | 엔드포인트와 템플릿 바로 삭제 — 90분 템플릿 대기 없음 |
 
 ### 실행 내역
 
