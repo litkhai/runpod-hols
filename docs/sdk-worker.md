@@ -27,6 +27,20 @@ Read from the installed 2.1.0 source on 2026-11-05 and compared with 1.12.0. No 
 
 Moving a worker to 2.x is a rebuild and a run, not a version bump: the image changes, so the measurements on these pages no longer describe it.
 
+### From 2.1 to 2.4
+
+Read from the 2.4.0 wheel on 2026-11-25 and compared with 2.1.0 ([#134](https://github.com/litkhai/runpod-hols/issues/134)).
+
+| | 2.4.0 |
+|---|---|
+| JSON check | The job input, the handler's return value and each stream chunk must be finite JSON (`allow_nan=False`). `NaN`, `Infinity` or an object `json` cannot encode fails the job with an error instead of being sent; a result that fails at upload is reported as `SerializationError` |
+| Next job during the upload | A finished job frees its slot before its result is sent, so the worker takes the next job while the upload (about 0.3 s per the SDK's comment) is in flight. At most 50 uploads overlap |
+| `stopPod` in a result | Stops intake like `refresh_worker`, and earlier uploads land before it is sent |
+| Local API server | A stream that errors returns `FAILED`; responses keep `null` fields |
+| `VolumeCache` | Large files hydrate in ranges, with retry counts reported |
+
+The handler contract is unchanged.
+
 ### Startup fitness checks
 
 Before your handler is ever called, the worker validates the machine it landed on. A failed check kills the process with `os._exit(1)` and the orchestrator routes the job elsewhere, rather than letting it fail slowly on bad hardware. At ~1,125 lines this is the largest part of the worker half, and it runs whether you ask for it or not.
@@ -270,6 +284,20 @@ Local `test_input.json` runs do **not** exercise streaming — the generator com
 | 오류에 담기는 핸들러 로그 | `RUNPOD_LOG_CAPTURE=all` 이면 stdout · stderr 의 마지막 16 KiB 가 오류 페이로드에 `logs` 로 들어갑니다. 기본값 `auto` 는 핸들러에 대해 하지 않습니다 |
 
 워커를 2.x 로 옮기는 것은 버전 숫자만 바꾸는 일이 아니라 재빌드와 재실행입니다. 이미지가 바뀌므로 이 페이지의 측정값은 더 이상 그 워커를 설명하지 않습니다.
+
+### 2.1 에서 2.4 로
+
+2026-11-25 에 2.4.0 휠을 읽고 2.1.0 과 비교했습니다 ([#134](https://github.com/litkhai/runpod-hols/issues/134)).
+
+| | 2.4.0 |
+|---|---|
+| JSON 검사 | 작업 입력, 핸들러 반환값, 스트림 조각은 유한한 JSON 이어야 합니다 (`allow_nan=False`). `NaN`, `Infinity`, `json` 이 인코딩하지 못하는 객체는 전송되지 않고 작업이 오류로 끝납니다. 업로드 단계에서 실패한 결과는 `SerializationError` 로 보고됩니다 |
+| 업로드 중 다음 작업 | 끝난 작업은 결과를 보내기 전에 슬롯을 비우므로, 업로드 (SDK 주석 기준 약 0.3초) 가 진행되는 동안 다음 작업을 받습니다. 동시에 진행되는 업로드는 최대 50개 |
+| 결과의 `stopPod` | `refresh_worker` 처럼 작업 수신을 멈추고, 앞선 업로드가 끝난 뒤 보냅니다 |
+| 로컬 API 서버 | 오류가 난 스트림은 `FAILED` 를 돌려주고, 응답에서 `null` 필드를 지우지 않습니다 |
+| `VolumeCache` | 큰 파일을 구간 단위로 가져오고 재시도 횟수를 보고합니다 |
+
+핸들러 계약은 그대로입니다.
 
 ### 기동 시 fitness check
 
@@ -517,6 +545,20 @@ SDK 中**在你的 worker 容器内部运行**的那一半。另一半见 [Clien
 
 把 worker 迁移到 2.x 是重新构建并重新运行，而不只是改版本号：镜像变了，这些页面上的测量值就不再描述它。
 
+### 从 2.1 到 2.4
+
+2026-11-25 读取 2.4.0 的 wheel 并与 2.1.0 对比（[#134](https://github.com/litkhai/runpod-hols/issues/134)）。
+
+| | 2.4.0 |
+|---|---|
+| JSON 检查 | job 输入、handler 返回值和每个流式片段都必须是有限的 JSON（`allow_nan=False`）。`NaN`、`Infinity` 或 `json` 无法编码的对象不会被发送，job 以错误结束；上传时失败的结果报告为 `SerializationError` |
+| 上传期间取下一个 job | 完成的 job 在发送结果前就释放槽位，因此 worker 会在上传（据 SDK 注释约 0.3 s）进行时取下一个 job。最多 50 个上传重叠 |
+| 结果中的 `stopPod` | 像 `refresh_worker` 一样停止接收，并在之前的上传完成后才发送 |
+| 本地 API 服务器 | 出错的流返回 `FAILED`；响应保留 `null` 字段 |
+| `VolumeCache` | 大文件按区间拉取，并报告重试次数 |
+
+handler 契约不变。
+
 ### 启动 fitness check
 
 在你的 handler 被调用之前，worker 会先验证它所落到的机器。检查失败时以 `os._exit(1)` 终止进程，由编排器把作业路由到别处，而不是让它在坏硬件上慢慢失败。约 1,125 行，是 worker 这一半中最大的部分，无论你是否要求都会运行。
@@ -762,6 +804,20 @@ SDK のうち、**worker コンテナの中で動く**半分です。もう半�
 | エラーに含まれる handler ログ | `RUNPOD_LOG_CAPTURE=all` にすると、stdout と stderr の最後の 16 KiB がエラーペイロードに `logs` として追加されます。デフォルトの `auto` は handler に対してはこれを行いません |
 
 worker を 2.x に移すのはバージョン番号の変更ではなく、再ビルドと再実行です。イメージが変わるので、これらのページの計測値はもうその worker を表しません。
+
+### 2.1 から 2.4 へ
+
+2026-11-25 に 2.4.0 の wheel を読み、2.1.0 と比較しました（[#134](https://github.com/litkhai/runpod-hols/issues/134)）。
+
+| | 2.4.0 |
+|---|---|
+| JSON チェック | job の入力、handler の戻り値、ストリームの各チャンクは有限の JSON である必要があります（`allow_nan=False`）。`NaN`、`Infinity`、`json` でエンコードできないオブジェクトは送信されず、job はエラーで終わります。アップロード時に失敗した結果は `SerializationError` として報告されます |
+| アップロード中の次の job | 終わった job は結果を送る前にスロットを空けるので、アップロード（SDK のコメントでは約 0.3 秒）の間に次の job を取ります。重なるアップロードは最大 50 |
+| 結果の `stopPod` | `refresh_worker` と同様に受け付けを止め、先行するアップロードが終わってから送ります |
+| ローカル API サーバー | エラーになったストリームは `FAILED` を返し、レスポンスは `null` フィールドを残します |
+| `VolumeCache` | 大きなファイルを範囲ごとに取得し、リトライ回数を報告します |
+
+handler の契約は変わりません。
 
 ### 起動時の fitness check
 
