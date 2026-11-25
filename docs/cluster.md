@@ -21,7 +21,7 @@ permalink: /cluster/
 | GPUs | B300, B200, H200, H100 SXM, A100 SXM (console, 2026-11-07) |
 | Cluster size | 2 Pods or more, 8 GPUs per Pod; the form's slider goes to 32 Pods |
 | Interconnect | 1600 Gbps (A100) to 6400 Gbps (B300) between nodes, exposed as `ens1`–`ens8` |
-| Price, smallest cluster | A100 SXM USD 2.15/GPU-hr = USD 34.37/hr; H100 SXM USD 4.79 = USD 76.61/hr |
+| Price, smallest cluster | A100 SXM USD 2.15/GPU-hr = USD 34.37/hr; H100 SXM USD 4.79 = USD 76.61/hr (console form, 2026-11-07). The catalog has no cluster price; its Secure Pod price on 2026-11-26 was A100 SXM USD 2.19 (16 GPUs: USD 35.04/hr) and H100 SXM USD 4.39 (USD 70.24/hr) |
 | Frameworks | PyTorch distributed, TensorFlow, Slurm, Axolotl |
 
 ### Lab 01 — torchrun and NCCL
@@ -153,7 +153,7 @@ Timeline and log excerpt: [lab README](https://github.com/litkhai/runpod-hols/tr
 | GPU | B300, B200, H200, H100 SXM, A100 SXM (콘솔, 2026-11-07) |
 | 클러스터 규모 | Pod 2개 이상, Pod 당 GPU 8장. 화면의 슬라이더는 32 Pod 까지 |
 | 인터커넥트 | 노드 간 1600 Gbps (A100) ~ 6400 Gbps (B300), `ens1`~`ens8` 인터페이스 |
-| 가장 작은 클러스터 가격 | A100 SXM GPU 시간당 USD 2.15 = 시간당 USD 34.37, H100 SXM USD 4.79 = 시간당 USD 76.61 |
+| 가장 작은 클러스터 가격 | A100 SXM GPU 시간당 USD 2.15 = 시간당 USD 34.37, H100 SXM USD 4.79 = 시간당 USD 76.61 (콘솔 양식, 2026-11-07). 카탈로그에는 클러스터 가격이 없다. 2026-11-26 카탈로그의 Secure Pod 가격은 A100 SXM USD 2.19 (16장: 시간당 USD 35.04), H100 SXM USD 4.39 (시간당 USD 70.24) |
 | 프레임워크 | PyTorch distributed, TensorFlow, Slurm, Axolotl |
 
 ### 실습 01 — torchrun 과 NCCL
@@ -285,7 +285,7 @@ A100 SXM 이 한국 시간 21:42 에 다시 나왔다. `cluster.py` 가 21:48 �
 | GPU | B300, B200, H200, H100 SXM, A100 SXM（控制台，2026-11-07） |
 | 集群规模 | 2 个 Pod 起，每个 Pod 8 块 GPU；表单滑块最多 32 个 Pod |
 | 互连 | 节点间 1600 Gbps（A100）到 6400 Gbps（B300），以 `ens1`–`ens8` 暴露 |
-| 最小集群价格 | A100 SXM 每 GPU 小时 USD 2.15 = 每小时 USD 34.37；H100 SXM USD 4.79 = 每小时 USD 76.61 |
+| 最小集群价格 | A100 SXM 每 GPU 小时 USD 2.15 = 每小时 USD 34.37；H100 SXM USD 4.79 = 每小时 USD 76.61（控制台表单，2026-11-07）。目录中没有集群价格；2026-11-26 目录的 Secure Pod 价格为 A100 SXM USD 2.19（16 块：每小时 USD 35.04）、H100 SXM USD 4.39（每小时 USD 70.24） |
 | 框架 | PyTorch distributed, TensorFlow, Slurm, Axolotl |
 
 ### 实验 01 — torchrun 与 NCCL
@@ -417,7 +417,7 @@ A100 SXM 在韩国时间 21:42 再次出现；`cluster.py` 在 21:48 创建集�
 | GPU | B300, B200, H200, H100 SXM, A100 SXM（コンソール、2026-11-07） |
 | クラスタ規模 | 2 Pod 以上、Pod あたり GPU 8 基。フォームのスライダーは 32 Pod まで |
 | インターコネクト | ノード間 1600 Gbps（A100）〜 6400 Gbps（B300）、`ens1`–`ens8` として公開 |
-| 最小クラスタの価格 | A100 SXM は GPU 時間あたり USD 2.15 = 時間あたり USD 34.37、H100 SXM は USD 4.79 = 時間あたり USD 76.61 |
+| 最小クラスタの価格 | A100 SXM は GPU 時間あたり USD 2.15 = 時間あたり USD 34.37、H100 SXM は USD 4.79 = 時間あたり USD 76.61（コンソールのフォーム、2026-11-07）。カタログにはクラスタ価格がありません。2026-11-26 のカタログの Secure Pod 価格は A100 SXM USD 2.19（16 基で時間あたり USD 35.04）、H100 SXM USD 4.39（時間あたり USD 70.24）です |
 | フレームワーク | PyTorch distributed, TensorFlow, Slurm, Axolotl |
 
 ### ラボ 01 — torchrun と NCCL

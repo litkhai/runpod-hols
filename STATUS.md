@@ -57,6 +57,5 @@ Tracked as issues — [all open](https://github.com/litkhai/runpod-hols/issues) 
 [needs a re-run](https://github.com/litkhai/runpod-hols/issues?q=is%3Aopen+label%3Are-verify) ·
 [new labs](https://github.com/litkhai/runpod-hols/issues?q=is%3Aopen+label%3Aenhancement).
 
-- Re-verify: [#37](https://github.com/litkhai/runpod-hols/issues/37) `runpod` SDK 2.x ·
-  [#65](https://github.com/litkhai/runpod-hols/issues/65) FlashBoot Standard mode.
-- New labs: [#19](https://github.com/litkhai/runpod-hols/issues/19) the cluster track — [#52](https://github.com/litkhai/runpod-hols/issues/52) stage 2 closed as a recorded failure (InfiniBand fatal errors; Runpod support traced both to host PCIe faults, [#97](https://github.com/litkhai/runpod-hols/issues/97)). Serverless: [#62](https://github.com/litkhai/runpod-hols/issues/62) load-balancing endpoints, [#63](https://github.com/litkhai/runpod-hols/issues/63) Bulk Requests. Pod: [#64](https://github.com/litkhai/runpod-hols/issues/64) Global volume.
+- Re-verify: [#143](https://github.com/litkhai/runpod-hols/issues/143) pinned lab dependencies behind their latest release (audit 2026-11-26).
+- New labs: [#19](https://github.com/litkhai/runpod-hols/issues/19) the cluster track — REST v2 create not run yet: no placeable A100 SXM cluster on 2026-11-24 or 2026-11-25; [#52](https://github.com/litkhai/runpod-hols/issues/52) stage 2 closed as a recorded failure (host PCIe faults, [#97](https://github.com/litkhai/runpod-hols/issues/97)).

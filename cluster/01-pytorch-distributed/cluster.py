@@ -36,7 +36,8 @@ PODS, PER_POD = 2, 8
 IMAGE = "runpod/pytorch:1.0.7-cu1300-torch291-ubuntu2404-cluster"
 REMOTE = "/workspace/dist"
 FILES = ["run.sh", "nccl_bench.py", "ddp_train.py"]
-MAX_PER_HR = 80.0  # the account's spend limit; A100 16 x 2.148 = 34.37, H100 16 x 4.788 = 76.61
+MAX_PER_HR = 80.0  # the account's spend limit. Console form 2026-11-07: A100 16 x 2.148 = 34.37, H100 16 x 4.788 = 76.61;
+# catalog Secure Pod price 2026-11-26: A100 16 x 2.19 = 35.04, H100 16 x 4.39 = 70.24 (#142).
 # --gpus: the first type in stock wins; its short name goes into the results tag.
 # --gpus: 먼저 재고가 나온 종류로 만들고, 결과 태그에 그 짧은 이름을 넣는다.
 SHORT = {"NVIDIA A100-SXM4-80GB": "A100SXM", "NVIDIA H100 80GB HBM3": "H100SXM"}

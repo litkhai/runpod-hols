@@ -39,7 +39,9 @@ SOURCES = [
     ("vLLM v0.31.0 — vllm/v1/metrics/loggers.py", "https://raw.githubusercontent.com/vllm-project/vllm/v0.31.0/vllm/v1/metrics/loggers.py",
      [r'name="vllm:num_preemptions"']),
     ("PyPI — vllm 0.31.0 requires_dist", "https://pypi.org/pypi/vllm/0.31.0/json", None),
-    ("Runpod REST API v1 — OpenAPI spec", "https://rest.runpod.io/v1/openapi.json", None),
+    # REST v1 (rest.runpod.io) was retired 2026-11-15 and its host no longer resolves; the v1
+    # excerpt in evidence/excerpts.md is kept as read on 2026-10-07. v2 is read instead (#142).
+    ("Runpod REST API v2 — OpenAPI spec", "https://api.runpod.io/v2/openapi.json", None),
 ]
 
 
