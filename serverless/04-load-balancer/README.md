@@ -30,10 +30,11 @@
 | `Dockerfile` | `python:3.11-slim`, `PORT=80`, `PORT_HEALTH=80` |
 | `bench.py` | Idle for `--gap` seconds, then one cold and `--warm` warm requests to each endpoint; load-balancer calls retry while refused, and every attempt is kept |
 | `results/run1.json`, `run2.json` | The two runs below |
+| `results/run3_rest_v2.json` | The REST v2 run on 2026-11-26 |
 
 ### Deploy
 
-REST v1, current when this lab ran, could not create one: `POST /endpoints` had no endpoint-type field. REST v2's `POST /v2/serverless` takes `type: LOAD_BALANCER` (spec read 2026-11-24, not tried here — [#101](https://github.com/litkhai/runpod-hols/issues/101)). The lab was built in the console:
+REST v1, current when this lab ran, could not create one: `POST /endpoints` had no endpoint-type field. REST v2's `POST /v2/serverless` takes `type: LOAD_BALANCER` (spec read 2026-11-24, [#101](https://github.com/litkhai/runpod-hols/issues/101)); it was run on 2026-11-26 — see [Re-run on REST v2](#re-run-on-rest-v2-with-fastapi-0165-2026-11-26). The lab was built in the console:
 
 1. **Serverless → New endpoint → Deploy from a GitHub repository**, pick this repository.
 2. **Branch** `main`, **Dockerfile path** `/serverless/04-load-balancer/Dockerfile`, **Advanced settings → Build context** `/serverless/04-load-balancer`.
@@ -67,6 +68,27 @@ The two endpoints ran on different CPU instances, and the load-balancing form ca
 
 **When to use it:** latency-sensitive HTTP or streaming APIs with a warm worker (Active workers ≥ 1, or steady traffic), and clients that retry. Keep the queue for long jobs, batches, and anything that must not be dropped while scaling from zero.
 
+### Re-run on REST v2 with FastAPI 0.165 (2026-11-26)
+
+After the bump to `fastapi==0.165.0` and `uvicorn==0.54.0` ([#143](https://github.com/litkhai/runpod-hols/issues/143)), the image was built locally and pushed to Docker Hub (`litkhai/runpod-hols-lb:fastapi0.165`), and the endpoint was created over REST v2 instead of the console:
+
+```json
+{"name": "hol-143-lb", "type": "LOAD_BALANCER", "image": "docker.io/litkhai/runpod-hols-lb:fastapi0.165",
+ "cpu": [{"id": "cpu3c", "vcpuCount": 2}], "scaling": {"type": "REQUEST_COUNT", "requestCount": 1},
+ "workers": {"min": 0, "max": 1}, "env": {"PORT": "80", "PORT_HEALTH": "80"}}
+```
+
+`GET /ping` answered 200 35.5 s after the create, `POST /hello` worked, then `bench.py` ran against it and `01-hello-world` (`--gap 60 --warm 5`):
+
+| | Load balancer (`cpu3c`, 2 vCPU) | Queue (01-hello-world) |
+|---|---|---|
+| Cold request, total | 32.6 s, one attempt, HTTP 200 | 3.4 s (`delayTime` 2.5 s) |
+| Warm requests | 0.31–1.01 s | 0.68–0.71 s (`delayTime` 90–97 ms) |
+
+- **The REST create works** with the body above; no console step was needed. The endpoint was deleted afterwards.
+- **No 502 this time:** the cold request was held for 32.6 s and then answered, where both November 7 runs were refused after 28–33 s.
+- **The queue side closed most of the gap.** On SDK 2.4.0 the queue endpoint's warm `delayTime` is about 0.1 s (0.83–0.89 s on 2026-11-07), so warm requests took 0.68–0.71 s; the load balancer's fastest were still about twice as fast.
+
 ---
 
 ## 한국어
@@ -95,10 +117,11 @@ The two endpoints ran on different CPU instances, and the load-balancing form ca
 | `Dockerfile` | `python:3.11-slim`, `PORT=80`, `PORT_HEALTH=80` |
 | `bench.py` | `--gap` 초 쉰 뒤 각 엔드포인트에 콜드 1건, 웜 `--warm` 건. 로드밸런서 호출은 거절되면 재시도하고 모든 시도를 남긴다 |
 | `results/run1.json`, `run2.json` | 아래 두 번의 실행 |
+| `results/run3_rest_v2.json` | 2026-11-26 REST v2 실행 |
 
 ### 배포
 
-이 실습 당시의 REST v1 로는 만들 수 없었다. `POST /endpoints` 에 엔드포인트 유형 필드가 없었다. REST v2 의 `POST /v2/serverless` 는 `type: LOAD_BALANCER` 를 받는다 (2026-11-24 스펙 확인, 여기서 시도하지 않음 — [#101](https://github.com/litkhai/runpod-hols/issues/101)). 실습은 콘솔에서 만들었다:
+이 실습 당시의 REST v1 로는 만들 수 없었다. `POST /endpoints` 에 엔드포인트 유형 필드가 없었다. REST v2 의 `POST /v2/serverless` 는 `type: LOAD_BALANCER` 를 받는다 (2026-11-24 스펙 확인, [#101](https://github.com/litkhai/runpod-hols/issues/101)). 2026-11-26 에 실제로 만들어 봤다. 아래 [REST v2 재실행](#rest-v2-재실행-fastapi-0165-2026-11-26) 참고. 실습은 콘솔에서 만들었다:
 
 1. **Serverless → New endpoint → Deploy from a GitHub repository**, 이 저장소 선택.
 2. **Branch** `main`, **Dockerfile path** `/serverless/04-load-balancer/Dockerfile`, **Advanced settings → Build context** `/serverless/04-load-balancer`.
@@ -131,3 +154,18 @@ python3 bench.py <로드밸런서_엔드포인트_id> <큐_엔드포인트_id> -
 두 엔드포인트는 서로 다른 CPU 인스턴스에서 돌았다. 로드밸런싱 생성 화면은 32 vCPU 옵션이 이미 선택된 채로 열렸으니 배포 전에 확인할 것. hello-world 는 코어를 쓰지 않으므로 지연 차이는 하드웨어가 아니라 라우팅 방식에서 온다.
 
 **언제 쓰나:** 웜 워커가 있고(Active workers ≥ 1, 또는 꾸준한 트래픽) 클라이언트가 재시도하는, 지연에 민감한 HTTP·스트리밍 API. 긴 작업, 배치, 0 에서 확장하는 동안 버려지면 안 되는 요청은 큐를 쓴다.
+
+### REST v2 재실행, FastAPI 0.165 (2026-11-26)
+
+`fastapi==0.165.0`, `uvicorn==0.54.0` 으로 올린 뒤 ([#143](https://github.com/litkhai/runpod-hols/issues/143)), 이미지를 로컬에서 빌드해 Docker Hub 에 올리고 (`litkhai/runpod-hols-lb:fastapi0.165`), 콘솔 대신 REST v2 로 엔드포인트를 만들었다. 본문은 위 영어 절과 같다.
+
+생성 35.5초 뒤 `GET /ping` 이 200 을 돌려줬고 `POST /hello` 도 됐다. 이어서 이 엔드포인트와 `01-hello-world` 에 `bench.py` 를 돌렸다 (`--gap 60 --warm 5`):
+
+| | 로드밸런서 (`cpu3c`, vCPU 2개) | 큐 (01-hello-world) |
+|---|---|---|
+| 콜드 요청, 전체 | 32.6초, 한 번에 HTTP 200 | 3.4초 (`delayTime` 2.5초) |
+| 웜 요청 | 0.31–1.01초 | 0.68–0.71초 (`delayTime` 90–97 ms) |
+
+- **REST 생성이 된다.** 위 본문으로 만들었고 콘솔 단계는 필요 없었다. 끝난 뒤 엔드포인트는 지웠다.
+- **이번에는 502 가 없었다.** 콜드 요청은 32.6초 붙잡혀 있다가 응답을 받았다. 11월 7일 두 번은 28–33초 뒤 거절됐다.
+- **큐 쪽이 차이를 많이 좁혔다.** SDK 2.4.0 에서 큐 엔드포인트의 웜 `delayTime` 은 약 0.1초라 (2026-11-07 에는 0.83–0.89초) 웜 요청이 0.68–0.71초였다. 로드밸런서의 가장 빠른 요청은 여전히 약 두 배 빨랐다.

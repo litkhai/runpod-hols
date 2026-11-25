@@ -7,7 +7,7 @@
 # ⚠️ Applying this creates a Pod that bills per minute. / apply 하면 분 단위로 과금되는 Pod 가 생성된다.
 
 pod_name    = "hol-lab-pod"
-image_name  = "runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404"
+image_name  = "runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404"
 # Check stock first: GET /v2/catalog/gpus?include=AVAILABILITY&product=POD
 # 먼저 재고를 확인: GET /v2/catalog/gpus?include=AVAILABILITY&product=POD
 gpu_type_id = "NVIDIA GeForce RTX 4090"

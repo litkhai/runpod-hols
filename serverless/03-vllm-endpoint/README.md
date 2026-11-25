@@ -14,7 +14,7 @@
 
 | | Lab 02 | Lab 03 |
 |---|---|---|
-| Worker code | Your `handler.py`, built from GitHub | None — `runpod/worker-v1-vllm:v2.30.2` from Docker Hub |
+| Worker code | Your `handler.py`, built from GitHub | None — `runpod/worker-v1-vllm:v2.32.0` from Docker Hub (v2.30.2 until 2026-11-26) |
 | Deploy | Console (GitHub builds are console-only) | `deploy.py`, REST API |
 | Client | `runsync` with Runpod's job format | OpenAI SDK against `/openai/v1` |
 | Serving | transformers, one request at a time | vLLM, continuous batching |
@@ -27,7 +27,7 @@
 | `chat.py` | Lists models, sends one chat completion and one streamed completion |
 | `teardown.py` | Deletes the endpoint, then the template |
 | `common.py` | `.env` loading, REST calls, the state file |
-| `requirements.txt` | `openai~=3.46` — the control plane is standard library |
+| `requirements.txt` | `openai~=3.59` — the control plane is standard library |
 
 ### Step 1 — Setup
 
@@ -119,6 +119,19 @@ Also seen:
 | Stream | First token 0.77 s |
 | `teardown.py` | Endpoint and template deleted at once — no 90-minute template hold |
 
+### Re-run on worker-vllm v2.32.0 (2026-11-26)
+
+Same three scripts after the bump ([#143](https://github.com/litkhai/runpod-hols/issues/143)): `runpod/worker-v1-vllm:v2.32.0` (vLLM 0.34.0, Runpod worker SDK 2.3.0 per its release notes), `openai` 3.59.0, same pools.
+
+| Step | Result |
+|---|---|
+| `chat.py` models | Listed after 129 s, including the cold start |
+| Chat | 1.0 s, 40 + 20 tokens |
+| Stream | First token 0.65 s, all ten chunks by 0.76 s |
+| `teardown.py` | Endpoint and template deleted at once |
+
+The first `chat.py` run answered; no retry was needed.
+
 ### What was run
 
 2026-11-05, `runpod/worker-v1-vllm:v2.30.2` (vLLM 0.32.0, Runpod worker SDK 1.12.0), `Qwen/Qwen2.5-1.5B-Instruct`, `MAX_MODEL_LEN` 4096, RTX 4090 in US-NC-1, FlashBoot on, idle timeout 5 s.
@@ -146,7 +159,7 @@ Not run: a second cold start, FlashBoot off, concurrency or throughput, the Resp
 
 | | Lab 02 | Lab 03 |
 |---|---|---|
-| 워커 코드 | 직접 쓴 `handler.py`, GitHub 에서 빌드 | 없음 — Docker Hub 의 `runpod/worker-v1-vllm:v2.30.2` |
+| 워커 코드 | 직접 쓴 `handler.py`, GitHub 에서 빌드 | 없음 — Docker Hub 의 `runpod/worker-v1-vllm:v2.32.0` (2026-11-26 전까지 v2.30.2) |
 | 배포 | 콘솔 (GitHub 빌드는 콘솔 전용) | `deploy.py`, REST API |
 | 클라이언트 | Runpod 작업 형식의 `runsync` | `/openai/v1` 에 OpenAI SDK |
 | 서빙 | transformers, 한 번에 요청 하나 | vLLM, continuous batching |
@@ -159,7 +172,7 @@ Not run: a second cold start, FlashBoot off, concurrency or throughput, the Resp
 | `chat.py` | 모델 목록, 채팅 1회, 스트리밍 1회 |
 | `teardown.py` | 엔드포인트 삭제 후 템플릿 삭제 |
 | `common.py` | `.env` 로딩, REST 호출, 상태 파일 |
-| `requirements.txt` | `openai~=3.46` — 제어 쪽은 표준 라이브러리만 사용 |
+| `requirements.txt` | `openai~=3.59` — 제어 쪽은 표준 라이브러리만 사용 |
 
 ### 1단계 — 준비
 
@@ -250,6 +263,19 @@ vLLM 자체는 77초였습니다. 나머지 14분은 플랫폼 쪽입니다. 이
 | 채팅 | 1.6초, 40 + 20 토큰 |
 | 스트림 | 첫 토큰 0.77초 |
 | `teardown.py` | 엔드포인트와 템플릿 바로 삭제 — 90분 템플릿 대기 없음 |
+
+### worker-vllm v2.32.0 재실행 (2026-11-26)
+
+버전을 올린 뒤 같은 세 스크립트로 다시 실행했습니다 ([#143](https://github.com/litkhai/runpod-hols/issues/143)). `runpod/worker-v1-vllm:v2.32.0` (릴리스 노트 기준 vLLM 0.34.0, Runpod 워커 SDK 2.3.0), `openai` 3.59.0, 풀은 같습니다.
+
+| 단계 | 결과 |
+|---|---|
+| `chat.py` 모델 목록 | 콜드 스타트 포함 129초 뒤 나옴 |
+| 채팅 | 1.0초, 40 + 20 토큰 |
+| 스트림 | 첫 토큰 0.65초, 10개 청크 모두 0.76초 안에 |
+| `teardown.py` | 엔드포인트와 템플릿 바로 삭제 |
+
+첫 `chat.py` 실행에서 바로 응답이 왔고 재시도는 필요 없었습니다.
 
 ### 실행 내역
 
