@@ -19,7 +19,7 @@ Runpod Serverless runs your code as an autoscaling HTTP endpoint. Workers start 
 | [01-hello-worker](https://github.com/litkhai/runpod-hols/tree/main/serverless/01-hello-worker) | Ready | handler → local test → Docker image → deploy |
 | [02-llm-chat](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat) | Ready | Small instruct model from GitHub, weights from Runpod's cached-model store |
 | [03-vllm-endpoint](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) | Run 2026-11-05 | Prebuilt `worker-vllm` image deployed from a script, OpenAI SDK client |
-| [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | Run 2026-11-07 | HTTP-server worker on a load-balancing endpoint, latency against a queue endpoint |
+| [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | Run 2026-11-07; created over REST v2 2026-11-26 | HTTP-server worker on a load-balancing endpoint, latency against a queue endpoint |
 | [05-bulk-requests](https://github.com/litkhai/runpod-hols/tree/main/serverless/05-bulk-requests) | Run 2026-11-07 | Bulk Requests: batches on a dedicated worker, checked against billing |
 | [06-autoscaling](https://github.com/litkhai/runpod-hols/tree/main/serverless/06-autoscaling) | Run 2026-11-07 | Queue delay vs request count scalers, per-worker concurrency |
 | [07-streaming](https://github.com/litkhai/runpod-hols/tree/main/serverless/07-streaming) | Run 2026-11-07 | `/stream` chunk latency, the cost of each `yield`, `/runsync` with a generator |
@@ -193,7 +193,7 @@ Lab 02 deploys `Qwen/Qwen2.5-1.5B-Instruct` from GitHub, with the weights in the
 The 12 s is container start, imports, a 2.37 s model load and the SDK's fitness checks. The image was already on the host — that pull happens right after a build.
 
 <div class="warn" markdown="1">
-**A 16 GB or 24 GB pool can hand you a Blackwell GPU.** The pools include `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` slices (sm_120). A CUDA 12.6 torch stops at sm_90, so the worker logged `no kernel image is available for execution on the device`, then `Worker is unhealthy, exiting.` The same image had served fine on an RTX A5000. The fix is a CUDA 12.8 base, `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime`, plus a minimum CUDA version of 12.8 on the endpoint so older drivers are not picked. With that base the model loaded from cache in 1.49 s on the MIG slice.
+**A 16 GB or 24 GB pool can hand you a Blackwell GPU.** The pools include `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` slices (sm_120). A CUDA 12.6 torch stops at sm_90, so the worker logged `no kernel image is available for execution on the device`, then `Worker is unhealthy, exiting.` The same image had served fine on an RTX A5000. The fix is a CUDA 12.8 base, `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime`, plus a minimum CUDA version of 12.8 on the endpoint so older drivers are not picked. With that base the model loaded from cache in 1.49 s on the MIG slice. Since 2026-11-26 the lab uses `pytorch/pytorch:2.15.0-cuda13.2-cudnn9-runtime` and CUDA 13.2 on the endpoint: that day every GPU with Serverless capacity in these pools reported CUDA 13.2 only, and the image ran on an RTX A4500 ([#143](https://github.com/litkhai/runpod-hols/issues/143)).
 </div>
 
 <figure class="shot"><a href="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}" alt="GPU configuration split into Previous generation and Latest generation tabs" loading="lazy" width="1400" height="998"></a><figcaption>The console now separates the pools into <strong>Previous generation</strong> and <strong>Latest generation</strong> ("require a CUDA 12.8+ image"). 02-llm-chat has 16 GB and 24 GB ticked here and a 24 GB pool on the Latest tab, so the form warns "You selected GPUs from both generations" — the situation above.</figcaption></figure>
@@ -208,7 +208,7 @@ The 12 s is container start, imports, a 2.37 s model load and the SDK's fitness 
 
 ### Lab 03 — vLLM endpoint
 
-Lab 03 deploys Runpod's prebuilt `runpod/worker-v1-vllm:v2.30.2` with `Qwen/Qwen2.5-1.5B-Instruct` from a script, and calls it with the OpenAI SDK at `https://api.runpod.ai/v2/<endpoint>/openai/v1`. Run once on 2026-11-05 on an RTX 4090, FlashBoot on; [the lab README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) has the full record.
+Lab 03 deploys Runpod's prebuilt `runpod/worker-v1-vllm:v2.32.0` with `Qwen/Qwen2.5-1.5B-Instruct` from a script, and calls it with the OpenAI SDK at `https://api.runpod.ai/v2/<endpoint>/openai/v1`. Run once on 2026-11-05 on an RTX 4090 with v2.30.2, FlashBoot on, and again on 2026-11-26 with v2.32.0 (vLLM 0.34.0): models listed after 129 s including the cold start, chat 1.0 s, first streamed token 0.65 s; [the lab README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) has the full record.
 
 | Once a worker was up | Result |
 |---|---|
@@ -366,7 +366,7 @@ Runpod Serverless 는 코드를 오토스케일 HTTP 엔드포인트로 실행�
 | [01-hello-worker](https://github.com/litkhai/runpod-hols/tree/main/serverless/01-hello-worker) | 준비됨 | handler → 로컬 테스트 → Docker 이미지 → 배포 |
 | [02-llm-chat](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat) | 준비됨 | GitHub 연동으로 소형 instruct 모델 배포, 가중치는 Runpod 모델 캐시 |
 | [03-vllm-endpoint](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) | 2026-11-05 실행 | 미리 빌드된 `worker-vllm` 이미지를 스크립트로 배포, OpenAI SDK 클라이언트 |
-| [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | 2026-11-07 실행 | 로드밸런싱 엔드포인트의 HTTP 서버 워커, 큐 엔드포인트와 지연 비교 |
+| [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | 2026-11-07 실행, 2026-11-26 REST v2 로 생성 | 로드밸런싱 엔드포인트의 HTTP 서버 워커, 큐 엔드포인트와 지연 비교 |
 | [05-bulk-requests](https://github.com/litkhai/runpod-hols/tree/main/serverless/05-bulk-requests) | 2026-11-07 실행 | Bulk Requests: 전용 워커의 배치, 청구 내역으로 확인 |
 | [06-autoscaling](https://github.com/litkhai/runpod-hols/tree/main/serverless/06-autoscaling) | 2026-11-07 실행 | Queue delay 와 Request count 스케일러, 워커당 동시성 |
 | [07-streaming](https://github.com/litkhai/runpod-hols/tree/main/serverless/07-streaming) | 2026-11-07 실행 | `/stream` 청크 지연, `yield` 한 번의 비용, 제너레이터와 `/runsync` |
@@ -540,7 +540,7 @@ REST v2 는 콘솔 **Metrics** 탭의 시계열과 엔드포인트별 워커·�
 12초는 컨테이너 기동, import, 모델 로드 2.37초, SDK fitness check 를 합친 시간입니다. 이미지는 이미 호스트에 있었습니다. 빌드 직후에 pull 이 일어나기 때문입니다.
 
 <div class="warn" markdown="1">
-**16 GB, 24 GB 풀에서 Blackwell GPU 가 배정될 수 있습니다.** 이 풀에는 `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` 조각(sm_120)이 섞여 있습니다. CUDA 12.6 torch 는 sm_90 까지만 지원하므로 워커가 `no kernel image is available for execution on the device` 를 남기고 `Worker is unhealthy, exiting.` 으로 종료했습니다. 같은 이미지가 RTX A5000 에서는 정상 동작했습니다. 해결책은 CUDA 12.8 베이스 `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime` 로 바꾸고, 엔드포인트의 최소 CUDA 버전을 12.8 로 지정해 오래된 드라이버가 선택되지 않게 하는 것입니다. 이 베이스로 MIG 조각에서 캐시로부터 1.49초 만에 모델을 올렸습니다.
+**16 GB, 24 GB 풀에서 Blackwell GPU 가 배정될 수 있습니다.** 이 풀에는 `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` 조각(sm_120)이 섞여 있습니다. CUDA 12.6 torch 는 sm_90 까지만 지원하므로 워커가 `no kernel image is available for execution on the device` 를 남기고 `Worker is unhealthy, exiting.` 으로 종료했습니다. 같은 이미지가 RTX A5000 에서는 정상 동작했습니다. 해결책은 CUDA 12.8 베이스 `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime` 로 바꾸고, 엔드포인트의 최소 CUDA 버전을 12.8 로 지정해 오래된 드라이버가 선택되지 않게 하는 것입니다. 이 베이스로 MIG 조각에서 캐시로부터 1.49초 만에 모델을 올렸습니다. 2026-11-26 부터 실습은 `pytorch/pytorch:2.15.0-cuda13.2-cudnn9-runtime` 과 엔드포인트 CUDA 13.2 를 씁니다. 그날 이 풀들에서 Serverless 여유가 있는 GPU 는 모두 CUDA 13.2 만 보고했고, 이미지는 RTX A4500 에서 돌았습니다 ([#143](https://github.com/litkhai/runpod-hols/issues/143)).
 </div>
 
 <figure class="shot"><a href="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}" alt="Previous generation 과 Latest generation 탭으로 나뉜 GPU configuration" loading="lazy" width="1400" height="998"></a><figcaption>콘솔은 이제 풀을 <strong>Previous generation</strong> 과 <strong>Latest generation</strong> ("CUDA 12.8+ 이미지 필요") 으로 나눈다. 02-llm-chat 은 여기서 16 GB 와 24 GB 를, Latest 탭에서 24 GB 풀을 골라 두어서 "You selected GPUs from both generations" 경고가 뜬다. 위에서 설명한 바로 그 상황이다.</figcaption></figure>
@@ -555,7 +555,7 @@ REST v2 는 콘솔 **Metrics** 탭의 시계열과 엔드포인트별 워커·�
 
 ### 실습 03 — vLLM 엔드포인트
 
-실습 03 은 Runpod 이 미리 빌드한 `runpod/worker-v1-vllm:v2.30.2` 에 `Qwen/Qwen2.5-1.5B-Instruct` 를 스크립트로 배포하고, OpenAI SDK 로 `https://api.runpod.ai/v2/<endpoint>/openai/v1` 를 호출합니다. 2026-11-05 RTX 4090, FlashBoot 켬으로 한 번 실행했습니다. 전체 기록은 [실습 README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) 에 있습니다.
+실습 03 은 Runpod 이 미리 빌드한 `runpod/worker-v1-vllm:v2.32.0` 에 `Qwen/Qwen2.5-1.5B-Instruct` 를 스크립트로 배포하고, OpenAI SDK 로 `https://api.runpod.ai/v2/<endpoint>/openai/v1` 를 호출합니다. 2026-11-05 RTX 4090, FlashBoot 켬, v2.30.2 로 실행했고, 2026-11-26 v2.32.0 (vLLM 0.34.0) 으로 다시 실행했습니다. 콜드 스타트를 포함해 129초 뒤 모델 목록이 나왔고, 채팅 1.0초, 스트림 첫 토큰 0.65초였습니다. 전체 기록은 [실습 README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) 에 있습니다.
 
 | 워커가 뜬 뒤 | 결과 |
 |---|---|
@@ -713,7 +713,7 @@ Runpod Serverless 将你的代码作为自动扩缩的 HTTP 端点运行。请�
 | [01-hello-worker](https://github.com/litkhai/runpod-hols/tree/main/serverless/01-hello-worker) | 就绪 | handler → 本地测试 → Docker 镜像 → 部署 |
 | [02-llm-chat](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat) | 就绪 | 从 GitHub 部署小型 instruct 模型，权重来自 Runpod 的缓存模型存储 |
 | [03-vllm-endpoint](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) | 2026-11-05 已运行 | 用脚本部署预构建的 `worker-vllm` 镜像，OpenAI SDK 客户端 |
-| [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | 2026-11-07 已运行 | 负载均衡端点上的 HTTP 服务器 worker，与队列端点比较延迟 |
+| [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | 2026-11-07 已运行；2026-11-26 通过 REST v2 创建 | 负载均衡端点上的 HTTP 服务器 worker，与队列端点比较延迟 |
 | [05-bulk-requests](https://github.com/litkhai/runpod-hols/tree/main/serverless/05-bulk-requests) | 2026-11-07 已运行 | Bulk Requests：专用 worker 上的批处理，用账单核对 |
 | [06-autoscaling](https://github.com/litkhai/runpod-hols/tree/main/serverless/06-autoscaling) | 2026-11-07 已运行 | Queue delay 与 Request count 扩缩器、每个 worker 的并发 |
 | [07-streaming](https://github.com/litkhai/runpod-hols/tree/main/serverless/07-streaming) | 2026-11-07 已运行 | `/stream` 分块延迟、每次 `yield` 的开销、生成器下的 `/runsync` |
@@ -887,7 +887,7 @@ REST v2 返回控制台 **Metrics** 标签页背后的时间序列，以及每�
 这 12 s 包括容器启动、导入、2.37 s 的模型加载以及 SDK 的 fitness check。镜像已经在主机上——拉取发生在构建之后不久。
 
 <div class="warn" markdown="1">
-**16 GB 或 24 GB 的池可能分配给你一块 Blackwell GPU。** 这些池中包括 `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` 切片（sm_120）。CUDA 12.6 的 torch 只支持到 sm_90，因此 worker 记录了 `no kernel image is available for execution on the device`，随后 `Worker is unhealthy, exiting.`。同一镜像在 RTX A5000 上运行正常。解决方法是换成 CUDA 12.8 基础镜像 `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime`，并在端点上把最低 CUDA 版本设为 12.8，以免选中较旧的驱动。使用该基础镜像后，模型在 MIG 切片上从缓存加载仅用 1.49 s。
+**16 GB 或 24 GB 的池可能分配给你一块 Blackwell GPU。** 这些池中包括 `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` 切片（sm_120）。CUDA 12.6 的 torch 只支持到 sm_90，因此 worker 记录了 `no kernel image is available for execution on the device`，随后 `Worker is unhealthy, exiting.`。同一镜像在 RTX A5000 上运行正常。解决方法是换成 CUDA 12.8 基础镜像 `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime`，并在端点上把最低 CUDA 版本设为 12.8，以免选中较旧的驱动。使用该基础镜像后，模型在 MIG 切片上从缓存加载仅用 1.49 s。自 2026-11-26 起，实验使用 `pytorch/pytorch:2.15.0-cuda13.2-cudnn9-runtime`，端点 CUDA 设为 13.2：当天这些池中有 Serverless 容量的 GPU 都只报告 CUDA 13.2，镜像在 RTX A4500 上运行（[#143](https://github.com/litkhai/runpod-hols/issues/143)）。
 </div>
 
 <figure class="shot"><a href="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}" alt="GPU configuration 分为 Previous generation 和 Latest generation 两个标签页" loading="lazy" width="1400" height="998"></a><figcaption>控制台现在把 GPU 池分成 <strong>Previous generation</strong> 和 <strong>Latest generation</strong>（"需要 CUDA 12.8+ 镜像"）。02-llm-chat 在这里勾选了 16 GB 和 24 GB，在 Latest 标签页又勾选了一个 24 GB 池，因此表单提示 "You selected GPUs from both generations"——正是上面描述的情况。</figcaption></figure>
@@ -902,7 +902,7 @@ REST v2 返回控制台 **Metrics** 标签页背后的时间序列，以及每�
 
 ### 实验 03 — vLLM 端点
 
-实验 03 用脚本部署 Runpod 预构建的 `runpod/worker-v1-vllm:v2.30.2` 和 `Qwen/Qwen2.5-1.5B-Instruct`，并用 OpenAI SDK 通过 `https://api.runpod.ai/v2/<endpoint>/openai/v1` 调用。于 2026-11-05 在 RTX 4090 上运行一次，FlashBoot 开启；完整记录见[实验 README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint)。
+实验 03 用脚本部署 Runpod 预构建的 `runpod/worker-v1-vllm:v2.32.0` 和 `Qwen/Qwen2.5-1.5B-Instruct`，并用 OpenAI SDK 通过 `https://api.runpod.ai/v2/<endpoint>/openai/v1` 调用。于 2026-11-05 在 RTX 4090 上用 v2.30.2 运行，FlashBoot 开启；2026-11-26 用 v2.32.0（vLLM 0.34.0）再次运行：含冷启动 129 秒后列出模型，聊天 1.0 秒，流式首个 token 0.65 秒；完整记录见[实验 README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint)。
 
 | worker 启动之后 | 结果 |
 |---|---|
@@ -1060,7 +1060,7 @@ Runpod Serverless は、コードをオートスケールする HTTP エンド�
 | [01-hello-worker](https://github.com/litkhai/runpod-hols/tree/main/serverless/01-hello-worker) | 準備済み | handler → ローカルテスト → Docker イメージ → デプロイ |
 | [02-llm-chat](https://github.com/litkhai/runpod-hols/tree/main/serverless/02-llm-chat) | 準備済み | GitHub から小型の instruct モデル、重みは Runpod のキャッシュモデルストアから |
 | [03-vllm-endpoint](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) | 2026-11-05 実行 | ビルド済みの `worker-vllm` イメージをスクリプトでデプロイ、OpenAI SDK クライアント |
-| [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | 2026-11-07 実行 | ロードバランシング・エンドポイント上の HTTP サーバーワーカー、キュー型エンドポイントと遅延を比較 |
+| [04-load-balancer](https://github.com/litkhai/runpod-hols/tree/main/serverless/04-load-balancer) | 2026-11-07 実行、2026-11-26 に REST v2 で作成 | ロードバランシング・エンドポイント上の HTTP サーバーワーカー、キュー型エンドポイントと遅延を比較 |
 | [05-bulk-requests](https://github.com/litkhai/runpod-hols/tree/main/serverless/05-bulk-requests) | 2026-11-07 実行 | Bulk Requests：専用ワーカー上のバッチを請求で確認 |
 | [06-autoscaling](https://github.com/litkhai/runpod-hols/tree/main/serverless/06-autoscaling) | 2026-11-07 実行 | Queue delay と Request count のスケーラー、ワーカーあたりの同時実行数 |
 | [07-streaming](https://github.com/litkhai/runpod-hols/tree/main/serverless/07-streaming) | 2026-11-07 実行 | `/stream` のチャンク遅延、`yield` 1 回のコスト、ジェネレーターと `/runsync` |
@@ -1234,7 +1234,7 @@ REST v2 は、コンソールの **Metrics** タブの時系列と、endpoint �
 12 s はコンテナの起動、import、2.37 s のモデルロード、SDK の fitness check を合わせたものです。イメージはすでにホスト上にありました。pull はビルドの直後に行われます。
 
 <div class="warn" markdown="1">
-**16 GB や 24 GB のプールで Blackwell GPU が割り当てられることがあります。** これらのプールには `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` のスライス（sm_120）が含まれます。CUDA 12.6 の torch は sm_90 までなので、worker は `no kernel image is available for execution on the device` を出し、続いて `Worker is unhealthy, exiting.` となりました。同じイメージは RTX A5000 では問題なく動いていました。対処は CUDA 12.8 ベースの `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime` にし、さらにエンドポイントの最小 CUDA バージョンを 12.8 にして古いドライバが選ばれないようにすることです。このベースで、MIG スライス上でモデルがキャッシュから 1.49 s でロードされました。
+**16 GB や 24 GB のプールで Blackwell GPU が割り当てられることがあります。** これらのプールには `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` のスライス（sm_120）が含まれます。CUDA 12.6 の torch は sm_90 までなので、worker は `no kernel image is available for execution on the device` を出し、続いて `Worker is unhealthy, exiting.` となりました。同じイメージは RTX A5000 では問題なく動いていました。対処は CUDA 12.8 ベースの `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime` にし、さらにエンドポイントの最小 CUDA バージョンを 12.8 にして古いドライバが選ばれないようにすることです。このベースで、MIG スライス上でモデルがキャッシュから 1.49 s でロードされました。2026-11-26 からラボは `pytorch/pytorch:2.15.0-cuda13.2-cudnn9-runtime` とエンドポイントの CUDA 13.2 を使います。その日、これらのプールで Serverless の空きがある GPU はすべて CUDA 13.2 のみを報告し、イメージは RTX A4500 で動きました（[#143](https://github.com/litkhai/runpod-hols/issues/143)）。
 </div>
 
 <figure class="shot"><a href="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}"><img src="{{ '/assets/img/serverless/edit-gpu-generations.webp' | relative_url }}" alt="Previous generation と Latest generation のタブに分かれた GPU configuration" loading="lazy" width="1400" height="998"></a><figcaption>コンソールはプールを <strong>Previous generation</strong> と <strong>Latest generation</strong>（「CUDA 12.8+ のイメージが必要」）に分けるようになりました。02-llm-chat はここで 16 GB と 24 GB を、Latest タブで 24 GB のプールを選んでいるため、"You selected GPUs from both generations" と警告が出ます。上で説明した状況そのものです。</figcaption></figure>
@@ -1249,7 +1249,7 @@ REST v2 は、コンソールの **Metrics** タブの時系列と、endpoint �
 
 ### ラボ 03 — vLLM エンドポイント
 
-ラボ 03 は Runpod のビルド済み `runpod/worker-v1-vllm:v2.30.2` と `Qwen/Qwen2.5-1.5B-Instruct` をスクリプトでデプロイし、OpenAI SDK で `https://api.runpod.ai/v2/<endpoint>/openai/v1` を呼び出します。2026-11-05 に RTX 4090、FlashBoot オンで 1 回実行しました。完全な記録は[ラボの README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) にあります。
+ラボ 03 は Runpod のビルド済み `runpod/worker-v1-vllm:v2.32.0` と `Qwen/Qwen2.5-1.5B-Instruct` をスクリプトでデプロイし、OpenAI SDK で `https://api.runpod.ai/v2/<endpoint>/openai/v1` を呼び出します。2026-11-05 に RTX 4090、FlashBoot オン、v2.30.2 で実行し、2026-11-26 に v2.32.0（vLLM 0.34.0）で再実行しました。コールドスタート込みで 129 秒後にモデル一覧、チャット 1.0 秒、ストリームの最初のトークン 0.65 秒でした。完全な記録は[ラボの README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) にあります。
 
 | worker が起動した後 | 結果 |
 |---|---|

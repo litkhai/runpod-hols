@@ -37,6 +37,8 @@ What changed against the 1.0.8 notes below:
 - **An old template name can be refused.** The first `apply` created the template, then the endpoint failed with `400 endpoint template names must be unique`. The same happens with a direct REST call; a fresh name works. The default `template_name` is now `hol-hello-worker-v2`.
 - **SSH: `ssh.direct` took over four minutes** to appear (EUR-IS-1). sshd answered, but the key on this machine is not registered on the account, so login was not checked.
 
+**Default image `runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404` since 2026-11-26** ([#143](https://github.com/litkhai/runpod-hols/issues/143)); 1.0.7 before. Same CUDA 12.8 and torch 2.9.1. `terraform validate` passed; `apply` was not re-run. The image itself was checked on REST v2 GPU Pods (L4, Secure): SSH, `torch.cuda.is_available()` and a CUDA matmul, and JupyterLab on the 8888 proxy 126 s after create with `startJupyter`.
+
 The rest of this page describes provider 1.0.8 and stays as the record of the October runs.
 
 ### ⚠️ Read This First — Two Blocking Issues
@@ -259,6 +261,8 @@ The provider works for the core cases, but it is young — 9 releases, ~2,000 do
 - **GraphQL 권한이 없는 키로도 됩니다.** 프로바이더는 아직 일부 폐기 예정 속성 (`machine_id`, `volume_encrypted`, 템플릿 `readme`, 엔드포인트 `users`) 을 GraphQL 로 읽습니다. GraphQL None 에서는 그 읽기가 401 이었고, 프로바이더는 경고만 내고 해당 속성을 null 로 두었습니다.
 - **예전 템플릿 이름이 거부될 수 있습니다.** 첫 `apply` 는 템플릿을 만든 뒤 엔드포인트에서 `400 endpoint template names must be unique` 로 실패했습니다. REST 를 직접 호출해도 같고, 새 이름은 됩니다. `template_name` 기본값을 `hol-hello-worker-v2` 로 바꿨습니다.
 - **SSH: `ssh.direct` 가 나타나기까지 4분 넘게 걸렸습니다** (EUR-IS-1). sshd 는 응답했지만 이 머신의 키가 계정에 등록돼 있지 않아 로그인은 확인하지 않았습니다.
+
+**2026-11-26 부터 기본 이미지는 `runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404`** ([#143](https://github.com/litkhai/runpod-hols/issues/143)). 그전에는 1.0.7. CUDA 12.8, torch 2.9.1 은 같다. `terraform validate` 는 통과했고 `apply` 는 다시 하지 않았다. 이미지 자체는 REST v2 GPU Pod (L4, Secure) 에서 확인했다. SSH, `torch.cuda.is_available()` 와 CUDA 행렬곱, `startJupyter` 로 만든 뒤 126초에 8888 프록시의 JupyterLab.
 
 이 페이지의 나머지는 프로바이더 1.0.8 에 관한 것이며, 10월 실행 기록으로 남겨 둡니다.
 

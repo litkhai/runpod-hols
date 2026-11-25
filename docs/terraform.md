@@ -37,6 +37,8 @@ What changed against the 1.0.8 notes below:
 - **An old template name can be refused.** The first `apply` created the template, then the endpoint failed with `400 endpoint template names must be unique`. The same happens with a direct REST call; a fresh name works. The default `template_name` is now `hol-hello-worker-v2`.
 - **SSH: `ssh.direct` took over four minutes** to appear (EUR-IS-1). sshd answered, but the key on this machine is not registered on the account, so login was not checked.
 
+**Default image `runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404` since 2026-11-26** ([#143](https://github.com/litkhai/runpod-hols/issues/143)); 1.0.7 before. Same CUDA 12.8 and torch 2.9.1. `terraform validate` passed; `apply` was not re-run. The image itself was checked on REST v2 GPU Pods (L4, Secure): SSH, `torch.cuda.is_available()` and a CUDA matmul, and JupyterLab on the 8888 proxy 126 s after create with `startJupyter`.
+
 The rest of this page describes provider 1.0.8 and stays as the record of the October runs.
 
 ### Read this first — two blocking issues
@@ -204,6 +206,8 @@ Serverless 와 Pod 트랙에서 콘솔로 직접 하던 작업을 선언적으�
 - **GraphQL 권한이 없는 키로도 됩니다.** 프로바이더는 아직 일부 폐기 예정 속성 (`machine_id`, `volume_encrypted`, 템플릿 `readme`, 엔드포인트 `users`) 을 GraphQL 로 읽습니다. GraphQL None 에서는 그 읽기가 401 이었고, 프로바이더는 경고만 내고 해당 속성을 null 로 두었습니다.
 - **예전 템플릿 이름이 거부될 수 있습니다.** 첫 `apply` 는 템플릿을 만든 뒤 엔드포인트에서 `400 endpoint template names must be unique` 로 실패했습니다. REST 를 직접 호출해도 같고, 새 이름은 됩니다. `template_name` 기본값을 `hol-hello-worker-v2` 로 바꿨습니다.
 - **SSH: `ssh.direct` 가 나타나기까지 4분 넘게 걸렸습니다** (EUR-IS-1). sshd 는 응답했지만 이 머신의 키가 계정에 등록돼 있지 않아 로그인은 확인하지 않았습니다.
+
+**2026-11-26 부터 기본 이미지는 `runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404`** ([#143](https://github.com/litkhai/runpod-hols/issues/143)). 그전에는 1.0.7. CUDA 12.8, torch 2.9.1 은 같다. `terraform validate` 는 통과했고 `apply` 는 다시 하지 않았다. 이미지 자체는 REST v2 GPU Pod (L4, Secure) 에서 확인했다. SSH, `torch.cuda.is_available()` 와 CUDA 행렬곱, `startJupyter` 로 만든 뒤 126초에 8888 프록시의 JupyterLab.
 
 이 페이지의 나머지는 프로바이더 1.0.8 에 관한 것이며, 10월 실행 기록으로 남겨 둡니다.
 
@@ -373,6 +377,8 @@ Provider 1.0.8 调用的是 REST v1，Runpod 已于 2026-11-15 停用。两个�
 - **旧的模板名可能被拒绝。** 第一次 `apply` 创建了模板，随后 endpoint 因 `400 endpoint template names must be unique` 失败。直接调用 REST 也一样；换新名字即可。`template_name` 的默认值已改为 `hol-hello-worker-v2`。
 - **SSH：`ssh.direct` 过了四分多钟才出现**（EUR-IS-1）。sshd 有响应，但本机的密钥未在账号中注册，因此没有验证登录。
 
+**自 2026-11-26 起默认镜像为 `runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404`**（[#143](https://github.com/litkhai/runpod-hols/issues/143)），此前为 1.0.7。CUDA 12.8 和 torch 2.9.1 不变。`terraform validate` 通过，未重新执行 `apply`。镜像本身在 REST v2 GPU Pod（L4，Secure）上检查过：SSH、`torch.cuda.is_available()` 与一次 CUDA 矩阵乘法，以及用 `startJupyter` 创建后 126 秒 8888 代理上的 JupyterLab。
+
 本页其余部分描述的是 provider 1.0.8，作为 10 月运行的记录保留。
 
 ### 请先阅读——两个阻断性问题
@@ -540,6 +546,8 @@ Serverless と Pod のトラックでコンソールから手作業で行うこ�
 - **GraphQL の権限がないキーでも動きます。** プロバイダーはまだ一部の非推奨属性（`machine_id`、`volume_encrypted`、テンプレートの `readme`、endpoint の `users`）を GraphQL から読みます。GraphQL None ではその読み取りが 401 になり、プロバイダーは警告を出して該当属性を null にしました。
 - **古いテンプレート名は拒否されることがあります。** 最初の `apply` はテンプレートを作成した後、endpoint で `400 endpoint template names must be unique` により失敗しました。REST を直接呼んでも同じで、新しい名前なら通ります。`template_name` の既定値を `hol-hello-worker-v2` に変えました。
 - **SSH：`ssh.direct` が現れるまで 4 分以上かかりました**（EUR-IS-1）。sshd は応答しましたが、このマシンのキーがアカウントに登録されていないため、ログインは確認していません。
+
+**2026-11-26 からデフォルトのイメージは `runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404`**（[#143](https://github.com/litkhai/runpod-hols/issues/143)）。それまでは 1.0.7。CUDA 12.8 と torch 2.9.1 は同じです。`terraform validate` は通過し、`apply` は再実行していません。イメージ自体は REST v2 の GPU Pod（L4、Secure）で確認しました。SSH、`torch.cuda.is_available()` と CUDA の行列積、`startJupyter` で作成して 126 秒後の 8888 プロキシの JupyterLab です。
 
 このページの残りはプロバイダー 1.0.8 についての記述で、10 月の実行の記録として残しています。
 

@@ -84,7 +84,7 @@ python launch.py --dry-run
 ```
 About to create a Pod:
     name    hol-pod-01
-    image   runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404
+    image   runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404
     compute CPU only (cpu3c-2-4)
     disks   container 10GB; no volume disk on a CPU Pod — /workspace is on the container disk
 
@@ -209,6 +209,8 @@ The whole run cost under one cent. Not checked: JupyterLab on 8888, `--stop`, a 
 
 About 8 minutes, under one cent.
 
+**Image `runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404`, 2026-11-26** ([#143](https://github.com/litkhai/runpod-hols/issues/143)); `DEFAULT_IMAGE` was 1.0.7 before. `launch.py --gpu` on an L4 (A5000, RTX 2000 Ada and A4000 had no stock): SSH after 188 s, `NVIDIA L4` driver 595.112.07, torch 2.9.1+cu128 with `torch.cuda.is_available()` True and a CUDA matmul, Python 3.12.3, Ubuntu 24.04.5. Port 8888 was not listening — `launch.py` does not ask for JupyterLab (`startJupyter` defaults to false). A separate REST v2 Pod with `startJupyter: true` on the same image served JupyterLab's login page on the 8888 proxy 126 s after create. Both Pods terminated.
+
 ---
 
 ## 한국어
@@ -291,7 +293,7 @@ python launch.py --dry-run
 ```
 About to create a Pod:
     name    hol-pod-01
-    image   runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404
+    image   runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404
     compute CPU only (cpu3c-2-4)
     disks   container 10GB; no volume disk on a CPU Pod — /workspace is on the container disk
 
@@ -415,3 +417,5 @@ SDK 와 콘솔이 다릅니다.
 | 종료 후 `status.py` | `No Pods.`, `currentSpendPerHr` 0 |
 
 약 8분, 1센트 미만.
+
+**이미지 `runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404`, 2026-11-26** ([#143](https://github.com/litkhai/runpod-hols/issues/143)). 그전 `DEFAULT_IMAGE` 는 1.0.7. L4 에서 `launch.py --gpu` (A5000, RTX 2000 Ada, A4000 은 재고 없음): 188초 뒤 SSH, `NVIDIA L4` 드라이버 595.112.07, torch 2.9.1+cu128 에서 `torch.cuda.is_available()` True 와 CUDA 행렬곱, Python 3.12.3, Ubuntu 24.04.5. 8888 포트는 열려 있지 않았다. `launch.py` 가 JupyterLab 을 요청하지 않기 때문이다 (`startJupyter` 기본값 false). 같은 이미지로 `startJupyter: true` 를 준 REST v2 Pod 를 따로 만들었더니 생성 126초 뒤 8888 프록시에서 JupyterLab 로그인 페이지가 나왔다. 두 Pod 모두 삭제했다.

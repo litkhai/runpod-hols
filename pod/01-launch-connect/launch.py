@@ -18,7 +18,7 @@ import sys
 
 from common import POD_ID_FILE, client, confirm, describe, running_pods
 
-DEFAULT_IMAGE = "runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404"
+DEFAULT_IMAGE = "runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404"
 # Smallest Compute-Optimized size: 2 vCPU, 2 GB per vCPU. runpod 2.x sends the
 # flavor and vCPU count from this id; the memory part is checked, not sent.
 # 가장 작은 Compute-Optimized 사양: vCPU 2개, vCPU 당 2GB. runpod 2.x 는 이 id 에서

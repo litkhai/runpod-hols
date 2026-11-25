@@ -18,10 +18,10 @@ import sys
 
 from common import load_state, rest, save_state
 
-# Prebuilt image from runpod-workers/worker-vllm, tag v2.30.2 (Docker Hub, 2026-11-03).
+# Prebuilt image from runpod-workers/worker-vllm, tag v2.32.0 (release 2026-11-19; v2.30.2 until 2026-11-26).
 # No build, no registry auth: the endpoint pulls it directly.
 # runpod-workers/worker-vllm 의 미리 빌드된 이미지. 빌드도 레지스트리 인증도 필요 없다.
-IMAGE = "runpod/worker-v1-vllm:v2.30.2"
+IMAGE = "runpod/worker-v1-vllm:v2.32.0"
 MODEL = "Qwen/Qwen2.5-1.5B-Instruct"
 # REST v2 selects Serverless GPUs by pool (GET /v2/catalog/gpus, `pool`), not by type,
 # and places workers on whichever listed pool has capacity — there is no order.

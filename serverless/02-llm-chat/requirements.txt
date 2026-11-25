@@ -4,5 +4,5 @@
 # 다시 설치하면 수 GB 가 늘고 CUDA 버전이 어긋날 위험이 있다.
 
 runpod~=2.4.0
-transformers~=5.14.1
-accelerate~=1.14.0
+transformers~=5.24.1
+accelerate~=1.16.0

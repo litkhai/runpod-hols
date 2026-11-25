@@ -10,7 +10,7 @@ variable "image_name" {
     Pod image. Official templates live in runpod/containers.
     Pod 이미지. 공식 템플릿은 runpod/containers 에 있다.
   EOT
-  default     = "runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404"
+  default     = "runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404"
 }
 
 variable "gpu_type_id" {

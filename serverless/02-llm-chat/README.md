@@ -41,7 +41,7 @@ Cached models work with public, gated (supply a Hugging Face token) and private-
 | `handler.py` | Loads the model at module scope, then answers one job per call |
 | `model_cache.py` | Resolves the cached snapshot path. Dependency-free, so it is unit-testable without CUDA |
 | `requirements.txt` | `runpod`, `transformers`, `accelerate` — **not** `torch` |
-| `Dockerfile` | `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime` |
+| `Dockerfile` | `pytorch/pytorch:2.15.0-cuda13.2-cudnn9-runtime` (2.9.1 on CUDA 12.8 until 2026-11-26) |
 | `.runpod/hub.json` | Hub metadata, exposes `MODEL_ID` as a configurable env var |
 
 > The SDK's handler contract — control keys, exceptions, streaming, concurrency — is documented in [sdk/worker.md](../../sdk/worker.md).
@@ -94,7 +94,7 @@ Nothing to build locally. Runpod clones the repo, builds the image and stores it
 3. **Branch** `main`, **Dockerfile Path** `/serverless/02-llm-chat/Dockerfile`, **Advanced settings → Build context** `/serverless/02-llm-chat`. The build context is required and confirmed working — without it the build fails with `"/handler.py": not found`. Save it before triggering a build.
 4. In **Endpoint Configuration**, set **Model** to `Qwen/Qwen2.5-1.5B-Instruct`. The console shows the model size and the GPU it suggests. It stores the value as the environment variable `MODEL_NAME`; `handler.py` reads `MODEL_ID` first, then `MODEL_NAME`.
 5. **Active Workers 0**, **Max Workers** 1–2, GPU per the console's suggestion (16GB is ample for 1.5B).
-6. Set the minimum CUDA version to **12.8**. The image's torch is a CUDA 12.8 build, and older drivers cannot run it.
+6. Set the CUDA version to **13.2** or newer. The image's torch is a CUDA 13.2 build, and older drivers cannot run it. (CUDA 12.8 until 2026-11-26.)
 7. **Deploy Endpoint**, then watch the **Builds** tab.
 
 > **"runpod.serverless.start() handler not found in your repo"** may appear before you deploy. The console looks for the handler through GitHub's code search, and this repository is not in that index. The warning was harmless here: the build succeeded and the handler served requests.
@@ -154,6 +154,17 @@ Re-run 2026-11-25 on SDK 2.4.0, after the console rebuilt the endpoint from `mai
 | No prompt (fails by design) | 134 ms | 52 ms |
 
 All four behaved as before: `loaded_from: cache`, `blue` for the `messages` form, and `FAILED` with the handler's message for no prompt. `model_load_seconds` was 3.42 (2.37 on 1.12.0). The first request was slower, but one cold sample on a freshly rebuilt endpoint does not separate the SDK from the host; warm requests matched.
+
+Re-run 2026-11-26 on PyTorch 2.15 / CUDA 13.2, `transformers` 5.24.1, `accelerate` 1.16.0 ([#143](https://github.com/litkhai/runpod-hols/issues/143)). The image was built locally and run on a temporary REST v2 endpoint (pools `AMPERE_16`, `AMPERE_24`, `ADA_24`, `allowedCudaVersions: ["13.2"]`, FlashBoot off), which has no Model field, so the model came from the Hub:
+
+| Request | `delayTime` | `executionTime` |
+|---|---|---|
+| First prompt | 200,190 ms | 2,047 ms |
+| Same prompt again | 103 ms | 955 ms |
+| `messages` form | 95 ms | 212 ms |
+| No prompt (fails by design) | 97 ms | 239 ms |
+
+RTX A4500 in EU-RO-1, `loaded_from: hub`, `model_load_seconds` 39.53. The first request's 200 s is an image pull on a host that had never seen it plus the Hub download; it is not comparable with the console endpoint's cached-model figures above. The PyTorch 2.15 images use the system Python, marked externally managed (PEP 668), so the Dockerfile sets `PIP_BREAK_SYSTEM_PACKAGES=1`.
 
 The worker had pulled the image and the model before the first request — that happens right after a build, and the pull took about 3 minutes. The 12 s is container start, imports, `model_load_seconds` of 2.37 and the SDK's fitness checks (0.46 s). A host that has never seen the image adds the pull.
 
@@ -239,7 +250,7 @@ Runpod 문서에 명시돼 있습니다. *"You aren't billed for worker time whi
 | `handler.py` | 모듈 스코프에서 모델을 로드하고, 호출마다 작업 1건을 처리 |
 | `model_cache.py` | 캐시된 스냅샷 경로 확인. 의존성이 없어 CUDA 없이도 단위 테스트 가능 |
 | `requirements.txt` | `runpod`, `transformers`, `accelerate` — `torch` 는 **없음** |
-| `Dockerfile` | `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime` |
+| `Dockerfile` | `pytorch/pytorch:2.15.0-cuda13.2-cudnn9-runtime` (2026-11-26 전까지 CUDA 12.8 의 2.9.1) |
 | `.runpod/hub.json` | Hub 메타데이터, `MODEL_ID` 를 설정 가능한 환경변수로 노출 |
 
 > SDK 의 핸들러 계약(제어 키, 예외 처리, 스트리밍, 동시성)은 [sdk/worker.md](../../sdk/worker.md) 에 정리돼 있습니다.
@@ -292,7 +303,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 3. **Branch** `main`, **Dockerfile Path** `/serverless/02-llm-chat/Dockerfile`, **Advanced settings → Build context** `/serverless/02-llm-chat`. Build context 는 필수이며 동작이 확인됐습니다. 지정하지 않으면 `"/handler.py": not found` 로 실패합니다. 빌드 트리거 전에 저장하세요.
 4. **Endpoint Configuration** 에서 **Model** 에 `Qwen/Qwen2.5-1.5B-Instruct` 입력. 콘솔이 모델 크기와 권장 GPU 를 표시합니다. 이 값은 환경변수 `MODEL_NAME` 으로 저장됩니다. `handler.py` 는 `MODEL_ID` 를 먼저 읽고, 없으면 `MODEL_NAME` 을 읽습니다.
 5. **Active Workers 0**, **Max Workers** 1~2, GPU 는 콘솔 권장값 (1.5B 에는 16GB 로 충분).
-6. 최소 CUDA 버전을 **12.8** 로 지정. 이미지의 torch 가 CUDA 12.8 빌드라 더 오래된 드라이버에서는 실행되지 않습니다.
+6. CUDA 버전을 **13.2** 이상으로 지정. 이미지의 torch 가 CUDA 13.2 빌드라 더 오래된 드라이버에서는 실행되지 않습니다. (2026-11-26 전까지는 CUDA 12.8.)
 7. **Deploy Endpoint** 후 **Builds** 탭에서 진행 확인.
 
 > 배포 전에 **"runpod.serverless.start() handler not found in your repo"** 경고가 뜰 수 있습니다. 콘솔은 GitHub 코드 검색으로 핸들러를 찾는데, 이 저장소는 그 색인에 없습니다. 이 실습에서는 무해했습니다. 빌드는 성공했고 핸들러는 요청을 처리했습니다.
@@ -352,6 +363,17 @@ curl -X POST "https://api.runpod.ai/v2/$RUNPOD_ENDPOINT_ID/runsync" \
 | 프롬프트 없음 (의도된 실패) | 134 ms | 52 ms |
 
 네 요청 모두 전과 같이 동작했습니다. `loaded_from: cache`였고, `messages` 형식은 `blue`를 답했고, 프롬프트 없는 요청은 핸들러의 메시지와 함께 `FAILED`였습니다. `model_load_seconds`는 3.42초였습니다(1.12.0에서는 2.37초). 첫 요청은 더 느렸지만, 새로 빌드한 엔드포인트에서 콜드 한 번만 잰 값이라 SDK 탓인지 호스트 탓인지 가를 수 없습니다. 웜 요청은 비슷했습니다.
+
+2026-11-26 PyTorch 2.15 / CUDA 13.2, `transformers` 5.24.1, `accelerate` 1.16.0 으로 다시 실행했습니다 ([#143](https://github.com/litkhai/runpod-hols/issues/143)). 이미지를 로컬에서 빌드해 임시 REST v2 엔드포인트(풀 `AMPERE_16`, `AMPERE_24`, `ADA_24`, `allowedCudaVersions: ["13.2"]`, FlashBoot 꺼짐)에서 돌렸습니다. REST 에는 Model 필드가 없어 모델은 Hub 에서 받았습니다.
+
+| 요청 | `delayTime` | `executionTime` |
+|---|---|---|
+| 첫 프롬프트 | 200,190 ms | 2,047 ms |
+| 같은 프롬프트 다시 | 103 ms | 955 ms |
+| `messages` 형식 | 95 ms | 212 ms |
+| 프롬프트 없음 (의도된 실패) | 97 ms | 239 ms |
+
+EU-RO-1 의 RTX A4500, `loaded_from: hub`, `model_load_seconds` 39.53. 첫 요청의 200초는 이미지를 처음 받는 호스트의 이미지 풀과 Hub 다운로드를 합친 값이라, 위의 콘솔 엔드포인트(캐시된 모델) 수치와 비교할 수 없습니다. PyTorch 2.15 이미지는 외부 관리 환경(PEP 668)으로 표시된 시스템 Python 을 써서, Dockerfile 에 `PIP_BREAK_SYSTEM_PACKAGES=1` 을 넣었습니다.
 
 첫 요청 전에 워커가 이미지와 모델을 미리 받아 두었습니다. 빌드 직후에 일어나며, 이미지 받는 데 약 3분이 걸렸습니다. 12초는 컨테이너 시작, import, `model_load_seconds` 2.37초, SDK 시작 점검 0.46초를 합친 값입니다. 이미지를 처음 받는 호스트라면 그 시간이 더해집니다.
 

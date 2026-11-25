@@ -7,22 +7,24 @@
 # 공식 PyTorch runtime 이미지를 쓰면 torch 가 이미 들어 있고 CUDA 버전도 맞다.
 # pip 로 따로 설치하면 이미지가 수 GB 커지고 버전 불일치 위험도 생긴다.
 #
-# CUDA 12.8, not 12.6: the cu126 build of torch 2.9.1 supports sm_50–sm_90
-# only. Runpod's 16/24 GB pools include RTX PRO 6000 Blackwell MIG slices
-# (sm_120), where the cu126 image failed the SDK's CUDA fitness check with
-# "no kernel image is available for execution on the device" (#10, 2026-10-11).
-# Set the endpoint's minimum CUDA version to 12.8 so hosts can run it.
-# Tag verified to exist on Docker Hub (4.45GB). Runpod rejects image
+# PyTorch 2.15 on CUDA 13.2 (2026-11-26, #143). torch 2.9.1 on CUDA 12.8 before.
+# History: CUDA 12.6 failed on the RTX PRO 6000 Blackwell MIG slices (sm_120) in
+# the 16/24 GB pools with "no kernel image is available for execution on the
+# device" (#10, 2026-10-11). On 2026-11-26 every GPU with Serverless capacity in
+# those pools reported CUDA 13.2 only, and this image ran on an RTX A4500.
+# Set the endpoint's CUDA version to 13.2 or newer so hosts can run it.
+# Tag verified to exist on Docker Hub. Runpod rejects image
 # references that do not resolve, so do not invent a tag here.
 #
-# CUDA 12.6 이 아니라 12.8 이다. torch 2.9.1 의 cu126 빌드는 sm_50–sm_90 만
-# 지원한다. Runpod 의 16/24 GB 풀에는 RTX PRO 6000 Blackwell MIG 조각(sm_120)이
-# 섞여 있고, cu126 이미지는 그곳에서 SDK 의 CUDA 점검을 "no kernel image is
-# available for execution on the device" 로 통과하지 못했다 (#10, 2026-10-11).
-# 엔드포인트의 최소 CUDA 버전을 12.8 로 지정해야 호스트가 실행할 수 있다.
-# Docker Hub 에 실재하는 태그로 확인했다 (4.45GB). Runpod 은 해석되지 않는
+# CUDA 13.2 의 PyTorch 2.15 (2026-11-26, #143). 그전에는 CUDA 12.8 의 torch 2.9.1.
+# 경위: CUDA 12.6 은 16/24 GB 풀의 RTX PRO 6000 Blackwell MIG 조각(sm_120)에서
+# "no kernel image is available for execution on the device" 로 실패했다
+# (#10, 2026-10-11). 2026-11-26 에는 이 풀들에서 Serverless 여유가 있는 GPU 가
+# 모두 CUDA 13.2 만 보고했고, 이 이미지는 RTX A4500 에서 돌았다.
+# 엔드포인트의 CUDA 버전을 13.2 이상으로 지정해야 호스트가 실행할 수 있다.
+# Docker Hub 에 실재하는 태그로 확인했다. Runpod 은 해석되지 않는
 # 이미지 참조를 거부하므로 태그를 임의로 적지 말 것.
-FROM pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime
+FROM pytorch/pytorch:2.15.0-cuda13.2-cudnn9-runtime
 
 # COPY paths are relative to THIS directory, keeping the lab self-contained.
 # Runpod defaults its build context to the repo root, so set the endpoint's
@@ -40,6 +42,9 @@ WORKDIR /app
 # Dependencies first so the pip layer survives handler edits.
 # 의존성을 먼저 복사해 handler 수정 시에도 pip 레이어가 재사용되게 한다.
 COPY requirements.txt .
+# PyTorch 2.15 images use the system Python, marked externally managed (PEP 668).
+# PyTorch 2.15 이미지는 시스템 Python 을 쓰며, 외부 관리 환경(PEP 668)으로 표시돼 있다.
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
 RUN pip install --no-cache-dir -r requirements.txt
 
 # No model weights are copied in. With Runpod's cached models the weights live

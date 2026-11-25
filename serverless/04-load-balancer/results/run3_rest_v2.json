@@ -1,0 +1,212 @@
+[
+  {
+    "ok": true,
+    "total_s": 32.596,
+    "attempts": [
+      {
+        "status": 200,
+        "s": 32.594,
+        "error": null
+      }
+    ],
+    "body": {
+      "greeting": "Hello, load_balancer-0!",
+      "worker_id": "yqv9wm4ehdlxks",
+      "served_by_this_worker": 1,
+      "uptime_s": 30.2,
+      "handler_ms": 0.055
+    },
+    "endpoint": "load_balancer",
+    "n": 0,
+    "phase": "cold",
+    "utc": "2026-11-25T15:29:22Z"
+  },
+  {
+    "ok": true,
+    "total_s": 1.014,
+    "attempts": [
+      {
+        "status": 200,
+        "s": 1.014,
+        "error": null
+      }
+    ],
+    "body": {
+      "greeting": "Hello, load_balancer-1!",
+      "worker_id": "yqv9wm4ehdlxks",
+      "served_by_this_worker": 2,
+      "uptime_s": 31.2,
+      "handler_ms": 0.012
+    },
+    "endpoint": "load_balancer",
+    "n": 1,
+    "phase": "warm",
+    "utc": "2026-11-25T15:29:23Z"
+  },
+  {
+    "ok": true,
+    "total_s": 0.746,
+    "attempts": [
+      {
+        "status": 200,
+        "s": 0.745,
+        "error": null
+      }
+    ],
+    "body": {
+      "greeting": "Hello, load_balancer-2!",
+      "worker_id": "yqv9wm4ehdlxks",
+      "served_by_this_worker": 3,
+      "uptime_s": 32.0,
+      "handler_ms": 0.02
+    },
+    "endpoint": "load_balancer",
+    "n": 2,
+    "phase": "warm",
+    "utc": "2026-11-25T15:29:24Z"
+  },
+  {
+    "ok": true,
+    "total_s": 0.36,
+    "attempts": [
+      {
+        "status": 200,
+        "s": 0.36,
+        "error": null
+      }
+    ],
+    "body": {
+      "greeting": "Hello, load_balancer-3!",
+      "worker_id": "yqv9wm4ehdlxks",
+      "served_by_this_worker": 4,
+      "uptime_s": 32.3,
+      "handler_ms": 0.02
+    },
+    "endpoint": "load_balancer",
+    "n": 3,
+    "phase": "warm",
+    "utc": "2026-11-25T15:29:24Z"
+  },
+  {
+    "ok": true,
+    "total_s": 0.313,
+    "attempts": [
+      {
+        "status": 200,
+        "s": 0.313,
+        "error": null
+      }
+    ],
+    "body": {
+      "greeting": "Hello, load_balancer-4!",
+      "worker_id": "yqv9wm4ehdlxks",
+      "served_by_this_worker": 5,
+      "uptime_s": 32.6,
+      "handler_ms": 0.02
+    },
+    "endpoint": "load_balancer",
+    "n": 4,
+    "phase": "warm",
+    "utc": "2026-11-25T15:29:24Z"
+  },
+  {
+    "ok": true,
+    "total_s": 0.375,
+    "attempts": [
+      {
+        "status": 200,
+        "s": 0.375,
+        "error": null
+      }
+    ],
+    "body": {
+      "greeting": "Hello, load_balancer-5!",
+      "worker_id": "yqv9wm4ehdlxks",
+      "served_by_this_worker": 6,
+      "uptime_s": 33.0,
+      "handler_ms": 0.02
+    },
+    "endpoint": "load_balancer",
+    "n": 5,
+    "phase": "warm",
+    "utc": "2026-11-25T15:29:25Z"
+  },
+  {
+    "ok": true,
+    "total_s": 3.447,
+    "status": 200,
+    "delayTime_ms": 2531,
+    "executionTime_ms": 147,
+    "workerId": "fwg0gn7ib98a3u",
+    "job_status": "COMPLETED",
+    "endpoint": "queue",
+    "n": 0,
+    "phase": "cold",
+    "utc": "2026-11-25T15:30:28Z"
+  },
+  {
+    "ok": true,
+    "total_s": 0.705,
+    "status": 200,
+    "delayTime_ms": 94,
+    "executionTime_ms": 140,
+    "workerId": "fwg0gn7ib98a3u",
+    "job_status": "COMPLETED",
+    "endpoint": "queue",
+    "n": 1,
+    "phase": "warm",
+    "utc": "2026-11-25T15:30:29Z"
+  },
+  {
+    "ok": true,
+    "total_s": 0.695,
+    "status": 200,
+    "delayTime_ms": 97,
+    "executionTime_ms": 137,
+    "workerId": "fwg0gn7ib98a3u",
+    "job_status": "COMPLETED",
+    "endpoint": "queue",
+    "n": 2,
+    "phase": "warm",
+    "utc": "2026-11-25T15:30:30Z"
+  },
+  {
+    "ok": true,
+    "total_s": 0.705,
+    "status": 200,
+    "delayTime_ms": 94,
+    "executionTime_ms": 144,
+    "workerId": "fwg0gn7ib98a3u",
+    "job_status": "COMPLETED",
+    "endpoint": "queue",
+    "n": 3,
+    "phase": "warm",
+    "utc": "2026-11-25T15:30:30Z"
+  },
+  {
+    "ok": true,
+    "total_s": 0.678,
+    "status": 200,
+    "delayTime_ms": 91,
+    "executionTime_ms": 139,
+    "workerId": "fwg0gn7ib98a3u",
+    "job_status": "COMPLETED",
+    "endpoint": "queue",
+    "n": 4,
+    "phase": "warm",
+    "utc": "2026-11-25T15:30:31Z"
+  },
+  {
+    "ok": true,
+    "total_s": 0.692,
+    "status": 200,
+    "delayTime_ms": 90,
+    "executionTime_ms": 146,
+    "workerId": "fwg0gn7ib98a3u",
+    "job_status": "COMPLETED",
+    "endpoint": "queue",
+    "n": 5,
+    "phase": "warm",
+    "utc": "2026-11-25T15:30:32Z"
+  }
+]
