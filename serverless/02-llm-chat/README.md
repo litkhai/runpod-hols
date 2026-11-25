@@ -166,6 +166,17 @@ Re-run 2026-11-26 on PyTorch 2.15 / CUDA 13.2, `transformers` 5.24.1, `accelerat
 
 RTX A4500 in EU-RO-1, `loaded_from: hub`, `model_load_seconds` 39.53. The first request's 200 s is an image pull on a host that had never seen it plus the Hub download; it is not comparable with the console endpoint's cached-model figures above. The PyTorch 2.15 images use the system Python, marked externally managed (PEP 668), so the Dockerfile sets `PIP_BREAK_SYSTEM_PACKAGES=1`.
 
+On the console endpoint, 2026-11-26: the endpoint's minimum CUDA version was changed from 12.8 to 13.2 over REST v2 (`PATCH /v2/serverless/{id}` with `{"gpu": {"minCudaVersion": "13.2"}}`, nothing else changed), then the merge rebuilt the image from `main`. **Old workers kept serving for about 30 minutes after the build:** workers marked `isStale` on the previous image (PyTorch 2.9.1) took the first requests, so they were discarded; the new image's workers had all come up 30 minutes later. On the new image (RTX A5000, CA-MTL-1, `loaded_from: cache`):
+
+| Request | `delayTime` | `executionTime` |
+|---|---|---|
+| First prompt | 14,596 ms | 1,388 ms |
+| Same prompt again | not served — queued 234 s and 833 s with workers reported idle, cancelled | |
+| `messages` form | 13,775 ms (`Blue.`) | 738 ms |
+| No prompt (fails by design) | 12,314 ms | 82 ms |
+
+Check `isStale` in `GET /v2/serverless/{id}/workers` before trusting a result right after a rebuild.
+
 The worker had pulled the image and the model before the first request — that happens right after a build, and the pull took about 3 minutes. The 12 s is container start, imports, `model_load_seconds` of 2.37 and the SDK's fitness checks (0.46 s). A host that has never seen the image adds the pull.
 
 ### Local testing
@@ -374,6 +385,17 @@ curl -X POST "https://api.runpod.ai/v2/$RUNPOD_ENDPOINT_ID/runsync" \
 | 프롬프트 없음 (의도된 실패) | 97 ms | 239 ms |
 
 EU-RO-1 의 RTX A4500, `loaded_from: hub`, `model_load_seconds` 39.53. 첫 요청의 200초는 이미지를 처음 받는 호스트의 이미지 풀과 Hub 다운로드를 합친 값이라, 위의 콘솔 엔드포인트(캐시된 모델) 수치와 비교할 수 없습니다. PyTorch 2.15 이미지는 외부 관리 환경(PEP 668)으로 표시된 시스템 Python 을 써서, Dockerfile 에 `PIP_BREAK_SYSTEM_PACKAGES=1` 을 넣었습니다.
+
+2026-11-26 콘솔 엔드포인트: 최소 CUDA 버전을 REST v2 로 12.8 에서 13.2 로 바꾸고 (`PATCH /v2/serverless/{id}` 에 `{"gpu": {"minCudaVersion": "13.2"}}`, 다른 설정은 그대로), 병합으로 `main` 에서 이미지를 다시 빌드했습니다. **빌드 뒤 약 30분 동안 이전 워커가 계속 요청을 받았습니다.** 이전 이미지(PyTorch 2.9.1)에 `isStale` 로 표시된 워커가 첫 요청들을 처리해서 그 결과는 버렸고, 30분 뒤에야 새 이미지 워커로 모두 바뀌었습니다. 새 이미지 결과 (RTX A5000, CA-MTL-1, `loaded_from: cache`):
+
+| 요청 | `delayTime` | `executionTime` |
+|---|---|---|
+| 첫 프롬프트 | 14,596 ms | 1,388 ms |
+| 같은 프롬프트 다시 | 처리 안 됨 — 워커가 idle 로 보이는데 큐에서 234초, 833초 대기 후 취소 | |
+| `messages` 형식 | 13,775 ms (`Blue.`) | 738 ms |
+| 프롬프트 없음 (의도된 실패) | 12,314 ms | 82 ms |
+
+다시 빌드한 직후의 결과는 `GET /v2/serverless/{id}/workers` 의 `isStale` 을 확인한 뒤에 믿을 것.
 
 첫 요청 전에 워커가 이미지와 모델을 미리 받아 두었습니다. 빌드 직후에 일어나며, 이미지 받는 데 약 3분이 걸렸습니다. 12초는 컨테이너 시작, import, `model_load_seconds` 2.37초, SDK 시작 점검 0.46초를 합친 값입니다. 이미지를 처음 받는 호스트라면 그 시간이 더해집니다.
 
