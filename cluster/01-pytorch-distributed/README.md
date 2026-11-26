@@ -118,6 +118,20 @@ python3 cluster.py auto auto --hours 48 --gpus "NVIDIA A100-SXM4-80GB,NVIDIA H10
 
 **Second wait, 2026-11-25** ([#19](https://github.com/litkhai/runpod-hols/issues/19)). A one-off stock read at 18:50 KST showed A100 SXM cluster stock `LOW` (USD 2.19/GPU/hr Secure). The same script then read the stock every 2 minutes from 18:53 to 20:53 (60 reads) and every read was `NONE`, so no create was sent. Nothing was created or billed; afterwards there were no clusters or Pods and `spendRate.current` was 0. A single `LOW` read is not worth acting on later — create on the read itself.
 
+**REST v2 create works: H100 SXM, 2026-11-26** ([#19](https://github.com/litkhai/runpod-hols/issues/19)). The wait script read stock for A100 SXM, then H100 SXM, every 2 minutes. From 15:22 KST both showed `LOW` on 14 reads; 11 creates were refused with `400 Insufficient resources` and 2 with `409 GPU_CONCURRENCY_EXCEEDED` (*"This account's plan allows 16 concurrent GPUs across Pods and Serverless; 2 are in use"* — other labs were running). At 15:49 `POST /v2/clusters` for 2 Pods × 8 H100 SXM succeeded, in AP-IN-1:
+
+| Check | Result |
+|---|---|
+| SSH on both nodes | 74 s after create |
+| GPUs per node | 8 × `NVIDIA H100 80GB HBM3` |
+| Cluster variables (from PID 1) | `NODE_RANK` 0 and 1, `NUM_NODES` 2, `WORLD_SIZE` 16 |
+| InfiniBand | `ibv_devinfo -l`: 8 HCAs (`mlx5_0` …) |
+| Price | USD 42.144/hr per Pod, **USD 84.29/hr** for the cluster (USD 5.27/GPU-hr) — above the catalog's Secure Pod price of 4.39 and above this account's USD 80/hr spend limit, which did not stop the create |
+| Delete | `DELETE /v2/clusters/{id}` 85 s after create; no cluster or Pod left, `spendRate.current` 0 |
+
+The cluster lived about 85 seconds (roughly USD 2). Two things to carry into the lab: the cap check must use the members' `cost` after create, not the catalog price, and the account's 16-GPU concurrency limit counts every Pod and Serverless worker, so a cluster needs the account otherwise idle. NCCL and DDP across the two nodes are still unrun.
+
+
 ### Stage 2 run — sockets instead of InfiniBand
 
 | Step | Time (KST) |
@@ -277,6 +291,20 @@ python3 cluster.py auto auto --hours 48 --gpus "NVIDIA A100-SXM4-80GB,NVIDIA H10
 **REST v2 생성, 2026-11-24: 카탈로그에는 재고, 자리는 없음** ([#130](https://github.com/litkhai/runpod-hols/issues/130)). 한국 시간 23:15 부터 01:15 까지 2분마다 재고를 읽고 (48회), 재고가 보일 때마다 생성을 시도했다. 카탈로그는 23:33–23:45 사이 A100 SXM 클러스터 재고를 `LOW` 로 여섯 번 보였지만, `POST /v2/clusters` 는 모두 `400 Insufficient resources` 였다. 검증 오류는 한 번도 없었다. 클러스터는 만들어지지 않았고 과금도 없었으며, 끝난 뒤 `spendRate.current` 는 0 이었다. 카탈로그 재고는 배치를 보장하지 않는다. 실제 확인은 생성 요청이므로, 기다리는 스크립트는 거절 뒤에도 계속 시도해야 한다. REST 생성 경로는 아직 실행되지 않았다.REST 생성 경로는 아직 실행되지 않았다.
 
 **두 번째 대기, 2026-11-25** ([#19](https://github.com/litkhai/runpod-hols/issues/19)). 한국 시간 18:50 에 한 번 읽은 A100 SXM 클러스터 재고는 `LOW` 였다 (Secure 기준 GPU당 시간당 USD 2.19). 같은 스크립트로 18:53 부터 20:53 까지 2분마다 읽었는데 (60회) 모두 `NONE` 이라 생성 요청은 한 번도 보내지 않았다. 만들어진 것도 과금도 없었고, 끝난 뒤 클러스터와 Pod 는 없었으며 `spendRate.current` 는 0 이었다. 한 번 본 `LOW` 는 나중에 쓸 수 없다. 읽은 그 자리에서 생성해야 한다.
+
+**REST v2 생성 성공: H100 SXM, 2026-11-26** ([#19](https://github.com/litkhai/runpod-hols/issues/19)). 대기 스크립트가 A100 SXM, H100 SXM 순으로 2분마다 재고를 읽었다. 한국 시간 15:22 부터 14번 읽는 동안 둘 다 `LOW` 였고, 생성 요청은 11번 `400 Insufficient resources`, 2번 `409 GPU_CONCURRENCY_EXCEEDED` (*"This account's plan allows 16 concurrent GPUs across Pods and Serverless; 2 are in use"* — 다른 실습이 돌고 있었다) 로 거절됐다. 15:49 에 Pod 2개 × H100 SXM 8장 `POST /v2/clusters` 가 AP-IN-1 에서 성공했다:
+
+| 확인 | 결과 |
+|---|---|
+| 두 노드 SSH | 생성 74초 뒤 |
+| 노드당 GPU | `NVIDIA H100 80GB HBM3` 8장 |
+| 클러스터 변수 (PID 1 에서) | `NODE_RANK` 0 과 1, `NUM_NODES` 2, `WORLD_SIZE` 16 |
+| InfiniBand | `ibv_devinfo -l`: HCA 8개 (`mlx5_0` …) |
+| 가격 | Pod 당 시간당 USD 42.144, 클러스터 **시간당 USD 84.29** (GPU 시간당 5.27). 카탈로그 Secure Pod 가격 4.39 보다 높고, 이 계정의 시간당 USD 80 지출 한도보다도 높았는데 생성은 막히지 않았다 |
+| 삭제 | 생성 85초 뒤 `DELETE /v2/clusters/{id}`. 남은 클러스터와 Pod 없음, `spendRate.current` 0 |
+
+클러스터는 약 85초 살아 있었다 (약 USD 2). 실습에 반영할 두 가지: 비용 상한 검사는 카탈로그 가격이 아니라 생성 뒤 멤버의 `cost` 로 해야 하고, 계정의 동시 GPU 16개 한도는 Pod 와 Serverless 워커를 모두 센다. 클러스터를 만들 때는 계정의 다른 GPU 가 비어 있어야 한다. 두 노드에 걸친 NCCL 과 DDP 는 아직 실행하지 않았다.
+
 
 ### 2단계 실행 — InfiniBand 대신 소켓
 
