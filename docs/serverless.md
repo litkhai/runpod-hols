@@ -208,7 +208,7 @@ The 12 s is container start, imports, a 2.37 s model load and the SDK's fitness 
 
 ### Lab 03 — vLLM endpoint
 
-Lab 03 deploys Runpod's prebuilt `runpod/worker-v1-vllm:v2.32.0` with `Qwen/Qwen2.5-1.5B-Instruct` from a script, and calls it with the OpenAI SDK at `https://api.runpod.ai/v2/<endpoint>/openai/v1`. Run once on 2026-11-05 on an RTX 4090 with v2.30.2, FlashBoot on, and again on 2026-11-26 with v2.32.0 (vLLM 0.34.0): models listed after 129 s including the cold start, chat 1.0 s, first streamed token 0.65 s; [the lab README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) has the full record.
+Lab 03 deploys Runpod's prebuilt `runpod/worker-v1-vllm:v2.32.0` with `Qwen/Qwen2.5-1.5B-Instruct` from a script, and calls it with the OpenAI SDK at `https://api.runpod.ai/v2/<endpoint>/openai/v1`. Run once on 2026-11-05 on an RTX 4090 with v2.30.2, FlashBoot on, and again on 2026-11-26 with v2.32.0 (vLLM 0.34.0): models listed after 129 s including the cold start, chat 1.0 s, first streamed token 0.65 s. On 2026-11-27 the Responses (`/openai/v1/responses`) and Anthropic Messages (`/openai/v1/messages`) routes both answered, plain and streamed, about 1 s each ([#162](https://github.com/litkhai/runpod-hols/issues/162)); [the lab README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) has the full record.
 
 | Once a worker was up | Result |
 |---|---|
@@ -555,7 +555,7 @@ REST v2 는 콘솔 **Metrics** 탭의 시계열과 엔드포인트별 워커·�
 
 ### 실습 03 — vLLM 엔드포인트
 
-실습 03 은 Runpod 이 미리 빌드한 `runpod/worker-v1-vllm:v2.32.0` 에 `Qwen/Qwen2.5-1.5B-Instruct` 를 스크립트로 배포하고, OpenAI SDK 로 `https://api.runpod.ai/v2/<endpoint>/openai/v1` 를 호출합니다. 2026-11-05 RTX 4090, FlashBoot 켬, v2.30.2 로 실행했고, 2026-11-26 v2.32.0 (vLLM 0.34.0) 으로 다시 실행했습니다. 콜드 스타트를 포함해 129초 뒤 모델 목록이 나왔고, 채팅 1.0초, 스트림 첫 토큰 0.65초였습니다. 전체 기록은 [실습 README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) 에 있습니다.
+실습 03 은 Runpod 이 미리 빌드한 `runpod/worker-v1-vllm:v2.32.0` 에 `Qwen/Qwen2.5-1.5B-Instruct` 를 스크립트로 배포하고, OpenAI SDK 로 `https://api.runpod.ai/v2/<endpoint>/openai/v1` 를 호출합니다. 2026-11-05 RTX 4090, FlashBoot 켬, v2.30.2 로 실행했고, 2026-11-26 v2.32.0 (vLLM 0.34.0) 으로 다시 실행했습니다. 콜드 스타트를 포함해 129초 뒤 모델 목록이 나왔고, 채팅 1.0초, 스트림 첫 토큰 0.65초였습니다. 2026-11-27 에는 Responses (`/openai/v1/responses`) 와 Anthropic Messages (`/openai/v1/messages`) 경로도 일반·스트리밍 모두 각각 약 1초에 응답했습니다 ([#162](https://github.com/litkhai/runpod-hols/issues/162)). 전체 기록은 [실습 README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) 에 있습니다.
 
 | 워커가 뜬 뒤 | 결과 |
 |---|---|
@@ -902,7 +902,7 @@ REST v2 返回控制台 **Metrics** 标签页背后的时间序列，以及每�
 
 ### 实验 03 — vLLM 端点
 
-实验 03 用脚本部署 Runpod 预构建的 `runpod/worker-v1-vllm:v2.32.0` 和 `Qwen/Qwen2.5-1.5B-Instruct`，并用 OpenAI SDK 通过 `https://api.runpod.ai/v2/<endpoint>/openai/v1` 调用。于 2026-11-05 在 RTX 4090 上用 v2.30.2 运行，FlashBoot 开启；2026-11-26 用 v2.32.0（vLLM 0.34.0）再次运行：含冷启动 129 秒后列出模型，聊天 1.0 秒，流式首个 token 0.65 秒；完整记录见[实验 README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint)。
+实验 03 用脚本部署 Runpod 预构建的 `runpod/worker-v1-vllm:v2.32.0` 和 `Qwen/Qwen2.5-1.5B-Instruct`，并用 OpenAI SDK 通过 `https://api.runpod.ai/v2/<endpoint>/openai/v1` 调用。于 2026-11-05 在 RTX 4090 上用 v2.30.2 运行，FlashBoot 开启；2026-11-26 用 v2.32.0（vLLM 0.34.0）再次运行：含冷启动 129 秒后列出模型，聊天 1.0 秒，流式首个 token 0.65 秒；2026-11-27 Responses（`/openai/v1/responses`）和 Anthropic Messages（`/openai/v1/messages`）路由在普通和流式两种方式下都在约 1 秒内响应（[#162](https://github.com/litkhai/runpod-hols/issues/162)）；完整记录见[实验 README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint)。
 
 | worker 启动之后 | 结果 |
 |---|---|
@@ -1249,7 +1249,7 @@ REST v2 は、コンソールの **Metrics** タブの時系列と、endpoint �
 
 ### ラボ 03 — vLLM エンドポイント
 
-ラボ 03 は Runpod のビルド済み `runpod/worker-v1-vllm:v2.32.0` と `Qwen/Qwen2.5-1.5B-Instruct` をスクリプトでデプロイし、OpenAI SDK で `https://api.runpod.ai/v2/<endpoint>/openai/v1` を呼び出します。2026-11-05 に RTX 4090、FlashBoot オン、v2.30.2 で実行し、2026-11-26 に v2.32.0（vLLM 0.34.0）で再実行しました。コールドスタート込みで 129 秒後にモデル一覧、チャット 1.0 秒、ストリームの最初のトークン 0.65 秒でした。完全な記録は[ラボの README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) にあります。
+ラボ 03 は Runpod のビルド済み `runpod/worker-v1-vllm:v2.32.0` と `Qwen/Qwen2.5-1.5B-Instruct` をスクリプトでデプロイし、OpenAI SDK で `https://api.runpod.ai/v2/<endpoint>/openai/v1` を呼び出します。2026-11-05 に RTX 4090、FlashBoot オン、v2.30.2 で実行し、2026-11-26 に v2.32.0（vLLM 0.34.0）で再実行しました。コールドスタート込みで 129 秒後にモデル一覧、チャット 1.0 秒、ストリームの最初のトークン 0.65 秒でした。2026-11-27 には Responses（`/openai/v1/responses`）と Anthropic Messages（`/openai/v1/messages`）のルートも、通常・ストリーミングともにそれぞれ約 1 秒で応答しました（[#162](https://github.com/litkhai/runpod-hols/issues/162)）。完全な記録は[ラボの README](https://github.com/litkhai/runpod-hols/tree/main/serverless/03-vllm-endpoint) にあります。
 
 | worker が起動した後 | 結果 |
 |---|---|

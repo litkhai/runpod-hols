@@ -1,0 +1,141 @@
+{
+ "issue": "https://github.com/litkhai/runpod-hols/issues/162",
+ "date": "2026-11-27",
+ "image": "runpod/worker-v1-vllm:v2.32.0",
+ "model": "Qwen/Qwen2.5-1.5B-Instruct",
+ "base": "https://api.runpod.ai/v2/<endpoint>/openai/v1",
+ "auth": "Authorization: Bearer <Runpod key>",
+ "chat_py_cold_s": 167.8,
+ "responses": {
+  "status": 200,
+  "content_type": "application/json; charset=utf-8",
+  "s": 0.95,
+  "json": {
+   "background": false,
+   "created_at": 1795709354,
+   "ec_transfer_params": null,
+   "frequency_penalty": 0,
+   "incomplete_details": null,
+   "input_messages": null,
+   "instructions": null,
+   "kv_transfer_params": null,
+   "max_output_tokens": 60,
+   "max_tool_calls": null,
+   "metadata": null,
+   "model": "Qwen/Qwen2.5-1.5B-Instruct",
+   "object": "response",
+   "output": [
+    {
+     "content": [
+      {
+       "annotations": [],
+       "logprobs": null,
+       "text": "A serverless GPU allows users to access and utilize GPUs without the need for on-premises infrastructure or management, leveraging cloud services for scalability and flexibility.",
+       "type": "output_text"
+      }
+     ],
+     "id": "msg_a526e1f622f9f4b1",
+     "phase": null,
+     "role": "assistant",
+     "status": "completed",
+     "type": "message"
+    }
+   ],
+   "output_messages": null,
+   "parallel_tool_calls": true,
+   "presence_penalty": 0,
+   "previous_response_id": null,
+   "prompt": null,
+   "prompt_cache_key": null,
+   "prompt_cache_options": null,
+   "prompt_cache_retention": null,
+   "reasoning": null,
+   "safety_identifier": null,
+   "service_tier": "auto",
+   "status": "completed",
+   "temperature": 0.7,
+   "text": null,
+   "tool_choice": "none",
+   "tools": [],
+   "top_logprobs": null,
+   "top_p": 0.8,
+   "truncation": "disabled",
+   "usage": {
+    "input_tokens": 40,
+    "input_tokens_details": {
+     "cache_write_tokens": 0,
+     "cached_tokens": 0,
+     "cached_tokens_per_turn": [],
+     "input_tokens_per_turn": []
+    },
+    "output_tokens": 32,
+    "output_tokens_details": {
+     "output_tokens_per_turn": [],
+     "reasoning_tokens": 0,
+     "tool_output_tokens": 0,
+     "tool_output_tokens_per_turn": []
+    },
+    "total_tokens": 72
+   },
+   "user": null
+  }
+ },
+ "responses_stream": {
+  "status": 200,
+  "content_type": "text/event-stream",
+  "s": 0.92,
+  "first_line_s": 0.55,
+  "lines": 22,
+  "head": "event: response.created\ndata: {\"response\":{\"id\":\"resp_ac242c3b7dace903\",\"created_at\":1795709355,\"incomplete_details\":null,\"instructions\":null,\"metadata\":null,\"model\":\"Qwen/Qwen2.5-1.5B-Instruct\",\"object\":\"response\",\"output\":[],\"parallel_tool_calls\":true,\"temperature\":0.7,\"tool_choice\":\"none\",\"tools\":[],\"top_p\":0.8,\"background\":false,\"max_output_tokens\":40,\"max_tool_calls\":null,\"previous_response_id\":null,\"prompt\":null,\"prompt_cache_options\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":null,\"reasoning\":null,\"safety_identifier\":null,\"service_tier\":\"auto\",\"status\":\"in_progress\",\"text\":null,\"top_logprobs\":null,\"truncation\":\"disabled\",\"usage\":null,\"user\":null,\"presence_penalty\":0.0,\"frequency_penalty\":0.0,\"kv_transfer_params\":null,\"ec_transfer_params\":null,\"input_messages\":null,\"output_messages\":null},\"sequence_number\":0,\"type\":\"response.created\"}\nevent: response.in_progress\ndata: {\"response\":{\"id\":\"resp_ac242c3b7dace903\",\"created_at\":1795709355,\"incomplete_details\":null,\"instructions\":null,\"metadata\":null,\"model\":\"Qwen/Qwen2.5-1.5B-Instruct\",\"object\":\"response\",\"output\":[],\"parallel_tool_calls\":true,\"temperature\":0.7,\"tool_choice\":\"none\",\"tools\":[],\"top_p\":0.8,\"background\":false,\"max_output_tokens\":40,\"max_tool_calls\":null,\"previous_response_id\":null,\"prompt\":null,\"prompt_cache_options\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":null,\"reasoning\":null,\"safety_identifier\":null,\"service_tier\":\"auto\",\"status\":\"in_progress\",\"text\":null,\"top_logprobs\":null,\"truncati"
+ },
+ "messages": {
+  "status": 200,
+  "content_type": "application/json; charset=utf-8",
+  "s": 1.02,
+  "json": {
+   "content": [
+    {
+     "text": "A serverless GPU refers to a cloud-based computing service that provides access to GPUs without the need for managing servers or infrastructure.",
+     "type": "text"
+    }
+   ],
+   "model": "Qwen/Qwen2.5-1.5B-Instruct",
+   "role": "assistant",
+   "stop_reason": "end_turn",
+   "type": "message",
+   "usage": {
+    "input_tokens": 40,
+    "output_tokens": 26
+   }
+  }
+ },
+ "messages_system": {
+  "status": 200,
+  "content_type": "application/json; charset=utf-8",
+  "s": 0.82,
+  "json": {
+   "content": [
+    {
+     "text": "Blue",
+     "type": "text"
+    }
+   ],
+   "model": "Qwen/Qwen2.5-1.5B-Instruct",
+   "role": "assistant",
+   "stop_reason": "end_turn",
+   "type": "message",
+   "usage": {
+    "input_tokens": 29,
+    "output_tokens": 2
+   }
+  }
+ },
+ "messages_stream": {
+  "status": 200,
+  "content_type": "text/event-stream",
+  "s": 0.86,
+  "first_line_s": 0.55,
+  "lines": 30,
+  "head": "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"chatcmpl-bbdaf587eba31c20\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"model\":\"Qwen/Qwen2.5-1.5B-Instruct\",\"stop_reason\":null,\"stop_sequence\":null,\"usage\":{\"input_tokens\":35,\"output_tokens\":0}}}\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"content_block\":{\"type\":\"text\",\"text\":\"\"},\"index\":0}\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"One\"},\"index\":0}\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\",\"},\"index\":0}\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\" two\"},\"index\":0}\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\",\"},\"index\":0}\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\" three\"},\"index\":0}\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\",\"},\"index\":0}\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\" four\"},\"index\":0}\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\",\"},\"index\":0}\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\" five\"},\"index\":0}\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\""
+ }
+}
