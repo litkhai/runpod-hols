@@ -192,7 +192,7 @@ Run end to end on 2026-11-05 with `runpod` 1.12.0, CPU Pod `cpu3c-2-4`, from the
 | `teardown.py` | Terminated, `.pod-id` removed |
 | `status.py` after | `No Pods.` |
 
-The whole run cost under one cent. Not checked: JupyterLab on 8888, `--stop`, a GPU Pod from this script ([`terraform/02-pod`](../../terraform/02-pod) launched GPU Pods on 2026-10-16).
+The whole run cost under one cent. Not checked in this run: JupyterLab on 8888, `--stop`, a GPU Pod from this script — all three were checked on 2026-11-26, below ([`terraform/02-pod`](../../terraform/02-pod) launched GPU Pods on 2026-10-16).
 
 **Re-run on `runpod` 2.4.0, 2026-11-24** ([#126](https://github.com/litkhai/runpod-hols/issues/126)), with the lab key (GraphQL None):
 
@@ -414,7 +414,7 @@ SDK 와 콘솔이 다릅니다.
 | `teardown.py` | 삭제, `.pod-id` 제거 |
 | 종료 후 `status.py` | `No Pods.` |
 
-전체 비용은 1센트 미만이었습니다. 확인하지 않은 것: 8888 의 JupyterLab, `--stop`, 이 스크립트로 GPU Pod 기동 ([`terraform/02-pod`](../../terraform/02-pod) 이 2026-10-16 에 GPU Pod 을 띄움).
+전체 비용은 1센트 미만이었습니다. 이 실행에서 확인하지 않은 것: 8888 의 JupyterLab, `--stop`, 이 스크립트로 GPU Pod 기동. 세 가지 모두 2026-11-26 에 확인했다 (아래) ([`terraform/02-pod`](../../terraform/02-pod) 이 2026-10-16 에 GPU Pod 을 띄움).
 
 **`runpod` 2.4.0 재실행, 2026-11-24** ([#126](https://github.com/litkhai/runpod-hols/issues/126)), 실습용 키 (GraphQL None):
 
