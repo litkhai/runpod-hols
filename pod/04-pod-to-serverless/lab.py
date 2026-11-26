@@ -30,7 +30,7 @@ GPU = "NVIDIA GeForce RTX 4090"
 GPU_POOL = "ADA_24"
 # Has CUDA, torch and python3.12; the Pod and the workers run the same image.
 # CUDA, torch, python3.12 포함. Pod 과 워커가 같은 이미지를 쓴다.
-IMAGE = "runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404"
+IMAGE = "runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404"
 
 
 def pod_line(p: dict) -> str:
