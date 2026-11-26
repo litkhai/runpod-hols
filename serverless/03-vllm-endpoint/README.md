@@ -132,6 +132,20 @@ Same three scripts after the bump ([#143](https://github.com/litkhai/runpod-hols
 
 The first `chat.py` run answered; no retry was needed.
 
+### Responses and Anthropic Messages routes (2026-11-27)
+
+([#162](https://github.com/litkhai/runpod-hols/issues/162)) Same image and model, `deploy.py`, then `chat.py` to start a worker (models after 166 s with the cold start, chat 1.1 s, first streamed token 0.64 s), then raw HTTP to the two routes worker-vllm documents on the OpenAI prefix, with the Runpod key as Bearer:
+
+| Route | Request | Result |
+|---|---|---|
+| `POST /openai/v1/responses` | `input`, `max_output_tokens` 60 | 200 in 0.95 s, `object` `response`, `status` `completed`, one `output_text` sentence, usage 40 in / 32 out |
+| same, `stream: true` | | `text/event-stream`, first event 0.55 s (`response.created`, `response.in_progress`, …), 22 lines in 0.92 s |
+| `POST /openai/v1/messages` | Anthropic shape, `max_tokens` 60 | 200 in 1.02 s, `type` `message`, one `text` block, `stop_reason` `end_turn`, usage 40 in / 26 out |
+| same, with `system` | "Answer with a single word." | `Blue`, 2 output tokens |
+| same, `stream: true` | | `text/event-stream`, first event 0.55 s (`message_start`, `content_block_start`, `content_block_delta`, …), 30 lines in 0.86 s |
+
+`teardown.py` deleted the endpoint and template; no Pods, `currentSpendPerHr` 0. The worker ran about three minutes. Record: [`results/routes_2026-11-27.json`](./results/routes_2026-11-27.json).
+
 ### What was run
 
 2026-11-05, `runpod/worker-v1-vllm:v2.30.2` (vLLM 0.32.0, Runpod worker SDK 1.12.0), `Qwen/Qwen2.5-1.5B-Instruct`, `MAX_MODEL_LEN` 4096, RTX 4090 in US-NC-1, FlashBoot on, idle timeout 5 s.
@@ -145,7 +159,7 @@ The first `chat.py` run answered; no retry was needed.
 | Worker log | KV cache 657,200 tokens; graph capture 3 + 4 s; weights 9.6 s download, 0.39 s load |
 | `teardown.py` | Endpoint deleted; template refused until about two hours later — still refused at 86 min, deleted at 116 min (handled) |
 
-Not run: a second cold start, FlashBoot off, concurrency or throughput, the Responses and Anthropic Messages routes. The billing API returned no rows for the run's hour when queried right after it.
+Not run: a second cold start, FlashBoot off, concurrency or throughput. (The Responses and Anthropic Messages routes were run on 2026-11-27, above.) The billing API returned no rows for the run's hour when queried right after it.
 
 ---
 
@@ -277,6 +291,20 @@ vLLM 자체는 77초였습니다. 나머지 14분은 플랫폼 쪽입니다. 이
 
 첫 `chat.py` 실행에서 바로 응답이 왔고 재시도는 필요 없었습니다.
 
+### Responses 와 Anthropic Messages 경로 (2026-11-27)
+
+([#162](https://github.com/litkhai/runpod-hols/issues/162)) 같은 이미지·모델로 `deploy.py`, 이어 `chat.py` 로 워커를 띄웠다 (콜드 스타트 포함 166초 뒤 모델 목록, 채팅 1.1초, 스트림 첫 토큰 0.64초). 그다음 worker-vllm 이 OpenAI 경로 아래에 문서화한 두 경로를 Runpod 키를 Bearer 로 넣어 HTTP 로 직접 호출했다:
+
+| 경로 | 요청 | 결과 |
+|---|---|---|
+| `POST /openai/v1/responses` | `input`, `max_output_tokens` 60 | 0.95초에 200, `object` `response`, `status` `completed`, `output_text` 한 문장, 사용량 입력 40 / 출력 32 |
+| 같은 경로, `stream: true` | | `text/event-stream`, 첫 이벤트 0.55초 (`response.created`, `response.in_progress`, …), 0.92초에 22줄 |
+| `POST /openai/v1/messages` | Anthropic 형식, `max_tokens` 60 | 1.02초에 200, `type` `message`, `text` 블록 하나, `stop_reason` `end_turn`, 사용량 입력 40 / 출력 26 |
+| 같은 경로, `system` 포함 | "Answer with a single word." | `Blue`, 출력 토큰 2개 |
+| 같은 경로, `stream: true` | | `text/event-stream`, 첫 이벤트 0.55초 (`message_start`, `content_block_start`, `content_block_delta`, …), 0.86초에 30줄 |
+
+`teardown.py` 가 엔드포인트와 템플릿을 지웠다. Pod 없음, `currentSpendPerHr` 0. 워커는 약 3분 돌았다. 기록: [`results/routes_2026-11-27.json`](./results/routes_2026-11-27.json).
+
 ### 실행 내역
 
 2026-11-05, `runpod/worker-v1-vllm:v2.30.2` (vLLM 0.32.0, Runpod 워커 SDK 1.12.0), `Qwen/Qwen2.5-1.5B-Instruct`, `MAX_MODEL_LEN` 4096, US-NC-1 의 RTX 4090, FlashBoot 켬, 유휴 타임아웃 5초.
@@ -290,4 +318,4 @@ vLLM 자체는 77초였습니다. 나머지 14분은 플랫폼 쪽입니다. 이
 | 워커 로그 | KV 캐시 657,200 토큰. 그래프 캡처 3 + 4초. 가중치 다운로드 9.6초, 로드 0.39초 |
 | `teardown.py` | 엔드포인트 삭제. 템플릿은 약 2시간 뒤까지 거부 — 86분에 여전히 거부, 116분에 삭제 (처리함) |
 
-실행하지 않은 것: 두 번째 콜드 스타트, FlashBoot 끔, 동시성·처리량, Responses 와 Anthropic Messages 경로. 실행 직후 조회한 결제 API 는 해당 시간대에 아무 행도 돌려주지 않았습니다.
+실행하지 않은 것: 두 번째 콜드 스타트, FlashBoot 끔, 동시성·처리량. (Responses 와 Anthropic Messages 경로는 2026-11-27 에 실행했다. 위 참고.) 실행 직후 조회한 결제 API 는 해당 시간대에 아무 행도 돌려주지 않았습니다.
