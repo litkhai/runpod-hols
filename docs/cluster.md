@@ -117,6 +117,10 @@ Details and raw logs: [lab README](https://github.com/litkhai/runpod-hols/tree/m
 
 Timeline and log excerpt: [lab README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#stage-2-rerun--the-cluster-image-infiniband-fails).
 
+### InfiniBand works on H100 SXM (2026-11-26)
+
+On 2 × 8 H100 SXM (AP-IN-1, USD 84.29/hr) NCCL used InfiniBand — 8 × `mlx5` at 400 Gb/s per node with GPUDirect RDMA. all-reduce `busbw` reached **446.7 GB/s** at 1 GiB (`algbw` 238 GB/s, the same as four H100s inside one Pod). DDP on 16 GPUs ran at 599,064 samples/s against 55,182 on one: scaling efficiency **0.68**, down from 0.82 for four GPUs in one Pod, the difference being the gradient all-reduce over the network. The whole run took 50 s; create to delete 115 s, about USD 2.7. A first attempt lost its SSH connection 20 s after the node first answered and was deleted after 75 s; the lab now retries the copy ([lab README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed), [#19](https://github.com/litkhai/runpod-hols/issues/19)).
+
 ### Possible labs
 
 | Lab | Contents |
@@ -248,6 +252,10 @@ A100 SXM 이 한국 시간 21:42 에 다시 나왔다. `cluster.py` 가 21:48 �
 - **실패로 기록한다.** 2026-11-08 기준 이 사이트에는 Runpod Instant Cluster 의 다중 노드 대역폭 수치가 없다 ([#52](https://github.com/litkhai/runpod-hols/issues/52)).
 
 시간표와 로그 발췌: [실습 README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#2단계-재실행--클러스터용-이미지-infiniband-실패).
+
+### H100 SXM 에서는 InfiniBand 동작 (2026-11-26)
+
+H100 SXM 2 × 8 (AP-IN-1, 시간당 USD 84.29) 에서 NCCL 은 InfiniBand 를 썼다. 노드마다 400 Gb/s `mlx5` 8개, GPUDirect RDMA. all-reduce `busbw` 는 1 GiB 에서 **446.7 GB/s** (`algbw` 238 GB/s, Pod 한 대 안의 H100 4장과 같음). GPU 16장 DDP 는 초당 599,064 샘플로 1장의 55,182 대비 확장 효율 **0.68** 이었다. Pod 한 대 4장의 0.82 보다 낮은 만큼이 네트워크 너머의 그래디언트 all-reduce 다. 실행은 50초, 생성부터 삭제까지 115초, 약 USD 2.7. 첫 시도는 노드가 처음 응답한 지 20초 만에 SSH 연결이 끊겨 75초 뒤 삭제됐고, 실습은 이제 복사를 재시도한다 ([실습 README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed), [#19](https://github.com/litkhai/runpod-hols/issues/19)).
 
 ### 검토 중인 실습
 
@@ -381,6 +389,10 @@ A100 SXM 在韩国时间 21:42 再次出现；`cluster.py` 在 21:48 创建集�
 
 时间线与日志节选：[实验 README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#stage-2-rerun--the-cluster-image-infiniband-fails)。
 
+### H100 SXM 上 InfiniBand 正常工作（2026-11-26）
+
+在 2 × 8 H100 SXM（AP-IN-1，每小时 USD 84.29）上，NCCL 使用了 InfiniBand：每个节点 8 个 400 Gb/s 的 `mlx5`，启用 GPUDirect RDMA。1 GiB 时 all-reduce `busbw` 达到 **446.7 GB/s**（`algbw` 238 GB/s，与一台 Pod 内 4 块 H100 相同）。16 块 GPU 的 DDP 为每秒 599,064 个样本，单卡为 55,182：扩展效率 **0.68**，低于一台 Pod 内 4 卡的 0.82，差额就是跨网络的梯度 all-reduce。运行耗时 50 秒，从创建到删除 115 秒，约 USD 2.7。第一次尝试在节点首次响应 20 秒后丢失 SSH 连接，75 秒后被删除；实验现在会重试复制（[实验 README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed)，[#19](https://github.com/litkhai/runpod-hols/issues/19)）。
+
 ### 可能的实验
 
 | 实验 | 内容 |
@@ -512,6 +524,10 @@ A100 SXM は韓国時間 21:42 に再び出ました。`cluster.py` が 21:48 �
 - **失敗として記録します。** 2026-11-08 時点で、このサイトには Runpod Instant Cluster のマルチノード帯域の数値がありません（[#52](https://github.com/litkhai/runpod-hols/issues/52)）。
 
 タイムラインとログの抜粋：[ラボの README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed#stage-2-rerun--the-cluster-image-infiniband-fails)。
+
+### H100 SXM では InfiniBand が動作（2026-11-26）
+
+H100 SXM 2 × 8（AP-IN-1、時間あたり USD 84.29）で NCCL は InfiniBand を使いました。ノードごとに 400 Gb/s の `mlx5` が 8 個、GPUDirect RDMA 有効。1 GiB で all-reduce の `busbw` は **446.7 GB/s**（`algbw` 238 GB/s、Pod 1 台内の H100 4 基と同じ）。GPU 16 基の DDP は毎秒 599,064 サンプルで、1 基の 55,182 に対しスケーリング効率 **0.68**。Pod 1 台 4 基の 0.82 より低い分が、ネットワーク越しの勾配 all-reduce です。実行は 50 秒、作成から削除まで 115 秒、約 USD 2.7。最初の試行はノードが初めて応答してから 20 秒で SSH 接続が切れ、75 秒後に削除されました。ラボはいまコピーを再試行します（[ラボの README](https://github.com/litkhai/runpod-hols/tree/main/cluster/01-pytorch-distributed)、[#19](https://github.com/litkhai/runpod-hols/issues/19)）。
 
 ### 候補のラボ
 

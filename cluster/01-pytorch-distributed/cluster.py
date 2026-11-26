@@ -142,10 +142,19 @@ def wait_ssh(timeout_s: int) -> list:
 
 
 def push(ts: list) -> None:
+    # A node closed the connection 20 s after SSH first answered (H100 cluster, 2026-11-26), so retry.
+    # SSH 가 처음 응답하고 20초 뒤 노드가 연결을 끊은 적이 있어 (H100 클러스터, 2026-11-26) 재시도한다.
     for t in ts:
-        subprocess.run(["ssh", *t, f"mkdir -p {REMOTE}"], check=True)
-        subprocess.run(["scp", "-P", t[1], "-i", t[3], "-o", "StrictHostKeyChecking=accept-new",
-                        *[str(LAB_DIR / f) for f in FILES], f"{t[-1]}:{REMOTE}/"], check=True)
+        for attempt in range(5):
+            ok = subprocess.run(["ssh", *t, f"mkdir -p {REMOTE}"]).returncode == 0 and subprocess.run(
+                ["scp", "-P", t[1], "-i", t[3], "-o", "StrictHostKeyChecking=accept-new",
+                 *[str(LAB_DIR / f) for f in FILES], f"{t[-1]}:{REMOTE}/"]).returncode == 0
+            if ok:
+                break
+            log("copy failed, retrying in 20 s")
+            time.sleep(20)
+        else:
+            raise RuntimeError("could not copy scripts after 5 attempts")
     log("copied scripts to", len(ts), "nodes")
 
 
@@ -216,7 +225,9 @@ def auto(a) -> int:
         if cost > MAX_PER_HR:
             raise RuntimeError(f"cost ${cost}/hr above cap")
         push(ts)
-        tl["exit_codes"] = run(ts, a.tag, 40 * 60)
+        # Finish before the watchdog: a run cut off by the delete hung fetching results (2026-11-08).
+        # 감시 장치보다 먼저 끝낸다. 삭제에 잘린 실행은 결과를 가져오다 멈췄다 (2026-11-08).
+        tl["exit_codes"] = run(ts, a.tag, max(5, a.stop - 6) * 60)
         tl["run_done"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
         pull(ts)
     except Exception as e:
@@ -234,6 +245,7 @@ def auto(a) -> int:
 
 
 def main() -> int:
+    global MAX_PER_HR
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("action", choices=["stock", "list", "auto", "create", "show", "push", "run", "pull", "delete"])
     ap.add_argument("tag", nargs="?", default="2x8xA100SXM")
@@ -241,7 +253,10 @@ def main() -> int:
     ap.add_argument("--gpus", default=GPU, help="comma-separated GPU type ids to wait for, in order")
     ap.add_argument("--every", type=int, default=120, help="seconds between stock checks")
     ap.add_argument("--stop", type=int, default=75, help="hard stop, minutes after create")
+    ap.add_argument("--max-per-hr", type=float, default=MAX_PER_HR,
+                    help="cost cap in USD/hr, checked against the catalog before create and the members' cost after")
     a = ap.parse_args()
+    MAX_PER_HR = a.max_per_hr
     if a.action == "stock":
         print(*stock())
     elif a.action == "list":
