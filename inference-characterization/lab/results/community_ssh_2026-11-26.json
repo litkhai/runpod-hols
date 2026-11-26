@@ -1,0 +1,51 @@
+{
+ "issue": "https://github.com/litkhai/runpod-hols/issues/153",
+ "date": "2026-11-26",
+ "api": "REST v2 POST /v2/pods",
+ "request": {
+  "cloud": "COMMUNITY",
+  "gpu": {
+   "id": "NVIDIA GeForce RTX 3090",
+   "count": 1
+  },
+  "image": "runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404",
+  "disk": 20,
+  "ports": [
+   "22/tcp"
+  ],
+  "startSsh": true,
+  "note": "REST v2 has no supportPublicIp field"
+ },
+ "create_attempts": [
+  [
+   "NVIDIA GeForce RTX 3090",
+   201
+  ]
+ ],
+ "cost_per_hr": 0.22,
+ "ssh_direct_after_s": 121,
+ "ssh_direct_fields": [
+  "command",
+  "host",
+  "port",
+  "username"
+ ],
+ "ssh_login_first_try": true,
+ "dataCenterId": null,
+ "host": {
+  "nvidia_smi_gpu": "NVIDIA GeForce RTX 3090; pcie gen current 1, max 3; width current 16, max 16; driver 580.65.06",
+  "gpu_uuid_present": true,
+  "cuda": "13.0",
+  "topology": "single GPU, CPU affinity 0-127, NUMA 0",
+  "cpu": "AMD EPYC 7C13 64-Core Processor, 128 CPUs",
+  "RUNPOD_DC_ID_over_ssh": "",
+  "torch": "2.9.1+cu128, cuda available True"
+ },
+ "deleted": true,
+ "pods_left": [],
+ "total_s": 211,
+ "notes": [
+  "IP address, port, Pod id and GPU UUID left out",
+  "RUNPOD_* variables are set on PID 1 only; /proc/1/environ was not read, so the data center is unknown"
+ ]
+}

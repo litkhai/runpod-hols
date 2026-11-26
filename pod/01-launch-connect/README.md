@@ -211,6 +211,19 @@ About 8 minutes, under one cent.
 
 **Image `runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404`, 2026-11-26** ([#143](https://github.com/litkhai/runpod-hols/issues/143)); `DEFAULT_IMAGE` was 1.0.7 before. `launch.py --gpu` on an L4 (A5000, RTX 2000 Ada and A4000 had no stock): SSH after 188 s, `NVIDIA L4` driver 595.112.07, torch 2.9.1+cu128 with `torch.cuda.is_available()` True and a CUDA matmul, Python 3.12.3, Ubuntu 24.04.5. Port 8888 was not listening — `launch.py` does not ask for JupyterLab (`startJupyter` defaults to false). A separate REST v2 Pod with `startJupyter: true` on the same image served JupyterLab's login page on the 8888 proxy 126 s after create. Both Pods terminated.
 
+**`teardown.py --stop`, 2026-11-26** ([#153](https://github.com/litkhai/runpod-hols/issues/153)). `launch.py --gpu` was refused for RTX A4000 (catalog stock `LOW`), A4500, A5000, RTX 2000 Ada and RTX 4000 Ada (*no longer any instances available*) and created an L4 in EUR-IS-1 at $0.69/hr.
+
+| Step | Result |
+|---|---|
+| `status.py` | `RUNNING`, SSH address after 213 s |
+| `teardown.py --stop` | `stopped`; `.pod-id` kept |
+| `status.py` 10 s later | Listed under *STOPPED — GPU released, volume storage still billed*: status `EXITED`, `$0.69/hr not running`, volume 10GB at `/workspace` |
+| REST v2 `GET /v2/pods/{id}` | `status` `EXITED`; `gpu` still `NVIDIA L4` ×1, `cost` still 0.69 (the rate, not what is billed), `ssh.direct` still listed |
+| `teardown.py` | Terminated the stopped Pod and removed `.pod-id` |
+| `status.py` after | `No Pods.`; `currentSpendPerHr` 0 |
+
+249 s, about USD 0.05. Starting the stopped Pod again was not tried here; [`02-storage`](../02-storage) covers stop and start.
+
 ---
 
 ## 한국어
@@ -419,3 +432,16 @@ SDK 와 콘솔이 다릅니다.
 약 8분, 1센트 미만.
 
 **이미지 `runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404`, 2026-11-26** ([#143](https://github.com/litkhai/runpod-hols/issues/143)). 그전 `DEFAULT_IMAGE` 는 1.0.7. L4 에서 `launch.py --gpu` (A5000, RTX 2000 Ada, A4000 은 재고 없음): 188초 뒤 SSH, `NVIDIA L4` 드라이버 595.112.07, torch 2.9.1+cu128 에서 `torch.cuda.is_available()` True 와 CUDA 행렬곱, Python 3.12.3, Ubuntu 24.04.5. 8888 포트는 열려 있지 않았다. `launch.py` 가 JupyterLab 을 요청하지 않기 때문이다 (`startJupyter` 기본값 false). 같은 이미지로 `startJupyter: true` 를 준 REST v2 Pod 를 따로 만들었더니 생성 126초 뒤 8888 프록시에서 JupyterLab 로그인 페이지가 나왔다. 두 Pod 모두 삭제했다.
+
+**`teardown.py --stop`, 2026-11-26** ([#153](https://github.com/litkhai/runpod-hols/issues/153)). `launch.py --gpu` 는 RTX A4000 (카탈로그 재고 `LOW`), A4500, A5000, RTX 2000 Ada, RTX 4000 Ada 에서 거부됐고 (*no longer any instances available*), EUR-IS-1 의 L4 를 시간당 $0.69 에 만들었다.
+
+| 단계 | 결과 |
+|---|---|
+| `status.py` | `RUNNING`, 213초 뒤 SSH 주소 |
+| `teardown.py --stop` | `stopped`, `.pod-id` 유지 |
+| 10초 뒤 `status.py` | *STOPPED — GPU 반납, 볼륨 스토리지는 계속 과금* 아래에 표시: 상태 `EXITED`, `$0.69/hr not running`, `/workspace` 에 볼륨 10GB |
+| REST v2 `GET /v2/pods/{id}` | `status` `EXITED`. `gpu` 는 여전히 `NVIDIA L4` ×1, `cost` 도 0.69 (요율이지 과금액이 아님), `ssh.direct` 도 그대로 |
+| `teardown.py` | 중지된 Pod 을 삭제하고 `.pod-id` 제거 |
+| 종료 후 `status.py` | `No Pods.`, `currentSpendPerHr` 0 |
+
+249초, 약 USD 0.05. 중지한 Pod 을 다시 시작하는 것은 여기서 해보지 않았다. 중지와 시작은 [`02-storage`](../02-storage) 에서 다룬다.
