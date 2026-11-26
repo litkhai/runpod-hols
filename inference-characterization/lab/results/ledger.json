@@ -141,5 +141,38 @@
     "usd": 0.842,
     "status": "done",
     "ended": "2026-10-07T02:19:16+0900"
+  },
+  {
+    "label": "RTX_3090_community",
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "cloud": "COMMUNITY",
+    "pod_id": "4myo7vocqgjgdd",
+    "usd_per_hr": 0.22,
+    "hours": 0.148,
+    "usd": 0.033,
+    "status": "failed",
+    "ended": "2026-11-26T23:08:39+0900"
+  },
+  {
+    "label": "RTX_4090_community",
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "cloud": "COMMUNITY",
+    "pod_id": "kry819ckz3r34m",
+    "usd_per_hr": 0.34,
+    "hours": 0.659,
+    "usd": 0.224,
+    "status": "no-ssh",
+    "ended": "2026-11-26T23:55:48+0900"
+  },
+  {
+    "label": "RTX_4090_v2",
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "cloud": "SECURE",
+    "pod_id": "v5kpvxd5ev82n2",
+    "usd_per_hr": 0.89,
+    "hours": 1.636,
+    "usd": 1.456,
+    "status": "done",
+    "ended": "2026-11-27T00:34:53+0900"
   }
 ]

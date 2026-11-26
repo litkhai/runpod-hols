@@ -239,7 +239,7 @@ AdamW keeps two pieces of history for every parameter — **m**, a running mean 
 GQA buys a 4× reduction, which is why every recent model uses GQA or MQA; an FP8 KV cache halves it again.
 
 <div class="note" markdown="1">
-**Measured here.** The inference sweep ([FINDINGS](https://github.com/litkhai/runpod-hols/blob/main/inference-characterization/FINDINGS.md)) ran one vLLM image on nine GPU types. vLLM's preemption counter — requests evicted because the KV cache filled up — rose **only on the three GPUs with the smallest KV cache**: RTX 4090, L4 and L40 (C6). On A100, H100 and H200, whose KV cache holds over a million tokens, 97–100% of prompt tokens were served from the prefix cache (C21).
+**Measured here.** The inference sweep ([FINDINGS](https://github.com/litkhai/runpod-hols/blob/main/inference-characterization/FINDINGS.md)) ran one vLLM image on nine GPU types. vLLM's preemption counter — requests evicted because the KV cache filled up — rose **only on the three GPUs with the smallest KV cache**: RTX 4090, L4 and L40 (C6). On A100, H100 and H200, whose KV cache holds over a million tokens, 97–100% of prompt tokens were served from the prefix cache (C21). Re-run on REST v2 on 2026-11-26 on an RTX 4090, the same sweep ran end to end with figures in October's range (C37).
 </div>
 
 ### The five workloads
@@ -533,7 +533,7 @@ Runpod Pod prices per GPU-hour, read from the REST v2 catalog on 2026-11-25:
 An 8×H100 server runs roughly USD 250–300k; over three years that is USD 1.2–1.5 per GPU-hour before power, space and people. Self-hosting wins only if you can hold 60%+ utilisation for three years — most teams cannot. And with NVIDIA on a yearly architecture cadence, build against CUDA, CUTLASS and Triton rather than hard-coding precision and memory assumptions.
 
 <div class="note" markdown="1">
-**Measured here.** Community Cloud is cheaper, but a Community RTX 4090 Pod created with a public IP never got one, or an SSH port, within 15 minutes in October (C7). On 2026-11-26 a Community RTX 3090 Pod created over REST v2 had a direct SSH address after 121 s and gave every host field except the data center (C36, [#153](https://github.com/litkhai/runpod-hols/issues/153)); the [cluster]({{ '/cluster/' | relative_url }}) and [Pod]({{ '/pod/' | relative_url }}) labs run on Secure Cloud.
+**Measured here.** Community Cloud is cheaper, but a Community RTX 4090 Pod created with a public IP never got one, or an SSH port, within 15 minutes in October (C7). On 2026-11-26 a Community RTX 3090 Pod created over REST v2 had a direct SSH address after 121 s and gave every host field except the data center (C36, [#153](https://github.com/litkhai/runpod-hols/issues/153)), but the same day a Community RTX 4090 Pod again got no SSH address in 15 minutes (C38); the [cluster]({{ '/cluster/' | relative_url }}) and [Pod]({{ '/pod/' | relative_url }}) labs run on Secure Cloud.
 </div>
 
 ## Glossary
@@ -806,7 +806,7 @@ AdamW 는 파라미터 하나하나마다 이력 두 개를 기억합니다 — 
 GQA 가 4배를 절감합니다. 최신 모델이 전부 GQA 또는 MQA 를 쓰는 이유이고, KV 캐시를 FP8 로 하면 한 번 더 절반입니다.
 
 <div class="note" markdown="1">
-**여기서 측정한 것.** 추론 스윕([FINDINGS](https://github.com/litkhai/runpod-hols/blob/main/inference-characterization/FINDINGS.md))은 vLLM 이미지 하나를 GPU 9종에서 돌렸습니다. vLLM 의 preemption 카운터 — KV 캐시가 가득 차 밀려난 요청 수 — 는 **KV 캐시가 가장 작은 GPU 세 종에서만** 올랐습니다: RTX 4090, L4, L40 (C6). KV 캐시가 100만 토큰 이상 들어가는 A100, H100, H200 에서는 프롬프트 토큰의 97–100% 가 프리픽스 캐시에서 처리됐습니다 (C21).
+**여기서 측정한 것.** 추론 스윕([FINDINGS](https://github.com/litkhai/runpod-hols/blob/main/inference-characterization/FINDINGS.md))은 vLLM 이미지 하나를 GPU 9종에서 돌렸습니다. vLLM 의 preemption 카운터 — KV 캐시가 가득 차 밀려난 요청 수 — 는 **KV 캐시가 가장 작은 GPU 세 종에서만** 올랐습니다: RTX 4090, L4, L40 (C6). KV 캐시가 100만 토큰 이상 들어가는 A100, H100, H200 에서는 프롬프트 토큰의 97–100% 가 프리픽스 캐시에서 처리됐습니다 (C21). 2026-11-26 REST v2 로 RTX 4090 에서 다시 돌린 같은 스윕은 처음부터 끝까지 돌았고 수치는 10월 범위 안이었습니다 (C37).
 </div>
 
 ### 다섯 가지 작업
@@ -1100,7 +1100,7 @@ Runpod Pod 의 GPU 시간당 가격, 2026-11-25 REST v2 카탈로그 기준:
 H100 8장 서버가 약 USD 250–300k 입니다. 3년이면 전력·상면·인력을 빼고도 GPU 시간당 USD 1.2–1.5 입니다. 자체 구축은 가동률 60% 이상을 3년간 유지할 수 있을 때만 유리하고, 대부분의 팀은 그러지 못합니다. 그리고 NVIDIA 가 연 단위 아키텍처 주기로 가는 만큼, 정밀도와 메모리 가정을 하드코딩하지 말고 CUDA, CUTLASS, Triton 에 맞춰 만드세요.
 
 <div class="note" markdown="1">
-**여기서 측정한 것.** Community Cloud 가 더 싸지만, 공인 IP 를 요청해 만든 Community RTX 4090 Pod 는 15분 안에 공인 IP 도, SSH 포트도 받지 못했습니다 (10월, C7). 2026-11-26 REST v2 로 만든 Community RTX 3090 Pod 은 121초 뒤 직접 SSH 주소가 생겼고, 데이터센터를 빼고 호스트 정보를 모두 얻었습니다 (C36, [#153](https://github.com/litkhai/runpod-hols/issues/153)). [클러스터]({{ '/cluster/' | relative_url }}) 와 [Pod]({{ '/pod/' | relative_url }}) 실습은 Secure Cloud 에서 돌립니다.
+**여기서 측정한 것.** Community Cloud 가 더 싸지만, 공인 IP 를 요청해 만든 Community RTX 4090 Pod 는 15분 안에 공인 IP 도, SSH 포트도 받지 못했습니다 (10월, C7). 2026-11-26 REST v2 로 만든 Community RTX 3090 Pod 은 121초 뒤 직접 SSH 주소가 생겼고, 데이터센터를 빼고 호스트 정보를 모두 얻었습니다 (C36, [#153](https://github.com/litkhai/runpod-hols/issues/153)). 같은 날 Community RTX 4090 Pod 은 다시 15분 동안 SSH 주소를 받지 못했습니다 (C38). [클러스터]({{ '/cluster/' | relative_url }}) 와 [Pod]({{ '/pod/' | relative_url }}) 실습은 Secure Cloud 에서 돌립니다.
 </div>
 
 ## 용어집
@@ -1373,7 +1373,7 @@ AdamW 为每个参数保留两份历史——**m**，近期梯度的滑动平均
 GQA 带来 4 倍的缩减，这就是近期模型都采用 GQA 或 MQA 的原因；FP8 KV cache 还能再减半。
 
 <div class="note" markdown="1">
-**此处实测。** 推理扫描实验（[FINDINGS](https://github.com/litkhai/runpod-hols/blob/main/inference-characterization/FINDINGS.md)）在九种 GPU 上运行了同一个 vLLM 镜像。vLLM 的抢占计数器——因 KV cache 占满而被驱逐的请求——**只在 KV cache 最小的三种 GPU 上上升**：RTX 4090、L4 和 L40（C6）。在 KV cache 能容纳超过一百万 token 的 A100、H100 和 H200 上，97–100% 的提示词 token 由 prefix cache 提供（C21）。
+**此处实测。** 推理扫描实验（[FINDINGS](https://github.com/litkhai/runpod-hols/blob/main/inference-characterization/FINDINGS.md)）在九种 GPU 上运行了同一个 vLLM 镜像。vLLM 的抢占计数器——因 KV cache 占满而被驱逐的请求——**只在 KV cache 最小的三种 GPU 上上升**：RTX 4090、L4 和 L40（C6）。在 KV cache 能容纳超过一百万 token 的 A100、H100 和 H200 上，97–100% 的提示词 token 由 prefix cache 提供（C21）。2026-11-26 在 RTX 4090 上用 REST v2 重新运行同一扫描，端到端跑通，数值在 10 月的范围内（C37）。
 </div>
 
 ### 五种工作负载
@@ -1667,7 +1667,7 @@ Runpod Pod 每 GPU 小时价格，于 2026-11-25 从 REST v2 目录读取：
 一台 8×H100 服务器约 USD 250–300k；摊到三年，在不计电力、场地和人力的情况下是每 GPU 小时 USD 1.2–1.5。只有能在三年内保持 60% 以上的利用率，自建才划算——大多数团队做不到。而且 NVIDIA 每年更新一次架构，应基于 CUDA、CUTLASS 和 Triton 来构建，而不是把精度和显存假设写死。
 
 <div class="note" markdown="1">
-**此处实测。** Community Cloud 更便宜，但一台带公网 IP 创建的 Community RTX 4090 Pod 在 15 分钟内始终没有拿到公网 IP，也没有 SSH 端口（10 月，C7）。2026-11-26 通过 REST v2 创建的 Community RTX 3090 Pod 在 121 秒后获得直连 SSH 地址，除数据中心外的主机信息都已取得（C36，[#153](https://github.com/litkhai/runpod-hols/issues/153)）；[集群]({{ '/cluster/' | relative_url }})和 [Pod]({{ '/pod/' | relative_url }}) 实验都在 Secure Cloud 上运行。
+**此处实测。** Community Cloud 更便宜，但一台带公网 IP 创建的 Community RTX 4090 Pod 在 15 分钟内始终没有拿到公网 IP，也没有 SSH 端口（10 月，C7）。2026-11-26 通过 REST v2 创建的 Community RTX 3090 Pod 在 121 秒后获得直连 SSH 地址，除数据中心外的主机信息都已取得（C36，[#153](https://github.com/litkhai/runpod-hols/issues/153)），但同一天一台 Community RTX 4090 Pod 又在 15 分钟内没有拿到 SSH 地址（C38）；[集群]({{ '/cluster/' | relative_url }})和 [Pod]({{ '/pod/' | relative_url }}) 实验都在 Secure Cloud 上运行。
 </div>
 
 ## 术语表
@@ -1940,7 +1940,7 @@ AdamW はすべてのパラメータについて 2 つの履歴を保持しま�
 GQA で 4 分の 1 になります。最近のモデルがすべて GQA か MQA を使うのはこのためで、FP8 の KV キャッシュにするとさらに半分になります。
 
 <div class="note" markdown="1">
-**ここで測定したもの。** 推論スイープ（[FINDINGS](https://github.com/litkhai/runpod-hols/blob/main/inference-characterization/FINDINGS.md)）は、1 つの vLLM イメージを 9 種類の GPU で実行しました。vLLM のプリエンプションカウンタ（KV キャッシュが満杯になって追い出されたリクエスト）が増えたのは、**KV キャッシュが最も小さい 3 つの GPU だけ**でした。RTX 4090、L4、L40 です（C6）。KV キャッシュが 100 万トークン以上を保持する A100、H100、H200 では、プロンプトトークンの 97–100% がプレフィックスキャッシュから提供されました（C21）。
+**ここで測定したもの。** 推論スイープ（[FINDINGS](https://github.com/litkhai/runpod-hols/blob/main/inference-characterization/FINDINGS.md)）は、1 つの vLLM イメージを 9 種類の GPU で実行しました。vLLM のプリエンプションカウンタ（KV キャッシュが満杯になって追い出されたリクエスト）が増えたのは、**KV キャッシュが最も小さい 3 つの GPU だけ**でした。RTX 4090、L4、L40 です（C6）。KV キャッシュが 100 万トークン以上を保持する A100、H100、H200 では、プロンプトトークンの 97–100% がプレフィックスキャッシュから提供されました（C21）。2026-11-26 に REST v2 で RTX 4090 上で同じスイープを再実行すると、エンドツーエンドで動き、数値は 10 月の範囲内でした（C37）。
 </div>
 
 ### 5 つのワークロード
@@ -2234,7 +2234,7 @@ Runpod の Pod の GPU 時間あたりの価格、2026-11-25 に REST v2 カタ�
 8×H100 サーバーはおよそ USD 25–30 万です。3 年間で、電力、スペース、人件費を除いて GPU 時間あたり USD 1.2–1.5 になります。セルフホストが勝つのは、3 年間 60% 以上の使用率を維持できる場合だけで、ほとんどのチームにはできません。そして NVIDIA が毎年アーキテクチャを更新する以上、精度やメモリの前提をハードコードするのではなく、CUDA、CUTLASS、Triton を前提に構築してください。
 
 <div class="note" markdown="1">
-**ここで測定したもの。** Community Cloud は安価ですが、パブリック IP を指定して作成した Community の RTX 4090 Pod は、15 分以内にパブリック IP も SSH ポートも得られませんでした（10 月、C7）。2026-11-26 に REST v2 で作成した Community の RTX 3090 Pod は 121 秒後に直接 SSH アドレスを得て、データセンター以外のホスト情報をすべて取得できました（C36、[#153](https://github.com/litkhai/runpod-hols/issues/153)）。[クラスタ]({{ '/cluster/' | relative_url }})と [Pod]({{ '/pod/' | relative_url }}) のラボは Secure Cloud で実行しています。
+**ここで測定したもの。** Community Cloud は安価ですが、パブリック IP を指定して作成した Community の RTX 4090 Pod は、15 分以内にパブリック IP も SSH ポートも得られませんでした（10 月、C7）。2026-11-26 に REST v2 で作成した Community の RTX 3090 Pod は 121 秒後に直接 SSH アドレスを得て、データセンター以外のホスト情報をすべて取得できました（C36、[#153](https://github.com/litkhai/runpod-hols/issues/153)）。同じ日に Community の RTX 4090 Pod は、再び 15 分以内に SSH アドレスを得られませんでした（C38）。[クラスタ]({{ '/cluster/' | relative_url }})と [Pod]({{ '/pod/' | relative_url }}) のラボは Secure Cloud で実行しています。
 </div>
 
 ## 用語集

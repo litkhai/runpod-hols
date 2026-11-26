@@ -1,0 +1,39 @@
+{
+ "issue": "https://github.com/litkhai/runpod-hols/issues/155",
+ "date": "2026-11-26",
+ "tool": "pod_sweep.py --cloud COMMUNITY --cases chat --rates 1",
+ "attempts": [
+  {
+   "label": "RTX_3090_community",
+   "gpu": "NVIDIA GeForce RTX 3090",
+   "usd_per_hr": 0.22,
+   "created": "22:59:46",
+   "ssh_ok": "23:03:44",
+   "bootstrap": [
+    "vllm 0.31.0 torch 2.13.0+cu130 cuda 13.0 gpu_ok True"
+   ],
+   "vllm_serve_error": [
+    "RuntimeError: CUDA unknown error - this may be due to an incorrectly set up environment, e.g. changing env variable CUDA_VISIBLE_DEVICES after program start. Setting the available devices to be zero."
+   ],
+   "host_json": "not captured (host capture runs after the server starts)",
+   "status": "failed",
+   "usd": 0.033
+  },
+  {
+   "label": "RTX_3090_community (retry)",
+   "gpu": "NVIDIA GeForce RTX 3090",
+   "result": "no capacity for 5 min (23:08-23:13), nothing created"
+  },
+  {
+   "label": "RTX_4090_community",
+   "gpu": "NVIDIA GeForce RTX 4090",
+   "usd_per_hr": 0.34,
+   "created": "23:16:16",
+   "ssh_direct": "none within 15 min",
+   "status": "no-ssh",
+   "delete": "failed 23:32-23:55 (local DNS unavailable while the machine slept), terminated 23:55:48",
+   "usd": 0.224
+  }
+ ],
+ "times": "KST; IPs, ports and Pod ids left out"
+}
