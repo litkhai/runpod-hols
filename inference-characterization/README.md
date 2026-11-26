@@ -104,8 +104,8 @@ To measure one GPU type on different hosts, pin each run to a datacenter with `-
 
 | ID | Result | Claims in [`FINDINGS.md`](./FINDINGS.md) |
 |---|---|---|
-| F1 | Secure Cloud: passes. Community Cloud: not determined — the Pod never got a public IP or port 22 | C3, C4, C7 |
-| F2 | Secure Cloud: passes; the only throttle reason seen was `sw_power_cap`. Community Cloud: not determined | C5, C6, C7 |
+| F1 | Secure Cloud: passes. Community Cloud: passes except the data center — on 2026-11-26 an RTX 3090 Pod had a direct SSH address after 121 s and gave every other host field; in October the Pod never got a public IP or port 22 | C3, C4, C7, C36 |
+| F2 | Secure Cloud: passes; the only throttle reason seen was `sw_power_cap`. Community Cloud: not determined — no load was run on the 2026-11-26 Pod | C5, C6, C7, C36 |
 | F3 | Passes on every GPU type obtained; one-GPU stock with a CUDA 13 floor changed within hours | C1, C2 |
 | F4 | The job response carries one `delayTime` and a `workerId` that does not distinguish cold from warm; the v2 worker logs hold the phases, but only while the container exists | C9–C14, C17–C19 |
 | F5 | Not as worded: Modal meets three of the four conditions under a literal reading | C16, [`RESEARCH.md`](./RESEARCH.md) |
@@ -214,8 +214,8 @@ python3 pod_sweep.py --label RTX_4090_community --gpu "NVIDIA GeForce RTX 4090" 
 
 | ID | 결과 | [`FINDINGS.md`](./FINDINGS.md)의 주장 |
 |---|---|---|
-| F1 | Secure Cloud: 통과. Community Cloud: 판정 불가. Pod에 공인 IP와 22번 포트가 생기지 않았다 | C3, C4, C7 |
-| F2 | Secure Cloud: 통과. 관측된 스로틀 사유는 `sw_power_cap`뿐이다. Community Cloud: 판정 불가 | C5, C6, C7 |
+| F1 | Secure Cloud: 통과. Community Cloud: 데이터센터를 빼고 통과. 2026-11-26 RTX 3090 Pod는 121초 뒤 직접 SSH 주소가 생겼고 나머지 호스트 정보를 모두 얻었다. 10월에는 Pod에 공인 IP와 22번 포트가 생기지 않았다 | C3, C4, C7, C36 |
+| F2 | Secure Cloud: 통과. 관측된 스로틀 사유는 `sw_power_cap`뿐이다. Community Cloud: 판정 불가. 2026-11-26 Pod에는 부하를 걸지 않았다 | C5, C6, C7, C36 |
 | F3 | 확보한 모든 GPU 종류에서 통과. CUDA 13 조건의 1장짜리 재고는 몇 시간 사이에 바뀌었다 | C1, C2 |
 | F4 | 작업 응답에는 `delayTime` 하나와 콜드·웜을 구분하지 못하는 `workerId`만 있다. v2 워커 로그에 단계 정보가 있지만 컨테이너가 살아 있는 동안만 남는다 | C9–C14, C17–C19 |
 | F5 | 문장 그대로는 성립하지 않는다. Modal이 문자 그대로 읽으면 네 조건 중 세 가지를 충족한다 | C16, [`RESEARCH.md`](./RESEARCH.md) |

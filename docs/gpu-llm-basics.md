@@ -533,7 +533,7 @@ Runpod Pod prices per GPU-hour, read from the REST v2 catalog on 2026-11-25:
 An 8×H100 server runs roughly USD 250–300k; over three years that is USD 1.2–1.5 per GPU-hour before power, space and people. Self-hosting wins only if you can hold 60%+ utilisation for three years — most teams cannot. And with NVIDIA on a yearly architecture cadence, build against CUDA, CUTLASS and Triton rather than hard-coding precision and memory assumptions.
 
 <div class="note" markdown="1">
-**Measured here.** Community Cloud is cheaper, but a Community RTX 4090 Pod created with a public IP never got one, or an SSH port, within 15 minutes (C7); the [cluster]({{ '/cluster/' | relative_url }}) and [Pod]({{ '/pod/' | relative_url }}) labs run on Secure Cloud.
+**Measured here.** Community Cloud is cheaper, but a Community RTX 4090 Pod created with a public IP never got one, or an SSH port, within 15 minutes in October (C7). On 2026-11-26 a Community RTX 3090 Pod created over REST v2 had a direct SSH address after 121 s and gave every host field except the data center (C36, [#153](https://github.com/litkhai/runpod-hols/issues/153)); the [cluster]({{ '/cluster/' | relative_url }}) and [Pod]({{ '/pod/' | relative_url }}) labs run on Secure Cloud.
 </div>
 
 ## Glossary
@@ -1100,7 +1100,7 @@ Runpod Pod 의 GPU 시간당 가격, 2026-11-25 REST v2 카탈로그 기준:
 H100 8장 서버가 약 USD 250–300k 입니다. 3년이면 전력·상면·인력을 빼고도 GPU 시간당 USD 1.2–1.5 입니다. 자체 구축은 가동률 60% 이상을 3년간 유지할 수 있을 때만 유리하고, 대부분의 팀은 그러지 못합니다. 그리고 NVIDIA 가 연 단위 아키텍처 주기로 가는 만큼, 정밀도와 메모리 가정을 하드코딩하지 말고 CUDA, CUTLASS, Triton 에 맞춰 만드세요.
 
 <div class="note" markdown="1">
-**여기서 측정한 것.** Community Cloud 가 더 싸지만, 공인 IP 를 요청해 만든 Community RTX 4090 Pod 는 15분 안에 공인 IP 도, SSH 포트도 받지 못했습니다 (C7). [클러스터]({{ '/cluster/' | relative_url }}) 와 [Pod]({{ '/pod/' | relative_url }}) 실습은 Secure Cloud 에서 돌립니다.
+**여기서 측정한 것.** Community Cloud 가 더 싸지만, 공인 IP 를 요청해 만든 Community RTX 4090 Pod 는 15분 안에 공인 IP 도, SSH 포트도 받지 못했습니다 (10월, C7). 2026-11-26 REST v2 로 만든 Community RTX 3090 Pod 은 121초 뒤 직접 SSH 주소가 생겼고, 데이터센터를 빼고 호스트 정보를 모두 얻었습니다 (C36, [#153](https://github.com/litkhai/runpod-hols/issues/153)). [클러스터]({{ '/cluster/' | relative_url }}) 와 [Pod]({{ '/pod/' | relative_url }}) 실습은 Secure Cloud 에서 돌립니다.
 </div>
 
 ## 용어집
@@ -1667,7 +1667,7 @@ Runpod Pod 每 GPU 小时价格，于 2026-11-25 从 REST v2 目录读取：
 一台 8×H100 服务器约 USD 250–300k；摊到三年，在不计电力、场地和人力的情况下是每 GPU 小时 USD 1.2–1.5。只有能在三年内保持 60% 以上的利用率，自建才划算——大多数团队做不到。而且 NVIDIA 每年更新一次架构，应基于 CUDA、CUTLASS 和 Triton 来构建，而不是把精度和显存假设写死。
 
 <div class="note" markdown="1">
-**此处实测。** Community Cloud 更便宜，但一台带公网 IP 创建的 Community RTX 4090 Pod 在 15 分钟内始终没有拿到公网 IP，也没有 SSH 端口（C7）；[集群]({{ '/cluster/' | relative_url }})和 [Pod]({{ '/pod/' | relative_url }}) 实验都在 Secure Cloud 上运行。
+**此处实测。** Community Cloud 更便宜，但一台带公网 IP 创建的 Community RTX 4090 Pod 在 15 分钟内始终没有拿到公网 IP，也没有 SSH 端口（10 月，C7）。2026-11-26 通过 REST v2 创建的 Community RTX 3090 Pod 在 121 秒后获得直连 SSH 地址，除数据中心外的主机信息都已取得（C36，[#153](https://github.com/litkhai/runpod-hols/issues/153)）；[集群]({{ '/cluster/' | relative_url }})和 [Pod]({{ '/pod/' | relative_url }}) 实验都在 Secure Cloud 上运行。
 </div>
 
 ## 术语表
@@ -2234,7 +2234,7 @@ Runpod の Pod の GPU 時間あたりの価格、2026-11-25 に REST v2 カタ�
 8×H100 サーバーはおよそ USD 25–30 万です。3 年間で、電力、スペース、人件費を除いて GPU 時間あたり USD 1.2–1.5 になります。セルフホストが勝つのは、3 年間 60% 以上の使用率を維持できる場合だけで、ほとんどのチームにはできません。そして NVIDIA が毎年アーキテクチャを更新する以上、精度やメモリの前提をハードコードするのではなく、CUDA、CUTLASS、Triton を前提に構築してください。
 
 <div class="note" markdown="1">
-**ここで測定したもの。** Community Cloud は安価ですが、パブリック IP を指定して作成した Community の RTX 4090 Pod は、15 分以内にパブリック IP も SSH ポートも得られませんでした（C7）。[クラスタ]({{ '/cluster/' | relative_url }})と [Pod]({{ '/pod/' | relative_url }}) のラボは Secure Cloud で実行しています。
+**ここで測定したもの。** Community Cloud は安価ですが、パブリック IP を指定して作成した Community の RTX 4090 Pod は、15 分以内にパブリック IP も SSH ポートも得られませんでした（10 月、C7）。2026-11-26 に REST v2 で作成した Community の RTX 3090 Pod は 121 秒後に直接 SSH アドレスを得て、データセンター以外のホスト情報をすべて取得できました（C36、[#153](https://github.com/litkhai/runpod-hols/issues/153)）。[クラスタ]({{ '/cluster/' | relative_url }})と [Pod]({{ '/pod/' | relative_url }}) のラボは Secure Cloud で実行しています。
 </div>
 
 ## 用語集

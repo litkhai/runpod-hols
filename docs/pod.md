@@ -11,7 +11,7 @@ permalink: /pod/
 ## English
 
 <div class="note" markdown="1">
-**Lab 01 runs end to end** — launch from Python, connect over SSH, tear down, CPU by default. First run on 2026-11-05 with `runpod` 1.12.0; re-run on 2026-11-24 with `runpod` 2.4.0 and a key with GraphQL set to None ([#126](https://github.com/litkhai/runpod-hols/issues/126)): a `cpu3c` 2-vCPU CPU Pod at $0.06/hr, SSH reachable within minutes, under one cent in total. [See the lab](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect).
+**Lab 01 runs end to end** — launch from Python, connect over SSH, tear down, CPU by default. First run on 2026-11-05 with `runpod` 1.12.0; re-run on 2026-11-24 with `runpod` 2.4.0 and a key with GraphQL set to None ([#126](https://github.com/litkhai/runpod-hols/issues/126)): a `cpu3c` 2-vCPU CPU Pod at $0.06/hr, SSH reachable within minutes, under one cent in total. On 2026-11-26 `teardown.py --stop` on an L4 GPU Pod left it `EXITED`, listed as stopped with the volume still billed, and a plain `teardown.py` then terminated it ([#153](https://github.com/litkhai/runpod-hols/issues/153)). [See the lab](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect).
 </div>
 
 A Pod is a GPU or CPU container you rent and control. Unlike Serverless it stays up until you stop it, keeps its filesystem, and gives you shell access. This is where development, experimentation and fine-tuning happen.
@@ -211,7 +211,7 @@ Note that `runpod/containers` is shared ground with the Serverless track — `ru
 ## 한국어
 
 <div class="note" markdown="1">
-**실습 01 은 처음부터 끝까지 실행됩니다** — Python 으로 기동, SSH 접속, 정리, 기본값 CPU. 2026-11-05 `runpod` 1.12.0 으로 처음 실행했고, 2026-11-24 `runpod` 2.4.0 과 GraphQL 을 None 으로 둔 키로 다시 실행했습니다 ([#126](https://github.com/litkhai/runpod-hols/issues/126)). `cpu3c` vCPU 2개 CPU Pod 시간당 $0.06, 몇 분 안에 SSH 접속, 총비용 1센트 미만. [실습 보기](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect).
+**실습 01 은 처음부터 끝까지 실행됩니다** — Python 으로 기동, SSH 접속, 정리, 기본값 CPU. 2026-11-05 `runpod` 1.12.0 으로 처음 실행했고, 2026-11-24 `runpod` 2.4.0 과 GraphQL 을 None 으로 둔 키로 다시 실행했습니다 ([#126](https://github.com/litkhai/runpod-hols/issues/126)). `cpu3c` vCPU 2개 CPU Pod 시간당 $0.06, 몇 분 안에 SSH 접속, 총비용 1센트 미만. 2026-11-26 L4 GPU Pod 에서 `teardown.py --stop` 을 실행하자 Pod 은 `EXITED` 가 되어 볼륨은 계속 과금되는 중지 상태로 표시됐고, 이어 `teardown.py` 로 삭제했습니다 ([#153](https://github.com/litkhai/runpod-hols/issues/153)). [실습 보기](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect).
 </div>
 
 Pod 는 직접 빌려서 제어하는 GPU 또는 CPU 컨테이너입니다. Serverless 와 달리 중지할 때까지 떠 있고, 파일시스템이 유지되며, 셸 접속이 가능합니다. 개발, 실험, 파인튜닝이 이루어지는 곳입니다.
@@ -411,7 +411,7 @@ Pod 는 코드 저장소가 필요 없습니다. 콘솔, CLI, SDK 로 기동하�
 ## 简体中文
 
 <div class="note" markdown="1">
-**实验 01 已端到端跑通**——从 Python 启动、通过 SSH 连接、销毁，默认使用 CPU。2026-11-05 首次使用 `runpod` 1.12.0 运行；2026-11-24 使用 `runpod` 2.4.0 和 GraphQL 设为 None 的密钥重新运行（[#126](https://github.com/litkhai/runpod-hols/issues/126)）：一个 `cpu3c` 2 vCPU 的 CPU Pod，$0.06/hr，几分钟内可通过 SSH 连接，总费用不到一美分。[查看实验](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect)。
+**实验 01 已端到端跑通**——从 Python 启动、通过 SSH 连接、销毁，默认使用 CPU。2026-11-05 首次使用 `runpod` 1.12.0 运行；2026-11-24 使用 `runpod` 2.4.0 和 GraphQL 设为 None 的密钥重新运行（[#126](https://github.com/litkhai/runpod-hols/issues/126)）：一个 `cpu3c` 2 vCPU 的 CPU Pod，$0.06/hr，几分钟内可通过 SSH 连接，总费用不到一美分。2026-11-26 在 L4 GPU Pod 上执行 `teardown.py --stop` 后，Pod 变为 `EXITED`，显示为已停止且卷仍计费，随后用 `teardown.py` 将其销毁（[#153](https://github.com/litkhai/runpod-hols/issues/153)）。[查看实验](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect)。
 </div>
 
 Pod 是你租用并自行控制的 GPU 或 CPU 容器。与 Serverless 不同，它会一直运行直到你停止它，保留其文件系统，并提供 shell 访问。开发、实验和微调都在这里进行。
@@ -611,7 +611,7 @@ Pod 不需要代码仓库——你可以从控制台、CLI 或 SDK 启动——�
 ## 日本語
 
 <div class="note" markdown="1">
-**ラボ 01 はエンドツーエンドで動作します**。Python から起動し、SSH で接続し、削除します。デフォルトは CPU です。2026-11-05 に `runpod` 1.12.0 で初回実行し、2026-11-24 に `runpod` 2.4.0 と GraphQL を None にしたキーで再実行しました（[#126](https://github.com/litkhai/runpod-hols/issues/126)）：`cpu3c` 2 vCPU の CPU Pod で $0.06/hr、数分で SSH 接続でき、合計 1 セント未満でした。[ラボを見る](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect)。
+**ラボ 01 はエンドツーエンドで動作します**。Python から起動し、SSH で接続し、削除します。デフォルトは CPU です。2026-11-05 に `runpod` 1.12.0 で初回実行し、2026-11-24 に `runpod` 2.4.0 と GraphQL を None にしたキーで再実行しました（[#126](https://github.com/litkhai/runpod-hols/issues/126)）：`cpu3c` 2 vCPU の CPU Pod で $0.06/hr、数分で SSH 接続でき、合計 1 セント未満でした。2026-11-26 に L4 GPU Pod で `teardown.py --stop` を実行すると Pod は `EXITED` になり、ボリュームは課金が続く停止状態として表示され、その後 `teardown.py` で削除しました（[#153](https://github.com/litkhai/runpod-hols/issues/153)）。[ラボを見る](https://github.com/litkhai/runpod-hols/tree/main/pod/01-launch-connect)。
 </div>
 
 Pod は借りて自分で制御する GPU または CPU コンテナです。Serverless と違い、停止するまで動き続け、ファイルシステムを保持し、シェルアクセスができます。開発、実験、ファインチューニングはここで行います。
