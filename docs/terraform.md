@@ -39,6 +39,8 @@ What changed against the 1.0.8 notes below:
 
 **Default image `runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404` since 2026-11-26** ([#143](https://github.com/litkhai/runpod-hols/issues/143)); 1.0.7 before. Same CUDA 12.8 and torch 2.9.1. `terraform validate` passed; `apply` was not re-run. The image itself was checked on REST v2 GPU Pods (L4, Secure): SSH, `torch.cuda.is_available()` and a CUDA matmul, and JupyterLab on the 8888 proxy 126 s after create with `startJupyter`.
 
+**SSH login with `apply`, 2026-11-26** ([#156](https://github.com/litkhai/runpod-hols/issues/156)). RTX 4090 in EU-RO-1 at $0.89/hr, default image 2.2.0 (an attempt 18 s earlier found no capacity on four GPU types). `ssh.direct` appeared 102 s after `apply` began and the first login with this machine's `~/.ssh/id_ed25519` worked: `nvidia-smi` showed the RTX 4090 with driver 595.112.07, torch 2.9.1+cu128 ran a CUDA matmul. Nothing in this config sends a key; the container's PID 1 had `PUBLIC_KEY` set and `authorized_keys` held two keys, so the account's key reaches the Pod. The 2026-11-24 note that the key was not registered was wrong. `destroy` removed the Pod; 109 s in all, about USD 0.03.
+
 The rest of this page describes provider 1.0.8 and stays as the record of the October runs.
 
 ### Read this first — two blocking issues
@@ -208,6 +210,8 @@ Serverless 와 Pod 트랙에서 콘솔로 직접 하던 작업을 선언적으�
 - **SSH: `ssh.direct` 가 나타나기까지 4분 넘게 걸렸습니다** (EUR-IS-1). sshd 는 응답했지만 이 머신의 키가 계정에 등록돼 있지 않아 로그인은 확인하지 않았습니다.
 
 **2026-11-26 부터 기본 이미지는 `runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404`** ([#143](https://github.com/litkhai/runpod-hols/issues/143)). 그전에는 1.0.7. CUDA 12.8, torch 2.9.1 은 같다. `terraform validate` 는 통과했고 `apply` 는 다시 하지 않았다. 이미지 자체는 REST v2 GPU Pod (L4, Secure) 에서 확인했다. SSH, `torch.cuda.is_available()` 와 CUDA 행렬곱, `startJupyter` 로 만든 뒤 126초에 8888 프록시의 JupyterLab.
+
+**`apply` 후 SSH 로그인, 2026-11-26** ([#156](https://github.com/litkhai/runpod-hols/issues/156)). EU-RO-1 의 RTX 4090, 시간당 $0.89, 기본 이미지 2.2.0 (18초 전 시도에서는 GPU 4종 모두 재고 없음). `apply` 시작 102초 뒤 `ssh.direct` 가 생겼고, 이 머신의 `~/.ssh/id_ed25519` 로 첫 로그인이 됐다. `nvidia-smi` 는 드라이버 595.112.07 의 RTX 4090 을 보여줬고, torch 2.9.1+cu128 로 CUDA 행렬곱이 돌았다. 이 구성은 키를 보내지 않는다. 컨테이너 PID 1 에 `PUBLIC_KEY` 가 있었고 `authorized_keys` 에 키가 두 개 있었으므로, 계정의 키가 Pod 에 들어간다. 2026-11-24 의 '키가 등록돼 있지 않다'는 기록은 틀렸다. `destroy` 로 Pod 을 지웠고, 전체 109초, 약 USD 0.03.
 
 이 페이지의 나머지는 프로바이더 1.0.8 에 관한 것이며, 10월 실행 기록으로 남겨 둡니다.
 
@@ -379,6 +383,8 @@ Provider 1.0.8 调用的是 REST v1，Runpod 已于 2026-11-15 停用。两个�
 
 **自 2026-11-26 起默认镜像为 `runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404`**（[#143](https://github.com/litkhai/runpod-hols/issues/143)），此前为 1.0.7。CUDA 12.8 和 torch 2.9.1 不变。`terraform validate` 通过，未重新执行 `apply`。镜像本身在 REST v2 GPU Pod（L4，Secure）上检查过：SSH、`torch.cuda.is_available()` 与一次 CUDA 矩阵乘法，以及用 `startJupyter` 创建后 126 秒 8888 代理上的 JupyterLab。
 
+**`apply` 后 SSH 登录，2026-11-26**（[#156](https://github.com/litkhai/runpod-hols/issues/156)）。EU-RO-1 的 RTX 4090，$0.89/hr，默认镜像 2.2.0（18 秒前的尝试中 4 种 GPU 都没有容量）。`apply` 开始 102 秒后出现 `ssh.direct`，用本机的 `~/.ssh/id_ed25519` 第一次就登录成功：`nvidia-smi` 显示 RTX 4090，驱动 595.112.07，torch 2.9.1+cu128 跑通了 CUDA 矩阵乘。此配置不发送任何密钥；容器 PID 1 上设有 `PUBLIC_KEY`，`authorized_keys` 中有两把密钥，说明账号的密钥会进入 Pod。2026-11-24 所记“密钥未注册”有误。`destroy` 删除了 Pod；全程 109 秒，约 USD 0.03。
+
 本页其余部分描述的是 provider 1.0.8，作为 10 月运行的记录保留。
 
 ### 请先阅读——两个阻断性问题
@@ -548,6 +554,8 @@ Serverless と Pod のトラックでコンソールから手作業で行うこ�
 - **SSH：`ssh.direct` が現れるまで 4 分以上かかりました**（EUR-IS-1）。sshd は応答しましたが、このマシンのキーがアカウントに登録されていないため、ログインは確認していません。
 
 **2026-11-26 からデフォルトのイメージは `runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404`**（[#143](https://github.com/litkhai/runpod-hols/issues/143)）。それまでは 1.0.7。CUDA 12.8 と torch 2.9.1 は同じです。`terraform validate` は通過し、`apply` は再実行していません。イメージ自体は REST v2 の GPU Pod（L4、Secure）で確認しました。SSH、`torch.cuda.is_available()` と CUDA の行列積、`startJupyter` で作成して 126 秒後の 8888 プロキシの JupyterLab です。
+
+**`apply` 後の SSH ログイン、2026-11-26**（[#156](https://github.com/litkhai/runpod-hols/issues/156)）。EU-RO-1 の RTX 4090、$0.89/hr、デフォルトイメージ 2.2.0（18 秒前の試行では 4 種類の GPU すべてで容量なし）。`apply` 開始から 102 秒後に `ssh.direct` が現れ、このマシンの `~/.ssh/id_ed25519` で初回からログインできました。`nvidia-smi` はドライバ 595.112.07 の RTX 4090 を表示し、torch 2.9.1+cu128 で CUDA の行列積が動きました。この構成はキーを送りません。コンテナの PID 1 に `PUBLIC_KEY` があり、`authorized_keys` には 2 本のキーがあったので、アカウントのキーが Pod に入っています。2026-11-24 の「キーが登録されていない」という記録は誤りでした。`destroy` で Pod を削除し、全体で 109 秒、約 USD 0.03。
 
 このページの残りはプロバイダー 1.0.8 についての記述で、10 月の実行の記録として残しています。
 
