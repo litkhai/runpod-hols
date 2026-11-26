@@ -1,0 +1,20 @@
+# NCCL transport, 2 x 8 H100 SXM cluster, 2026-11-26 (lines from ssh-node0.log, deduplicated)
+GPU Direct RDMA Enabled for GPU 8 / HCA 0 (distance 4 <= 5), read 0 mode Default
+GPU Direct RDMA Enabled for GPU 8 / HCA 0 (distance 4 <= 5), read 1 mode Default
+GPU Direct RDMA Enabled for GPU 8 / HCA 1 (distance 4 <= 5), read 0 mode Default
+GPU Direct RDMA Enabled for GPU 8 / HCA 2 (distance 4 <= 5), read 0 mode Default
+GPU Direct RDMA Enabled for GPU 8 / HCA 3 (distance 4 <= 5), read 0 mode Default
+GPU Direct RDMA Enabled for GPU 8 / HCA 4 (distance 4 <= 5), read 0 mode Default
+GPU Direct RDMA Enabled for GPU 8 / HCA 5 (distance 4 <= 5), read 0 mode Default
+GPU Direct RDMA Enabled for GPU 8 / HCA 6 (distance 4 <= 5), read 0 mode Default
+GPU Direct RDMA Enabled for GPU 8 / HCA 7 (distance 4 <= 5), read 0 mode Default
+NET/IB : Made virtual device [0] name=mlx5_0 speed=400000 ndevs=1
+NET/IB : Made virtual device [1] name=mlx5_1 speed=400000 ndevs=1
+NET/IB : Made virtual device [2] name=mlx5_2 speed=400000 ndevs=1
+NET/IB : Made virtual device [3] name=mlx5_3 speed=400000 ndevs=1
+NET/IB : Made virtual device [4] name=mlx5_4 speed=400000 ndevs=1
+NET/IB : Made virtual device [5] name=mlx5_7 speed=400000 ndevs=1
+NET/IB : Made virtual device [6] name=mlx5_8 speed=400000 ndevs=1
+NET/IB : Made virtual device [7] name=mlx5_9 speed=400000 ndevs=1
+NET/IB : Using [0]mlx5_0:1/IB [1]mlx5_1:1/IB [2]mlx5_2:1/IB [3]mlx5_3:1/IB [4]mlx5_4:1/IB [5]mlx5_7:1/IB [6]mlx5_8:1/IB [7]mlx5_9:1/IB [RO]; OOB ens1:10.67.0.3<0>
+Using network IB

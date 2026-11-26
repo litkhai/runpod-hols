@@ -185,6 +185,30 @@ Raw files: [`results/2x8xA100SXM-socket/`](./results/2x8xA100SXM-socket/) (with 
 
 Raw files: [`results/2x8xA100SXM-cluster/nccl-ib.txt`](./results/2x8xA100SXM-cluster/nccl-ib.txt) (excerpt of both nodes' NCCL logs), [`timeline.json`](./results/2x8xA100SXM-cluster/timeline.json).
 
+
+### Stage 2 on H100 SXM — InfiniBand works (2026-11-26)
+
+`cluster.py auto auto --gpus "NVIDIA H100 80GB HBM3,NVIDIA A100-SXM4-80GB" --stop 25 --max-per-hr 90` ([#19](https://github.com/litkhai/runpod-hols/issues/19)). The cluster image `runpod/pytorch:1.0.7-cu1300-torch291-ubuntu2404-cluster` (torch 2.9.1+cu130, NCCL 2.27.7), AP-IN-1:
+
+| 2026-11-26, AP-IN-1 | 2 nodes × 8 H100 SXM 80GB |
+|---|---|
+| Price | USD 42.144/hr per node, **USD 84.29/hr** |
+| Create → SSH on both nodes | 31 s |
+| Transport | `Using network IB`: 8 × `mlx5` at 400 Gb/s per node, GPUDirect RDMA enabled |
+| all-reduce `busbw`, 1 MiB / 1 GiB | 9.1 / **446.7 GB/s** (`algbw` 238.2 GB/s at 1 GiB) |
+| DDP, 1 GPU | 55,182 samples/s (4.64 ms/step) |
+| DDP, 16 GPUs on 2 nodes | 599,064 samples/s (6.84 ms/step) |
+| Scaling efficiency (16 GPUs / 16 × 1 GPU) | **0.68** |
+| `run.sh` on both nodes | 50 s, exit codes 0 and 0 |
+| Create → delete | 115 s, about USD 2.7 |
+
+- **InfiniBand carried the all-reduce across nodes**, where the A100 runs got sockets (0.32 GB/s) or a host fault. At 1 GiB the 16-GPU `algbw` (238 GB/s) matched the four H100s inside one Pod (238 GB/s); `busbw` is higher only because its factor grows with the rank count.
+- **Efficiency fell to 0.68 from 0.82** (4 GPUs in one Pod): the step went from 4.6 ms to 6.8 ms, and the extra is the gradient all-reduce over the network. Sixteen GPUs still trained 3.3× as fast as the four.
+- **The first attempt failed before running.** A node closed the SSH connection 20 s after it first answered, while the scripts were being copied; the cluster was deleted after 75 s (about USD 1.8). `push()` now retries the copy five times, 20 s apart.
+- **`--max-per-hr` exists because of the price.** The members billed USD 84.29/hr, above the default cap of 80 (the account's spend limit, which did not block the create), so the run passed `--max-per-hr 90`. `run.sh` is now bounded by the hard stop minus six minutes, so a run cannot be cut off by the watchdog mid-fetch.
+
+Raw files: [`results/2x8xH100SXM-cluster/`](./results/2x8xH100SXM-cluster/).
+
 ---
 
 ## 한국어
@@ -358,3 +382,26 @@ python3 cluster.py auto auto --hours 48 --gpus "NVIDIA A100-SXM4-80GB,NVIDIA H10
 - **#52 는 실패로 기록하고 닫는다.** 2026-11-08 기준 이 실습에는 Runpod Instant Cluster 의 다중 노드 대역폭 수치가 없다. 클러스터 두 번의 청구액은 USD 15.91 다 (Runpod 수치). 장애가 Runpod 호스트 쪽이었으므로 지원팀이 전액을 USD 16 Runpod 크레딧으로 돌려줬다 (2026-11-14 코드 등록). 지원팀에 따르면 이런 크레딧은 건마다 검토한다.
 
 원본 파일: [`results/2x8xA100SXM-cluster/nccl-ib.txt`](./results/2x8xA100SXM-cluster/nccl-ib.txt) (두 노드 NCCL 로그 발췌), [`timeline.json`](./results/2x8xA100SXM-cluster/timeline.json).
+
+### 2단계, H100 SXM — InfiniBand 동작 (2026-11-26)
+
+`cluster.py auto auto --gpus "NVIDIA H100 80GB HBM3,NVIDIA A100-SXM4-80GB" --stop 25 --max-per-hr 90` ([#19](https://github.com/litkhai/runpod-hols/issues/19)). 클러스터용 이미지 `runpod/pytorch:1.0.7-cu1300-torch291-ubuntu2404-cluster` (torch 2.9.1+cu130, NCCL 2.27.7), AP-IN-1:
+
+| 2026-11-26, AP-IN-1 | 노드 2개 × H100 SXM 80GB 8장 |
+|---|---|
+| 가격 | 노드당 시간당 USD 42.144, **시간당 USD 84.29** |
+| 생성 → 두 노드 SSH | 31초 |
+| 전송 | `Using network IB`: 노드마다 400 Gb/s `mlx5` 8개, GPUDirect RDMA 사용 |
+| all-reduce `busbw`, 1 MiB / 1 GiB | 9.1 / **446.7 GB/s** (1 GiB 에서 `algbw` 238.2 GB/s) |
+| DDP, GPU 1장 | 초당 55,182 샘플 (스텝 4.64 ms) |
+| DDP, 노드 2개 GPU 16장 | 초당 599,064 샘플 (스텝 6.84 ms) |
+| 확장 효율 (16장 / 16 × 1장) | **0.68** |
+| 두 노드 `run.sh` | 50초, 종료 코드 0, 0 |
+| 생성 → 삭제 | 115초, 약 USD 2.7 |
+
+- **노드 사이 all-reduce 를 InfiniBand 가 날랐다.** A100 실행은 소켓 (0.32 GB/s) 이었거나 호스트 결함이었다. 1 GiB 에서 GPU 16장의 `algbw` (238 GB/s) 는 Pod 한 대 안의 H100 4장 (238 GB/s) 과 같았다. `busbw` 가 더 높은 것은 순위 수에 따라 계수가 커지기 때문이다.
+- **효율은 0.82 (Pod 한 대 GPU 4장) 에서 0.68 로 떨어졌다.** 스텝이 4.6 ms 에서 6.8 ms 가 됐고, 늘어난 만큼이 네트워크 너머의 그래디언트 all-reduce 다. 그래도 16장은 4장보다 3.3배 빨리 학습했다.
+- **첫 시도는 실행 전에 실패했다.** SSH 가 처음 응답한 뒤 20초 만에, 스크립트를 복사하는 도중 노드가 연결을 끊었다. 클러스터는 75초 뒤 삭제됐다 (약 USD 1.8). 이제 `push()` 는 20초 간격으로 다섯 번까지 복사를 다시 시도한다.
+- **`--max-per-hr` 는 가격 때문에 생겼다.** 멤버 청구가 시간당 USD 84.29 로 기본 상한 80 (계정 지출 한도. 생성을 막지 않았다) 을 넘어서 `--max-per-hr 90` 으로 실행했다. `run.sh` 는 이제 강제 종료 시점보다 6분 먼저 끊기므로, 감시 장치가 결과를 가져오는 도중에 클러스터를 지우는 일이 없다.
+
+원본 파일: [`results/2x8xH100SXM-cluster/`](./results/2x8xH100SXM-cluster/).
