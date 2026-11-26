@@ -14,7 +14,7 @@
 
 | | Pod (develop) | Serverless worker (serve) |
 |---|---|---|
-| Image | `runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404` | Same |
+| Image | `runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404` (1.0.7 until 2026-11-26) | Same |
 | Network volume mounted at | `/workspace` | `/runpod-volume` |
 | Your code | `/workspace/app/handler.py` | `/runpod-volume/app/handler.py` — the same file |
 | Python packages | `pip install --target /workspace/app/deps` | `PYTHONPATH=/runpod-volume/app/deps` |
@@ -47,12 +47,12 @@ The endpoint can only use GPUs in the volume's data center, so pick one that sto
 scp -P <port> handler.py root@<ip>:/workspace/app/handler.py
 ssh root@<ip> -p <port>
 cd /workspace/app
-pip install --target /workspace/app/deps runpod==1.12.0
+pip install --target /workspace/app/deps runpod==2.4.0
 PYTHONPATH=/workspace/app/deps python3 handler.py --test_input '{"input": {"n": 2048}}'
 ```
 
 ```
-INFO   | Job result: {'output': {'device': 'NVIDIA GeForce RTX 4090', 'loaded_from': '/workspace/app/handler.py', 'runpod_sdk': '1.12.0', 'torch': '2.9.1+cu128', 'n': 2048, 'matmul_s': 0.081}}
+INFO   | Job result: {'output': {'device': 'NVIDIA GeForce RTX 4090', 'loaded_from': '/workspace/app/handler.py', 'runpod_sdk': '2.4.0', 'torch': '2.9.1+cu128', 'n': 2048, 'matmul_s': 0.0526}}
 ```
 
 `--test_input` runs the handler once, locally, the way the worker will. torch comes from the image; only `runpod` and its dependencies go on the volume.
@@ -120,6 +120,18 @@ The same steps through REST v2 ([#123](https://github.com/litkhai/runpod-hols/is
 | Endpoint with `mounts.network` | First job: `runsync` returned `IN_QUEUE` at 91 s, done with `delayTime` 92.8 s, `loaded_from` `/runpod-volume/app/handler.py`. Second job on the same worker: 25.6 s |
 | Clean up | Endpoint, template and volume deleted at once — no template hold this time |
 
+### Re-run on `runpod/pytorch` 2.2.0 and `runpod` 2.4.0 (2026-11-26)
+
+The same steps after the image bump ([#148](https://github.com/litkhai/runpod-hols/issues/148)), EU-RO-1, RTX 4090:
+
+| Step | Result |
+|---|---|
+| Development Pod | Created on the first try; SSH after 80 s |
+| `pip install --target`, `runpod==2.4.0`, plus the test | 185 s together; 9,536 files, 163 MB of data, `du` 2.1 GB |
+| Test on the Pod | `Version 2.4.0` banner, `matmul_s` 0.0526 for n = 2048, torch 2.9.1+cu128 |
+| Endpoint with `mounts.network` | First job 196 s end to end (cold), `runpod_sdk` 2.4.0 from `/runpod-volume`; second job on the same worker 26 s |
+| Clean up | Pod, endpoint, template and volume deleted |
+
 ### What was run
 
 2026-11-05, Secure Cloud EU-RO-1, RTX 4090, `runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404`, runpod SDK 1.12.0 on the volume, REST v1.
@@ -148,7 +160,7 @@ Not run: editing the handler on the Pod while the endpoint is live, a volume sha
 
 | | Pod (개발) | Serverless 워커 (서빙) |
 |---|---|---|
-| 이미지 | `runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404` | 같음 |
+| 이미지 | `runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404` (2026-11-26 전까지 1.0.7) | 같음 |
 | 네트워크 볼륨 마운트 위치 | `/workspace` | `/runpod-volume` |
 | 코드 | `/workspace/app/handler.py` | `/runpod-volume/app/handler.py` — 같은 파일 |
 | Python 패키지 | `pip install --target /workspace/app/deps` | `PYTHONPATH=/runpod-volume/app/deps` |
@@ -181,12 +193,12 @@ python3 lab.py pod show             # 생성 약 2분 뒤 SSH 명령 출력
 scp -P <port> handler.py root@<ip>:/workspace/app/handler.py
 ssh root@<ip> -p <port>
 cd /workspace/app
-pip install --target /workspace/app/deps runpod==1.12.0
+pip install --target /workspace/app/deps runpod==2.4.0
 PYTHONPATH=/workspace/app/deps python3 handler.py --test_input '{"input": {"n": 2048}}'
 ```
 
 ```
-INFO   | Job result: {'output': {'device': 'NVIDIA GeForce RTX 4090', 'loaded_from': '/workspace/app/handler.py', 'runpod_sdk': '1.12.0', 'torch': '2.9.1+cu128', 'n': 2048, 'matmul_s': 0.081}}
+INFO   | Job result: {'output': {'device': 'NVIDIA GeForce RTX 4090', 'loaded_from': '/workspace/app/handler.py', 'runpod_sdk': '2.4.0', 'torch': '2.9.1+cu128', 'n': 2048, 'matmul_s': 0.0526}}
 ```
 
 `--test_input` 은 워커가 할 방식 그대로 핸들러를 로컬에서 한 번 실행합니다. torch 는 이미지에 있고, 볼륨에는 `runpod` 와 그 의존성만 올립니다.
@@ -253,6 +265,18 @@ python3 lab.py status
 | Pod 에서 테스트 | n = 2048 에 `matmul_s` 0.063 |
 | `mounts.network` 를 쓴 엔드포인트 | 첫 작업: `runsync` 가 91초에 `IN_QUEUE`, `delayTime` 92.8초로 완료, `loaded_from` `/runpod-volume/app/handler.py`. 같은 워커의 두 번째 작업: 25.6초 |
 | 정리 | 엔드포인트, 템플릿, 볼륨이 바로 삭제됨 — 이번에는 템플릿 대기 없음 |
+
+### `runpod/pytorch` 2.2.0, `runpod` 2.4.0 재실행 (2026-11-26)
+
+이미지를 올린 뒤 같은 단계로 다시 실행했다 ([#148](https://github.com/litkhai/runpod-hols/issues/148)). EU-RO-1, RTX 4090:
+
+| 단계 | 결과 |
+|---|---|
+| 개발용 Pod | 첫 시도에 생성, 80초 뒤 SSH |
+| `pip install --target`, `runpod==2.4.0` 과 테스트 | 합쳐서 185초. 파일 9,536개, 데이터 163 MB, `du` 2.1 GB |
+| Pod 에서 테스트 | `Version 2.4.0` 배너, n = 2048 에서 `matmul_s` 0.0526, torch 2.9.1+cu128 |
+| `mounts.network` 엔드포인트 | 첫 작업 전체 196초 (콜드), `/runpod-volume` 의 `runpod_sdk` 2.4.0. 같은 워커의 두 번째 작업 26초 |
+| 정리 | Pod, 엔드포인트, 템플릿, 볼륨 삭제 |
 
 ### 실행 내역
 
