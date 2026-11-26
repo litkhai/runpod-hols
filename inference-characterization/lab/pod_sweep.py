@@ -23,9 +23,13 @@ PRICES = os.path.join(RESULTS, "prices.json")
 API = "https://api.runpod.io/v2"
 NO_CAPACITY = ("no instances currently available", "no longer any instances available")
 # The PyTorch template image already used by pod/01-launch-connect. vLLM brings its own torch.
-IMAGE = "runpod/pytorch:1.0.7-cu1281-torch291-ubuntu2404"
+IMAGE = "runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404"
 # vLLM 0.31.0 pins torch 2.13.0 with CUDA 13 dependencies, so the host driver must support CUDA 13.
-CUDA = ["13.0"]
+# A floor, not a list: v2 matches allowedCudaVersions exactly, and on 2026-11-26 hosts reported 13.2,
+# so ["13.0"] found no capacity (#157).
+# 목록이 아니라 하한으로 준다. v2 는 allowedCudaVersions 를 정확히 일치시키고, 2026-11-26 호스트는
+# 13.2 를 보고해 ["13.0"] 으로는 장비를 받지 못했다 (#157).
+MIN_CUDA = "13.0"
 UPLOAD = ["run_sweep.sh", "capture_host.sh", "sample_gpu.sh", "use_cases.json", "pod_bootstrap.sh"]
 
 
@@ -118,7 +122,7 @@ def main():
 
     key = os.path.expanduser(os.environ.get("SSH_KEY", "~/.ssh/id_ed25519"))
     body = {"name": "ic-" + a.label.lower().replace("_", "-"), "image": IMAGE,
-            "gpu": {"id": a.gpu, "count": 1, "allowedCudaVersions": CUDA}, "cloud": a.cloud,
+            "gpu": {"id": a.gpu, "count": 1, "minCudaVersion": MIN_CUDA}, "cloud": a.cloud,
             "disk": 80, "ports": ["22/tcp"],
             "env": {"PUBLIC_KEY": open(key + ".pub").read().strip()}}
     # v1's supportPublicIp has no v2 field; a Community Pod without a public IP gets no ssh.direct.
@@ -169,6 +173,11 @@ def main():
             if ip and port:
                 break
             time.sleep(10)
+        # v2's create response and the container env (RUNPOD_DC_ID) no longer carry the data center
+        # (#155); the Pod read does on Secure Cloud, so log it from there.
+        # v2 는 생성 응답과 컨테이너 환경(RUNPOD_DC_ID)에 데이터센터를 주지 않는다(#155). Secure Cloud 에서는
+        # Pod 조회에 있으므로 거기서 기록한다.
+        log("data center %s" % (p.get("dataCenterId") or "null"))
         if not (ip and port):
             status = "no-ssh"
             raise RuntimeError("no public IP / port 22 mapping after 15 min")

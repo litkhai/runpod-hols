@@ -92,7 +92,7 @@ python3 serverless_endpoint.py delete
 ROUNDS=10 SLEEP_S=60 python3 stock_create_probe.py
 ```
 
-Community Cloud runs once, at the smallest scale that proves F1 and F2 — one use case at one rate. It needs `supportPublicIp` for SSH:
+Community Cloud runs once, at the smallest scale that proves F1 and F2 — one use case at one rate. REST v2 has no `supportPublicIp`; whether a Community Pod gets a public IP depends on the host (C36, C38):
 
 ```bash
 python3 pod_sweep.py --label RTX_4090_community --gpu "NVIDIA GeForce RTX 4090" --cloud COMMUNITY --cases chat --rates 1
@@ -104,13 +104,15 @@ To measure one GPU type on different hosts, pin each run to a datacenter with `-
 
 | ID | Result | Claims in [`FINDINGS.md`](./FINDINGS.md) |
 |---|---|---|
-| F1 | Secure Cloud: passes. Community Cloud: passes except the data center — on 2026-11-26 an RTX 3090 Pod had a direct SSH address after 121 s and gave every other host field; in October the Pod never got a public IP or port 22 | C3, C4, C7, C36 |
-| F2 | Secure Cloud: passes; the only throttle reason seen was `sw_power_cap`. Community Cloud: not determined — no load was run on the 2026-11-26 Pod | C5, C6, C7, C36 |
+| F1 | Secure Cloud: passes, except the data center on REST v2 (C37). Community Cloud: depends on the host — on 2026-11-26 one RTX 3090 Pod had SSH after 121 s and gave every field but the data center, a second failed at vLLM start, and an RTX 4090 Pod never got a public IP, as in October | C3, C4, C7, C36–C38 |
+| F2 | Secure Cloud: passes; the only throttle reason seen was `sw_power_cap`. Community Cloud: not determined — no Community Pod both answered SSH and ran load on 2026-11-26 | C5, C6, C7, C36, C38 |
 | F3 | Passes on every GPU type obtained; one-GPU stock with a CUDA 13 floor changed within hours | C1, C2 |
 | F4 | The job response carries one `delayTime` and a `workerId` that does not distinguish cold from warm; the v2 worker logs hold the phases, but only while the container exists | C9–C14, C17–C19 |
 | F5 | Not as worded: Modal meets three of the four conditions under a literal reading | C16, [`RESEARCH.md`](./RESEARCH.md) |
 
 Raw results: [`lab/results/`](./lab/results). Profile table: [`lab/results/PROFILE.md`](./lab/results/PROFILE.md).
+
+**Re-run on REST v2, 2026-11-26** ([#157](https://github.com/litkhai/runpod-hols/issues/157)): one Secure RTX 4090 with every use case ran end to end (`RTX_4090_v2`, C37) after the CUDA filter changed from an exact `allowedCudaVersions` list to `minCudaVersion`; figures stayed in October's range. The Community step ([#155](https://github.com/litkhai/runpod-hols/issues/155)) did not complete (C38).
 
 ---
 
@@ -202,7 +204,7 @@ python3 serverless_endpoint.py delete
 ROUNDS=10 SLEEP_S=60 python3 stock_create_probe.py
 ```
 
-Community Cloud는 F1과 F2를 확인하는 최소 규모로 한 번만 돌린다. 유즈케이스 하나, 요청률 하나다. SSH를 쓰려면 `supportPublicIp`가 필요하다.
+Community Cloud는 F1과 F2를 확인하는 최소 규모로 한 번만 돌린다. 유즈케이스 하나, 요청률 하나다. REST v2에는 `supportPublicIp`가 없고, Community Pod이 공인 IP를 받는지는 호스트에 따라 다르다(C36, C38).
 
 ```bash
 python3 pod_sweep.py --label RTX_4090_community --gpu "NVIDIA GeForce RTX 4090" --cloud COMMUNITY --cases chat --rates 1
@@ -214,10 +216,12 @@ python3 pod_sweep.py --label RTX_4090_community --gpu "NVIDIA GeForce RTX 4090" 
 
 | ID | 결과 | [`FINDINGS.md`](./FINDINGS.md)의 주장 |
 |---|---|---|
-| F1 | Secure Cloud: 통과. Community Cloud: 데이터센터를 빼고 통과. 2026-11-26 RTX 3090 Pod는 121초 뒤 직접 SSH 주소가 생겼고 나머지 호스트 정보를 모두 얻었다. 10월에는 Pod에 공인 IP와 22번 포트가 생기지 않았다 | C3, C4, C7, C36 |
-| F2 | Secure Cloud: 통과. 관측된 스로틀 사유는 `sw_power_cap`뿐이다. Community Cloud: 판정 불가. 2026-11-26 Pod에는 부하를 걸지 않았다 | C5, C6, C7, C36 |
+| F1 | Secure Cloud: 통과. 단 REST v2에서는 데이터센터가 없다(C37). Community Cloud: 호스트에 따라 다르다. 2026-11-26 RTX 3090 Pod 하나는 121초 뒤 SSH가 되어 데이터센터 말고 모든 정보를 줬고, 다른 하나는 vLLM 시작에서 실패했으며, RTX 4090 Pod은 10월처럼 공인 IP를 받지 못했다 | C3, C4, C7, C36–C38 |
+| F2 | Secure Cloud: 통과. 관측된 스로틀 사유는 `sw_power_cap`뿐이다. Community Cloud: 판정 불가. 2026-11-26에는 SSH가 되면서 부하까지 건 Community Pod이 없었다 | C5, C6, C7, C36, C38 |
 | F3 | 확보한 모든 GPU 종류에서 통과. CUDA 13 조건의 1장짜리 재고는 몇 시간 사이에 바뀌었다 | C1, C2 |
 | F4 | 작업 응답에는 `delayTime` 하나와 콜드·웜을 구분하지 못하는 `workerId`만 있다. v2 워커 로그에 단계 정보가 있지만 컨테이너가 살아 있는 동안만 남는다 | C9–C14, C17–C19 |
 | F5 | 문장 그대로는 성립하지 않는다. Modal이 문자 그대로 읽으면 네 조건 중 세 가지를 충족한다 | C16, [`RESEARCH.md`](./RESEARCH.md) |
 
 원자료: [`lab/results/`](./lab/results). 프로파일 표: [`lab/results/PROFILE.md`](./lab/results/PROFILE.md).
+
+**REST v2 재실행, 2026-11-26** ([#157](https://github.com/litkhai/runpod-hols/issues/157)): CUDA 필터를 정확 일치 목록 `allowedCudaVersions` 에서 `minCudaVersion` 으로 바꾼 뒤, Secure RTX 4090 한 대로 모든 유즈케이스가 처음부터 끝까지 돌았다(`RTX_4090_v2`, C37). 수치는 10월 범위 안이었다. Community 단계([#155](https://github.com/litkhai/runpod-hols/issues/155))는 끝까지 가지 못했다(C38).
