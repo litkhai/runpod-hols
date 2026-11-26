@@ -129,7 +129,7 @@ What it showed:
 | **`start_ssh` / `start_jupyter` are not sent either** | SSH worked anyway — the image exposes port 22 by default. Jupyter was not checked |
 | **The volume's data center must support storage.** `US-KS-2`, the previous default, reported `storageSupport = false` | Default changed to `EU-RO-1`. Check `dataCenters { id storageSupport }` before applying |
 
-**Not yet verified:** Jupyter on the `02-pod` Pod.
+**Jupyter: verified 2026-11-26** ([#161](https://github.com/litkhai/runpod-hols/issues/161)) with provider 2.0.0, which now sends `start_jupyter` (default `true`): RTX 2000 Ada in EU-RO-1 at $0.24/hr (the first GPU with stock), the 8888 proxy served the *Jupyter Server* login page 126 s after `apply`, the Pod read back `ports` `8888/http`, `22/tcp`; `destroy` clean, 133 s in all, about USD 0.01.
 
 ### Discovering Valid IDs
 
@@ -356,7 +356,7 @@ AttributeName("workers"): must have Required, Optional, or Computed set..
 | **`start_ssh` / `start_jupyter` 도 전송되지 않습니다** | 이미지가 기본으로 22 번 포트를 열어 SSH 는 동작했습니다. Jupyter 는 확인하지 않았습니다 |
 | **볼륨의 데이터센터가 스토리지를 지원해야 합니다.** 이전 기본값 `US-KS-2` 는 `storageSupport = false` 였습니다 | 기본값을 `EU-RO-1` 로 바꿨습니다. apply 전에 `dataCenters { id storageSupport }` 를 확인하세요 |
 
-**아직 검증하지 않은 것:** `02-pod` Pod 의 Jupyter.
+**Jupyter: 2026-11-26 확인** ([#161](https://github.com/litkhai/runpod-hols/issues/161)). 이제 `start_jupyter` (기본값 `true`) 를 보내는 프로바이더 2.0.0 으로, EU-RO-1 의 RTX 2000 Ada (시간당 $0.24, 재고가 있던 첫 GPU) 에서 `apply` 126초 뒤 8888 프록시가 *Jupyter Server* 로그인 페이지를 돌려줬다. Pod 조회의 `ports` 는 `8888/http`, `22/tcp`. `destroy` 정상, 전체 133초, 약 USD 0.01.
 
 ### 유효한 ID 조회하기
 

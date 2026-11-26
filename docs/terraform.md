@@ -124,7 +124,7 @@ What it showed:
 | **`start_ssh` / `start_jupyter` are not sent either** | SSH worked anyway — the image exposes port 22 by default. Jupyter was not checked |
 | **The volume's data center must support storage.** `US-KS-2`, the previous default, reported `storageSupport = false` | Default changed to `EU-RO-1`. Check `dataCenters { id storageSupport }` before applying |
 
-**Not verified:** Jupyter on the `02-pod` Pod.
+**Jupyter: verified 2026-11-26** ([#161](https://github.com/litkhai/runpod-hols/issues/161)) with provider 2.0.0, which now sends `start_jupyter` (default `true`): RTX 2000 Ada in EU-RO-1 at $0.24/hr (the first GPU with stock), the 8888 proxy served the *Jupyter Server* login page 126 s after `apply`, the Pod read back `ports` `8888/http`, `22/tcp`; `destroy` clean, 133 s in all, about USD 0.01.
 
 <div class="note" markdown="1">
 Don't guess GPU or data-center IDs. Read them from `data "runpod_data_centers"` and `data "runpod_gpu_types"` — a data-source-only config creates nothing on `apply`.
@@ -296,7 +296,7 @@ AttributeName("workers"): must have Required, Optional, or Computed set..
 | **`start_ssh` / `start_jupyter` 도 전송되지 않습니다** | 이미지가 기본으로 22 번 포트를 열어 SSH 는 동작했습니다. Jupyter 는 확인하지 않았습니다 |
 | **볼륨의 데이터센터가 스토리지를 지원해야 합니다.** 이전 기본값 `US-KS-2` 는 `storageSupport = false` 였습니다 | 기본값을 `EU-RO-1` 로 바꿨습니다. apply 전에 `dataCenters { id storageSupport }` 를 확인하세요 |
 
-**미검증:** `02-pod` Pod 의 Jupyter.
+**Jupyter: 2026-11-26 확인** ([#161](https://github.com/litkhai/runpod-hols/issues/161)). 이제 `start_jupyter` (기본값 `true`) 를 보내는 프로바이더 2.0.0 으로, EU-RO-1 의 RTX 2000 Ada (시간당 $0.24, 재고가 있던 첫 GPU) 에서 `apply` 126초 뒤 8888 프록시가 *Jupyter Server* 로그인 페이지를 돌려줬다. Pod 조회의 `ports` 는 `8888/http`, `22/tcp`. `destroy` 정상, 전체 133초, 약 USD 0.01.
 
 <div class="note" markdown="1">
 GPU 나 데이터센터 ID 를 추측하지 마세요. `data "runpod_data_centers"` 와 `data "runpod_gpu_types"` 로 읽으면 됩니다. 데이터소스만 있는 설정은 `apply` 해도 생성되는 것이 없습니다.
@@ -468,7 +468,7 @@ provider 自带的示例针对的是 1.0.9，在 1.0.8 上无法运行：
 | **`start_ssh` / `start_jupyter` 也不会被发送** | SSH 照样能用——镜像默认暴露 22 端口。Jupyter 未检查 |
 | **volume 所在的数据中心必须支持存储。** 之前的默认值 `US-KS-2` 报告 `storageSupport = false` | 默认值已改为 `EU-RO-1`。apply 之前请检查 `dataCenters { id storageSupport }` |
 
-**未验证：** `02-pod` 的 Pod 上的 Jupyter。
+**Jupyter：2026-11-26 已验证**（[#161](https://github.com/litkhai/runpod-hols/issues/161)）。provider 2.0.0 现在会发送 `start_jupyter`（默认 `true`）：EU-RO-1 的 RTX 2000 Ada，$0.24/hr（第一个有库存的 GPU），`apply` 后 126 秒 8888 代理返回 *Jupyter Server* 登录页，Pod 读取到的 `ports` 为 `8888/http`、`22/tcp`；`destroy` 干净，全程 133 秒，约 USD 0.01。
 
 <div class="note" markdown="1">
 不要猜测 GPU 或数据中心的 ID。请从 `data "runpod_data_centers"` 和 `data "runpod_gpu_types"` 中读取——只包含 data source 的配置在 `apply` 时不会创建任何东西。
@@ -640,7 +640,7 @@ provider 自体のサンプルは 1.0.9 向けで、1.0.8 では動きません�
 | **`start_ssh` / `start_jupyter` も送信されません** | それでも SSH は動いた。イメージがデフォルトで 22 番ポートを公開しているため。Jupyter は未確認 |
 | **volume のデータセンターはストレージに対応している必要があります。** 以前のデフォルトの `US-KS-2` は `storageSupport = false` を返した | デフォルトを `EU-RO-1` に変更。apply の前に `dataCenters { id storageSupport }` を確認すること |
 
-**未検証：** `02-pod` の Pod 上の Jupyter。
+**Jupyter：2026-11-26 に確認**（[#161](https://github.com/litkhai/runpod-hols/issues/161)）。provider 2.0.0 は `start_jupyter`（デフォルト `true`）を送るようになりました。EU-RO-1 の RTX 2000 Ada、$0.24/hr（在庫のあった最初の GPU）で、`apply` の 126 秒後に 8888 プロキシが *Jupyter Server* のログインページを返し、Pod の `ports` は `8888/http`、`22/tcp` でした。`destroy` も問題なく、全体で 133 秒、約 USD 0.01。
 
 <div class="note" markdown="1">
 GPU やデータセンターの ID を推測しないでください。`data "runpod_data_centers"` と `data "runpod_gpu_types"` から読み取ってください。data source だけの設定は `apply` しても何も作成しません。
