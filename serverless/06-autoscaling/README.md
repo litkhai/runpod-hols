@@ -70,6 +70,7 @@ The same 50 jobs of 2 s, with the probe built on `runpod==2.4.0` (`docker.io/lit
 
 - **2.4 took about a second off every job.** A concurrency-1 worker started its next 2 s job every 2.33 s (median) instead of 3.34 s; the control on the same day and setup kept 3.34 s. 2.4 frees a job's slot before its result is uploaded and takes the next job meanwhile, so the ~1.3 s gap became ~0.3 s. On the same two workers the burst finished in 64.7 s instead of 93.1 s.
 - **Only two workers ran jobs on the new endpoints, with either SDK.** Up to six more cycled between initialising and idle without taking a job. The 2026-11-07 endpoint had five workers ready after its build; why fresh REST endpoints held at two was not found.
+  Re-checked 2026-11-26 ([#147](https://github.com/litkhai/runpod-hols/issues/147)) with 30 jobs of 10 s on fresh REST endpoints (SDK 2.4.0 probe, `cpu5g` 2 vCPU, queue delay 4 s): `workers.max` 3, 5 and 8 reached 3, 4 and 5 running workers and finished in 107, 77 and 68 s. The two-worker ceiling did not recur; with 2 s jobs the backlog may simply have drained before more workers were needed.
 - **Changing the template env did not reach an endpoint created over REST.** The create copies the template into the endpoint (`templateId` reads back `null`), so `PATCH /v2/templates/{id}` left the workers unchanged — unlike the GitHub-built template above. Each setting got its own endpoint instead.
 - **REST rejects `idleTimeout` with request-count scaling:** `idleTimeout does not apply to queue-based endpoints scaling on requestCount` (400).
 
@@ -141,5 +142,6 @@ python3 burst.py <id> --jobs 50 --seconds 2 --label request_count25_c4 --out res
 
 - **2.4 는 작업마다 약 1초를 줄였다.** 동시성 1 워커가 2초 작업을 3.34초가 아니라 2.33초 (중앙값) 마다 시작했고, 같은 날 같은 설정의 대조군은 3.34초 그대로였다. 2.4 는 결과를 올리기 전에 슬롯을 비우고 그동안 다음 작업을 받으므로, 약 1.3초이던 간격이 약 0.3초가 됐다. 같은 워커 2개로 버스트가 93.1초 대신 64.7초에 끝났다.
 - **새 엔드포인트에서는 SDK 와 상관없이 워커 2개만 작업을 받았다.** 나머지 최대 6개는 작업을 받지 않고 초기화와 idle 을 오갔다. 2026-11-07 엔드포인트는 빌드 뒤 워커 5개가 준비돼 있었다. 새 REST 엔드포인트가 2개에 머문 이유는 찾지 못했다.
+  2026-11-26 다시 확인 ([#147](https://github.com/litkhai/runpod-hols/issues/147)): 새 REST 엔드포인트(SDK 2.4.0 프로브, `cpu5g` vCPU 2개, 큐 지연 4초)에 10초 작업 30개를 보냈더니 `workers.max` 3, 5, 8 에서 실행 워커가 3, 4, 5 개까지 늘었고 107, 77, 68초에 끝났다. 워커 2개 한계는 다시 나타나지 않았다. 2초 작업에서는 워커가 더 필요해지기 전에 큐가 비었을 수 있다.
 - **템플릿 env 를 바꿔도 REST 로 만든 엔드포인트에는 반영되지 않았다.** 생성 시 템플릿을 엔드포인트에 복사하므로 (`templateId` 를 다시 읽으면 `null`), `PATCH /v2/templates/{id}` 는 워커를 바꾸지 않았다. 위의 GitHub 빌드 템플릿과 다르다. 그래서 설정마다 엔드포인트를 따로 만들었다.
 - **REST 는 요청 수 스케일링에 `idleTimeout` 을 주면 거부한다:** `idleTimeout does not apply to queue-based endpoints scaling on requestCount` (400).
