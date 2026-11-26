@@ -177,6 +177,8 @@ On the console endpoint, 2026-11-26: the endpoint's minimum CUDA version was cha
 
 Check `isStale` in `GET /v2/serverless/{id}/workers` before trusting a result right after a rebuild.
 
+**One worker took every job, 2026-11-26** ([#147](https://github.com/litkhai/runpod-hols/issues/147)). Six sequential requests, about 2 s apart once each finished, all completed and all ran on the same worker. Two started within 0.15 s; four waited 22 s (the first, a cold start), 32, 30 and 66 s, and while they waited `/health` showed one idle, ready worker that did not take them. With `idleTimeout` 5 s the serving worker's container appears to be stopping and starting between jobs, and the queue waits for it rather than for the idle one. The 234 s and 833 s waits above came during the rollout, when workers were churning; they did not recur at that length.
+
 The worker had pulled the image and the model before the first request — that happens right after a build, and the pull took about 3 minutes. The 12 s is container start, imports, `model_load_seconds` of 2.37 and the SDK's fitness checks (0.46 s). A host that has never seen the image adds the pull.
 
 ### Local testing
@@ -396,6 +398,8 @@ EU-RO-1 의 RTX A4500, `loaded_from: hub`, `model_load_seconds` 39.53. 첫 요�
 | 프롬프트 없음 (의도된 실패) | 12,314 ms | 82 ms |
 
 다시 빌드한 직후의 결과는 `GET /v2/serverless/{id}/workers` 의 `isStale` 을 확인한 뒤에 믿을 것.
+
+**모든 작업을 워커 하나가 받았다, 2026-11-26** ([#147](https://github.com/litkhai/runpod-hols/issues/147)). 앞 요청이 끝난 뒤 약 2초 간격으로 요청 6건을 차례로 보냈더니 모두 완료됐고 모두 같은 워커에서 돌았다. 2건은 0.15초 안에 시작했고 4건은 22초(첫 요청, 콜드 스타트), 32, 30, 66초를 기다렸다. 기다리는 동안 `/health` 에는 작업을 받지 않는 idle, ready 워커가 하나 보였다. `idleTimeout` 5초에서는 처리하던 워커의 컨테이너가 작업 사이에 멈췄다 다시 뜨는 것으로 보이고, 큐는 idle 워커가 아니라 그 워커를 기다린다. 위의 234초, 833초 대기는 워커가 계속 바뀌던 교체 중에 생겼고, 그 길이로는 다시 나타나지 않았다.
 
 첫 요청 전에 워커가 이미지와 모델을 미리 받아 두었습니다. 빌드 직후에 일어나며, 이미지 받는 데 약 3분이 걸렸습니다. 12초는 컨테이너 시작, import, `model_load_seconds` 2.37초, SDK 시작 점검 0.46초를 합친 값입니다. 이미지를 처음 받는 호스트라면 그 시간이 더해집니다.
 
