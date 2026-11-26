@@ -35,7 +35,7 @@ What changed against the 1.0.8 notes below:
 - **`gpu_type_id` is sent.** 1.0.8 dropped it and Pods came up as RTX 4090; 2.0.0 gave the RTX 2000 Ada that was asked for.
 - **A key without GraphQL works.** The provider still reads a few deprecated attributes (`machine_id`, `volume_encrypted`, the template `readme`, endpoint `users`) from GraphQL. With GraphQL None that read answered 401, and the provider reported it as a warning and left those attributes null.
 - **An old template name can be refused.** The first `apply` created the template, then the endpoint failed with `400 endpoint template names must be unique`. The same happens with a direct REST call; a fresh name works. The default `template_name` is now `hol-hello-worker-v2`.
-- **SSH: `ssh.direct` took over four minutes** to appear (EUR-IS-1). sshd answered, but the key on this machine is not registered on the account, so login was not checked.
+- **SSH: `ssh.direct` took over four minutes** to appear (EUR-IS-1). sshd answered; login was not tried then, on the belief that the key on this machine was not registered on the account. That belief was wrong: on 2026-11-26 the account key reached the Pod and login worked ([#156](https://github.com/litkhai/runpod-hols/issues/156)).
 
 **Default image `runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404` since 2026-11-26** ([#143](https://github.com/litkhai/runpod-hols/issues/143)); 1.0.7 before. Same CUDA 12.8 and torch 2.9.1. `terraform validate` passed; `apply` was not re-run. The image itself was checked on REST v2 GPU Pods (L4, Secure): SSH, `torch.cuda.is_available()` and a CUDA matmul, and JupyterLab on the 8888 proxy 126 s after create with `startJupyter`.
 
@@ -207,7 +207,7 @@ Serverless 와 Pod 트랙에서 콘솔로 직접 하던 작업을 선언적으�
 - **`gpu_type_id` 가 전달됩니다.** 1.0.8 은 이 값을 빠뜨려 Pod 이 RTX 4090 으로 떴지만, 2.0.0 은 요청한 RTX 2000 Ada 를 줬습니다.
 - **GraphQL 권한이 없는 키로도 됩니다.** 프로바이더는 아직 일부 폐기 예정 속성 (`machine_id`, `volume_encrypted`, 템플릿 `readme`, 엔드포인트 `users`) 을 GraphQL 로 읽습니다. GraphQL None 에서는 그 읽기가 401 이었고, 프로바이더는 경고만 내고 해당 속성을 null 로 두었습니다.
 - **예전 템플릿 이름이 거부될 수 있습니다.** 첫 `apply` 는 템플릿을 만든 뒤 엔드포인트에서 `400 endpoint template names must be unique` 로 실패했습니다. REST 를 직접 호출해도 같고, 새 이름은 됩니다. `template_name` 기본값을 `hol-hello-worker-v2` 로 바꿨습니다.
-- **SSH: `ssh.direct` 가 나타나기까지 4분 넘게 걸렸습니다** (EUR-IS-1). sshd 는 응답했지만 이 머신의 키가 계정에 등록돼 있지 않아 로그인은 확인하지 않았습니다.
+- **SSH: `ssh.direct` 가 나타나기까지 4분 넘게 걸렸습니다** (EUR-IS-1). sshd 는 응답했지만, 이 머신의 키가 계정에 등록돼 있지 않다고 보고 로그인은 시도하지 않았습니다. 그 판단은 틀렸습니다. 2026-11-26 에 계정의 키가 Pod 에 들어갔고 로그인이 됐습니다 ([#156](https://github.com/litkhai/runpod-hols/issues/156)).
 
 **2026-11-26 부터 기본 이미지는 `runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404`** ([#143](https://github.com/litkhai/runpod-hols/issues/143)). 그전에는 1.0.7. CUDA 12.8, torch 2.9.1 은 같다. `terraform validate` 는 통과했고 `apply` 는 다시 하지 않았다. 이미지 자체는 REST v2 GPU Pod (L4, Secure) 에서 확인했다. SSH, `torch.cuda.is_available()` 와 CUDA 행렬곱, `startJupyter` 로 만든 뒤 126초에 8888 프록시의 JupyterLab.
 
@@ -379,7 +379,7 @@ Provider 1.0.8 调用的是 REST v1，Runpod 已于 2026-11-15 停用。两个�
 - **`gpu_type_id` 会被发送。** 1.0.8 丢掉了它，Pod 变成 RTX 4090；2.0.0 给出了所请求的 RTX 2000 Ada。
 - **没有 GraphQL 权限的密钥也能用。** Provider 仍通过 GraphQL 读取少数已弃用属性（`machine_id`、`volume_encrypted`、模板 `readme`、endpoint `users`）。GraphQL 为 None 时该读取返回 401，provider 只给出警告并将这些属性置为 null。
 - **旧的模板名可能被拒绝。** 第一次 `apply` 创建了模板，随后 endpoint 因 `400 endpoint template names must be unique` 失败。直接调用 REST 也一样；换新名字即可。`template_name` 的默认值已改为 `hol-hello-worker-v2`。
-- **SSH：`ssh.direct` 过了四分多钟才出现**（EUR-IS-1）。sshd 有响应，但本机的密钥未在账号中注册，因此没有验证登录。
+- **SSH：`ssh.direct` 过了四分多钟才出现**（EUR-IS-1）。sshd 有响应；当时认为本机的密钥未在账号中注册，因此没有尝试登录。这一判断有误：2026-11-26 账号的密钥进入了 Pod，登录成功（[#156](https://github.com/litkhai/runpod-hols/issues/156)）。
 
 **自 2026-11-26 起默认镜像为 `runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404`**（[#143](https://github.com/litkhai/runpod-hols/issues/143)），此前为 1.0.7。CUDA 12.8 和 torch 2.9.1 不变。`terraform validate` 通过，未重新执行 `apply`。镜像本身在 REST v2 GPU Pod（L4，Secure）上检查过：SSH、`torch.cuda.is_available()` 与一次 CUDA 矩阵乘法，以及用 `startJupyter` 创建后 126 秒 8888 代理上的 JupyterLab。
 
@@ -551,7 +551,7 @@ Serverless と Pod のトラックでコンソールから手作業で行うこ�
 - **`gpu_type_id` が送られます。** 1.0.8 はこの値を落とし Pod が RTX 4090 になりましたが、2.0.0 は指定した RTX 2000 Ada を割り当てました。
 - **GraphQL の権限がないキーでも動きます。** プロバイダーはまだ一部の非推奨属性（`machine_id`、`volume_encrypted`、テンプレートの `readme`、endpoint の `users`）を GraphQL から読みます。GraphQL None ではその読み取りが 401 になり、プロバイダーは警告を出して該当属性を null にしました。
 - **古いテンプレート名は拒否されることがあります。** 最初の `apply` はテンプレートを作成した後、endpoint で `400 endpoint template names must be unique` により失敗しました。REST を直接呼んでも同じで、新しい名前なら通ります。`template_name` の既定値を `hol-hello-worker-v2` に変えました。
-- **SSH：`ssh.direct` が現れるまで 4 分以上かかりました**（EUR-IS-1）。sshd は応答しましたが、このマシンのキーがアカウントに登録されていないため、ログインは確認していません。
+- **SSH：`ssh.direct` が現れるまで 4 分以上かかりました**（EUR-IS-1）。sshd は応答しましたが、このマシンのキーがアカウントに登録されていないと考え、ログインは試しませんでした。この判断は誤りでした。2026-11-26 にはアカウントのキーが Pod に入り、ログインできました（[#156](https://github.com/litkhai/runpod-hols/issues/156)）。
 
 **2026-11-26 からデフォルトのイメージは `runpod/pytorch:2.2.0-cu1281-torch291-ubuntu2404`**（[#143](https://github.com/litkhai/runpod-hols/issues/143)）。それまでは 1.0.7。CUDA 12.8 と torch 2.9.1 は同じです。`terraform validate` は通過し、`apply` は再実行していません。イメージ自体は REST v2 の GPU Pod（L4、Secure）で確認しました。SSH、`torch.cuda.is_available()` と CUDA の行列積、`startJupyter` で作成して 126 秒後の 8888 プロキシの JupyterLab です。
 
