@@ -121,6 +121,21 @@ The same steps through REST v2 ([#123](https://github.com/litkhai/runpod-hols/is
 | `start` | The same 400 twice, accepted on the third try a minute later; the new value |
 | Clean up | Pod, template and secret deleted at once |
 
+### GPU Pod and container start command (2026-11-27)
+
+A one-off run through REST v2 ([#167](https://github.com/litkhai/runpod-hols/issues/167)); `lab.py` still makes a CPU Pod. RTX 2000 Ada in EU-RO-1 (USD 0.24/hr), `runpod/base:1.0.2-ubuntu2404`, about three minutes of Pod time. The template had `category: NVIDIA` and `cmd: ["bash", "-c", "echo template-cmd … >> /hol-start.txt; exec /start.sh"]`. REST v2 calls the console's *Container start command* (`dockerStartCmd` in v1) `cmd` and `entrypoint`, stored together as `args`. A `cmd` replaces the image's `CMD` — `/start.sh` here, which sets up SSH — so this one ends by running it.
+
+| Step | Result |
+|---|---|
+| Template, read back | `cmd` as sent; `args` holds it as `{"cmd":[…]}`; `entrypoint` null |
+| Pod from the template | Create response and `GET` carry the template's `cmd`; `template` reads back `null`, as on CPU Pods |
+| Inside the Pod, SSH after 30 s | `/hol-start.txt` written; PID 1 is `docker-init -- bash -c …`; `sshd` running; `nvidia-smi -L` lists the GPU; secret hash matches; `/etc/rp_environment` still holds it and `RUNPOD_API_KEY`; new names `RUNPOD_GPU_NAME` and `RUNPOD_PROXY_BASE` |
+| Rotate, then `restart` | `200`; SSH answered again within 25 s; the new secret value in PID 1; `/hol-start.txt` held only the new start's line — the container was recreated, so files outside volumes were gone |
+| Second Pod from the template, with its own `cmd` | The Pod's `cmd` ran, not the template's |
+| Clean up | Pods, template and secret deleted at once; USD 0.01 |
+
+`restart` worked on this GPU host. On CPU Pods it had returned 500 (v1) and 400 (v2).
+
 ### What was run
 
 2026-11-05, Secure Cloud CPU Pod (`cpu3c`, 2 vCPU), `runpod/base:1.0.2-ubuntu2404`, REST v1 for templates and Pods, REST v2 for secrets.
@@ -137,7 +152,7 @@ The same steps through REST v2 ([#123](https://github.com/litkhai/runpod-hols/is
 | `stop` + `start` | New value |
 | Clean up | Pod, template and secret deleted at once; `currentSpendPerHr` 0 |
 
-Not run: building a custom image (the template reuses `runpod/base`), `dockerStartCmd` overrides, a GPU Pod, a template marked public, a secret used by a Serverless endpoint.
+Not run: building a custom image (the template reuses `runpod/base`), a template marked public, a secret used by a Serverless endpoint. A GPU Pod and a start command ran on 2026-11-27, above.
 
 ---
 
@@ -258,6 +273,21 @@ Pod 템플릿은 바로 지워졌습니다. [Serverless Lab 03](../../serverless
 | `start` | 같은 400 두 번, 1분 뒤 세 번째에 성공. 새 값 |
 | 정리 | Pod, 템플릿, 시크릿 바로 삭제 |
 
+### GPU Pod 과 컨테이너 시작 명령 (2026-11-27)
+
+REST v2 로 한 번 따로 실행했습니다 ([#167](https://github.com/litkhai/runpod-hols/issues/167)). `lab.py` 는 여전히 CPU Pod 을 만듭니다. EU-RO-1 의 RTX 2000 Ada (시간당 USD 0.24), `runpod/base:1.0.2-ubuntu2404`, Pod 시간 약 3분. 템플릿은 `category: NVIDIA` 에 `cmd: ["bash", "-c", "echo template-cmd … >> /hol-start.txt; exec /start.sh"]` 였습니다. 콘솔의 *Container start command* (v1 의 `dockerStartCmd`) 를 REST v2 는 `cmd` 와 `entrypoint` 로 받고, 둘을 합쳐 `args` 에 저장합니다. `cmd` 는 이미지의 `CMD` 를 대체합니다. 이 이미지의 `CMD` 는 SSH 를 띄우는 `/start.sh` 라서, 명령 끝에서 그것을 실행했습니다.
+
+| 단계 | 결과 |
+|---|---|
+| 템플릿, 다시 읽기 | `cmd` 는 보낸 그대로. `args` 에 `{"cmd":[…]}` 로 저장. `entrypoint` 는 null |
+| 템플릿으로 만든 Pod | 생성 응답과 `GET` 에 템플릿의 `cmd` 가 있음. CPU Pod 때처럼 `template` 은 `null` 로 읽힘 |
+| Pod 안, SSH 30초 후 | `/hol-start.txt` 생성. PID 1 은 `docker-init -- bash -c …`. `sshd` 실행 중. `nvidia-smi -L` 에 GPU 가 보임. 시크릿 해시 일치. `/etc/rp_environment` 에 시크릿과 `RUNPOD_API_KEY` 가 여전히 있음. 새 이름 `RUNPOD_GPU_NAME`, `RUNPOD_PROXY_BASE` |
+| 교체 후 `restart` | `200`. 25초 안에 SSH 가 다시 응답. PID 1 에 새 시크릿 값. `/hol-start.txt` 에는 새 시작의 줄만 남음 — 컨테이너가 새로 만들어져 볼륨 밖의 파일은 사라짐 |
+| 같은 템플릿으로 `cmd` 를 따로 준 두 번째 Pod | 템플릿이 아니라 Pod 의 `cmd` 가 실행됨 |
+| 정리 | Pod, 템플릿, 시크릿 즉시 삭제. USD 0.01 |
+
+이 GPU 호스트에서는 `restart` 가 동작했습니다. CPU Pod 에서는 500 (v1) 과 400 (v2) 이었습니다.
+
 ### 실행 내역
 
 2026-11-05, Secure Cloud CPU Pod (`cpu3c`, vCPU 2개), `runpod/base:1.0.2-ubuntu2404`, 템플릿과 Pod 은 REST v1, 시크릿은 REST v2.
@@ -274,4 +304,4 @@ Pod 템플릿은 바로 지워졌습니다. [Serverless Lab 03](../../serverless
 | `stop` + `start` | 새 값 |
 | 정리 | Pod, 템플릿, 시크릿 모두 바로 삭제. `currentSpendPerHr` 0 |
 
-실행하지 않은 것: 커스텀 이미지 빌드 (템플릿은 `runpod/base` 를 재사용), `dockerStartCmd` 재정의, GPU Pod, 공개 템플릿, Serverless 엔드포인트에서의 시크릿 사용.
+실행하지 않은 것: 커스텀 이미지 빌드 (템플릿은 `runpod/base` 를 재사용), 공개 템플릿, Serverless 엔드포인트에서의 시크릿 사용. GPU Pod 과 시작 명령은 2026-11-27 에 실행했습니다 (위).
