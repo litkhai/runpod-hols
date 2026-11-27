@@ -4,11 +4,11 @@
 
 > The half of the SDK that runs **on your own machine**, calling and managing Runpod. The other half — the worker runtime, including the handler contract — is in [worker.md](./worker.md).
 >
-> Read out of the installed SDK source at 1.11.0 and 1.12.0, and exercised against a live endpoint. Outputs shown are real. What 2.1.0 changes is in its own section, read from source.
+> Read out of the installed SDK source at 1.11.0 and 1.12.0, and exercised against a live endpoint. Outputs shown are real. What 2.1.0 changes is in its own section, read from source. The base text was checked against the 2.4.0 source on 2026-11-27; what no longer holds is under *Checked against 2.4.0*.
 >
 > SDK 중 **내 컴퓨터에서 도는** 절반으로, Runpod 을 호출하고 관리합니다. 나머지 절반인 워커 런타임(핸들러 계약 포함)은 [worker.md](./worker.md) 에 있습니다.
 >
-> 1.11.0 과 1.12.0 의 설치된 SDK 소스를 읽고 실제 엔드포인트에 실행해 확인했습니다. 아래 출력은 실제 결과입니다. 2.1.0 에서 바뀐 것은 소스를 읽어 별도 섹션에 정리했습니다.
+> 1.11.0 과 1.12.0 의 설치된 SDK 소스를 읽고 실제 엔드포인트에 실행해 확인했습니다. 아래 출력은 실제 결과입니다. 2.1.0 에서 바뀐 것은 소스를 읽어 별도 섹션에 정리했습니다. 2026-11-27 에 본문을 2.4.0 소스와 다시 대조했고, 더는 맞지 않는 것은 *2.4.0 기준으로 다시 확인* 에 있습니다.
 
 ---
 
@@ -173,11 +173,27 @@ The upstream `CHANGELOG.md` labels the 2.0.0 notes as a second `2.1.0` section d
 | | 2.4.0 |
 |---|---|
 | A failed job | `run_sync` and `job.output()` raise `runpod.error.JobError` (`job_id`, `status`, `error`) for `FAILED`, `TIMED_OUT` and `CANCELLED`, where 2.1 returned `None`. `run_sync` on a stub answering `FAILED`: `JobError: job j1 FAILED: boom`. Code that checked for `None` now needs `try` |
-| `CANCELLED` | Final for both calls — the disagreement under Job states is gone in 2.4 |
+| `CANCELLED` | Final for `run_sync` and `job.output()`; not for `stream()` (see *Checked against 2.4.0*) |
 | Credential profiles | `RUNPOD_PROFILE` picks a profile in `~/.runpod/config.toml`, saved with `rp login --profile NAME`; unset means `default` |
 | Hosts | `RUNPOD_CONSOLE_URL` and `RUNPOD_PROXY_DOMAIN` join `RUNPOD_ENDPOINT_BASE_URL`; read on every call |
 | Network volume files | New resumable upload and download through the S3-compatible API, multipart above 64 MiB, resume state under `~/.runpod/transfers` |
 | User-Agent | Calls can carry `Integration/<name>`; the `runpod.apps` runtime sends `Integration/apps` |
+
+### Checked against 2.4.0
+
+The rest of this page was read at 1.11.0 and 1.12.0. On 2026-11-27 each claim in it was checked against the source of the 2.4.0 wheel, the current release ([#166](https://github.com/litkhai/runpod-hols/issues/166)). These no longer hold, or never did; the rest still does. Read from source only — nothing in this table was run.
+
+| Claim in the text | 2.4.0 |
+|---|---|
+| `CANCELLED` is final in 2.4 | For `run_sync` and `job.output()`. `job.stream()` and the async `stream()` still stop only on `COMPLETED`, `FAILED` and `TIMED_OUT`, so on a cancelled job they keep polling |
+| `RUNPOD_API_BASE_URL` points the GraphQL control plane | It is also the base of every REST v2 call: Pods, templates, Serverless, catalog, registries |
+| Infrastructure functions | Same names. `resume_pod(..., gpu_count=…)` raises `ValueError`; `stop_pod` and `terminate_pod` take no `api_key`; `update_user_settings` and registry-credential create and delete call REST v2. REST calls retry on 429: three retries, at most 60 s of waiting, 30 s timeout |
+| `get_pods()` lists everything that bills | One `GET /v2/pods`: the first page only |
+| Every client call carries a User-Agent | Only control-plane calls. `Endpoint`, `Job` and `AsyncioEndpoint` send the HTTP library's default; 1.12 did the same |
+| Worker traffic is not tagged | It is: the worker's HTTP session sends the SDK User-Agent with the agent suffix; 1.12 did the same |
+| Input is wrapped in `{"input": …}` unless it already is | `{"input": {}}` is wrapped again, and `AsyncioEndpoint.run` always wraps; 1.12 did the same |
+| Hosts are read on every call | `Endpoint` and `Job` read `RUNPOD_ENDPOINT_BASE_URL` once, at `import runpod` |
+| The CLI drops `project` and `exec` | `config` is gone too |
 
 ### REST v1 to v2
 
@@ -452,11 +468,27 @@ SDK 는 `api.runpod.io` 의 `/v2` 경로, 즉 REST v2 를 씁니다 ([스펙](ht
 | | 2.4.0 |
 |---|---|
 | 실패한 작업 | `run_sync` 와 `job.output()` 이 `FAILED`, `TIMED_OUT`, `CANCELLED` 에서 `runpod.error.JobError` (`job_id`, `status`, `error`) 를 던집니다. 2.1 은 `None` 을 돌려줬습니다. `FAILED` 를 돌려주는 가짜 클라이언트에서 `run_sync` 는 `JobError: job j1 FAILED: boom`. `None` 을 확인하던 코드는 이제 `try` 가 필요합니다 |
-| `CANCELLED` | 두 호출 모두 최종 상태로 봅니다. 작업 상태 절의 불일치는 2.4 에서 사라졌습니다 |
+| `CANCELLED` | `run_sync` 와 `job.output()` 은 최종 상태로 봅니다. `stream()` 은 아닙니다 (*2.4.0 기준으로 다시 확인* 참고) |
 | 인증 프로필 | `RUNPOD_PROFILE` 이 `~/.runpod/config.toml` 의 프로필을 고릅니다 (`rp login --profile NAME` 으로 저장). 비어 있으면 `default` |
 | 호스트 | `RUNPOD_ENDPOINT_BASE_URL` 에 `RUNPOD_CONSOLE_URL`, `RUNPOD_PROXY_DOMAIN` 이 더해졌고, 호출할 때마다 읽습니다 |
 | 네트워크 볼륨 파일 | S3 호환 API 를 통한 이어받기 가능한 업로드·다운로드가 새로 생겼습니다. 64 MiB 초과는 multipart, 재개 상태는 `~/.runpod/transfers` |
 | User-Agent | 호출에 `Integration/<name>` 을 붙일 수 있고, `runpod.apps` 런타임은 `Integration/apps` 를 보냅니다 |
+
+### 2.4.0 기준으로 다시 확인
+
+이 문서의 나머지는 1.11.0 과 1.12.0 에서 읽었습니다. 2026-11-27 에 그 내용을 현재 릴리스인 2.4.0 휠의 소스와 하나씩 대조했습니다 ([#166](https://github.com/litkhai/runpod-hols/issues/166)). 아래는 더는 맞지 않거나 처음부터 틀렸던 것이고, 나머지는 그대로 맞습니다. 소스만 읽었으며 이 표의 내용은 실행하지 않았습니다.
+
+| 본문의 주장 | 2.4.0 |
+|---|---|
+| 2.4 에서 `CANCELLED` 는 최종 상태 | `run_sync` 와 `job.output()` 에서만. `job.stream()` 과 비동기 `stream()` 은 여전히 `COMPLETED` · `FAILED` · `TIMED_OUT` 에서만 멈추므로, 취소된 작업에서는 계속 폴링합니다 |
+| `RUNPOD_API_BASE_URL` 은 GraphQL 컨트롤 플레인 주소 | 모든 REST v2 호출의 기준 주소이기도 합니다: Pod, 템플릿, Serverless, 카탈로그, 레지스트리 |
+| 인프라 함수 | 이름은 같습니다. `resume_pod(..., gpu_count=…)` 는 `ValueError` 를 냅니다. `stop_pod` · `terminate_pod` 는 `api_key` 를 받지 않습니다. `update_user_settings` 와 레지스트리 자격 증명 생성·삭제는 REST v2 를 부릅니다. REST 호출은 429 에서 재시도합니다: 3회, 대기 최대 60초, 타임아웃 30초 |
+| `get_pods()` 는 과금되는 것을 모두 보여줌 | `GET /v2/pods` 한 번, 첫 페이지만 |
+| 모든 클라이언트 호출에 User-Agent 가 붙음 | 컨트롤 플레인 호출만. `Endpoint` · `Job` · `AsyncioEndpoint` 는 HTTP 라이브러리 기본값을 보냅니다. 1.12 도 같았습니다 |
+| 워커 트래픽에는 표시가 없음 | 있습니다. 워커의 HTTP 세션이 에이전트 접미사가 붙은 SDK User-Agent 를 보냅니다. 1.12 도 같았습니다 |
+| 입력이 이미 `{"input": …}` 이 아니면 감쌈 | `{"input": {}}` 은 한 번 더 감싸고, `AsyncioEndpoint.run` 은 항상 감쌉니다. 1.12 도 같았습니다 |
+| 호스트는 호출마다 읽음 | `Endpoint` 와 `Job` 은 `RUNPOD_ENDPOINT_BASE_URL` 을 `import runpod` 때 한 번 읽습니다 |
+| CLI 에서 `project` 와 `exec` 가 빠짐 | `config` 도 빠졌습니다 |
 
 ### REST v1 에서 v2 로
 

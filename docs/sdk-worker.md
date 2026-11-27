@@ -12,7 +12,7 @@ permalink: /sdk/worker/
 
 The half of the SDK that runs **inside your worker container**. The other half is [Client SDK]({{ '/sdk/client/' | relative_url }}).
 
-Read out of the installed source at 1.11.0 and 1.12.0, and confirmed by running each case. Where behaviour is surprising, the observed output is shown.
+Read out of the installed source at 1.11.0 and 1.12.0, and confirmed by running each case. Where behaviour is surprising, the observed output is shown. The base text was checked against the 2.4.0 source on 2026-11-27; what no longer holds is under *Checked against 2.4.0*.
 
 ### What changed in 2.x
 
@@ -39,7 +39,23 @@ Read from the 2.4.0 wheel on 2026-11-25 and compared with 2.1.0 ([#134](https://
 | Local API server | A stream that errors returns `FAILED`; responses keep `null` fields |
 | `VolumeCache` | Large files hydrate in ranges, with retry counts reported |
 
-The handler contract is unchanged.
+The handler contract is unchanged, apart from a bare `{}` return (see *Checked against 2.4.0*).
+
+### Checked against 2.4.0
+
+The rest of this page was read at 1.11.0 and 1.12.0. On 2026-11-27 each claim in it was checked against the source of the 2.4.0 wheel, the current release ([#166](https://github.com/litkhai/runpod-hols/issues/166)). Beyond the two tables above, these no longer hold; the rest still does. Read from source only — nothing in this table was run.
+
+| Claim in the text | 2.4.0 |
+|---|---|
+| The fitness checks live in `rp_fitness`, `rp_gpu_fitness`, `rp_system_fitness` | Those names are aliases now; the code is in `runpod/_health/` (`fitness`, `system`, `gpu`, `cuda`), about 1,580 lines |
+| The network check | A TCP connection to the host of `RUNPOD_WEBHOOK_GET_JOB`, else `api.runpod.ai:443`, three tries, run when the worker starts. 1.12 probed `8.8.8.8:53` |
+| The CUDA init check and the GPU benchmark run when a GPU is present | Only when the handler has already imported torch or CuPy (for torch, with a CUDA context created); otherwise they are skipped. The SDK no longer imports torch itself |
+| Environment variables | New: `RUNPOD_SKIP_FITNESS_CHECKS` turns off every check, built-in and registered; `RUNPOD_DEFER_FITNESS_CHECKS` skips the pass at import. Skip flags accept `1`, `true`, `yes` or `on`; 1.12 accepted only `true` |
+| `log.secret` keeps the first and last character | Prints `name: [REDACTED]` whatever the value |
+| Returning `{}` drops `output` | The result is `{"output": {}}`; `output` is dropped only next to `error` or `stopPod` |
+| A generator handler under `test_input.json` returns the generator object | The return value fails the JSON check (*must be json-serializable*) and the local run exits with 1 |
+| `boto3>=1.43.51` | `boto3>=1.44.2` |
+| Private download URLs are refused | Still; `RUNPOD_ALLOW_PRIVATE_DOWNLOAD_URLS=true` turns the guard off, in 1.12 as well |
 
 ### Startup fitness checks
 
@@ -131,7 +147,7 @@ Six levels — `NOTSET`, `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR` — default `
 Locally you get `INFO   | message`. Same call, different shape — which is why console and local logs do not look alike. Messages over **4096 characters** are truncated from the middle — the SDK's comment says 10MB, but the constant is 4096. Easy to hit with a stack trace.
 
 <div class="note" markdown="1">
-`log.secret(name, value)` masks all but the first and last character. It does not redact very short values: `"ab"` prints as `ab` and `"a"` as `aa`, because the mask is `"*" * (len - 2)`.
+2.x prints `name: [REDACTED]` whatever the value. In 1.x, `log.secret(name, value)` masks all but the first and last character. It does not redact very short values: `"ab"` prints as `ab` and `"a"` as `aa`, because the mask is `"*" * (len - 2)`.
 </div>
 
 ### A fourth place a model can live
@@ -206,7 +222,7 @@ The SDK inspects your return value and pulls two keys out as control signals rat
 | `{"ok": True}` | `{"output": {"ok": True}}` | Normal success |
 | `{"ok": False, "error": "bad input"}` | `{"output": {"ok": False}, "error": "bad input"}` | **Job marked FAILED** |
 | `{"ok": True, "refresh_worker": True}` | `{"output": {"ok": True}, "stopPod": True}` | Success, worker recycled |
-| `{}` | `{}` | `output` dropped entirely |
+| `{}` | `{}` | `output` dropped entirely in 1.x; 2.x returns `{"output": {}}` unless `error` or `stopPod` is set |
 | `"just a string"` | `{"output": "just a string"}` | Non-dicts wrapped |
 
 <div class="warn" markdown="1">
@@ -270,7 +286,7 @@ Local `test_input.json` runs do **not** exercise streaming — the generator com
 
 ## 한국어
 
-1.11.0 과 1.12.0 의 설치된 SDK 소스를 직접 읽고 각 경우를 실행해 확인한 내용입니다. 동작이 직관과 다른 부분은 실제 출력을 함께 실었습니다.
+1.11.0 과 1.12.0 의 설치된 SDK 소스를 직접 읽고 각 경우를 실행해 확인한 내용입니다. 동작이 직관과 다른 부분은 실제 출력을 함께 실었습니다. 2026-11-27 에 본문을 2.4.0 소스와 다시 대조했고, 더는 맞지 않는 것은 *2.4.0 기준으로 다시 확인* 에 있습니다.
 
 ### 2.x 에서 바뀐 것
 
@@ -297,7 +313,23 @@ Local `test_input.json` runs do **not** exercise streaming — the generator com
 | 로컬 API 서버 | 오류가 난 스트림은 `FAILED` 를 돌려주고, 응답에서 `null` 필드를 지우지 않습니다 |
 | `VolumeCache` | 큰 파일을 구간 단위로 가져오고 재시도 횟수를 보고합니다 |
 
-핸들러 계약은 그대로입니다.
+핸들러 계약은 그대로입니다. 단, `{}` 만 반환할 때는 다릅니다 (*2.4.0 기준으로 다시 확인* 참고).
+
+### 2.4.0 기준으로 다시 확인
+
+이 문서의 나머지는 1.11.0 과 1.12.0 에서 읽었습니다. 2026-11-27 에 그 내용을 현재 릴리스인 2.4.0 휠의 소스와 하나씩 대조했습니다 ([#166](https://github.com/litkhai/runpod-hols/issues/166)). 위의 두 표 말고 더는 맞지 않는 것은 아래와 같고, 나머지는 그대로 맞습니다. 소스만 읽었으며 이 표의 내용은 실행하지 않았습니다.
+
+| 본문의 주장 | 2.4.0 |
+|---|---|
+| fitness check 는 `rp_fitness` · `rp_gpu_fitness` · `rp_system_fitness` 에 있음 | 이제 그 이름은 별칭이고, 코드는 `runpod/_health/` (`fitness`, `system`, `gpu`, `cuda`) 에 약 1,580줄로 있습니다 |
+| 네트워크 검사 | `RUNPOD_WEBHOOK_GET_JOB` 의 호스트, 없으면 `api.runpod.ai:443` 으로 TCP 연결을 3번까지 시도하며, 워커가 시작할 때 돕니다. 1.12 는 `8.8.8.8:53` 을 확인했습니다 |
+| GPU 가 있으면 CUDA 초기화 검사와 GPU 벤치마크가 돎 | 핸들러가 이미 torch 나 CuPy 를 import 했을 때만 (torch 는 CUDA 컨텍스트까지 만든 경우) 돌고, 아니면 건너뜁니다. SDK 가 직접 torch 를 import 하지 않습니다 |
+| 환경변수 | 새로 생김: `RUNPOD_SKIP_FITNESS_CHECKS` 는 내장·등록된 검사를 모두 끄고, `RUNPOD_DEFER_FITNESS_CHECKS` 는 import 시점 검사를 건너뜁니다. 건너뛰기 플래그는 `1`, `true`, `yes`, `on` 을 받습니다. 1.12 는 `true` 만 받았습니다 |
+| `log.secret` 은 첫 글자와 마지막 글자를 남김 | 값과 상관없이 `name: [REDACTED]` 를 출력합니다 |
+| `{}` 를 반환하면 `output` 이 사라짐 | 결과는 `{"output": {}}` 입니다. `output` 은 `error` 나 `stopPod` 가 함께 있을 때만 사라집니다 |
+| `test_input.json` 으로 돌린 제너레이터 핸들러는 제너레이터 객체를 돌려줌 | 반환값이 JSON 검사에 걸려 (*must be json-serializable*) 로컬 실행이 1 로 끝납니다 |
+| `boto3>=1.43.51` | `boto3>=1.44.2` |
+| 사설 주소 다운로드 URL 은 거부됨 | 여전히 그렇습니다. `RUNPOD_ALLOW_PRIVATE_DOWNLOAD_URLS=true` 로 이 보호를 끌 수 있고, 1.12 도 같았습니다 |
 
 ### 기동 시 fitness check
 
@@ -389,7 +421,7 @@ SIGTERM 과 SIGINT 는 종료 이벤트를 세팅하므로 루프가 작업 중�
 로컬에서는 `INFO   | message` 입니다. 같은 호출인데 형태가 달라, 콘솔 로그와 로컬 로그가 달라 보입니다. **4096자**를 넘는 메시지는 가운데가 잘립니다. SDK 주석은 10MB 라고 하지만 상수는 4096 입니다. 스택 트레이스면 쉽게 넘습니다.
 
 <div class="note" markdown="1">
-`log.secret(name, value)` 는 첫 글자와 마지막 글자만 남기고 가립니다. 아주 짧은 값은 가리지 못합니다. 마스크가 `"*" * (len - 2)` 라서 `"ab"` 는 `ab`, `"a"` 는 `aa` 로 나옵니다.
+2.x 는 값과 상관없이 `name: [REDACTED]` 를 출력합니다. 1.x 의 `log.secret(name, value)` 는 첫 글자와 마지막 글자만 남기고 가립니다. 아주 짧은 값은 가리지 못합니다. 마스크가 `"*" * (len - 2)` 라서 `"ab"` 는 `ab`, `"a"` 는 `aa` 로 나옵니다.
 </div>
 
 ### 모델이 있을 수 있는 네 번째 장소
@@ -464,7 +496,7 @@ SDK 가 반환값을 검사해 두 키를 데이터가 아닌 제어 신호로 �
 | `{"ok": True}` | `{"output": {"ok": True}}` | 정상 성공 |
 | `{"ok": False, "error": "bad input"}` | `{"output": {"ok": False}, "error": "bad input"}` | **작업 실패 처리** |
 | `{"ok": True, "refresh_worker": True}` | `{"output": {"ok": True}, "stopPod": True}` | 성공 후 워커 재활용 |
-| `{}` | `{}` | `output` 이 통째로 사라짐 |
+| `{}` | `{}` | `output` 이 통째로 사라짐 (1.x). 2.x 는 `error` 나 `stopPod` 가 없으면 `{"output": {}}` |
 | `"just a string"` | `{"output": "just a string"}` | 딕셔너리가 아니면 감싸짐 |
 
 <div class="warn" markdown="1">
@@ -530,7 +562,7 @@ SDK 가 잡습니다. 워커는 살아남고 작업만 실패하며, `error_type
 
 SDK 中**在你的 worker 容器内部运行**的那一半。另一半见 [Client SDK]({{ '/sdk/client/' | relative_url }})。
 
-内容读自已安装的 1.11.0 和 1.12.0 源码，并逐一运行确认。行为出人意料之处，附上了实际输出。
+内容读自已安装的 1.11.0 和 1.12.0 源码，并逐一运行确认。行为出人意料之处，附上了实际输出。2026-11-27 对照 2.4.0 源码复查了正文，不再成立的内容见“对照 2.4.0 复查”。
 
 ### 2.x 中的变化
 
@@ -557,7 +589,23 @@ SDK 中**在你的 worker 容器内部运行**的那一半。另一半见 [Clien
 | 本地 API 服务器 | 出错的流返回 `FAILED`；响应保留 `null` 字段 |
 | `VolumeCache` | 大文件按区间拉取，并报告重试次数 |
 
-handler 契约不变。
+handler 契约不变，只有单独返回 `{}` 时不同（见“对照 2.4.0 复查”）。
+
+### 对照 2.4.0 复查
+
+本页其余内容读自 1.11.0 和 1.12.0。2026-11-27 把其中每条说法与当前版本 2.4.0 wheel 的源码逐一对照（[#166](https://github.com/litkhai/runpod-hols/issues/166)）。除上面两张表外，下列内容不再成立，其余仍然成立。只读了源码——表中内容均未实际运行。
+
+| 正文中的说法 | 2.4.0 |
+|---|---|
+| fitness check 位于 `rp_fitness`、`rp_gpu_fitness`、`rp_system_fitness` | 这些名称现在只是别名；代码在 `runpod/_health/`（`fitness`、`system`、`gpu`、`cuda`），约 1,580 行 |
+| 网络检查 | 向 `RUNPOD_WEBHOOK_GET_JOB` 的主机（没有则 `api.runpod.ai:443`）建立 TCP 连接，最多尝试 3 次，在 worker 启动时运行。1.12 探测的是 `8.8.8.8:53` |
+| 有 GPU 时运行 CUDA 初始化检查和 GPU 基准测试 | 仅当 handler 已经 import 了 torch 或 CuPy（torch 还需已创建 CUDA 上下文）时才运行，否则跳过。SDK 不再自己 import torch |
+| 环境变量 | 新增：`RUNPOD_SKIP_FITNESS_CHECKS` 关闭全部检查（内置和注册的）；`RUNPOD_DEFER_FITNESS_CHECKS` 跳过 import 时的检查。跳过标志接受 `1`、`true`、`yes`、`on`；1.12 只接受 `true` |
+| `log.secret` 保留首尾字符 | 无论值为何都打印 `name: [REDACTED]` |
+| 返回 `{}` 会丢掉 `output` | 结果是 `{"output": {}}`；只有与 `error` 或 `stopPod` 同时出现时才丢掉 `output` |
+| 用 `test_input.json` 运行生成器 handler 会返回生成器对象 | 返回值无法通过 JSON 检查（*must be json-serializable*），本地运行以 1 退出 |
+| `boto3>=1.43.51` | `boto3>=1.44.2` |
+| 私有地址的下载 URL 会被拒绝 | 仍然如此；`RUNPOD_ALLOW_PRIVATE_DOWNLOAD_URLS=true` 可关闭该防护，1.12 也一样 |
 
 ### 启动 fitness check
 
@@ -649,7 +697,7 @@ SIGTERM 和 SIGINT 会设置一个关闭事件，因此循环会收尾结束，�
 在本地你得到的是 `INFO   | message`。同样的调用，不同的形态——这就是控制台日志和本地日志看起来不一样的原因。超过 **4096 个字符**的消息会从中间截断——SDK 的注释写的是 10MB，但常量是 4096。一个堆栈跟踪就很容易超过。
 
 <div class="note" markdown="1">
-`log.secret(name, value)` 会遮盖除首尾字符以外的所有内容。它无法遮盖非常短的值：`"ab"` 打印为 `ab`，`"a"` 打印为 `aa`，因为掩码是 `"*" * (len - 2)`。
+2.x 无论值为何都打印 `name: [REDACTED]`。在 1.x 中，`log.secret(name, value)` 会遮盖除首尾字符以外的所有内容。它无法遮盖非常短的值：`"ab"` 打印为 `ab`，`"a"` 打印为 `aa`，因为掩码是 `"*" * (len - 2)`。
 </div>
 
 ### 模型可以存放的第四个位置
@@ -724,7 +772,7 @@ SDK 会检查你的返回值，把两个键作为控制信号而不是数据取�
 | `{"ok": True}` | `{"output": {"ok": True}}` | 正常成功 |
 | `{"ok": False, "error": "bad input"}` | `{"output": {"ok": False}, "error": "bad input"}` | **作业标记为 FAILED** |
 | `{"ok": True, "refresh_worker": True}` | `{"output": {"ok": True}, "stopPod": True}` | 成功，worker 被回收 |
-| `{}` | `{}` | `output` 被整个丢弃 |
+| `{}` | `{}` | `output` 被整个丢弃（1.x）；2.x 只要没有 `error` 或 `stopPod` 就返回 `{"output": {}}` |
 | `"just a string"` | `{"output": "just a string"}` | 非字典会被包装 |
 
 <div class="warn" markdown="1">
@@ -790,7 +838,7 @@ SDK 会捕获异常，worker 存活，作业失败并返回一个 JSON，其中�
 
 SDK のうち、**worker コンテナの中で動く**半分です。もう半分は [Client SDK]({{ '/sdk/client/' | relative_url }}) です。
 
-インストール済みの 1.11.0 と 1.12.0 のソースを読み、各ケースを実行して確認しました。挙動が意外な箇所には、実際の出力を載せています。
+インストール済みの 1.11.0 と 1.12.0 のソースを読み、各ケースを実行して確認しました。挙動が意外な箇所には、実際の出力を載せています。2026-11-27 に本文を 2.4.0 のソースと照合し直しました。成り立たなくなった点は「2.4.0 で再確認」にあります。
 
 ### 2.x での変更点
 
@@ -817,7 +865,23 @@ worker を 2.x に移すのはバージョン番号の変更ではなく、再�
 | ローカル API サーバー | エラーになったストリームは `FAILED` を返し、レスポンスは `null` フィールドを残します |
 | `VolumeCache` | 大きなファイルを範囲ごとに取得し、リトライ回数を報告します |
 
-handler の契約は変わりません。
+handler の契約は変わりません。ただし `{}` だけを返す場合は別です（「2.4.0 で再確認」を参照）。
+
+### 2.4.0 で再確認
+
+このページの残りは 1.11.0 と 1.12.0 で読んだ内容です。2026-11-27 に、その一つひとつを現行リリース 2.4.0 の wheel のソースと照合しました（[#166](https://github.com/litkhai/runpod-hols/issues/166)）。上の 2 つの表のほかに成り立たなくなった点は下のとおりで、それ以外は今も成り立ちます。ソースを読んだだけで、この表の内容は実行していません。
+
+| 本文の記述 | 2.4.0 |
+|---|---|
+| fitness check は `rp_fitness`・`rp_gpu_fitness`・`rp_system_fitness` にある | これらの名前は今は別名で、コードは `runpod/_health/`（`fitness`、`system`、`gpu`、`cuda`）にあり、約 1,580 行です |
+| ネットワークチェック | `RUNPOD_WEBHOOK_GET_JOB` のホスト（なければ `api.runpod.ai:443`）へ TCP 接続を最大 3 回試し、worker の起動時に実行します。1.12 は `8.8.8.8:53` を確認していました |
+| GPU があれば CUDA 初期化チェックと GPU ベンチマークが走る | handler がすでに torch か CuPy を import している場合（torch は CUDA コンテキストを作成済みの場合）だけ走り、そうでなければスキップされます。SDK 自身はもう torch を import しません |
+| 環境変数 | 新規：`RUNPOD_SKIP_FITNESS_CHECKS` は組み込みと登録済みのチェックをすべて無効にし、`RUNPOD_DEFER_FITNESS_CHECKS` は import 時のチェックを飛ばします。スキップ用フラグは `1`、`true`、`yes`、`on` を受け付けます。1.12 は `true` だけでした |
+| `log.secret` は先頭と末尾の文字を残す | 値にかかわらず `name: [REDACTED]` と出力します |
+| `{}` を返すと `output` が消える | 結果は `{"output": {}}` です。`output` が消えるのは `error` か `stopPod` が一緒にあるときだけです |
+| `test_input.json` で動かしたジェネレーター handler はジェネレーターオブジェクトを返す | 戻り値が JSON チェックで弾かれ（*must be json-serializable*）、ローカル実行は 1 で終了します |
+| `boto3>=1.43.51` | `boto3>=1.44.2` |
+| プライベートアドレスのダウンロード URL は拒否される | 今もそうです。`RUNPOD_ALLOW_PRIVATE_DOWNLOAD_URLS=true` でこの保護を外せ、1.12 も同じでした |
 
 ### 起動時の fitness check
 
@@ -909,7 +973,7 @@ SIGTERM と SIGINT はシャットダウンイベントをセットするので�
 ローカルでは `INFO   | message` になります。同じ呼び出しでも形が違うので、コンソールのログとローカルのログは見た目が異なります。**4096 文字**を超えるメッセージは中央が切り詰められます。SDK のコメントには 10MB とありますが、定数は 4096 です。スタックトレースなら簡単に超えます。
 
 <div class="note" markdown="1">
-`log.secret(name, value)` は先頭と末尾の 1 文字以外をマスクします。非常に短い値は伏せられません。マスクが `"*" * (len - 2)` なので、`"ab"` は `ab`、`"a"` は `aa` と出力されます。
+2.x は値にかかわらず `name: [REDACTED]` と出力します。1.x では、`log.secret(name, value)` は先頭と末尾の 1 文字以外をマスクします。非常に短い値は伏せられません。マスクが `"*" * (len - 2)` なので、`"ab"` は `ab`、`"a"` は `aa` と出力されます。
 </div>
 
 ### モデルを置ける 4 つ目の場所
@@ -984,7 +1048,7 @@ SDK は戻り値を検査し、2 つのキーをデータではなく制御シ�
 | `{"ok": True}` | `{"output": {"ok": True}}` | 通常の成功 |
 | `{"ok": False, "error": "bad input"}` | `{"output": {"ok": False}, "error": "bad input"}` | **ジョブが FAILED になる** |
 | `{"ok": True, "refresh_worker": True}` | `{"output": {"ok": True}, "stopPod": True}` | 成功、worker はリサイクルされる |
-| `{}` | `{}` | `output` がまるごと消える |
+| `{}` | `{}` | `output` がまるごと消える（1.x）。2.x は `error` か `stopPod` がなければ `{"output": {}}` |
 | `"just a string"` | `{"output": "just a string"}` | dict 以外はラップされる |
 
 <div class="warn" markdown="1">

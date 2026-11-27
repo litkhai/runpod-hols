@@ -20,7 +20,7 @@ The handler contract is one section of the worker half, not a peer of the SDK �
 | [Worker](./worker.md) | Handler contract · startup fitness checks · handler utilities · internals · local development |
 | [Client](./client.md) | `Endpoint` / `Job` · control plane · AI agent detection · the bundled `runpod` CLI |
 
-Both were read out of the installed source at 1.11.0 and 1.12.0, and confirmed by running them. Where behaviour is surprising, the observed output is included.
+Both were read out of the installed source at 1.11.0 and 1.12.0, and confirmed by running them. Where behaviour is surprising, the observed output is included. Both were checked against the 2.4.0 source on 2026-11-27 ([#166](https://github.com/litkhai/runpod-hols/issues/166)); each page lists what no longer holds.
 
 ---
 
@@ -40,4 +40,4 @@ Handler 계약은 SDK 와 나란한 항목이 아니라 **워커 절반의 한 �
 | [Worker](./worker.md) | Handler 계약 · 기동 시 fitness check · handler 유틸리티 · 내부 동작 · 로컬 개발 |
 | [Client](./client.md) | `Endpoint` / `Job` · 컨트롤 플레인 · AI 에이전트 감지 · 함께 설치되는 `runpod` CLI |
 
-두 문서 모두 1.11.0 과 1.12.0 의 설치된 소스를 직접 읽고 실행해 확인했습니다. 동작이 직관과 다른 부분은 실제 출력을 함께 실었습니다.
+두 문서 모두 1.11.0 과 1.12.0 의 설치된 소스를 직접 읽고 실행해 확인했습니다. 동작이 직관과 다른 부분은 실제 출력을 함께 실었습니다. 2026-11-27 에 두 문서 모두 2.4.0 소스와 다시 대조했고 ([#166](https://github.com/litkhai/runpod-hols/issues/166)), 더는 맞지 않는 것은 각 문서에 정리했습니다.
