@@ -59,6 +59,8 @@ Run on 2026-11-05 in EU-RO-1 with marker files on each tier ([the lab](https://g
 
 While stopped, the account's `currentSpendPerHr` was `0.003` for a 10 GB Pod volume, but the Pod's `costPerHr` still showed the running rate, `0.89`. In EU-RO-1 both kinds of volume were a FUSE mount, `mfs#euro.runpod.net:9421`; `df` showed the whole 2.3 PB filesystem, and writes stopped at the 10 GB allocation with `Disk quota exceeded`.
 
+**US-MO-2, 2026-11-27** ([#168](https://github.com/litkhai/runpod-hols/issues/168)): the same steps in a second data center gave the same picture. The Pod volume (on an L4) and the network volume were both `mfs#us-mo-2.runpod.net:9421`; markers on `/workspace` survived stop/start and a new Pod, those in `/root` did not.
+
 ### Global volume (beta)
 
 A third kind of persistent storage, listed first in **Add volume** with a **Global** badge: no datacenter, no size, USD 0.09 per GB-month stored plus IOPS. It is created through `POST https://api.runpod.io/v2/global-volumes` (name only) or the console, but REST v1 cannot attach it: the console's deploy mutation passes `volumeMounts: [{volumeId, volumeType: "OBJECT_STORE_VOLUME", mountPath: "/workspace"}]`. Inside the Pod it is a FUSE mount of an object store.
@@ -260,6 +262,8 @@ Pod 는 직접 빌려서 제어하는 GPU 또는 CPU 컨테이너입니다. Serv
 </div>
 
 중지 중 계정의 `currentSpendPerHr` 는 10 GB Pod 볼륨에 대해 `0.003` 이었지만, Pod 의 `costPerHr` 는 실행 중 요금 `0.89` 를 그대로 보여줬습니다. EU-RO-1 에서는 두 종류의 볼륨 모두 FUSE 마운트 `mfs#euro.runpod.net:9421` 이었고, `df` 는 2.3 PB 파일시스템 전체를 보여줬으며, 쓰기는 10 GB 할당에서 `Disk quota exceeded` 로 멈췄습니다.
+
+**US-MO-2, 2026-11-27** ([#168](https://github.com/litkhai/runpod-hols/issues/168)): 두 번째 데이터센터에서 같은 단계를 실행해 같은 결과를 얻었습니다. Pod 볼륨 (L4) 과 네트워크 볼륨 모두 `mfs#us-mo-2.runpod.net:9421` 이었고, `/workspace` 의 표식은 중지·시작과 새 Pod 을 거쳐도 남았으며 `/root` 의 표식은 사라졌습니다.
 
 ### Global volume (베타)
 
@@ -463,6 +467,8 @@ Pod 是你租用并自行控制的 GPU 或 CPU 容器。与 Serverless 不同，
 
 停止期间，对于一个 10 GB 的 Pod volume，账号的 `currentSpendPerHr` 为 `0.003`，但 Pod 的 `costPerHr` 仍显示运行时的费率 `0.89`。在 EU-RO-1，两种 volume 都是 FUSE 挂载 `mfs#euro.runpod.net:9421`；`df` 显示的是整个 2.3 PB 的文件系统，而写入在达到 10 GB 分配量时以 `Disk quota exceeded` 停止。
 
+**US-MO-2，2026-11-27**（[#168](https://github.com/litkhai/runpod-hols/issues/168)）：在第二个数据中心执行相同步骤，结果相同。Pod volume（L4 上）和 network volume 都是 `mfs#us-mo-2.runpod.net:9421`；`/workspace` 上的标记在 stop/start 和新 Pod 之后仍在，`/root` 中的则没有。
+
 ### Global volume（测试版）
 
 第三种持久存储，在 **Add volume** 列表中排在最前，带 **Global** 标记：没有数据中心，也没有容量，按存储每 GB·月 USD 0.09 加 IOPS 计费。可以用 `POST https://api.runpod.io/v2/global-volumes`（只需名称）或控制台创建，但 REST v1 无法把它挂到 Pod 上：控制台的部署 mutation 传的是 `volumeMounts: [{volumeId, volumeType: "OBJECT_STORE_VOLUME", mountPath: "/workspace"}]`。在 Pod 内它是一个对象存储的 FUSE 挂载。
@@ -664,6 +670,8 @@ Pod は借りて自分で制御する GPU または CPU コンテナです。Ser
 </div>
 
 停止中、10 GB の Pod volume に対してアカウントの `currentSpendPerHr` は `0.003` でしたが、Pod の `costPerHr` は稼働時の料金 `0.89` のままでした。EU-RO-1 ではどちらの volume も FUSE マウント `mfs#euro.runpod.net:9421` でした。`df` は 2.3 PB のファイルシステム全体を表示し、書き込みは 10 GB の割り当てで `Disk quota exceeded` となって止まりました。
+
+**US-MO-2、2026-11-27**（[#168](https://github.com/litkhai/runpod-hols/issues/168)）：2 つ目のデータセンターで同じ手順を実行し、同じ結果になりました。Pod volume（L4）と network volume はどちらも `mfs#us-mo-2.runpod.net:9421` で、`/workspace` のマーカーは stop/start と新しい Pod を経ても残り、`/root` のものは消えました。
 
 ### Global volume（ベータ）
 
