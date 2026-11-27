@@ -101,6 +101,8 @@ A template's `env` can hold {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %}, r
 **Inside the Pod a secret is a plain file.** `/etc/rp_environment`, mode 644, held the resolved secret and the Pod's `RUNPOD_API_KEY`. Secrets keep values out of templates and the API, not out of the container.
 </div>
 
+**GPU Pod and start command, 2026-11-27** ([#167](https://github.com/litkhai/runpod-hols/issues/167)): a template with `category: NVIDIA` and a `cmd` (the console's *Container start command*, `dockerStartCmd` in v1) on an RTX 2000 Ada. The command ran and then `exec /start.sh` brought SSH up; the GPU was visible and the secret arrived. `restart` returned 200 and the Pod came back with the rotated secret in a new container — a file written outside volumes was gone. A Pod-level `cmd` overrode the template's.
+
 ### Lab 04 — from a Pod to Serverless
 
 One network volume, mounted at `/workspace` on a Pod and at `/runpod-volume` on Serverless workers, lets an endpoint run the file you just tested on the Pod — no image build. The template sets `dockerStartCmd: ["python3", "-u", "/runpod-volume/app/handler.py"]` and `PYTHONPATH` to packages installed on the volume. Run on 2026-11-05 on RTX 4090 in EU-RO-1 ([the lab](https://github.com/litkhai/runpod-hols/tree/main/pod/04-pod-to-serverless)):
@@ -300,6 +302,8 @@ Pod 는 직접 빌려서 제어하는 GPU 또는 CPU 컨테이너입니다. Serv
 <div class="warn" markdown="1">
 **Pod 안에서 시크릿은 평범한 파일입니다.** 권한 644 인 `/etc/rp_environment` 에 치환된 시크릿과 Pod 의 `RUNPOD_API_KEY` 가 들어 있었습니다. 시크릿은 값을 템플릿과 API 에서 감춰 주지만, 컨테이너 안에서까지 감추지는 않습니다.
 </div>
+
+**GPU Pod 과 시작 명령, 2026-11-27** ([#167](https://github.com/litkhai/runpod-hols/issues/167)): `category: NVIDIA` 와 `cmd` (콘솔의 *Container start command*, v1 의 `dockerStartCmd`) 를 넣은 템플릿을 RTX 2000 Ada 에서 실행했습니다. 명령이 돈 뒤 `exec /start.sh` 로 SSH 가 떴고, GPU 가 보였고, 시크릿도 들어왔습니다. `restart` 는 200 을 돌려줬고 Pod 은 교체된 시크릿을 가진 새 컨테이너로 돌아왔습니다 — 볼륨 밖에 쓴 파일은 사라졌습니다. Pod 에 준 `cmd` 가 템플릿의 것보다 우선했습니다.
 
 ### 실습 04 — Pod 에서 Serverless 로
 
@@ -501,6 +505,8 @@ template 的 `env` 中可以写 {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %
 **在 Pod 内部，secret 只是一个普通文件。** `/etc/rp_environment`（权限 644）中存有解析后的 secret 以及 Pod 的 `RUNPOD_API_KEY`。secret 让值不出现在 template 和 API 中，但不会让值不出现在容器里。
 </div>
 
+**GPU Pod 与启动命令，2026-11-27**（[#167](https://github.com/litkhai/runpod-hols/issues/167)）：在 RTX 2000 Ada 上运行了带 `category: NVIDIA` 和 `cmd`（控制台的 *Container start command*，v1 中的 `dockerStartCmd`）的 template。命令执行后由 `exec /start.sh` 启动了 SSH；GPU 可见，secret 也已注入。`restart` 返回 200，Pod 以新容器带着轮换后的 secret 回来——写在 volume 之外的文件消失了。Pod 级别的 `cmd` 覆盖了 template 的。
+
 ### 实验 04 — 从 Pod 到 Serverless
 
 一个 network volume 在 Pod 上挂载到 `/workspace`，在 Serverless worker 上挂载到 `/runpod-volume`，就能让 endpoint 运行你刚在 Pod 上测试过的文件——无需构建镜像。template 设置 `dockerStartCmd: ["python3", "-u", "/runpod-volume/app/handler.py"]`，并将 `PYTHONPATH` 指向安装在 volume 上的包。2026-11-05 在 EU-RO-1 的 RTX 4090 上运行（[实验](https://github.com/litkhai/runpod-hols/tree/main/pod/04-pod-to-serverless)）：
@@ -700,6 +706,8 @@ template の `env` には {% raw %}`{{ RUNPOD_SECRET_<name> }}`{% endraw %} を�
 <div class="warn" markdown="1">
 **Pod の中では secret はただのファイルです。** `/etc/rp_environment`（モード 644）に、解決済みの secret と Pod の `RUNPOD_API_KEY` が入っていました。secret は値を template や API から隠しますが、コンテナからは隠しません。
 </div>
+
+**GPU Pod と起動コマンド、2026-11-27**（[#167](https://github.com/litkhai/runpod-hols/issues/167)）：`category: NVIDIA` と `cmd`（コンソールの *Container start command*、v1 の `dockerStartCmd`）を持つ template を RTX 2000 Ada で動かしました。コマンドが実行されたあと `exec /start.sh` で SSH が起動し、GPU が見え、secret も届きました。`restart` は 200 を返し、Pod はローテーション後の secret を持つ新しいコンテナで戻りました。volume の外に書いたファイルは消えていました。Pod 側の `cmd` が template のものより優先されました。
 
 ### ラボ 04 — Pod から Serverless へ
 
