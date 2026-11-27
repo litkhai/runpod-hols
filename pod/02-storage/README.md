@@ -143,6 +143,20 @@ The same steps through REST v2 ([#123](https://github.com/litkhai/runpod-hols/is
 | CPU Pod + `--disk volume` | REST v2 refuses a Pod volume on a CPU Pod, so the lab sends none; `/workspace` is overlay |
 | Clean up | No Pods, no volumes, `spendRate.current` 0 |
 
+### Another data center: US-MO-2 (2026-11-27)
+
+The same steps through REST v2 in US-MO-2 ([#168](https://github.com/litkhai/runpod-hols/issues/168)), Secure Cloud, the same image and `marks.sh`, about seven minutes, about USD 0.03. Network volume type `STANDARD`.
+
+| Step | Result |
+|---|---|
+| CPU Pod A (`cpu3c`) with the network volume | SSH after 20 s; `/workspace` is `mfs#us-mo-2.runpod.net:9421` (FUSE, 322 TB shown) |
+| Stop, start | `EXITED` after the stop; SSH 136 s after `start`; the marker on `/workspace` kept, the one in `/root` gone |
+| Delete A, new CPU Pod B on the same volume | B found A's marker |
+| L4 with a 10 GB Pod volume (USD 0.69/hr) | `/workspace` is again `mfs#us-mo-2.runpod.net:9421`, not a local disk, though the host has NVMe disks; after stop and start the `/workspace` marker kept, `/root`'s gone; SSH 29 s after `start` |
+| Clean up | Pods and volume deleted; `currentSpendPerHr` 0 |
+
+The EU-RO-1 picture holds in a second data center: both kinds of volume are MooseFS served by the data center, and `df` shows the shared filesystem.
+
 ### What was run
 
 2026-11-05, Secure Cloud, EU-RO-1, image `runpod/base:1.0.2-ubuntu2404`, REST API v1.
@@ -160,7 +174,7 @@ The same steps through REST v2 ([#123](https://github.com/litkhai/runpod-hols/is
 | CPU Pod + `volumeInGb` 10 | No Pod volume |
 | Clean up | No Pods, no volumes, `currentSpendPerHr` 0 |
 
-Not run: other data centers, a Pod volume on a host where it might be local disk, read throughput, the storage price per GB (read it from [Pricing](https://docs.runpod.io/pods/pricing)), a stop that never resumes.
+Not run: data centers other than EU-RO-1 and US-MO-2, a Pod volume on a host where it might be local disk, read throughput, the storage price per GB (read it from [Pricing](https://docs.runpod.io/pods/pricing)), a stop that never resumes.
 
 ---
 
@@ -303,6 +317,20 @@ mfs#euro.runpod.net:9421  2.3P  1.9P  399T  83% /workspace
 | CPU Pod + `--disk volume` | REST v2 는 CPU Pod 의 Pod 볼륨을 거부하므로 실습이 보내지 않음. `/workspace` 는 overlay |
 | 정리 | Pod·볼륨 없음, `spendRate.current` 0 |
 
+### 다른 데이터센터: US-MO-2 (2026-11-27)
+
+같은 단계를 REST v2 로 US-MO-2 에서 실행했습니다 ([#168](https://github.com/litkhai/runpod-hols/issues/168)). Secure Cloud, 같은 이미지와 `marks.sh`, 약 7분, 약 USD 0.03. 네트워크 볼륨 유형은 `STANDARD`.
+
+| 단계 | 결과 |
+|---|---|
+| 네트워크 볼륨을 붙인 CPU Pod A (`cpu3c`) | 20초 후 SSH. `/workspace` 는 `mfs#us-mo-2.runpod.net:9421` (FUSE, 322 TB 로 표시) |
+| 중지, 시작 | 중지 후 `EXITED`. `start` 후 136초에 SSH. `/workspace` 의 표식은 남고 `/root` 의 표식은 사라짐 |
+| A 삭제, 같은 볼륨으로 새 CPU Pod B | B 가 A 의 표식을 찾음 |
+| 10 GB Pod 볼륨을 붙인 L4 (시간당 USD 0.69) | `/workspace` 는 이번에도 `mfs#us-mo-2.runpod.net:9421` 로, 호스트에 NVMe 디스크가 있어도 로컬 디스크가 아님. 중지·시작 후 `/workspace` 표식은 남고 `/root` 표식은 사라짐. `start` 후 29초에 SSH |
+| 정리 | Pod 과 볼륨 삭제. `currentSpendPerHr` 0 |
+
+EU-RO-1 에서 본 그림이 두 번째 데이터센터에서도 같습니다. 두 종류의 볼륨 모두 데이터센터가 제공하는 MooseFS 이고, `df` 는 공유 파일시스템을 보여줍니다.
+
 ### 실행 내역
 
 2026-11-05, Secure Cloud, EU-RO-1, 이미지 `runpod/base:1.0.2-ubuntu2404`, REST API v1.
@@ -320,4 +348,4 @@ mfs#euro.runpod.net:9421  2.3P  1.9P  399T  83% /workspace
 | CPU Pod + `volumeInGb` 10 | Pod 볼륨 없음 |
 | 정리 | Pod 없음, 볼륨 없음, `currentSpendPerHr` 0 |
 
-실행하지 않은 것: 다른 데이터센터, Pod 볼륨이 로컬 디스크일 수 있는 호스트, 읽기 처리량, GB 당 스토리지 요금 ([Pricing](https://docs.runpod.io/pods/pricing) 참고), 끝내 재개되지 않는 중지.
+실행하지 않은 것: EU-RO-1 · US-MO-2 외의 데이터센터, Pod 볼륨이 로컬 디스크일 수 있는 호스트, 읽기 처리량, GB 당 스토리지 요금 ([Pricing](https://docs.runpod.io/pods/pricing) 참고), 끝내 재개되지 않는 중지.
